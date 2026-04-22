@@ -17,12 +17,8 @@ direct new money without selling existing positions.
 
 from typing import List
 
-from fastapi import HTTPException
-
-from app.infra.db.models.portfolio import (
-    CustomCategory,
-    CustomCategoryAssignment,
-)
+from app.core.exceptions import BusinessRuleError
+from app.infra.db.models.portfolio import CustomCategory, CustomCategoryAssignment
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.modules.portfolio.api.rebalancing.schema import (
     AssetRebalancingEntry,
@@ -165,9 +161,8 @@ class PortfolioRebalancingService:
         # Validate category sum
         cat_sum = sum(c.target_percentage for c in payload.categories)
         if abs(cat_sum - 100) > 0.01:
-            raise HTTPException(
-                status_code=422,
-                detail=f'A soma dos percentuais das categorias deve ser 100%. Atual: {cat_sum:.2f}%',
+            raise BusinessRuleError(
+                f'A soma dos percentuais das categorias deve ser 100%. Atual: {cat_sum:.2f}%',
             )
 
         # Validate asset sum per category
@@ -176,9 +171,8 @@ class PortfolioRebalancingService:
             if abs(asset_sum - 100) > 0.01:
                 category_obj = await self.base_repo.get(CustomCategory, id=cat.category_id)
                 cat_name = category_obj.name if category_obj else str(cat.category_id)
-                raise HTTPException(
-                    status_code=422,
-                    detail=f'A soma dos percentuais dos ativos na categoria "{cat_name}" deve ser 100%. Atual: {asset_sum:.2f}%',
+                raise BusinessRuleError(
+                    f'A soma dos percentuais dos ativos na categoria "{cat_name}" deve ser 100%. Atual: {asset_sum:.2f}%',
                 )
 
         # Verify all categories belong to this portfolio
@@ -189,9 +183,8 @@ class PortfolioRebalancingService:
 
         for cat in payload.categories:
             if cat.category_id not in portfolio_category_ids:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f'Categoria {cat.category_id} não pertence à carteira {portfolio_id}.',
+                raise BusinessRuleError(
+                    f'Categoria {cat.category_id} não pertence à carteira {portfolio_id}.',
                 )
 
         # Save category targets

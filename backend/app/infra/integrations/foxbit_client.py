@@ -6,63 +6,44 @@ import time
 from urllib.parse import urlencode
 
 import pandas as pd
-import requests
-
-API_KEY = os.getenv('FOXBIT_API_KEY')
-API_SECRET = os.getenv('FOXBIT_API_SECRET')
-API_BASE_URL = 'https://api.foxbit.com.br/rest/v3'
+from app.infra.http import AsyncHttpClient
 
 
 class FoxbitClient:
     def __init__(self):
-        self.api_key = API_KEY
-        self.api_secret = API_SECRET
-        self.api_base_url = API_BASE_URL
+        self.http = AsyncHttpClient(
+            provider='foxbit',
+            base_url='https://api.foxbit.com.br/rest/v3',
+            timeout=10.0,
+        )
+        self.api_key = os.getenv('FOXBIT_API_KEY')
+        self.api_secret = os.getenv('FOXBIT_API_SECRET')
 
-    def sign(self, method, path, params, body):
-        queryString = ''
-        if params:
-            queryString = urlencode(params)
-
-        rawBody = ''
-        if body:
-            rawBody = json.dumps(body)
+    def _sign(self, method: str, path: str, params: dict | None, body: dict | None):
+        query_string = urlencode(params) if params else ''
+        raw_body = json.dumps(body) if body else ''
 
         timestamp = str(int(time.time() * 1000))
-        preHash = f'{timestamp}{method.upper()}{"/rest/v3" + path}{queryString}{rawBody}'
-        signature = hmac.new(self.api_secret.encode(), preHash.encode(), hashlib.sha256).hexdigest()
-
+        pre_hash = f'{timestamp}{method.upper()}{"/rest/v3" + path}{query_string}{raw_body}'
+        signature = hmac.new(self.api_secret.encode(), pre_hash.encode(), hashlib.sha256).hexdigest()
         return signature, timestamp
 
-    def request(self, method, path, params=None, body=None):
-        signature, timestamp = self.sign(method, path, params, body)
-        url = f'{self.api_base_url}{path}'
-        headers = {
+    def _auth_headers(self, method: str, path: str, params: dict | None, body: dict | None) -> dict:
+        signature, timestamp = self._sign(method, path, params, body)
+        return {
             'X-FB-ACCESS-KEY': self.api_key,
             'X-FB-ACCESS-TIMESTAMP': timestamp,
             'X-FB-ACCESS-SIGNATURE': signature,
-            'Content-Type': 'application/json',
         }
 
-        try:
-            response = requests.request(method, url, params=params, json=body, headers=headers)
-            return response.json()
-        except requests.HTTPError as http_err:
-            print(
-                f'HTTP Status Code: {http_err.response.status_code}, Error Response Body:',
-                http_err.response.json(),
-            )
-            raise
-        except Exception as err:
-            print(f'An error occurred: {err}')
-            raise
+    async def _request(self, method: str, path: str, *, params=None, json_body=None):
+        headers = self._auth_headers(method, path, params, json_body)
+        return await self.http.request(method, path, params=params, json=json_body, headers=headers)
 
-    def get_currencies(self):
-        endpoint = '/currencies'
+    async def get_currencies(self):
+        return await self._request('GET', '/currencies')
 
-        return self.request('GET', endpoint)
-
-    def get_candlesticks(
+    async def get_candlesticks(
         self,
         market_symbol,
         interval='1d',
@@ -70,13 +51,13 @@ class FoxbitClient:
         end_time=None,
         limit=500,
     ):
-        endpoint = f'/markets/{market_symbol}/candlesticks'
         params = {'interval': interval, 'limit': limit}
         if start_time:
             params['start_time'] = start_time
         if end_time:
             params['end_time'] = end_time
-        candlesticks = self.request('GET', endpoint, params)
+
+        candlesticks = await self._request('GET', f'/markets/{market_symbol}/candlesticks', params=params)
 
         close_data = []
         for candle in candlesticks:
@@ -89,17 +70,14 @@ class FoxbitClient:
             close_price = float(candle[4])
             close_data.append({'data': close_datetime, 'preco': close_price})
 
-        df_history = pd.DataFrame(close_data)
-        return df_history
+        return pd.DataFrame(close_data)
 
-    def get_user_info(self):
-        endpoint = '/me'
+    async def get_user_info(self):
+        return await self._request('GET', '/me')
 
-        user_info = self.request('GET', endpoint)
-        return user_info
-
-    def get_trades(self, ticker):
-        endpoint = '/trades'
+    async def get_trades(self, ticker):
         params = {'market_symbol': ticker, 'page_size': 100}
-        trades = self.request('GET', endpoint, params)
-        return trades
+        return await self._request('GET', '/trades', params=params)
+
+    async def aclose(self):
+        await self.http.aclose()

@@ -5,13 +5,13 @@ Service to consolidate portfolio and category returns into the database.
 
 import pandas as pd
 from app.config.logger import logger
-from app.domain.finance.performance_metrics import cagr
 from app.infra.db.models.portfolio import (
     CategoryReturn,
     CustomCategory,
     CustomCategoryAssignment,
     PortfolioReturn,
 )
+from app.lib.finance.performance_metrics import cagr
 from app.modules.portfolio.domain.returns import (
     calculate_category_acc_return,
     calculate_portfolio_acc_return,

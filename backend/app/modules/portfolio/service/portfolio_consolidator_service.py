@@ -9,7 +9,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from app.config.logger import logger
-from app.domain.finance.trade import average_price
+from app.core.exceptions import NotFoundError
 from app.infra.db.models.asset import Asset, Event
 from app.infra.db.models.asset_fixed_income import FixedIncome
 from app.infra.db.models.constants.asset_fixed_income_type import (
@@ -27,11 +27,11 @@ from app.infra.db.models.portfolio import (
     Transaction,
 )
 from app.infra.db.session import AsyncSessionLocal
-from app.infra.integrations.market_data_provider import MarketDataProvider
+from app.lib.finance.trade import average_price
+from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.service.market_data_service import MarketDataService
 from app.modules.portfolio.domain.fixed_income import calculate_fixed_income_prices
 from app.modules.portfolio.repositories import PortfolioRepository
-from fastapi import HTTPException
 
 # treasury_bond_type_id → INDEX id (None = prefixado, sem indexador)
 TREASURY_INDEX_MAP = {
@@ -295,9 +295,8 @@ class PortfolioConsolidatorService:
         )
 
         if transactions_df.empty:
-            raise HTTPException(
-                status_code=404,
-                detail=f'Transactions not found for portfolio {portfolio_id}',
+            raise NotFoundError(
+                f'Transactions not found for portfolio {portfolio_id}',
             )
 
         asset_ids = transactions_df['asset_id'].unique().tolist()
@@ -365,13 +364,13 @@ class PortfolioConsolidatorService:
         no_exposure = (position_df['quantity'] == 0) | (prev_qty == 0)
 
         # BRL
-        position_df['daily_return'] = position_df['price'].pct_change(fill_method=None).fillna(0)
+        position_df['daily_return'] = position_df['price'].pct_change(fill_method=None).infer_objects(copy=False).fillna(0)
         # Add dividend yield: dividend / (quantity * previous price)
         if 'dividend' in position_df.columns:
             base_value = position_df['quantity'] * position_df['price'].shift(1)
             position_df['daily_return'] += (
                 position_df['dividend'] / base_value.replace(0, pd.NA)
-            ).fillna(0)
+            ).infer_objects(copy=False).fillna(0)
         position_df.loc[no_exposure, 'daily_return'] = 0
         position_df['acc_return'] = (1 + position_df['daily_return']).cumprod() - 1
 
@@ -393,13 +392,13 @@ class PortfolioConsolidatorService:
 
         # USD
         position_df['daily_return_usd'] = (
-            position_df['price_usd'].pct_change(fill_method=None).fillna(0)
+            position_df['price_usd'].pct_change(fill_method=None).infer_objects(copy=False).fillna(0)
         )
         if 'dividend_usd' in position_df.columns:
             base_value_usd = position_df['quantity'] * position_df['price_usd'].shift(1)
             position_df['daily_return_usd'] += (
                 position_df['dividend_usd'] / base_value_usd.replace(0, pd.NA)
-            ).fillna(0)
+            ).infer_objects(copy=False).fillna(0)
         position_df.loc[no_exposure, 'daily_return_usd'] = 0
         position_df['acc_return_usd'] = (1 + position_df['daily_return_usd']).cumprod() - 1
 
@@ -490,6 +489,9 @@ class PortfolioConsolidatorService:
             )
         await self.session.commit()
         logger.info(f"Dividendos de {row['ticker']} na data {row['date']} consolidados com sucesso")
+
+        logger.info(f"Dividendos de {row['ticker']} na data {row['date']} consolidados com sucesso")
+
 
         logger.info(f"Dividendos de {row['ticker']} na data {row['date']} consolidados com sucesso")
 

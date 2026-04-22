@@ -1,18 +1,19 @@
 import {
-    Box,
-    Divider,
-    Drawer,
-    List,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
-    Typography,
+  Box,
+  Divider,
+  Drawer,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
 } from '@mui/material'
 
 import BusinessIcon from '@mui/icons-material/Business'
 import EventIcon from '@mui/icons-material/Event'
 import PaletteIcon from '@mui/icons-material/Palette'
 import PeopleIcon from '@mui/icons-material/People'
+import PsychologyIcon from '@mui/icons-material/Psychology'
 import TokenIcon from '@mui/icons-material/Token'
 
 import { useNavigate } from 'react-router-dom'
@@ -26,6 +27,7 @@ const menuItems = [
   { text: 'Corretoras', icon: <BusinessIcon fontSize="small" />, path: '/admin/brokers' },
   { text: 'Eventos', icon: <EventIcon fontSize="small" />, path: '/admin/events' },
   { text: 'Usuários', icon: <PeopleIcon fontSize="small" />, path: '/admin/users' },
+  { text: 'AI Features', icon: <PsychologyIcon fontSize="small" />, path: '/admin/ai-features' },
   { text: 'Design System', icon: <PaletteIcon fontSize="small" />, path: '/admin/design-system' },
 ]
 

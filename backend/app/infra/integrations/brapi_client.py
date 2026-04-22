@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
-
 from app.config.settings import settings
 from app.infra.http import AsyncHttpClient
 from app.utils.df import extend_values_to_today
@@ -11,21 +10,15 @@ from app.utils.df import extend_values_to_today
 
 class BrapiClient:
     def __init__(self):
-        self.api_token = settings.BRAPI_API_TOKEN
-        self.base_url = 'https://brapi.dev/api'
         self.http = AsyncHttpClient(
-            base_url=self.base_url,
-            headers={'Authorization': f'Bearer {self.api_token}'},
+            provider='brapi',
+            base_url='https://brapi.dev/api',
             timeout=15.0,
-            max_retries=3,
-            backoff_factor=1.0,
+            headers={'Authorization': f'Bearer {settings.BRAPI_API_TOKEN}'},
         )
 
     async def _get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        try:
-            return await self.http.get(endpoint, params=params)
-        except Exception as e:
-            raise ValueError(f'Error fetching data from BRAPI: {e}') from e
+        return await self.http.request('GET', endpoint, params=params)
 
     async def _get_quotes(
         self, tickers: List[str], range: str = '1y', interval: str = '1d', modules: str = 'summaryProfile'
@@ -72,24 +65,23 @@ class BrapiClient:
 
         return 'max'
 
-    async def get_price_history_df(self, ticker: str, init_date, interval: str = '1d') -> pd.DataFrame:
+    async def _fetch_price_df(self, ticker: str, init_date, interval: str = '1d') -> pd.DataFrame:
+        """Fetch raw price data without filling missing days."""
         range_param = self._brapi_range_from_init_date(init_date)
         asset_quotes = await self._get_quotes([ticker], range_param, interval)
 
-        try:
-            asset = asset_quotes['results'][0]
-            history = asset.get('historicalDataPrice', [])
-            df = pd.DataFrame(history)
-            df['currency'] = asset.get('currency')
-            df['date'] = pd.to_datetime(df['date'], unit='s').dt.normalize()
-            df = df.drop_duplicates(subset=['date'])
-            df = extend_values_to_today(df)
-            return df
+        asset = asset_quotes['results'][0]
+        history = asset.get('historicalDataPrice', [])
+        df = pd.DataFrame(history)
+        df['currency'] = asset.get('currency')
+        df['date'] = pd.to_datetime(df['date'], unit='s').dt.normalize()
+        df = df.drop_duplicates(subset=['date'])
+        return df
 
-        except Exception as e:
-            raise ValueError(
-                f'Erro ao buscar dados do BRApi. Ticker: {ticker}. Erro: {str(e)}'
-            ) from e
+    async def get_price_history_df(self, ticker: str, init_date, interval: str = '1d') -> pd.DataFrame:
+        df = await self._fetch_price_df(ticker, init_date, interval)
+        df = extend_values_to_today(df)
+        return df
 
     async def get_quotes(
         self,
@@ -98,10 +90,7 @@ class BrapiClient:
         end_date=None,
         interval: str = '1d'
     ) -> Dict[str, Any]:
-        df = await self.get_price_history_df(ticker, init_date, interval)
-        if interval == '1d':
-            df = df.set_index('date').asfreq('D').reset_index()
-            df = df.ffill().bfill()
+        df = await self._fetch_price_df(ticker, init_date, interval)
         if end_date:
             end_date = pd.to_datetime(end_date).normalize()
             df = df[df['date'] <= end_date]
@@ -143,6 +132,5 @@ class BrapiClient:
                 })
         return dividends
 
-    async def close(self):
-        """Close the HTTP client."""
-        await self.http.close()
+    async def aclose(self):
+        await self.http.aclose()

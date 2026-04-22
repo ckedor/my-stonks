@@ -6,12 +6,7 @@ Handles market indexes, USD/BRL history, and asset quotes.
 
 from typing import List
 
-from fastapi import APIRouter, Depends
-from fastapi.params import Query
-
 from app.entrypoints.worker.task_runner import run_task
-from app.infra.db.models.constants.asset_type import ASSET_TYPE
-from app.infra.db.models.constants.exchange import EXCHANGE
 from app.infra.db.session import get_session
 from app.modules.market_data.api.schemas import (
     Currency,
@@ -20,12 +15,15 @@ from app.modules.market_data.api.schemas import (
     QuoteResponse,
     USD_BRL_History,
 )
+from app.modules.market_data.domain.enums import EXCHANGE
 from app.modules.market_data.service.market_data_service import MarketDataService
 from app.modules.market_data.tasks.set_indexes_history_cache import (
     set_indexes_history_cache,
 )
 from app.modules.users.models import User
 from app.modules.users.views import current_active_user, current_superuser
+from fastapi import APIRouter, Depends
+from fastapi.params import Query
 
 router = APIRouter(
     prefix='/market_data',

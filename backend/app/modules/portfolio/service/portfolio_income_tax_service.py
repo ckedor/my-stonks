@@ -4,14 +4,21 @@ Portfolio income tax service - handles tax calculations and reports.
 """
 
 import pandas as pd
-from app.domain.finance.trade import profits_by_month_df
-from app.domain.income_tax.tax_income_calculator import TaxIncomeCalculator
 from app.infra.db.models.asset import Event
 from app.infra.db.models.constants.asset_type import ASSET_TYPE
 from app.infra.db.models.constants.currency import CURRENCY
+from app.lib.finance.trade import profits_by_month_df
+from app.lib.income_tax.constants import TaxableAssetType
+from app.lib.income_tax.tax_income_calculator import TaxIncomeCalculator
 from app.modules.portfolio.repositories import PortfolioRepository
 from app.utils.response import df_response
 
+_ASSET_TYPE_TO_TAXABLE: dict[ASSET_TYPE, TaxableAssetType] = {
+    ASSET_TYPE.STOCK: TaxableAssetType.STOCK,
+    ASSET_TYPE.FII: TaxableAssetType.FII,
+    ASSET_TYPE.ETF: TaxableAssetType.ETF,
+    ASSET_TYPE.CRIPTO: TaxableAssetType.CRIPTO,
+}
 
 class PortfolioIncomeTaxService:
     def __init__(self, session):
@@ -214,7 +221,8 @@ class PortfolioIncomeTaxService:
         df.loc[:, 'total_amount'] = df['quantity'] * df['price']
         df = self._calculate_monthly_profits(df)
 
-        tax_calculator = TaxIncomeCalculator(asset_type, df)
+        taxable_type = _ASSET_TYPE_TO_TAXABLE[asset_type]
+        tax_calculator = TaxIncomeCalculator(taxable_type, df)
         taxed_df = tax_calculator.calculate_tax()
 
         last_day_fiscal_year = pd.to_datetime(f"{fiscal_year}-12-31")

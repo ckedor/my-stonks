@@ -2,19 +2,21 @@ import json
 from datetime import datetime
 
 import pandas as pd
-import requests
+from app.infra.http import AsyncHttpClient
 from bs4 import BeautifulSoup
 
 
 class AnbimaClient:
     def __init__(self):
-        pass
+        self.http = AsyncHttpClient(
+            provider='anbima',
+            base_url='https://data.anbima.com.br',
+            timeout=30.0,
+        )
 
-    @staticmethod
-    def get_fund_history_df(anbima_class_code):
-        url = f'https://data.anbima.com.br/fundos/{anbima_class_code}/periodicos'
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
+    async def get_fund_history_df(self, anbima_class_code):
+        html = await self.http.request('GET', f'/fundos/{anbima_class_code}/periodicos', parse='text')
+        soup = BeautifulSoup(html, 'html.parser')
 
         scripts = soup.find_all('script')
 
@@ -43,3 +45,6 @@ class AnbimaClient:
         df['price'] = df['price'].ffill()
         df = df.reset_index(names='date')
         return df
+
+    async def aclose(self):
+        await self.http.aclose()

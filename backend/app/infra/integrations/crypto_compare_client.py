@@ -2,7 +2,6 @@
 from datetime import datetime
 
 import pandas as pd
-
 from app.config.settings import settings
 from app.infra.http import AsyncHttpClient
 from app.utils.df import extend_values_to_today
@@ -11,21 +10,20 @@ from app.utils.df import extend_values_to_today
 class CryptoCompareClient:
     def __init__(self):
         self.api_key = settings.CRYPTO_COMPARE_API_KEY
-        self.base_url = 'https://data-api.cryptocompare.com'
         self.http = AsyncHttpClient(
-            base_url=self.base_url,
-            headers={'accept': 'application/json'},
+            provider='crypto_compare',
+            base_url='https://data-api.cryptocompare.com',
             timeout=30.0,
-            max_retries=3,
-            backoff_factor=1.0,
+            headers={'accept': 'application/json'},
         )
 
     async def get_crypto_price_history_df(
         self, symbol: str, market: str = 'cadli', init_date: datetime = None
     ) -> pd.DataFrame:
+        if init_date is None:
+            init_date = datetime(2015, 1, 1)
         instrument = symbol + '-USD'
 
-        endpoint = '/index/cc/v1/historical/days'
         limit = 2000
         aggregate = 1
         all_data = []
@@ -45,7 +43,7 @@ class CryptoCompareClient:
                 'to_ts': to_ts,
             }
 
-            data = await self.http.get(endpoint, params=params)
+            data = await self.http.request('GET', '/index/cc/v1/historical/days', params=params)
 
             if 'Data' not in data or not data['Data']:
                 break
@@ -107,6 +105,5 @@ class CryptoCompareClient:
             'quotes': history_df[['date', 'open', 'high', 'low', 'close']].to_dict(orient='records'),
         }
 
-    async def close(self):
-        """Close the HTTP client."""
-        await self.http.close()
+    async def aclose(self):
+        await self.http.aclose()

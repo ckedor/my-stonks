@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from app.core.exceptions import NotFoundError
 from app.infra.db.models.constants.currency import CURRENCY
 from app.infra.db.models.constants.index import INDEX
 from app.infra.db.models.portfolio import Position
@@ -24,7 +25,6 @@ from app.modules.portfolio.domain.returns import (
 from app.modules.portfolio.repositories import PortfolioRepository
 from app.utils.df import df_to_dict_list, df_to_named_dict
 from app.utils.response import df_response
-from fastapi import HTTPException
 
 
 class PortfolioPositionService:
@@ -37,7 +37,7 @@ class PortfolioPositionService:
     async def get_asset_details(self, portfolio_id: int, asset_id: int = None, currency: str = 'BRL') -> dict:
         asset = await self.repo.get_asset_details(asset_id)
         if not asset:
-            raise HTTPException(status_code=404, detail='Ativo não encontrado')
+            raise NotFoundError('Ativo não encontrado')
 
         position = await self.repo.get(
             Position,

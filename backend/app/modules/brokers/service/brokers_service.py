@@ -5,8 +5,7 @@ Brokers service - handles broker management operations.
 
 from typing import Optional
 
-from fastapi import HTTPException
-
+from app.core.exceptions import AlreadyExistsError, NotFoundError
 from app.infra.db.models.portfolio import Broker
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 
@@ -23,7 +22,7 @@ class BrokersService:
     async def get_broker(self, broker_id: int) -> Broker:
         broker = await self.repo.get(Broker, id=broker_id)
         if not broker:
-            raise HTTPException(status_code=404, detail="Broker not found")
+            raise NotFoundError('Broker not found')
         return broker
 
     async def create_broker(self, name: str, cnpj: Optional[str], currency_id: int) -> Broker:
@@ -31,7 +30,7 @@ class BrokersService:
         if cnpj:
             existing = await self.repo.get(Broker, by={'cnpj': cnpj}, first=True)
             if existing:
-                raise HTTPException(status_code=400, detail="Broker with this CNPJ already exists")
+                raise AlreadyExistsError('Broker with this CNPJ already exists')
         
         data = {
             'name': name,
@@ -58,7 +57,7 @@ class BrokersService:
         if cnpj and cnpj != broker.cnpj:
             existing = await self.repo.get(Broker, by={'cnpj': cnpj}, first=True)
             if existing and existing.id != broker_id:
-                raise HTTPException(status_code=400, detail="Another broker with this CNPJ already exists")
+                raise AlreadyExistsError('Another broker with this CNPJ already exists')
         
         # Preparar dados para atualização
         update_data = {'id': broker_id}

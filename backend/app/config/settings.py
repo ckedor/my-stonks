@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     BRAPI_API_TOKEN: str
     ALPHAVANTAGE_KEY: str
     CRYPTO_COMPARE_API_KEY: str
+    OPENAI_API_KEY: str = ''
     JWT_SECRET: str
 
     CORS_ORIGINS: list[str] = [

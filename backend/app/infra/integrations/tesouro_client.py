@@ -5,11 +5,9 @@ from datetime import date
 from io import StringIO
 
 import pandas as pd
-from redis.asyncio import Redis
-
-from app.config.logger import logger
 from app.config.settings import settings
 from app.infra.http import AsyncHttpClient
+from redis.asyncio import Redis
 
 
 class TesouroClient:
@@ -22,11 +20,7 @@ class TesouroClient:
     REDIS_TTL_SECONDS = 86400  # 24 horas
 
     def __init__(self):
-        self.http = AsyncHttpClient(
-            timeout=60.0,
-            max_retries=3,
-            backoff_factor=1.0,
-        )
+        self.http = AsyncHttpClient(provider='tesouro', timeout=60.0)
         self._redis: Redis | None = None
 
     async def _get_redis(self) -> Redis:
@@ -55,34 +49,30 @@ class TesouroClient:
             if TesouroClient._cached_df is not None and TesouroClient._cache_date == today:
                 return TesouroClient._cached_df
 
-            try:
-                redis = await self._get_redis()
-                redis_key = self._get_redis_key()
+            redis = await self._get_redis()
+            redis_key = self._get_redis_key()
 
-                cached_gzip = await redis.get(redis_key)
+            cached_gzip = await redis.get(redis_key)
 
-                if cached_gzip:
-                    csv_content = gzip.decompress(cached_gzip).decode('utf-8')
-                    result = await self._parse_csv(csv_content)
-                    TesouroClient._cached_df = result
-                    TesouroClient._cache_date = today
-                    return result
-
-                taxas_precos_history_url = 'https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/PrecoTaxaTesouroDireto.csv'
-
-                response = await self.http.get(taxas_precos_history_url, parse_json=False)
-
-                compressed = gzip.compress(response.encode('utf-8'), compresslevel=6)
-                await redis.set(redis_key, compressed, ex=self.REDIS_TTL_SECONDS)
-
-                result = await self._parse_csv(response)
+            if cached_gzip:
+                csv_content = gzip.decompress(cached_gzip).decode('utf-8')
+                result = await self._parse_csv(csv_content)
                 TesouroClient._cached_df = result
                 TesouroClient._cache_date = today
-
                 return result
-            except Exception as e:
-                logger.error(f'Error fetching Tesouro CSV: {e}')
-                return None
+
+            taxas_precos_history_url = 'https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/PrecoTaxaTesouroDireto.csv'
+
+            response = await self.http.request('GET', taxas_precos_history_url, parse='text')
+
+            compressed = gzip.compress(response.encode('utf-8'), compresslevel=6)
+            await redis.set(redis_key, compressed, ex=self.REDIS_TTL_SECONDS)
+
+            result = await self._parse_csv(response)
+            TesouroClient._cached_df = result
+            TesouroClient._cache_date = today
+
+            return result
 
     async def _parse_csv(self, csv_content: str) -> pd.DataFrame:
         """Parse CSV em thread separada para não bloquear o event loop."""
@@ -117,11 +107,12 @@ class TesouroClient:
 
     async def get_quotes(
         self,
-        treasury_type,
-        treasury_maturity_date,
+        treasury_type: str,
+        treasury_maturity_date: str,
         start_date=None,
         end_date=None,
     ):
+        treasury_maturity_date = pd.to_datetime(treasury_maturity_date).date()
         history_df = await self.get_precos_tesouro(treasury_type, treasury_maturity_date)
 
         if start_date:
@@ -134,6 +125,5 @@ class TesouroClient:
             'quotes': history_df[['date', 'close']],
         }
 
-    async def close(self):
-        """Close the HTTP client."""
-        await self.http.close()
+    async def aclose(self):
+        await self.http.aclose()

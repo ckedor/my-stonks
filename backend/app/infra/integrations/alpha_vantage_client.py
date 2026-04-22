@@ -4,17 +4,19 @@ import asyncio
 import pandas as pd
 from alpha_vantage.foreignexchange import ForeignExchange
 from alpha_vantage.timeseries import TimeSeries
-
 from app.config.settings import settings
+from app.infra.http import raise_for_provider
+
+PROVIDER = 'alpha_vantage'
 
 
 class AlphaVantageClient:
     """
     AlphaVantage client wrapper.
-    Uses asyncio.to_thread to run synchronous alpha_vantage library calls 
+    Uses asyncio.to_thread to run synchronous alpha_vantage library calls
     without blocking the event loop.
     """
-    
+
     def __init__(self):
         self.alpha_vantage_key = settings.ALPHAVANTAGE_KEY
 
@@ -50,8 +52,7 @@ class AlphaVantageClient:
             return df[['date', 'open', 'high', 'low', 'close', 'currency']]
 
         except Exception as e:
-            print('AlphaVantage: Erro ao buscar dados históricos: ', str(e))
-            raise e
+            raise_for_provider(e, provider=PROVIDER)
 
     async def get_price_history_df(self, symbol):
         """Async wrapper using to_thread to avoid blocking."""
@@ -62,7 +63,11 @@ class AlphaVantageClient:
         symbol: str,
         init_date=None,
         end_date=None,
+        is_b3=False,
     ) -> dict:
+        if is_b3 and not symbol.endswith('.SA'):
+            symbol += '.SA'
+            
         df = await self.get_price_history_df(symbol)
         if end_date:
             end_date = pd.to_datetime(end_date).normalize()
@@ -94,11 +99,7 @@ class AlphaVantageClient:
             return df[['data', 'preco']]
 
         except Exception as e:
-            print(
-                'AlphaVantage: Erro ao buscar dados históricos do S&P 500:',
-                str(e),
-            )
-            raise e
+            raise_for_provider(e, provider=PROVIDER)
 
     async def get_sp500_history(self):
         """Async wrapper."""
@@ -119,7 +120,7 @@ class AlphaVantageClient:
             df = df.rename(columns={'index': 'data'})
             return df[['data', 'BRL/USD']]
         except Exception as e:
-            raise e
+            raise_for_provider(e, provider=PROVIDER)
 
     async def get_usd_brl_exchange_rate_alpha_vantage(self):
         """Async wrapper."""

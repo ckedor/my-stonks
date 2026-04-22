@@ -3,7 +3,6 @@ import json
 from enum import IntEnum
 
 import pandas as pd
-
 from app.infra.http import AsyncHttpClient
 
 
@@ -13,22 +12,16 @@ class Category(IntEnum):
 
 class StatusInvestClient:
     def __init__(self):
-        self.base_url = 'https://statusinvest.com.br'
         self.http = AsyncHttpClient(
-            base_url=self.base_url,
-            headers={'User-Agent': 'Chrome/112.0.0.0'},
+            provider='status_invest',
+            base_url='https://statusinvest.com.br',
             timeout=30.0,
-            max_retries=3,
-            backoff_factor=1.0,
+            headers={'User-Agent': 'Chrome/112.0.0.0'},
         )
 
-    async def get(self, endpoint, params=None):
-        return await self.http.get(endpoint, params=params)
-
     async def get_provents_df(self, ticker, max=True):
-        endpoint = '/fii/companytickerprovents'
         params = {'ticker': ticker, 'chartProventsType': 2 if max else 3}
-        response = await self.get(endpoint, params)
+        response = await self.http.request('GET', '/fii/companytickerprovents', params=params)
         provents = response['assetEarningsModels']
         provents_df = pd.DataFrame(provents)
         provents_df.rename(columns={'pd': 'date', 'v': 'value_per_share'}, inplace=True)
@@ -37,7 +30,6 @@ class StatusInvestClient:
         return provents_df[['ticker', 'date', 'value_per_share']]
 
     async def get_fiis_df(self):
-        endpoint = '/category/advancedsearchresultpaginated'
         search = {
             "Segment": "",
             "Gestao": "",
@@ -52,7 +44,7 @@ class StatusInvestClient:
             "patrimonio": {"Item1": None, "Item2": None},
             "valorpatrimonialcota": {"Item1": None, "Item2": None},
             "numerocotas": {"Item1": None, "Item2": None},
-            "lastdividend": {"Item1": None, "Item2": None}
+            "lastdividend": {"Item1": None, "Item2": None},
         }
 
         all_data = []
@@ -67,17 +59,15 @@ class StatusInvestClient:
                 'isAsc': '',
                 'page': page,
                 'take': take,
-                'CategoryType': category
+                'CategoryType': category,
             }
-            data = await self.get(endpoint, params)
-            if len(data["list"]) == 0:
+            data = await self.http.request('GET', '/category/advancedsearchresultpaginated', params=params)
+            if len(data['list']) == 0:
                 break
-            all_data.extend(data["list"])
+            all_data.extend(data['list'])
             page += 1
 
-        fiis_df = pd.DataFrame(all_data)
-        return fiis_df
+        return pd.DataFrame(all_data)
 
-    async def close(self):
-        """Close the HTTP client."""
-        await self.http.close()
+    async def aclose(self):
+        await self.http.aclose()

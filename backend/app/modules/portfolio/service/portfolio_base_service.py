@@ -3,8 +3,7 @@
 Portfolio base service - handles portfolio CRUD operations.
 """
 
-from fastapi import HTTPException
-
+from app.core.exceptions import BusinessRuleError, NotFoundError
 from app.infra.db.models.portfolio import (
     CustomCategory,
     CustomCategoryAssignment,
@@ -32,7 +31,7 @@ class PortfolioBaseService:
         id_list = await self.repo.create(Portfolio, {'name': portfolio.name, 'user_id': user_id})
         user_categories = portfolio.user_categories
         if not id_list:
-            raise HTTPException(status_code=400, detail='Erro ao criar portfolio')
+            raise BusinessRuleError('Erro ao criar portfolio')
         categories = [
             CustomCategory(
                 **cat.model_dump(exclude={'portfolio_id'}),
@@ -53,7 +52,7 @@ class PortfolioBaseService:
     async def update_portfolio(self, portfolio: UpdatePortfolioRequest) -> None:    
         portfolio_obj = await self.repo.get(Portfolio, portfolio.id)
         if not portfolio_obj:
-            raise HTTPException(status_code=404, detail='Portfolio não encontrado')
+            raise NotFoundError('Portfolio não encontrado')
 
         await self.repo.update(
             Portfolio,
@@ -70,7 +69,7 @@ class PortfolioBaseService:
     async def delete_portfolio(self, portfolio_id: int) -> None:
         portfolio = await self.repo.get(Portfolio, portfolio_id)
         if not portfolio:
-            raise HTTPException(status_code=404, detail='Portfolio não encontrado')
+            raise NotFoundError('Portfolio não encontrado')
 
         custom_categories = await self.repo.get(
             CustomCategory, by={'portfolio_id': portfolio_id}

@@ -3,8 +3,7 @@
 Portfolio user configuration service - handles portfolio settings.
 """
 
-from fastapi import HTTPException
-
+from app.core.exceptions import NotFoundError, ValidationError
 from app.infra.db.models.portfolio import ConfigurationName, PortfolioUserConfiguration
 from app.modules.portfolio.api.user_configuration.schemas import (
     UserConfigurationUpdateRequest,
@@ -52,7 +51,7 @@ class PortfolioUserConfigurationService:
 
         config_names = await self.repo.get(ConfigurationName, by={'name': name})
         if not config_names:
-            raise HTTPException(status_code=400, detail="Invalid configuration name.")
+            raise ValidationError('Invalid configuration name.')
 
         config_name = config_names[0]
 
@@ -65,7 +64,7 @@ class PortfolioUserConfigurationService:
         )
 
         if not existing_configs:
-            raise HTTPException(status_code=404, detail="Configuration not found.")
+            raise NotFoundError('Configuration not found.')
 
         config = existing_configs[0]
         config.enabled = enabled

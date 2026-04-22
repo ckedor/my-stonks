@@ -4,27 +4,29 @@ import { useTradeFormStore } from '@/stores/trade-form'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import SearchIcon from '@mui/icons-material/Search'
 import {
-    Box,
-    Chip,
-    FormControl,
-    Grid,
-    IconButton,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Pagination,
-    Select,
-    TextField,
-    Tooltip,
-    Typography,
+  Box,
+  Chip,
+  FormControl,
+  Grid,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Pagination,
+  Select,
+  TextField,
+  Tooltip,
+  Typography,
 } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import api from '../../../lib/api'
 
 const ITEMS_PER_PAGE = 24
 
 export default function MarketAtivosPage() {
+  const navigate = useNavigate()
   const { openTradeForm } = useTradeFormStore()
 
   const { assets, assetTypes, loading: marketLoading, setAssets, setAssetTypes, setLoading } = useMarketStore()
@@ -197,6 +199,7 @@ export default function MarketAtivosPage() {
         {paginatedAssets.map((asset) => (
           <Grid key={asset.id} size={{xs: 12, sm: 6, md: 4, lg: 3}}>
             <AppCard
+              onClick={() => navigate(`/market/asset/${asset.id}`)}
               sx={{
                 height: '100%',
                 display: 'flex',

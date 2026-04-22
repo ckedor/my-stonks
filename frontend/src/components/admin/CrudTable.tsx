@@ -26,7 +26,7 @@ interface CrudTableProps {
   data: any[]
   columns: ColumnConfig[]
   onEdit: (item: any) => void
-  onDelete: (item: any) => void
+  onDelete?: (item: any) => void
   idField?: string
   rowsPerPageOptions?: number[]
 }
@@ -84,11 +84,13 @@ export default function CrudTable({
                         <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Excluir">
-                      <IconButton size="small" onClick={() => onDelete(row)} color="error">
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    {onDelete && (
+                      <Tooltip title="Excluir">
+                        <IconButton size="small" onClick={() => onDelete(row)} color="error">
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </Box>
                 </TableCell>
               </TableRow>

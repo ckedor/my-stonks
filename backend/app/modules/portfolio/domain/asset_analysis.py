@@ -1,9 +1,9 @@
 import math
 
 import pandas as pd
-from app.domain.finance.performance_metrics import annualize_vol, cagr, sharpe_ratio
-from app.domain.finance.returns import calculate_returns
-from app.domain.finance.risk_metrics import (
+from app.lib.finance.performance_metrics import annualize_vol, cagr, sharpe_ratio
+from app.lib.finance.returns import calculate_returns
+from app.lib.finance.risk_metrics import (
     cvar_historic,
     drawdown,
     drawdown_stats,

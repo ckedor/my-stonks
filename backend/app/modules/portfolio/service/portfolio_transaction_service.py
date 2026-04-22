@@ -7,11 +7,10 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-
-from app.domain.finance import trade
 from app.entrypoints.worker.task_runner import run_task
 from app.infra.db.models.constants.currency import CURRENCY
 from app.infra.db.models.portfolio import Transaction
+from app.lib.finance import trade
 from app.modules.market_data.service.market_data_service import MarketDataService
 from app.modules.portfolio.repositories import PortfolioRepository
 from app.modules.portfolio.tasks.recalculate_asset_position import (

@@ -7,16 +7,15 @@ from datetime import datetime
 from decimal import Decimal
 
 import pandas as pd
-
 from app.config.logger import logger
-from app.domain.finance.returns import calculate_acc_returns_from_prices
 from app.infra.db.models.asset import Currency
 from app.infra.db.models.constants.index import INDEX
 from app.infra.db.models.market_data import Index, IndexHistory
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
-from app.infra.integrations.market_data_provider import MarketDataProvider
 from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
+from app.lib.finance.returns import calculate_acc_returns_from_prices
+from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.repositories.market_data_repository import (
     MarketDataRepository,
 )

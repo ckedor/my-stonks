@@ -1,3 +1,5 @@
+from .ai_artifact import AIArtifact
+from .ai_feature import AIFeature
 from .asset import Asset, AssetClass, AssetType, Currency
 from .asset_etf import ETF, ETFSegment
 from .asset_fii import FII, FIISegment, FIIType
@@ -19,6 +21,8 @@ from .portfolio import (
 )
 
 __all__ = [
+    'AIArtifact',
+    'AIFeature',
     'Asset',
     'AssetClass',
     'AssetType',

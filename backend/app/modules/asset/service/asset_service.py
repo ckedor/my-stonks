@@ -3,6 +3,7 @@
 Asset service - handles asset management operations.
 """
 
+from app.core.exceptions import NotFoundError
 from app.infra.db.models.asset import Asset, AssetType, Event, Exchange
 from app.infra.db.models.asset_etf import ETF, ETFSegment
 from app.infra.db.models.asset_fii import FII, FIISegment
@@ -16,7 +17,6 @@ from app.infra.db.models.portfolio import Transaction
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
-from fastapi import HTTPException
 
 STOCK_TYPES = {ASSET_TYPE.STOCK, ASSET_TYPE.BDR}
 FII_TYPES = {ASSET_TYPE.FII}
@@ -118,7 +118,7 @@ class AssetService:
             relations=['stock', 'fii', 'etf', 'fund', 'fixed_income', 'treasury_bond'],
         )
         if not asset:
-            raise HTTPException(status_code=404, detail='Asset not found')
+            raise NotFoundError('Asset not found')
         return asset
 
     async def create_asset(self, data: dict):
@@ -142,7 +142,7 @@ class AssetService:
 
         asset = await self.repo.get(Asset, id=asset_id)
         if not asset:
-            raise HTTPException(status_code=404, detail='Asset not found')
+            raise NotFoundError('Asset not found')
 
         asset.ticker = data.get('ticker')
         asset.name = data['name']

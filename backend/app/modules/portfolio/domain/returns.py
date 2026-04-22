@@ -1,5 +1,5 @@
 import pandas as pd
-from app.domain.finance.returns import calculate_acc_returns
+from app.lib.finance.returns import calculate_acc_returns
 
 
 def calculate_portfolio_daily_returns(pos_df: pd.DataFrame) -> pd.DataFrame:

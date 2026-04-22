@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom"
 import "./App.css";
 import { initAuth } from "./actions/auth";
 import MainLayout from "./layouts/MainLayout";
+import AdminAIFeaturesPage from "./pages/admin/ai-features/page";
 import AdminAssetsPage from "./pages/admin/assets/page";
 import AdminBrokersPage from "./pages/admin/brokers/page";
 import DesignSystemPage from "./pages/admin/design-system/page";
@@ -9,6 +10,7 @@ import AdminEventsPage from "./pages/admin/events/page";
 import AdminLayout from "./pages/admin/layout";
 import AdminUsersPage from "./pages/admin/users/page";
 import LoginPage from "./pages/login";
+import MarketAssetPage from "./pages/market/asset/page";
 import MarketAtivosPage from "./pages/market/ativos/page";
 import PortfolioAssetsPage from "./pages/portfolio/asset";
 import DistributionPage from "./pages/portfolio/distribution/page";
@@ -44,6 +46,7 @@ const router = createBrowserRouter([
       { path: "portfolio/user-configurations/theme-editor", element: <ThemeEditorPage /> },
       { path: "portfolio/user-configurations/theme-editor/:id", element: <ThemeEditorPage /> },
       { path: "market/assets", element: <MarketAtivosPage /> },
+      { path: "market/asset/:id", element: <MarketAssetPage /> },
     ],
   },
   {
@@ -55,6 +58,7 @@ const router = createBrowserRouter([
       { path: "events", element: <AdminEventsPage /> },
       { path: "users", element: <AdminUsersPage /> },
       { path: "design-system", element: <DesignSystemPage /> },
+      { path: "ai-features", element: <AdminAIFeaturesPage /> },
       { index: true, element: <Navigate to="/admin/assets" replace /> },
     ],
   },
