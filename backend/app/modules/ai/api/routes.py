@@ -5,6 +5,7 @@ from app.modules.ai.api.schemas import (
     AssetOverviewAndNewsResponse,
 )
 from app.modules.ai.domain.feature_keys import AIFeatureKey
+from app.modules.ai.domain.inputs import AssetOverviewAndNewsInput
 from app.modules.ai.service.ai_artifact_service import AIArtifactService
 from app.modules.ai.service.ai_feature_service import AIFeatureService
 from app.modules.users.views import current_active_user, current_superuser
@@ -44,7 +45,7 @@ async def get_asset_overview_and_news(
     ai_artifact_service = AIArtifactService(session)
     return await ai_artifact_service.get_or_generate_artifact(
         feature_key=AIFeatureKey.ASSET_OVERVIEW_AND_NEWS,
-        input_payload={'ticker': ticker},
+        input=AssetOverviewAndNewsInput(ticker=ticker),
         force_generate=force_generate,
     )
 

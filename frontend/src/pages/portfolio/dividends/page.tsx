@@ -5,27 +5,28 @@ import DividendsCategoryChart from '@/components/DividendsCategoryChart'
 import AppCard from '@/components/ui/AppCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { useCurrency } from '@/hooks/useCurrency'
+import { getLast12MonthDividendStats } from '@/lib/utils/dividends'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { useDividendsStore } from '@/stores/portfolio/dividends'
 import type { Dividend } from '@/types'
 import {
-    Autocomplete,
-    Box,
-    Button,
-    Chip,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    SelectChangeEvent,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    TextField,
-    Typography,
+  Autocomplete,
+  Box,
+  Button,
+  Chip,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
 } from '@mui/material'
 import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
@@ -84,13 +85,10 @@ export default function PortfolioDividendsPage() {
       .reduce((sum, d) => sum + d.amount, 0)
   }, [filteredDividends, selectedYear])
 
-  // Total received in last 12 months
-  const total12m = useMemo(() => {
-    const cutoff = dayjs().subtract(12, 'month')
-    return dividends
-      .filter((d) => dayjs(d.date).isAfter(cutoff))
-      .reduce((sum, d) => sum + d.amount, 0)
-  }, [dividends])
+  const { total: total12m, average: average12m } = useMemo(
+    () => getLast12MonthDividendStats(dividends),
+    [dividends],
+  )
 
   // Category totals for legend
   const categoryTotals = useMemo(() => {
@@ -123,6 +121,14 @@ export default function PortfolioDividendsPage() {
               </Typography>
               <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5 }}>
                 {formatCurrency(total12m)}
+              </Typography>
+            </AppCard>
+            <AppCard sx={{ flex: '1 1 200px', maxWidth: 280 }}>
+              <Typography variant="caption" color="text.secondary">
+                Média dos últimos 12 meses
+              </Typography>
+              <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5 }}>
+                {formatCurrency(average12m)}
               </Typography>
             </AppCard>
             <AppCard sx={{ flex: '1 1 200px', maxWidth: 280 }}>

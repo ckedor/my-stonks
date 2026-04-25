@@ -1,4 +1,5 @@
 import { useCurrency } from '@/hooks/useCurrency'
+import { getLast12MonthDividendStats } from '@/lib/utils/dividends'
 import { Dividend } from '@/types'
 import { Box, Stack, Typography, useTheme } from '@mui/material'
 import dayjs from 'dayjs'
@@ -20,7 +21,7 @@ export default function OverviewDividendsChart({ dividends, selected, size = 340
     [dividends, selected],
   )
 
-  const { currentYear, previousYear, data, total12m } = useMemo(() => {
+  const { currentYear, previousYear, data, average12m } = useMemo(() => {
     const mostRecent = filtered.reduce<Dividend | undefined>(
       (a, b) => (!a || dayjs(a.date).isBefore(b.date) ? b : a),
       undefined,
@@ -43,13 +44,9 @@ export default function OverviewDividendsChart({ dividends, selected, size = 340
       monthlyMap[m][key] = ((monthlyMap[m][key] as number) || 0) + d.amount
     }
 
-    // Total last 12 months
-    const cutoff = dayjs().subtract(12, 'month')
-    const total12m = filtered
-      .filter((d) => dayjs(d.date).isAfter(cutoff))
-      .reduce((sum, d) => sum + d.amount, 0)
+    const { average } = getLast12MonthDividendStats(filtered)
 
-    return { currentYear, previousYear, data: Object.values(monthlyMap), total12m }
+    return { currentYear, previousYear, data: Object.values(monthlyMap), average12m: average }
   }, [filtered])
 
   const labelColor = theme.palette.chart.label
@@ -69,10 +66,10 @@ export default function OverviewDividendsChart({ dividends, selected, size = 340
       <Stack direction="row" justifyContent="flex-end" alignItems="baseline" sx={{ mb: 2 }}>
         <Stack direction="row" spacing={0.5} alignItems="baseline">
           <Typography variant="body2" color="text.secondary">
-            12 meses:
+            Média 12 meses:
           </Typography>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            {formatCurrency(total12m)}
+            {formatCurrency(average12m)}
           </Typography>
         </Stack>
       </Stack>

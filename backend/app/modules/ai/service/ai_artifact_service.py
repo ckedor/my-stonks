@@ -1,38 +1,33 @@
 import hashlib
-import json
 from datetime import datetime, timedelta, timezone
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from app.core.exceptions import NotFoundError
 from app.infra.db.models.ai_artifact import AIArtifact
 from app.infra.db.models.ai_feature import AIFeature
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
-from app.infra.openai.openai_client import OpenAIClient
 from app.modules.ai.domain.feature_keys import AIFeatureKey
-from app.modules.ai.domain.prompts import build_asset_overview_and_news_prompt
-
-AIResponse = dict[str, Any]
-ArtifactBuilder = Callable[['AIArtifactService', dict[str, Any]], Awaitable[AIResponse]]
+from app.modules.ai.domain.inputs import AIArtifactInput
+from app.modules.ai.service.handlers import ARTIFACT_HANDLERS, AIResponse
 
 
 class AIArtifactService:
     def __init__(self, session):
         self.session = session
         self.repo = SQLAlchemyRepository(session)
-        self.openai_client = OpenAIClient()
 
     async def get_or_generate_artifact(
         self,
         feature_key: AIFeatureKey,
-        input_payload: dict[str, Any],
+        input: AIArtifactInput,
         force_generate: bool = False,
     ) -> dict[str, Any]:
         feature = await self._load_feature(feature_key)
-        input_hash = self._hash_payload(input_payload)
+        input_hash = self._hash_input(input)
         artifact = await self._find_artifact(feature.id, input_hash)
 
         if self._needs_generation(artifact, force_generate):
-            ai_response = await self._generate(feature_key, input_payload)
+            ai_response = await self._generate(feature_key, input)
             artifact = await self._persist_artifact(
                 artifact=artifact,
                 feature=feature,
@@ -40,7 +35,7 @@ class AIArtifactService:
                 ai_response=ai_response,
             )
 
-        return self._build_response(feature_key, input_payload, artifact)
+        return self._build_response(feature_key, input, artifact)
 
     async def _load_feature(self, feature_key: AIFeatureKey) -> AIFeature:
         feature = await self.repo.get(AIFeature, by={'key': feature_key.value}, first=True)
@@ -61,11 +56,19 @@ class AIArtifactService:
             return True
         return artifact.expires_at <= datetime.now(timezone.utc)
 
-    async def _generate(self, feature_key: AIFeatureKey, input_payload: dict[str, Any]) -> AIResponse:
-        builder = self._ARTIFACT_BUILDERS.get(feature_key)
-        if builder is None:
+    async def _generate(
+        self, feature_key: AIFeatureKey, input: AIArtifactInput
+    ) -> AIResponse:
+        handler_cls = ARTIFACT_HANDLERS.get(feature_key)
+        if handler_cls is None:
             raise NotFoundError(f'AI feature {feature_key.value} has no handler')
-        return await builder(self, input_payload)
+        if not isinstance(input, handler_cls.input_schema):
+            raise TypeError(
+                f'Expected input of type {handler_cls.input_schema.__name__} '
+                f'for feature {feature_key.value}, got {type(input).__name__}'
+            )
+        handler = handler_cls(self.session)
+        return await handler.generate(input)
 
     async def _persist_artifact(
         self,
@@ -81,9 +84,9 @@ class AIArtifactService:
             artifact = AIArtifact(feature_id=feature.id, input_hash=input_hash)
             self.session.add(artifact)
 
-        artifact.summary = ai_response.get('summary')
-        artifact.payload = ai_response.get('payload')
-        artifact.model = ai_response.get('model')
+        artifact.summary = ai_response.summary
+        artifact.payload = ai_response.payload
+        artifact.model = ai_response.model
         artifact.generated_at = now
         artifact.expires_at = expires_at
 
@@ -94,12 +97,12 @@ class AIArtifactService:
     @staticmethod
     def _build_response(
         feature_key: AIFeatureKey,
-        input_payload: dict[str, Any],
+        input: AIArtifactInput,
         artifact: AIArtifact,
     ) -> dict[str, Any]:
         return {
             'feature_key': feature_key.value,
-            'ticker': str(input_payload.get('ticker', '')),
+            **input.model_dump(),
             'summary': artifact.summary,
             'payload': artifact.payload,
             'model': artifact.model,
@@ -107,25 +110,7 @@ class AIArtifactService:
             'expires_at': artifact.expires_at,
         }
 
-    async def _build_asset_overview_and_news_artifact(self, input_payload: dict[str, Any]) -> AIResponse:
-        prompt = build_asset_overview_and_news_prompt(ticker=str(input_payload['ticker']))
-        text = await self.openai_client.ask(
-            prompt=prompt.prompt,
-            system=prompt.system,
-            temperature=prompt.temperature,
-            max_tokens=prompt.max_tokens,
-        )
-        return {
-            'summary': prompt.summary,
-            'payload': {'text': text},
-            'model': self.openai_client.model,
-        }
-
-    _ARTIFACT_BUILDERS: dict[AIFeatureKey, ArtifactBuilder] = {
-        AIFeatureKey.ASSET_OVERVIEW_AND_NEWS: _build_asset_overview_and_news_artifact,
-    }
-
     @staticmethod
-    def _hash_payload(payload: dict[str, Any]) -> str:
-        canonical = json.dumps(payload, sort_keys=True, separators=(',', ':'))
+    def _hash_input(input: AIArtifactInput) -> str:
+        canonical = input.model_dump_json()
         return hashlib.sha256(canonical.encode('utf-8')).hexdigest()
