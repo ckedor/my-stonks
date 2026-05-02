@@ -3,24 +3,23 @@
 Market data repository - handles database operations for indexes and their history.
 """
 
-import pandas as pd
-from sqlalchemy import select
-
 from app.infra.db.models.market_data import Index, IndexHistory
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
+from sqlalchemy import select
 
 
 class MarketDataRepository(SQLAlchemyRepository):
     """Repository for market data operations"""
-    
-    async def get_index_history_df(
+
+    async def get_index_history(
         self,
         start_date: str = None,
         index_id: int = None,
-    ) -> pd.DataFrame:
-        """
-        Get index history as DataFrame.
-        Joins Index and IndexHistory tables to include index metadata.
+    ) -> list[dict]:
+        """Return raw index history rows joined with index metadata.
+
+        Each row is a mapping with keys: ``date``, ``value``, ``index_symbol``,
+        ``index_name``. Conversion to DataFrame is the caller's responsibility.
         """
         stmt = select(
             IndexHistory.date,
@@ -35,9 +34,4 @@ class MarketDataRepository(SQLAlchemyRepository):
             stmt = stmt.where(Index.id == index_id)
 
         result = await self.session.execute(stmt)
-        rows = result.all()
-
-        df = pd.DataFrame(rows, columns=['date', 'value', 'index_symbol', 'index_name'])
-        df['date'] = pd.to_datetime(df['date'])
-
-        return df
+        return result.mappings().all()

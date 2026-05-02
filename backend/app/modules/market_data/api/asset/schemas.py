@@ -1,5 +1,4 @@
-# app/modules/asset/api/schemas.py
-"""Asset API schemas"""
+"""Asset domain schemas (assets, types, FII/ETF/fixed income, events, exchanges)."""
 
 from datetime import date
 from typing import Optional
@@ -7,16 +6,10 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
 
-class Currency(BaseModel):
-    id: int
-    code: str
-    name: str
-    
-    model_config = ConfigDict(from_attributes=True)
-
 class AssetClass(BaseModel):
     id: int
     name: str
+
 
 class AssetType(BaseModel):
     id: int
@@ -24,19 +17,21 @@ class AssetType(BaseModel):
     name: str
     asset_class_id: int
     asset_class: AssetClass
-    
+
     model_config = ConfigDict(from_attributes=True)
+
 
 class Asset(BaseModel):
     id: int
-    ticker: str 
+    ticker: str
     name: str
     asset_type_id: int
-    
+
     asset_type: AssetType
 
     model_config = ConfigDict(from_attributes=True)
-    
+
+
 class AssetClassOut(BaseModel):
     id: int
     name: str
@@ -161,6 +156,7 @@ class ETFOut(BaseModel):
     segment: Optional[ETFSegmentOut]
     model_config = {'from_attributes': True}
 
+
 class AssetDetailsOut(BaseModel):
     id: int
     ticker: Optional[str]
@@ -189,13 +185,14 @@ class AssetDetailsWithPosition(AssetDetailsOut):
     twelve_months_return: Optional[float] = None
     cagr: Optional[float] = None
 
+
 class AssetEvent(BaseModel):
     id: Optional[int]
     asset_id: int
     date: date
     factor: float
     type: str
-    
+
     model_config = {'from_attributes': True}
 
 
@@ -203,9 +200,10 @@ class FixedIncomeType(BaseModel):
     id: int
     name: str
     description: Optional[str]
-    
+
     model_config = ConfigDict(from_attributes=True)
-    
+
+
 class FixedIncomeAsset(BaseModel):
     name: str
     ticker: str
@@ -214,7 +212,7 @@ class FixedIncomeAsset(BaseModel):
     index_id: Optional[int]
     fixed_income_type_id: int
     asset_type_id: int
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -259,12 +257,4 @@ class ExchangeOut(BaseModel):
     id: int
     code: str
     name: str
-    model_config = ConfigDict(from_attributes=True)
-
-
-class TreasuryBondTypeOut(BaseModel):
-    id: int
-    code: str
-    name: str
-    description: Optional[str]
     model_config = ConfigDict(from_attributes=True)

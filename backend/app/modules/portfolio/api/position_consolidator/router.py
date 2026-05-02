@@ -1,5 +1,8 @@
+import asyncio
+
+from app.config.logger import logger
 from app.entrypoints.worker.task_runner import run_task
-from app.infra.db.session import get_session
+from app.infra.db.session import AsyncSessionLocal, get_session
 from app.modules.portfolio.repositories import PortfolioRepository
 from app.modules.portfolio.service.portfolio_consolidator_service import (
     PortfolioConsolidatorService,
@@ -22,13 +25,31 @@ from fastapi import APIRouter, Depends
 router = APIRouter(tags=['Portfolio Consolidator'], dependencies=[Depends(current_superuser)])
 
 
+async def _recalculate_assets_in_parallel(
+    portfolio_id: int, asset_ids: list[int]
+) -> None:
+    """Paraleliza a consolidação dos ativos, uma sessão por ativo."""
+
+    async def _recalculate_asset_position(asset_id: int) -> None:
+        async with AsyncSessionLocal() as session:
+            await PortfolioConsolidatorService(
+                session
+            ).recalculate_position_asset(portfolio_id, asset_id)
+
+    await asyncio.gather(
+        *(_recalculate_asset_position(asset_id) for asset_id in asset_ids)
+    )
+
+
 @router.post('/{portfolio_id}/consolidate')
 async def consolidate_portfolio(
     portfolio_id: int,
     session = Depends(get_session)
 ):
-    service = PortfolioConsolidatorService(session)
-    await service.consolidate_position_portfolio(portfolio_id)
+    asset_ids = await PortfolioConsolidatorService(
+        session
+    ).get_asset_ids_to_consolidate(portfolio_id)
+    await _recalculate_assets_in_parallel(portfolio_id, asset_ids)
     run_task(set_patrimony_evolution_cache, portfolio_id)
     run_task(consolidate_portfolio_returns_task, portfolio_id)
     run_task(set_portfolio_returns_cache, portfolio_id)
@@ -54,8 +75,10 @@ async def recalculate_all_positions(
     portfolio_id: int,
     session = Depends(get_session)
 ):
-    service = PortfolioConsolidatorService(session)
-    await service.recalculate_all_positions_portfolio(portfolio_id)
+    asset_ids = await PortfolioConsolidatorService(
+        session
+    ).get_asset_ids_with_transactions(portfolio_id)
+    await _recalculate_assets_in_parallel(portfolio_id, asset_ids)
     run_task(set_patrimony_evolution_cache, portfolio_id)
     run_task(consolidate_portfolio_returns_task, portfolio_id)
     run_task(set_portfolio_returns_cache, portfolio_id)

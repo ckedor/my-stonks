@@ -1,8 +1,7 @@
 from typing import List
 
+from app.modules.market_data.api.index.schemas import Currency
 from pydantic import BaseModel, ConfigDict
-
-from app.modules.asset.api.schemas import Currency
 
 
 class CustomCategory(BaseModel):

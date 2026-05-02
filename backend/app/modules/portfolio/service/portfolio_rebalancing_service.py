@@ -37,17 +37,20 @@ class PortfolioRebalancingService:
 
     async def get_rebalancing_data(self, portfolio_id: int) -> RebalancingResponse:
         """Return current positions enriched with target allocations and differences."""
-        pos_df = await self.repo.get_position_on_date(portfolio_id)
+        rows = await self.repo.get_position_on_date(portfolio_id)
 
-        if pos_df is None or pos_df.empty:
+        if not rows:
             return RebalancingResponse(
                 portfolio_id=portfolio_id,
                 total_value=0,
                 categories=[],
             )
 
-        pos_df['value'] = pos_df['quantity'] * pos_df['price']
-        total_value = pos_df['value'].sum()
+        positions = [
+            {**dict(row), 'value': (row['quantity'] or 0) * (row['price'] or 0)}
+            for row in rows
+        ]
+        total_value = sum(p['value'] for p in positions)
 
         # Load categories with their assignments (which hold asset-level targets)
         categories = await self.base_repo.get(
@@ -67,7 +70,7 @@ class PortfolioRebalancingService:
 
         # Group positions by category
         category_groups = {}
-        for _, row in pos_df.iterrows():
+        for row in positions:
             cat_name = row.get('category', None) or '(Sem Categoria)'
             if cat_name not in category_groups:
                 category_groups[cat_name] = []

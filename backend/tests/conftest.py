@@ -8,13 +8,12 @@ import pytest
 import pytest_asyncio
 from alembic import command
 from alembic.config import Config
+from app.infra.db.base import Base
+from app.modules.users.models import User
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import sessionmaker
-
-from app.infra.db.base import Base
-from app.modules.users.models import User
 
 # ---------------------------------------------------------------------------
 # Database URLs
@@ -125,7 +124,7 @@ async def _test_get_session():
 # Mock Redis (services instantiate RedisService directly)
 # ---------------------------------------------------------------------------
 _REDIS_PATCHES = [
-    'app.modules.asset.service.asset_service.RedisService',
+    'app.modules.market_data.service.asset_service.RedisService',
     'app.modules.market_data.service.market_data_service.RedisService',
     'app.modules.portfolio.service.portfolio_base_service.RedisService',
     'app.modules.portfolio.service.portfolio_position_service.RedisService',
@@ -156,7 +155,7 @@ def mock_redis():
 # Mock Celery run_task (avoids broker dependency)
 # ---------------------------------------------------------------------------
 _RUN_TASK_PATCHES = [
-    'app.modules.market_data.api.routes.run_task',
+    'app.modules.market_data.api.index.router.run_task',
     'app.modules.portfolio.api.category.router.run_task',
     'app.modules.portfolio.api.transaction.router.run_task',
     'app.modules.portfolio.api.position_consolidator.router.run_task',

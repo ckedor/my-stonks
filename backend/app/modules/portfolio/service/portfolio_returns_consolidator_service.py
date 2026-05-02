@@ -12,6 +12,7 @@ from app.infra.db.models.portfolio import (
     PortfolioReturn,
 )
 from app.lib.finance.performance_metrics import cagr
+from app.lib.utils.df import rows_to_df
 from app.modules.portfolio.domain.returns import (
     calculate_category_acc_return,
     calculate_portfolio_acc_return,
@@ -28,7 +29,11 @@ class PortfolioReturnsConsolidatorService:
     async def consolidate_returns(self, portfolio_id: int):
         logger.info(f"Consolidando retornos do portfolio {portfolio_id}")
 
-        portfolio_position_df = await self.repo.get_portfolio_position_df(portfolio_id)
+        portfolio_position_df = rows_to_df(
+            await self.repo.get_portfolio_position(portfolio_id),
+            datetime_cols=['date'],
+            numeric_fillna_cols=['dividend', 'dividend_usd'],
+        )
 
         if portfolio_position_df.empty:
             logger.warning(f"Sem posições para portfolio {portfolio_id}")
@@ -45,7 +50,11 @@ class PortfolioReturnsConsolidatorService:
     async def consolidate_category_returns(self, portfolio_id: int):
         logger.info(f"Consolidando retornos das categorias do portfolio {portfolio_id}")
 
-        portfolio_position_df = await self.repo.get_portfolio_position_df(portfolio_id)
+        portfolio_position_df = rows_to_df(
+            await self.repo.get_portfolio_position(portfolio_id),
+            datetime_cols=['date'],
+            numeric_fillna_cols=['dividend', 'dividend_usd'],
+        )
 
         if portfolio_position_df.empty:
             logger.warning(f"Sem posições para portfolio {portfolio_id}")

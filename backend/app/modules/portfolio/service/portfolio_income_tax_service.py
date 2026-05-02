@@ -10,8 +10,9 @@ from app.infra.db.models.constants.currency import CURRENCY
 from app.lib.finance.trade import profits_by_month_df
 from app.lib.income_tax.constants import TaxableAssetType
 from app.lib.income_tax.tax_income_calculator import TaxIncomeCalculator
+from app.lib.utils.df import rows_to_df
+from app.lib.utils.fastapi import df_response
 from app.modules.portfolio.repositories import PortfolioRepository
-from app.utils.response import df_response
 
 _ASSET_TYPE_TO_TAXABLE: dict[ASSET_TYPE, TaxableAssetType] = {
     ASSET_TYPE.STOCK: TaxableAssetType.STOCK,
@@ -29,8 +30,14 @@ class PortfolioIncomeTaxService:
         last_day_fiscal_year = pd.to_datetime(f'{fiscal_year}-12-31')
         last_day_previous_year = pd.to_datetime(f'{fiscal_year - 1}-12-31')
 
-        position_dec_fy = await self.repo.get_position_on_date_by_broker(portfolio_id, last_day_fiscal_year)
-        position_dec_prev = await self.repo.get_position_on_date_by_broker(portfolio_id, last_day_previous_year)
+        position_dec_fy = rows_to_df(
+            await self.repo.get_position_on_date_by_broker(portfolio_id, last_day_fiscal_year),
+            datetime_cols=['date'],
+        )
+        position_dec_prev = rows_to_df(
+            await self.repo.get_position_on_date_by_broker(portfolio_id, last_day_previous_year),
+            datetime_cols=['date'],
+        )
 
         df = pd.merge(
             position_dec_fy,
@@ -178,7 +185,10 @@ class PortfolioIncomeTaxService:
             return f"Ativo {row['name']} ({row['ticker']}) via {broker}."
 
     async def get_fiis_operations_tax(self, portfolio_id: int, fiscal_year: int) -> dict:
-        df = await self.repo.get_transactions_df(portfolio_id, asset_types_ids=[ASSET_TYPE.FII])
+        rows = await self.repo.get_transactions(portfolio_id, asset_types_ids=[ASSET_TYPE.FII])
+        df = pd.DataFrame(rows)
+        if not df.empty:
+            df['date'] = pd.to_datetime(df['date'])
         
         events = await self.repo.get(Event, order_by="date asc")
         df = self._apply_split_events(df, events)
@@ -193,18 +203,24 @@ class PortfolioIncomeTaxService:
         return df_response(grouped)
 
     async def get_common_operations_tax(self, portfolio_id: int, fiscal_year: int) -> dict:
-        br_stocks_df = await self.repo.get_transactions_df(
+        br_stocks_rows = await self.repo.get_transactions(
             portfolio_id,
             asset_types_ids=[ASSET_TYPE.STOCK],
-            currency_id=CURRENCY.BRL
+            currency_id=CURRENCY.BRL,
         )
+        br_stocks_df = pd.DataFrame(br_stocks_rows)
+        if not br_stocks_df.empty:
+            br_stocks_df['date'] = pd.to_datetime(br_stocks_df['date'])
         br_result = await self._calculate_tax(br_stocks_df, fiscal_year, ASSET_TYPE.STOCK)
-        
-        br_etf_bdr_df = await self.repo.get_transactions_df(
+
+        br_etf_bdr_rows = await self.repo.get_transactions(
             portfolio_id,
             asset_types_ids=[ASSET_TYPE.ETF, ASSET_TYPE.BDR],
-            currency_id=CURRENCY.BRL
+            currency_id=CURRENCY.BRL,
         )
+        br_etf_bdr_df = pd.DataFrame(br_etf_bdr_rows)
+        if not br_etf_bdr_df.empty:
+            br_etf_bdr_df['date'] = pd.to_datetime(br_etf_bdr_df['date'])
         br_etf_bdr_result = await self._calculate_tax(br_etf_bdr_df, fiscal_year, ASSET_TYPE.ETF)
 
         merged = pd.concat([br_result, br_etf_bdr_result], ignore_index=True)
@@ -260,11 +276,11 @@ class PortfolioIncomeTaxService:
         return monthly_df
 
     async def get_darf(self, portfolio_id: int, fiscal_year: int) -> dict:
-        transactions_df = await self.repo.get_transactions_df(portfolio_id)
-        if transactions_df.empty:
+        rows = await self.repo.get_transactions(portfolio_id)
+        if not rows:
             return {"cripto": pd.DataFrame(), "fiis": pd.DataFrame(), "br_stocks": pd.DataFrame(), "etf_bdr": pd.DataFrame()}
 
-        transactions_df = transactions_df.copy()
+        transactions_df = pd.DataFrame(rows)
         transactions_df["date"] = pd.to_datetime(transactions_df["date"])
 
         events = await self.repo.get(Event, order_by="date asc")

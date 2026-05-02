@@ -1,6 +1,7 @@
+from app.lib.utils.df import rows_to_df
+from app.lib.utils.fastapi import df_to_xlsx_response
 from app.modules.portfolio.domain.portfolio_reports import StatementScope
 from app.modules.portfolio.repositories.portfolio_repository import PortfolioRepository
-from app.utils.response import df_to_xlsx_response
 
 
 class PortfolioReportsService:
@@ -30,9 +31,12 @@ class PortfolioReportsService:
                 f'category_ids is required when scope={StatementScope.CATEGORY}'
             )
             
-        position_history_df = await self.repo.get_complete_portfolio_position_history_df(
-            portfolio_id=portfolio_id,
-            asset_ids=asset_ids
+        position_history_df = rows_to_df(
+            await self.repo.get_complete_portfolio_position_history(
+                portfolio_id=portfolio_id,
+                asset_ids=asset_ids,
+            ),
+            datetime_cols=['date'],
         )
         return df_to_xlsx_response(
             position_history_df, 

@@ -75,6 +75,7 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
   const [type, setType] = useState<'Compra' | 'Venda'>('Compra')
   const [quantity, setQuantity] = useState<number>(0)
   const [price, setPrice] = useState<number>(0)
+  const [currency, setCurrency] = useState<'BRL' | 'USD'>('BRL')
   const [date, setDate] = useState<Dayjs | null>(dayjs())
   const [brokerId, setBrokerId] = useState<number | ''>('')
   const [portfolioId, setPortfolioId] = useState<number | ''>('')
@@ -91,6 +92,13 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
   const selectedBroker = brokers.find((b) => b.id === brokerId)
   const isDolar = selectedBroker?.currency.name === 'Dólar'
 
+  // When broker changes, default currency to broker's currency (only when creating).
+  useEffect(() => {
+    if (isEdit) return
+    if (!selectedBroker) return
+    setCurrency(isDolar ? 'USD' : 'BRL')
+  }, [brokerId, isDolar, isEdit, selectedBroker])
+
   const isValid =
     quantity > 0 &&
     price > 0 &&
@@ -103,6 +111,7 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
       setType(trade.type as 'Compra' | 'Venda')
       setQuantity(Math.abs(trade.quantity))
       setPrice(trade.original_price)
+      setCurrency((trade.currency as 'BRL' | 'USD') ?? 'BRL')
       setDate(dayjs(trade.date))
       setBrokerId(trade.broker_id)
       setPortfolioId(trade.portfolio_id)
@@ -110,6 +119,7 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
       setType('Compra')
       setQuantity(0)
       setPrice(0)
+      setCurrency('BRL')
       setDate(dayjs())
       setBrokerId('')
       setPortfolioId(selectedPortfolio?.id ?? '')
@@ -168,6 +178,7 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
       asset_id: isEdit ? assetId : selectedAsset?.id,
       quantity: type === 'Compra' ? quantity : -quantity,
       price: price,
+      currency: currency,
       date: date?.toISOString(),
       broker_id: brokerId,
       portfolio_id: portfolioId,
@@ -274,7 +285,7 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
             />
 
             <TextField
-              label={isDolar ? 'Preço (USD)' : 'Preço (R$)'}
+              label={currency === 'USD' ? 'Preço (USD)' : 'Preço (R$)'}
               type="number"
               value={price}
               onChange={(e) => setPrice(parseFloat(e.target.value))}
@@ -289,6 +300,18 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
               helperText={touched && price <= 0 ? 'Preço deve ser maior que zero' : ''}
               fullWidth
             />
+
+            <FormControl fullWidth>
+              <InputLabel>Moeda</InputLabel>
+              <Select
+                value={currency}
+                label="Moeda"
+                onChange={(e) => setCurrency(e.target.value as 'BRL' | 'USD')}
+              >
+                <MenuItem value="BRL">BRL</MenuItem>
+                <MenuItem value="USD">USD</MenuItem>
+              </Select>
+            </FormControl>
 
             <FormControl fullWidth error={touched && brokerId === ''}>
               <InputLabel>Corretora</InputLabel>

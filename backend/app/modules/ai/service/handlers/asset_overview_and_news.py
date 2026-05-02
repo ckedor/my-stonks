@@ -3,7 +3,7 @@ from app.modules.ai.domain.feature_keys import AIFeatureKey
 from app.modules.ai.domain.inputs import AssetOverviewAndNewsInput
 from app.modules.ai.domain.prompts import build_asset_overview_and_news_prompt
 from app.modules.ai.service.handlers.base import AIArtifactHandler, AIResponse
-from app.modules.asset.service.asset_service import AssetService
+from app.modules.market_data.service.asset_service import AssetService
 
 
 class AssetOverviewAndNewsHandler(AIArtifactHandler[AssetOverviewAndNewsInput]):

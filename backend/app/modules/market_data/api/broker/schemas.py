@@ -1,17 +1,9 @@
-# app/modules/brokers/api/schemas.py
-"""Brokers API schemas"""
+"""Broker schemas."""
 
 from typing import Optional
 
+from app.modules.market_data.api.index.schemas import Currency
 from pydantic import BaseModel, ConfigDict
-
-
-class Currency(BaseModel):
-    id: int
-    code: str
-    name: str
-    
-    model_config = ConfigDict(from_attributes=True)
 
 
 class BrokerCreate(BaseModel):

@@ -1,14 +1,9 @@
-# app/modules/asset/api/routes.py
-"""
-Asset API routes.
-Handles asset management, asset types, fixed income, and events.
-"""
+"""Asset, asset type, FII/ETF, fixed income, treasury bond, event and exchange routes."""
 
 from typing import List
 
 from app.infra.db.session import get_session
-from app.modules.asset.api.schemas import (
-    Asset,
+from app.modules.market_data.api.asset.schemas import (
     AssetCreate,
     AssetDetailsOut,
     AssetEvent,
@@ -19,11 +14,11 @@ from app.modules.asset.api.schemas import (
     FixedIncomeType,
     TreasuryBondTypeOut,
 )
-from app.modules.asset.service.asset_service import AssetService
+from app.modules.market_data.service.asset_service import AssetService
 from app.modules.users.views import current_superuser
 from fastapi import APIRouter, Depends
 
-router = APIRouter(tags=['Assets'], prefix='/assets')
+router = APIRouter(prefix='/assets', tags=['Assets'])
 
 
 @router.get('/assets')
@@ -113,7 +108,11 @@ async def get_segments(
     return await service.list_fii_segments()
 
 
-@router.get('/events', response_model=List[AssetEvent], dependencies=[Depends(current_superuser)])
+@router.get(
+    '/events',
+    response_model=List[AssetEvent],
+    dependencies=[Depends(current_superuser)],
+)
 async def list_events(
     session=Depends(get_session),
 ):

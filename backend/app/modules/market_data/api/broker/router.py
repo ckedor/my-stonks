@@ -1,18 +1,17 @@
-# app/modules/brokers/api/routes.py
-"""
-Brokers API routes.
-Handles broker CRUD operations.
-"""
+"""Broker CRUD routes."""
 
 from typing import List
 
+from app.infra.db.session import get_session
+from app.modules.market_data.api.broker.schemas import (
+    Broker,
+    BrokerCreate,
+    BrokerUpdate,
+)
+from app.modules.market_data.service.brokers_service import BrokersService
 from fastapi import APIRouter, Depends, status
 
-from app.infra.db.session import get_session
-from app.modules.brokers.api.schemas import Broker, BrokerCreate, BrokerUpdate
-from app.modules.brokers.service.brokers_service import BrokersService
-
-router = APIRouter(tags=['Brokers'], prefix='/broker')
+router = APIRouter(prefix='/broker', tags=['Brokers'])
 
 
 @router.get('/', response_model=List[Broker])
@@ -44,7 +43,7 @@ async def create_broker(
     return await service.create_broker(
         name=broker_data.name,
         cnpj=broker_data.cnpj,
-        currency_id=broker_data.currency_id
+        currency_id=broker_data.currency_id,
     )
 
 
@@ -60,7 +59,7 @@ async def update_broker(
         broker_id=broker_id,
         name=broker_data.name,
         cnpj=broker_data.cnpj,
-        currency_id=broker_data.currency_id
+        currency_id=broker_data.currency_id,
     )
 
 

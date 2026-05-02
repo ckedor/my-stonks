@@ -111,7 +111,8 @@ class Transaction(Base):
     broker_id = Column(Integer, ForeignKey('portfolio.broker.id'), nullable=False)
     date = Column(DateTime, nullable=False)
     quantity = Column(Float, nullable=False)
-    price = Column(Float, nullable=False)
+    price = Column(Float, nullable=False)        # always in BRL
+    price_usd = Column(Float, nullable=True)     # always in USD
 
     portfolio = relationship('Portfolio', back_populates='transactions')
     asset = relationship('Asset')

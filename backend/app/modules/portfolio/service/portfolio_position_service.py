@@ -14,7 +14,12 @@ from app.infra.db.models.constants.index import INDEX
 from app.infra.db.models.portfolio import Position
 from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
-from app.modules.asset.api.schemas import AssetDetailsOut, AssetDetailsWithPosition
+from app.lib.utils.df import df_to_dict_list, df_to_named_dict, rows_to_df
+from app.lib.utils.fastapi import df_response
+from app.modules.market_data.api.asset.schemas import (
+    AssetDetailsOut,
+    AssetDetailsWithPosition,
+)
 from app.modules.market_data.service.market_data_service import MarketDataService
 from app.modules.portfolio.domain.asset_analysis import calculate_returns_analysis
 from app.modules.portfolio.domain.returns import (
@@ -23,8 +28,6 @@ from app.modules.portfolio.domain.returns import (
     calculate_returns_portfolio,
 )
 from app.modules.portfolio.repositories import PortfolioRepository
-from app.utils.df import df_to_dict_list, df_to_named_dict
-from app.utils.response import df_response
 
 
 class PortfolioPositionService:
@@ -69,7 +72,11 @@ class PortfolioPositionService:
         return AssetDetailsWithPosition(**asset_serialized_with_position)
     
     async def get_portfolio_analysis(self, portfolio_id: int) -> dict:
-        portfolio_position_df = await self.repo.get_portfolio_position_df(portfolio_id)
+        portfolio_position_df = rows_to_df(
+            await self.repo.get_portfolio_position(portfolio_id),
+            datetime_cols=['date'],
+            numeric_fillna_cols=['dividend', 'dividend_usd'],
+        )
 
         if portfolio_position_df.empty:
             return None
@@ -89,8 +96,12 @@ class PortfolioPositionService:
         return result
     
     async def get_asset_analysis(self, portfolio_id: int, asset_id: int, currency: str = 'BRL') -> dict:
-        asset_position_df = await self.repo.get_asset_position_df(
-            portfolio_id, [asset_id], start_date=None, end_date=None
+        asset_position_df = rows_to_df(
+            await self.repo.get_asset_position(
+                portfolio_id, [asset_id], start_date=None, end_date=None
+            ),
+            datetime_cols=['date'],
+            numeric_fillna_cols=['dividend', 'dividend_usd'],
         )
 
         if asset_position_df.empty:
@@ -122,7 +133,11 @@ class PortfolioPositionService:
 
 
     async def get_aported_history(self, portfolio_id: int, currency: str = 'BRL'):
-        transactions_df = await self.repo.get_transactions_df(portfolio_id)
+        rows = await self.repo.get_transactions(portfolio_id)
+        if not rows:
+            return pd.DataFrame(columns=['date', 'aported'])
+        transactions_df = pd.DataFrame(rows)
+        transactions_df['date'] = pd.to_datetime(transactions_df['date'])
         usd_brl_df = await self.market_data_service.get_usd_brl_history(transactions_df['date'].min())
         transactions_df = transactions_df.merge(usd_brl_df[['date', 'usdbrl']], on='date', how='left')
         if currency == 'USD':
@@ -157,11 +172,15 @@ class PortfolioPositionService:
         asset_type_ids: list = None,
         currency: str = 'BRL',
     ) -> pd.DataFrame:
-        portfolio_position_df = await self.repo.get_portfolio_position_df(
-            portfolio_id, 
-            asset_id=asset_id, 
-            asset_type_id=asset_type_id, 
-            asset_type_ids=asset_type_ids,
+        portfolio_position_df = rows_to_df(
+            await self.repo.get_portfolio_position(
+                portfolio_id,
+                asset_id=asset_id,
+                asset_type_id=asset_type_id,
+                asset_type_ids=asset_type_ids,
+            ),
+            datetime_cols=['date'],
+            numeric_fillna_cols=['dividend', 'dividend_usd'],
         )
 
         if portfolio_position_df.empty:
@@ -220,8 +239,12 @@ class PortfolioPositionService:
         end_date: str = None,
         currency: str = 'BRL',
     ):
-        asset_position_df = await self.repo.get_asset_position_df(
-            portfolio_id, asset_ids, start_date, end_date
+        asset_position_df = rows_to_df(
+            await self.repo.get_asset_position(
+                portfolio_id, asset_ids, start_date, end_date
+            ),
+            datetime_cols=['date'],
+            numeric_fillna_cols=['dividend', 'dividend_usd'],
         )
 
         if asset_position_df.empty:
@@ -244,15 +267,21 @@ class PortfolioPositionService:
         currency: str = 'BRL',
         ) -> list:
         if group_by_broker:
-            pos_df = await self.repo.get_position_on_date_by_broker(
+            rows = await self.repo.get_position_on_date_by_broker(
                 portfolio_id, date, asset_type_id
             )
         else:
-            pos_df = await self.repo.get_position_on_date(
+            rows = await self.repo.get_position_on_date(
                 portfolio_id, date, asset_type_id, currency=currency
             )
-        
-        if pos_df is None or pos_df.empty:
+
+        pos_df = rows_to_df(
+            rows,
+            datetime_cols=['date'],
+            numeric_fillna_cols=['dividend'],
+        )
+
+        if pos_df.empty:
             return []
 
         pos_df['value'] = pos_df['quantity'] * pos_df['price']
@@ -262,7 +291,11 @@ class PortfolioPositionService:
     async def get_portfolio_position_history(
         self, portfolio_id: int, asset_id: int = None, currency: str = 'BRL'
     ) -> pd.DataFrame:
-        pos_df = await self.repo.get_portfolio_position_df(portfolio_id, asset_id=asset_id)
+        pos_df = rows_to_df(
+            await self.repo.get_portfolio_position(portfolio_id, asset_id=asset_id),
+            datetime_cols=['date'],
+            numeric_fillna_cols=['dividend', 'dividend_usd'],
+        )
 
         if pos_df.empty:
             return []
@@ -317,5 +350,7 @@ class PortfolioPositionService:
             )
             benchmarks[category.benchmark.short_name] = benchmark_history
 
+        result = calculate_returns_analysis(returns_series, benchmarks)
+        return result
         result = calculate_returns_analysis(returns_series, benchmarks)
         return result

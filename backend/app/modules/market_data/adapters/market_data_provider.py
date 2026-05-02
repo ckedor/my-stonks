@@ -4,7 +4,6 @@ from typing import Callable
 
 import pandas as pd
 from app.core.exceptions import NotFoundError, ValidationError
-from app.infra.db.models.asset import Asset
 from app.infra.db.models.constants.asset_type import ASSET_TYPE
 from app.infra.db.models.constants.fii_segments import FIISegment
 from app.infra.db.models.constants.index import INDEX
@@ -16,8 +15,8 @@ from app.infra.integrations.crypto_compare_client import CryptoCompareClient
 from app.infra.integrations.mais_retorno_client import MaisRetornoClient
 from app.infra.integrations.status_invest_client import StatusInvestClient
 from app.infra.integrations.tesouro_client import TesouroClient
+from app.lib.utils.strings import extract_digits
 from app.modules.market_data.domain.enums import EXCHANGE, AssetType
-from app.utils.strings import extract_digits
 
 STATUSINVEST_TO_INTERNAL_SEGMENT = {
     'Shoppings': FIISegment.SHOPPING,
@@ -82,38 +81,6 @@ class MarketDataProvider:
 
         return history_df
 
-    async def get_asset_prices(self, asset: Asset, init_date) -> pd.DataFrame:
-        prices_df = pd.DataFrame()
-
-        if asset.asset_type_id in {
-            ASSET_TYPE.ETF,
-            ASSET_TYPE.STOCK,
-            ASSET_TYPE.FII,
-            ASSET_TYPE.BDR,
-        }:
-            prices_df = await self.brapi_client.get_price_history_df(
-                asset.ticker, init_date=init_date, interval='1d'
-            )
-
-            if prices_df.empty:
-                prices_df = await self.alphavantage_client.get_price_history_df(asset.ticker)
-
-        elif asset.asset_type.id == ASSET_TYPE.PREV:
-            fund_legal_id = extract_digits(asset.fund.legal_id)
-            prices_df = await self.mais_retorno_client.get_fund_price_history_df(fund_legal_id, init_date)
-
-        elif asset.asset_type.id == ASSET_TYPE.CRIPTO:
-            prices_df = await self.crypto_compare_client.get_crypto_price_history_df(
-                asset.ticker, init_date=init_date
-            )
-
-        elif asset.asset_type.id == ASSET_TYPE.TREASURY:
-            maturity_date = asset.treasury_bond.maturity_date
-            type_name = asset.treasury_bond.type.name
-            prices_df = await self.tesouro_client.get_precos_tesouro(type_name, maturity_date)
-
-        return prices_df
-
     async def get_all_fiis_df(self):
         fiis_df = await self.status_invest_client.get_fiis_df()
         fiis_df['segment_id'] = fiis_df['segment'].map(
@@ -138,7 +105,7 @@ class MarketDataProvider:
     async def get_asset_quotes(
         self,
         ticker: str,
-        asset_type: str | None = None,
+        asset_type: str | int | None = None,
         exchange: str | None = None,
         date: str = None,
         start_date: str = None,
@@ -146,37 +113,56 @@ class MarketDataProvider:
         treasury_maturity_date: str = None,
         treasury_type: str = None,
     ) -> dict:
+        """``asset_type`` accepts either the ``AssetType`` StrEnum value
+        (``'STOCK'``, ``'CRIPTO'``, ...) or the ``ASSET_TYPE`` IntEnum id
+        from the database. Strings are normalized to the IntEnum id before
+        dispatch.
+        """
         if date:
             start_date = end_date = pd.to_datetime(date)
 
+        asset_type_id = self._coerce_asset_type_id(asset_type)
+
         handlers = {
-            AssetType.STOCK: self._get_quotes_stock,
-            AssetType.ETF: self._get_quotes_stock,
-            AssetType.FII: self._get_quotes_stock,
-            AssetType.BDR: self._get_quotes_stock,
-            AssetType.CRIPTO: self._get_quotes_crypto,
-            AssetType.PREV: self._get_quotes_prev,
-            AssetType.TREASURY: self._get_quotes_treasury,
+            ASSET_TYPE.STOCK: self._get_quotes_stock,
+            ASSET_TYPE.ETF: self._get_quotes_stock,
+            ASSET_TYPE.FII: self._get_quotes_stock,
+            ASSET_TYPE.BDR: self._get_quotes_stock,
+            ASSET_TYPE.CRIPTO: self._get_quotes_crypto,
+            ASSET_TYPE.PREV: self._get_quotes_prev,
+            ASSET_TYPE.TREASURY: self._get_quotes_treasury,
         }
-        handler = handlers.get(asset_type)
+        handler = handlers.get(asset_type_id)
         if not handler:
             raise ValidationError("Unsupported asset type", context={"asset_type": asset_type})
 
         quotes = await handler(
-            ticker=ticker, 
-            start_date=start_date, 
-            end_date=end_date, 
+            ticker=ticker,
+            start_date=start_date,
+            end_date=end_date,
             exchange=exchange,
             treasury_maturity_date=treasury_maturity_date,
-            treasury_type=treasury_type
+            treasury_type=treasury_type,
         )
 
         return {
             'ticker': ticker,
-            'asset_type': asset_type,
+            'asset_type': AssetType(ASSET_TYPE(asset_type_id).name).value,
             'currency': quotes.get('currency'),
             'quotes': quotes.get('quotes', []),
         }
+
+    @staticmethod
+    def _coerce_asset_type_id(asset_type) -> int | None:
+        if asset_type is None:
+            return None
+        if isinstance(asset_type, int) and not isinstance(asset_type, bool):
+            return int(asset_type)
+        # String path: accept AssetType StrEnum value (e.g. 'STOCK', 'CRIPTO').
+        try:
+            return int(ASSET_TYPE[AssetType(asset_type).name])
+        except (KeyError, ValueError):
+            return None
 
     async def _get_quotes_stock(self, ticker: str, start_date: pd.Timestamp, end_date: pd.Timestamp, exchange=None, **_):
         return await self._get_quotes_with_fallback([

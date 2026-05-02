@@ -1,8 +1,7 @@
-# app/modules/market_data/api/schemas.py
+"""Index, currency and exchange-rate schemas."""
 
-import datetime
 from datetime import date
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from pydantic import BaseModel, ConfigDict, RootModel
 
@@ -11,7 +10,7 @@ class Currency(BaseModel):
     id: int
     code: str
     name: str
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -22,14 +21,14 @@ class MarketIndex(BaseModel):
     symbol: str
     currency_id: int | None = None
     currency: Currency | None = None
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class IndexPoint(BaseModel):
     date: date
     value: float
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -40,21 +39,3 @@ class MarketIndexesTimeSeries(RootModel[Dict[str, List[IndexPoint]]]):
 
 class USD_BRL_History(RootModel[List[IndexPoint]]):
     model_config = ConfigDict(from_attributes=True)
-
-
-class OHLCV(BaseModel):
-    """Open, High, Low, Close, Volume data point"""
-    date: datetime.datetime
-    close: float
-    open: Optional[float] = None
-    high: Optional[float] = None
-    low: Optional[float] = None
-    volume: Optional[int] = None
-
-
-class QuoteResponse(BaseModel):
-    """Response containing asset quotes/price history"""
-    ticker: str
-    asset_type: str
-    currency: Optional[str] = None
-    quotes: List[OHLCV]

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 import pandas as pd
 from app.config.settings import settings
 from app.infra.http import AsyncHttpClient
-from app.utils.df import extend_values_to_today
+from app.lib.utils.df import extend_values_to_today
 
 
 class BrapiClient:

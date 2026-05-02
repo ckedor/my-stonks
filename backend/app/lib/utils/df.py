@@ -1,7 +1,29 @@
-from typing import Any
+from typing import Any, Iterable, Sequence
 
 import numpy as np
 import pandas as pd
+
+
+def rows_to_df(
+    rows: Sequence | Iterable,
+    datetime_cols: Sequence[str] | None = None,
+    numeric_fillna_cols: Sequence[str] | None = None,
+) -> pd.DataFrame:
+    """Build a DataFrame from repository rows (list of mappings).
+
+    Optionally coerces ``datetime_cols`` to ``datetime64`` and
+    ``numeric_fillna_cols`` to numeric with ``NaN`` replaced by 0.
+    """
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+    for col in datetime_cols or ():
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col])
+    for col in numeric_fillna_cols or ():
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+    return df
 
 
 def df_to_named_dict(df: pd.DataFrame) -> dict[str, list[dict]]:

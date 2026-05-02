@@ -8,18 +8,21 @@ from decimal import Decimal
 
 import pandas as pd
 from app.config.logger import logger
+from app.core.exceptions import NotFoundError
 from app.infra.db.models.asset import Currency
+from app.infra.db.models.constants.asset_type import ASSET_TYPE
+from app.infra.db.models.constants.currency import CURRENCY_MAP
 from app.infra.db.models.constants.index import INDEX
 from app.infra.db.models.market_data import Index, IndexHistory
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
 from app.lib.finance.returns import calculate_acc_returns_from_prices
+from app.lib.utils.df import df_to_named_dict, rows_to_df
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.repositories.market_data_repository import (
     MarketDataRepository,
 )
-from app.utils.df import df_to_named_dict
 
 
 class MarketDataService:
@@ -49,7 +52,8 @@ class MarketDataService:
         For USD-based indexes (S&P500, NASDAQ), converts to BRL.
         For price-based indexes (IBOV, etc.), returns the value directly.
         """
-        df = await self.repo.get_index_history_df(start_date, index_id=index_id)
+        df = await self.repo.get_index_history(start_date, index_id=index_id)
+        df = rows_to_df(df, datetime_cols=['date'])
         df = df.sort_values('date')
         df['value'] = df['value'].astype(float)
 
@@ -76,7 +80,10 @@ class MarketDataService:
     async def compute_indexes_history(self, start_date: pd.Timestamp = None):
 
         start_date = start_date or pd.Timestamp(datetime.today()) - pd.DateOffset(years=5)
-        index_history_df = await self.repo.get_index_history_df(start_date)
+        index_history_df = rows_to_df(
+            await self.repo.get_index_history(start_date),
+            datetime_cols=['date'],
+        )
 
         index_history_returns_df = pd.DataFrame()
 
@@ -217,3 +224,61 @@ class MarketDataService:
             treasury_type=treasury_type,
             treasury_maturity_date=treasury_maturity_date,
         )
+
+    async def get_asset_prices(self, asset, init_date) -> pd.DataFrame:
+        """Return native-currency close-price history for ``asset``.
+
+        Translates the ORM ``Asset`` into the primitive arguments accepted by
+        :meth:`get_asset_quotes`, fetches OHLCV quotes from the underlying
+        provider and normalizes the result: extends to today (forward-filling
+        missing days) and maps the provider's currency code to the ``CURRENCY``
+        enum id.
+
+        Output columns: ``date``, ``close``, ``currency``.
+        """
+        asset_type_id = asset.asset_type_id
+
+        kwargs: dict = {
+            'ticker': asset.ticker,
+            'asset_type': asset_type_id,
+            'start_date': init_date,
+        }
+        if asset.exchange is not None:
+            kwargs['exchange'] = asset.exchange.code
+        if asset_type_id == ASSET_TYPE.PREV:
+            kwargs['ticker'] = asset.fund.legal_id
+        if asset_type_id == ASSET_TYPE.TREASURY:
+            kwargs['treasury_type'] = asset.treasury_bond.type.name
+            kwargs['treasury_maturity_date'] = asset.treasury_bond.maturity_date
+
+        try:
+            response = await self.market_data_provider.get_asset_quotes(**kwargs)
+        except NotFoundError:
+            return pd.DataFrame()
+
+        quotes = response.get('quotes') or []
+        if not quotes:
+            return pd.DataFrame()
+
+        prices_df = pd.DataFrame(quotes)
+        prices_df['currency'] = response.get('currency')
+        return self._normalize_prices(prices_df)
+
+    async def get_fii_dividends_df(self, tickers: list, max: bool = True) -> pd.DataFrame:
+        """Return FII dividends fetched from the market-data provider."""
+        return await self.market_data_provider.get_fii_dividends_df(tickers, max=max)
+
+    @staticmethod
+    def _normalize_prices(prices_df: pd.DataFrame) -> pd.DataFrame:
+        df = prices_df.copy()
+        df['date'] = pd.to_datetime(df['date'])
+        full_range = pd.DataFrame({
+            'date': pd.date_range(start=df['date'].min(), end=datetime.today(), freq='D')
+        })
+        df = pd.merge(full_range, df, on='date', how='left')
+        df['close'] = df['close'].ffill()
+        df = df[['date', 'close', 'currency']]
+        df['currency'] = df['currency'].map(CURRENCY_MAP).ffill()
+        return df
+        df['currency'] = df['currency'].map(CURRENCY_MAP).ffill()
+        return df

@@ -1,17 +1,14 @@
 from typing import List, Optional
 
 from app.infra.db.session import get_session
-from app.modules.asset.api.schemas import AssetDetailsWithPosition
+from app.lib.utils.fastapi import df_response
+from app.modules.market_data.api.asset.schemas import AssetDetailsWithPosition
 from app.modules.portfolio.service.portfolio_position_service import (
     PortfolioPositionService,
 )
-from app.utils.response import df_response
 from fastapi import APIRouter, Depends, Query
 
 router = APIRouter()
-
-
-# --- Portfolio Data ---
 
 
 @router.get('/{portfolio_id}/returns', tags=['Portfolio Data'])
@@ -60,9 +57,6 @@ async def get_portfolio_analysis(
 ):
     service = PortfolioPositionService(session)
     return await service.get_portfolio_stats(portfolio_id, currency=currency)
-
-
-# --- Portfolio Category Data ---
 
 
 @router.get('/{portfolio_id}/category/returns', tags=['Portfolio Category Data'])

@@ -21,7 +21,7 @@ from app.infra.db.models.portfolio import (
     Transaction,
 )
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
-from sqlalchemy import Date, and_, cast, func, literal, select
+from sqlalchemy import Date, and_, cast, desc, func, literal, select
 from sqlalchemy.orm import joinedload
 
 
@@ -35,15 +35,56 @@ def get_custom_category_subquery(portfolio_id):
 
 
 class PortfolioRepository(SQLAlchemyRepository):
+    
+    async def get_most_recent_asset_ids_from_position(
+        self,
+        portfolio_id: int, 
+        delta_days: Optional[int] = 1,
+        ) -> list[int]:
+        """
+        Returns a list of asset_ids from the most recent asset position 
+        """
+        most_recent_date_subquery = (
+            select(func.max(Position.date))
+            .where(Position.portfolio_id == portfolio_id)
+            .scalar_subquery()
+        )
+        query = (
+            select(Position.asset_id)
+            .where(Position.portfolio_id == portfolio_id)
+            .where(Position.date > most_recent_date_subquery - timedelta(days=delta_days))
+            .distinct()
+        )  
+        
+        result = await self.session.execute(query)
+        rows = result.scalars()
+        return list(rows)
+    
+    async def get_asset_ids_with_transactions(
+        self,
+        portfolio_id: int,
+    ) -> list[int]:
+        """Returns the distinct asset_ids that have transactions in the portfolio."""
+        query = (
+            select(Transaction.asset_id)
+            .where(Transaction.portfolio_id == portfolio_id)
+            .distinct()
+        )
+        result = await self.session.execute(query)
+        return list(result.scalars())
+    
+    
     async def get_position_on_date_by_broker(
         self,
         portfolio_id: int,
         date: date_type | datetime | None = None,
         asset_type_id: int | None = None,
-    ) -> pd.DataFrame:
+    ) -> list[dict]:
         """
-        Retorna a posição do portfólio agrupada por corretora (broker),
+        Retorna as linhas da posição do portfólio agrupadas por corretora (broker),
         somando as quantities das transactions até a data (ignorando horário).
+
+        Each row is a mapping; conversion to DataFrame is the caller's responsibility.
         """
         if date is None:
             search_date = await self._get_portfolio_position_latest_date(portfolio_id)
@@ -118,34 +159,8 @@ class PortfolioRepository(SQLAlchemyRepository):
             stmt = stmt.where(Asset.asset_type_id == asset_type_id)
 
         result = await self.session.execute(stmt)
-        rows = result.all()
+        return result.mappings().all()
 
-        df = pd.DataFrame(
-            rows,
-            columns=[
-                "date",
-                "asset_id",
-                "ticker",
-                "name",
-                "currency_id",
-                "quantity",
-                "price",
-                "twelve_months_return",
-                "acc_return",
-                "daily_return",
-                "dividend",
-                "category",
-                "type",
-                "type_id",
-                "class",
-                "broker_id",
-                "broker_name",
-                "broker_cnpj",
-            ],
-        )
-        df["date"] = pd.to_datetime(df["date"])
-        return df
-        
     async def get_asset_details(self, asset_id: int):
         stmt = (
             select(Asset)
@@ -176,13 +191,13 @@ class PortfolioRepository(SQLAlchemyRepository):
         result = await self.session.execute(stmt)
         return result.unique().scalars().all()
 
-    async def get_transactions_df(
+    async def get_transactions(
         self,
         portfolio_id: int,
         asset_id: Optional[int] = None,
         asset_types_ids: Optional[List[int]] = None,
         currency_id: Optional[int] = None,
-    ) -> pd.DataFrame:
+    ) -> list[dict]:
         cat_assignment_subq = get_custom_category_subquery(portfolio_id)
 
         stmt = (
@@ -194,6 +209,7 @@ class PortfolioRepository(SQLAlchemyRepository):
                 Broker.name.label('broker'),
                 Broker.currency_id.label('currency_id'),
                 Transaction.price,
+                Transaction.price_usd,
                 Asset.id.label('asset_id'),
                 Asset.ticker,
                 Asset.asset_type_id,
@@ -214,31 +230,11 @@ class PortfolioRepository(SQLAlchemyRepository):
             stmt = stmt.where(Broker.currency_id == currency_id)
 
         result = await self.session.execute(stmt)
-        rows = result.all()
-        df = pd.DataFrame(
-            rows,
-            columns=[
-                'id',
-                'date',
-                'quantity',
-                'broker_id',
-                'broker',
-                'currency_id',
-                'price',
-                'asset_id',
-                'ticker',
-                'asset_type_id',
-                'category',
-            ],
-        )
-        df['date'] = pd.to_datetime(df['date'])
-        df['quantity'] = df['quantity'].astype(float)
-        df['price'] = df['price'].astype(float)
-        return df
+        return result.mappings().all()
 
     async def get_portfolio_dividends(
         self, portfolio_id: int, filters, currency: str = 'BRL'
-    ) -> pd.DataFrame:
+    ) -> list[dict]:
         cat_assignment_subq = get_custom_category_subquery(portfolio_id)
 
         amount_col = (
@@ -270,13 +266,11 @@ class PortfolioRepository(SQLAlchemyRepository):
             stmt = stmt.where(Asset.asset_type_id.in_(filters.asset_type_ids))
 
         result = await self.session.execute(stmt)
-        dividends = result.all()
+        return result.mappings().all()
 
-        return dividends
-
-    async def get_asset_position_df(
+    async def get_asset_position(
         self, portfolio_id: int, asset_ids: list[int], start_date=None, end_date=None
-    ) -> pd.DataFrame:
+    ) -> list[dict]:
         dividend_subquery = (
             select(
                 Dividend.asset_id,
@@ -322,25 +316,18 @@ class PortfolioRepository(SQLAlchemyRepository):
             stmt = stmt.where(Position.date <= end_date)
 
         result = await self.session.execute(stmt)
-        df = pd.DataFrame(
-            result.all(),
-            columns=['date', 'asset_id', 'ticker', 'quantity', 'price', 'price_usd', 'twelve_months_return', 'dividend', 'dividend_usd'],
-        )
-        df['dividend'] = pd.to_numeric(df['dividend'], errors='coerce').fillna(0)
-        df['dividend_usd'] = pd.to_numeric(df['dividend_usd'], errors='coerce').fillna(0)
-        df['date'] = pd.to_datetime(df['date'])
-        return df
+        return result.mappings().all()
 
-    async def get_portfolio_position_df(
-        self, 
-        portfolio_id: int, 
-        start_date=None, 
-        end_date=None, 
-        asset_id=None, 
-        asset_type_id=None, 
+    async def get_portfolio_position(
+        self,
+        portfolio_id: int,
+        start_date=None,
+        end_date=None,
+        asset_id=None,
+        asset_type_id=None,
         asset_type_ids=None,
-        asset_ids: Optional[List[int]] = None
-    ) -> pd.DataFrame:
+        asset_ids: Optional[List[int]] = None,
+    ) -> list[dict]:
         dividend_subquery = (
             select(
                 Dividend.asset_id,
@@ -397,54 +384,17 @@ class PortfolioRepository(SQLAlchemyRepository):
             stmt = stmt.where(Asset.asset_type_id.in_(asset_type_ids))
 
         result = await self.session.execute(stmt)
-        df = pd.DataFrame(
-            result.all(),
-            columns=[
-                'date',
-                'asset_id',
-                'ticker',
-                'quantity',
-                'price',
-                'price_usd',
-                'average_price',
-                'dividend',
-                'dividend_usd',
-                'category',
-            ],
-        )
-        df['dividend'] = pd.to_numeric(df['dividend'], errors='coerce').fillna(0)
-        df['dividend_usd'] = pd.to_numeric(df['dividend_usd'], errors='coerce').fillna(0)
-        df['date'] = pd.to_datetime(df['date'])
-        return df
+        return result.mappings().all()
 
-    async def get_position_on_date(self, portfolio_id, date=None, asset_type_id=None, currency='BRL'):
-        stmt = await self._build_portfolio_position_query(portfolio_id, date, asset_type_id, currency=currency)
+    async def get_position_on_date(
+        self, portfolio_id, date=None, asset_type_id=None, currency='BRL'
+    ) -> list[dict]:
+        stmt = await self._build_portfolio_position_query(
+            portfolio_id, date, asset_type_id, currency=currency
+        )
 
         result = await self.session.execute(stmt)
-        df = pd.DataFrame(
-            result.all(),
-            columns=[
-                'date',
-                'asset_id',
-                'ticker',
-                'name',
-                'quantity',
-                'price',
-                'twelve_months_return',
-                'acc_return',
-                'daily_return',
-                'cagr',
-                'total_invested',
-                'dividend',
-                'category',
-                'type',
-                'type_id',
-                'class',
-            ],
-        )
-        df['dividend'] = pd.to_numeric(df['dividend'], errors='coerce').fillna(0)
-        df['date'] = pd.to_datetime(df['date'])
-        return df
+        return result.mappings().all()
     
     async def _build_portfolio_position_query(
         self,
@@ -559,11 +509,11 @@ class PortfolioRepository(SQLAlchemyRepository):
         result = await self.session.execute(stmt)
         return [row[0] for row in result.all() if row[0] is not None]
 
-    async def get_complete_portfolio_position_history_df(
+    async def get_complete_portfolio_position_history(
         self,
         portfolio_id: int,
         asset_ids: Optional[List[int]] = None,
-    ) -> pd.DataFrame:
+    ) -> list[dict]:
         div_q = (
             select(
                 Dividend.asset_id.label("asset_id"),
@@ -648,13 +598,7 @@ class PortfolioRepository(SQLAlchemyRepository):
             stmt = stmt.where(Position.asset_id.in_(asset_ids))
 
         result = await self.session.execute(stmt)
-
-        df = pd.DataFrame(result.mappings().all())
-
-        if not df.empty:
-            df["date"] = pd.to_datetime(df["date"])
-
-        return df
+        return result.mappings().all()
 
     async def get_portfolio_returns(
         self, portfolio_id: int, currency: str = 'BRL'

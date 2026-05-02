@@ -53,3 +53,4 @@ celerybeat-schedule.dat
 celerybeat-schedule
 
 rascunhos
+backfill_transaction_price_usd.py
