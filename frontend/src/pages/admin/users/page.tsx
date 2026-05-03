@@ -1,6 +1,7 @@
 import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
 import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { AUTH_ROUTES, USER_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
 import {
@@ -57,7 +58,7 @@ export default function AdminUsersPage() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res = await api.get('/users')
+      const res = await api.get(USER_ROUTES.list)
       setUsers(res.data)
       setFilteredUsers(res.data)
     } catch (error) {
@@ -86,7 +87,7 @@ export default function AdminUsersPage() {
   const confirmDelete = async () => {
     if (!selectedUser) return
     try {
-      await api.delete(`/users/${selectedUser.id}`)
+      await api.delete(USER_ROUTES.byId(selectedUser.id))
       setSnackbar({ open: true, message: 'Usuário excluído com sucesso', severity: 'success' })
       fetchData()
     } catch (error) {
@@ -101,7 +102,7 @@ export default function AdminUsersPage() {
   const handleSave = async (data: Record<string, unknown>) => {
     try {
       if (selectedUser) {
-        await api.patch(`/users/${selectedUser.id}`, {
+        await api.patch(USER_ROUTES.byId(selectedUser.id), {
           username: data.username,
           email: data.email,
           is_active: data.is_active,
@@ -110,7 +111,7 @@ export default function AdminUsersPage() {
         })
         setSnackbar({ open: true, message: 'Usuário atualizado com sucesso', severity: 'success' })
       } else {
-        await api.post('/auth/register', {
+        await api.post(AUTH_ROUTES.register, {
           username: data.username,
           email: data.email,
           password: data.password,

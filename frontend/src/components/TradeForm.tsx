@@ -1,4 +1,5 @@
 import { ASSET_TYPES } from '@/constants/assetTypes'
+import { BROKER_ROUTES, QUOTE_ROUTES, TRANSACTION_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { Asset, Trade } from '@/types'
@@ -134,7 +135,7 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
 
   useEffect(() => {
     if (open) {
-      api.get('/broker').then((res) => setBrokers(res.data))
+      api.get(BROKER_ROUTES.list).then((res) => setBrokers(res.data))
     }
   }, [open])
 
@@ -149,7 +150,7 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
     setPriceLoading(true)
     try {
       const d = dayjs(date).format('YYYY-MM-DD')
-      const { data } = await api.get<QuoteResponse>('market_data/quotes', {
+      const { data } = await api.get<QuoteResponse>(QUOTE_ROUTES.get, {
         params: { ticker: selectedAsset.ticker, asset_type: assetTypeKey, date: d },
       })
       const q =
@@ -185,10 +186,10 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
     }
 
     try {
-      if (isEdit) {
-        await api.put('/portfolio/transaction/', payload)
+      if (isEdit && trade?.id) {
+        await api.put(TRANSACTION_ROUTES.byId(trade.id), payload)
       } else {
-        await api.post('/portfolio/transaction/', payload)
+        await api.post(TRANSACTION_ROUTES.create, payload)
       }
       onClose()
       onSave?.()
@@ -203,7 +204,7 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
   const handleDelete = async () => {
     if (!trade?.id) return
     try {
-      await api.delete(`/portfolio/transaction/${trade.id}`, {
+      await api.delete(TRANSACTION_ROUTES.byId(trade.id), {
         data: {
           portfolio_id: portfolioId,
           asset_id: assetId,

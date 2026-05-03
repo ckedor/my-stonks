@@ -1,5 +1,6 @@
 import AssetDrawer from '@/components/AssetDrawer'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { POSITION_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
 import api from '@/lib/api'
 import PerformanceBarChart, { type DistributionMetric } from '@/pages/portfolio/asset/PerformanceBarChart'
@@ -25,7 +26,7 @@ export default function DistributionPage() {
   const { data: positions } = useCachedData<any[]>(
     portfolioId ? `distribution:positions:${portfolioId}` : null,
     useCallback(
-      () => api.get(`/portfolio/${portfolioId}/position`).then(r => r.data),
+      () => api.get(POSITION_ROUTES.byPortfolio(portfolioId!)).then(r => r.data),
       [portfolioId],
     ),
     { enabled: !!portfolioId },

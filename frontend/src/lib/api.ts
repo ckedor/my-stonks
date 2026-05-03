@@ -1,3 +1,4 @@
+import { AUTH_ROUTES } from '@/constants/routes'
 import type { InternalAxiosRequestConfig } from 'axios'
 import axios from 'axios'
 import Cookies from 'js-cookie'
@@ -23,7 +24,7 @@ export const loginRequest = async (username: string, password: string) => {
   formData.append('username', username)
   formData.append('password', password)
 
-  const response = await api.post('/auth/jwt/login', formData, {
+  const response = await api.post(AUTH_ROUTES.login, formData, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },

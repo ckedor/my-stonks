@@ -1,6 +1,7 @@
 import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
 import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { ASSET_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
 import {
@@ -120,14 +121,14 @@ export default function AdminAssetsPage() {
     try {
       const [assetsRes, typesRes, exchangesRes, fiiSegRes, etfSegRes, fiTypesRes, tbTypesRes, indexesRes] =
         await Promise.all([
-          api.get('/assets/assets'),
-          api.get('/assets/types'),
-          api.get('/assets/exchanges'),
-          api.get('/assets/fiis/segments'),
-          api.get('/assets/etfs/segments'),
-          api.get('/assets/fixed_income/types'),
-          api.get('/assets/treasury_bond/types'),
-          api.get('/assets/indexes'),
+          api.get(ASSET_ROUTES.list),
+          api.get(ASSET_ROUTES.type),
+          api.get(ASSET_ROUTES.exchange),
+          api.get(ASSET_ROUTES.fiiSegment),
+          api.get(ASSET_ROUTES.etfSegment),
+          api.get(ASSET_ROUTES.fixedIncomeType),
+          api.get(ASSET_ROUTES.treasuryBondType),
+          api.get(ASSET_ROUTES.index),
         ])
       setAssets(assetsRes.data)
       setFilteredAssets(assetsRes.data)
@@ -154,7 +155,7 @@ export default function AdminAssetsPage() {
 
   const handleEdit = async (asset: AssetRow) => {
     try {
-      const res = await api.get(`/assets/assets/${asset.id}`)
+      const res = await api.get(ASSET_ROUTES.byId(asset.id))
       const detail = res.data
       // Flatten subclass fields for the form
       const flat: Record<string, unknown> = {
@@ -209,7 +210,7 @@ export default function AdminAssetsPage() {
   const confirmDelete = async () => {
     if (!selectedAsset) return
     try {
-      await api.delete(`/assets/assets/${selectedAsset.id}`)
+      await api.delete(ASSET_ROUTES.byId(selectedAsset.id))
       setSnackbar({ open: true, message: 'Ativo excluído com sucesso', severity: 'success' })
       fetchData()
     } catch (error) {
@@ -224,10 +225,10 @@ export default function AdminAssetsPage() {
   const handleSave = async (data: Record<string, unknown>) => {
     try {
       if (selectedAsset && selectedAsset.id) {
-        await api.put(`/assets/asset/${selectedAsset.id}`, data)
+        await api.put(ASSET_ROUTES.byId(selectedAsset.id), data)
         setSnackbar({ open: true, message: 'Ativo atualizado com sucesso', severity: 'success' })
       } else {
-        await api.post('/assets/asset', data)
+        await api.post(ASSET_ROUTES.create, data)
         setSnackbar({ open: true, message: 'Ativo criado com sucesso', severity: 'success' })
       }
       fetchData()

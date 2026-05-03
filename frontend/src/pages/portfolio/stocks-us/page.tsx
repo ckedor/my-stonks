@@ -4,6 +4,7 @@ import PortfolioReturnsChart from '@/components/PortfolioReturnsChart'
 import Trades from '@/components/Trades'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { ASSET_TYPES } from '@/constants/assetTypes'
+import { POSITION_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
@@ -35,14 +36,14 @@ export default function StocksEuaPage() {
 
   const { data: positionData } = useCachedData<StockPortfolioPositionEntry[]>(
     portfolioId ? `stocks-us:positions:${portfolioId}:${currency}` : null,
-    useCallback(() => api.get(`/portfolio/${portfolioId}/position`, {
+    useCallback(() => api.get(POSITION_ROUTES.byPortfolio(portfolioId!), {
       params: { asset_type_ids: [ASSET_TYPES.STOCK, ASSET_TYPES.BDR, ASSET_TYPES.ETF], currency_id: 2, currency },
     }).then(r => r.data), [portfolioId, currency]),
     { enabled: !!portfolioId },
   )
   const { data: patrimonyData } = useCachedData<PatrimonyEntry[]>(
     portfolioId ? `stocks-us:patrimony:${portfolioId}:${currency}` : null,
-    useCallback(() => api.get(`/portfolio/${portfolioId}/patrimony_evolution`, {
+    useCallback(() => api.get(POSITION_ROUTES.patrimonyEvolution(portfolioId!), {
       params: { asset_type_ids: [ASSET_TYPES.STOCK, ASSET_TYPES.BDR, ASSET_TYPES.ETF], currency },
     }).then(r => r.data), [portfolioId, currency]),
     { enabled: !!portfolioId },

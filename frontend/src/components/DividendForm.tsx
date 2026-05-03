@@ -1,4 +1,5 @@
 
+import { DIVIDEND_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
@@ -99,10 +100,10 @@ export default function DividendForm({ open, onClose, onSave, initialAsset, divi
     }
 
     try {
-      if (isEdit) {
-        await api.put('/portfolio/dividends/', payload)
+      if (isEdit && dividend?.id) {
+        await api.put(DIVIDEND_ROUTES.byId(dividend.id), payload)
       } else {
-        await api.post('/portfolio/dividends/', payload)
+        await api.post(DIVIDEND_ROUTES.create, payload)
       }
 
       onClose()
@@ -119,7 +120,7 @@ export default function DividendForm({ open, onClose, onSave, initialAsset, divi
   const handleDelete = async () => {
     if (!dividend?.id) return
     try {
-      await api.delete(`/portfolio/dividends/${dividend.id}`)
+      await api.delete(DIVIDEND_ROUTES.byId(dividend.id))
       setConfirmOpen(false)
       onClose()
       if (onSave) onSave()

@@ -11,7 +11,6 @@ from http import HTTPStatus
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from app.infra.db.models.market_data import IndexHistory
 
 
@@ -20,7 +19,7 @@ from app.infra.db.models.market_data import IndexHistory
 # ---------------------------------------------------------------------------
 @pytest.mark.asyncio
 async def test_list_currencies(client):
-    response = await client.get('/market_data/currency')
+    response = await client.get('/market_data/index/currency')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -34,7 +33,7 @@ async def test_list_currencies(client):
 # ---------------------------------------------------------------------------
 @pytest.mark.asyncio
 async def test_list_indexes(client):
-    response = await client.get('/market_data/indexes')
+    response = await client.get('/market_data/index')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -49,7 +48,7 @@ async def test_list_indexes(client):
 @pytest.mark.asyncio
 async def test_indexes_time_series_empty(client):
     """With no index_history rows, the endpoint should still return 200."""
-    response = await client.get('/market_data/indexes/time_series')
+    response = await client.get('/market_data/index/time_series')
 
     assert response.status_code == HTTPStatus.OK
 
@@ -61,7 +60,7 @@ async def test_indexes_time_series_with_data(client, db):
     db.add(ih)
     db.commit()
 
-    response = await client.get('/market_data/indexes/time_series')
+    response = await client.get('/market_data/index/time_series')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -74,7 +73,7 @@ async def test_indexes_time_series_with_data(client, db):
 # ---------------------------------------------------------------------------
 @pytest.mark.asyncio
 async def test_usd_brl_history_empty(client):
-    response = await client.get('/market_data/indexes/usd_brl')
+    response = await client.get('/market_data/index/usd_brl')
 
     assert response.status_code == HTTPStatus.OK
 
@@ -85,7 +84,7 @@ async def test_usd_brl_history_with_data(client, db):
     db.add(ih)
     db.commit()
 
-    response = await client.get('/market_data/indexes/usd_brl')
+    response = await client.get('/market_data/index/usd_brl')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -120,7 +119,7 @@ async def test_get_quotes_mocked(client):
         return_value=mock_quotes,
     ):
         response = await client.get(
-            '/market_data/quotes',
+            '/market_data/quote',
             params={'ticker': 'PETR4', 'asset_type': 'STOCK'},
         )
 
@@ -143,7 +142,7 @@ async def test_consolidate_history_returns_ok(client):
         'app.modules.market_data.service.market_data_service.MarketDataService.consolidate_market_indexes_history',
         new_callable=AsyncMock,
     ):
-        response = await client.post('/market_data/indexes/consolidate_history')
+        response = await client.post('/market_data/index/consolidate_history')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'OK'}

@@ -14,20 +14,20 @@ from fastapi.params import Query
 
 router = APIRouter(tags=['AI'], prefix='/ai')
 
-features_router = APIRouter(prefix='/features', dependencies=[Depends(current_superuser)])
+feature_router = APIRouter(prefix='/feature', dependencies=[Depends(current_superuser)])
 
 
-@features_router.get('', response_model=list[AIFeatureResponse])
+@feature_router.get('', response_model=list[AIFeatureResponse])
 async def list_features(session=Depends(get_session)):
     return await AIFeatureService(session).list()
 
 
-@features_router.get('/{feature_id}', response_model=AIFeatureResponse)
+@feature_router.get('/{feature_id}', response_model=AIFeatureResponse)
 async def get_feature(feature_id: int, session=Depends(get_session)):
     return await AIFeatureService(session).get(feature_id)
 
 
-@features_router.patch('/{feature_id}', response_model=AIFeatureResponse)
+@feature_router.patch('/{feature_id}', response_model=AIFeatureResponse)
 async def update_feature(feature_id: int, payload: AIFeatureUpdate, session=Depends(get_session)):
     return await AIFeatureService(session).update(feature_id, payload)
 
@@ -50,5 +50,5 @@ async def get_asset_overview_and_news(
     )
 
 
-router.include_router(features_router)
+router.include_router(feature_router)
 

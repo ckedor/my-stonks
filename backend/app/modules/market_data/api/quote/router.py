@@ -6,10 +6,10 @@ from app.modules.market_data.domain.enums import EXCHANGE
 from app.modules.market_data.service.market_data_service import MarketDataService
 from fastapi import APIRouter, Depends, Query
 
-router = APIRouter(prefix='/market_data', tags=['Market Data'])
+router = APIRouter(prefix='/quote', tags=['Quote'])
 
 
-@router.get('/quotes', response_model=QuoteResponse)
+@router.get('', response_model=QuoteResponse)
 async def get_asset_quotes(
     ticker: str,
     session=Depends(get_session),

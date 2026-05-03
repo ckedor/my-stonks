@@ -1,6 +1,7 @@
 
 import AppCard from '@/components/ui/AppCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { INCOME_TAX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
@@ -30,7 +31,7 @@ export default function AssetsAndRights({ fiscalYear, portfolioId }: AssetsAndRi
     const fetchData = async () => {
       setLoading(true)
       try {
-        const res = await api.get(`/portfolio/${portfolioId}/income_tax/assets_and_rights`, {
+        const res = await api.get(INCOME_TAX_ROUTES.assetsAndRights(portfolioId), {
           params: { fiscal_year: fiscalYear },
         })
         setData(res.data)

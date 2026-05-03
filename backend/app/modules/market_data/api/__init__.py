@@ -5,7 +5,7 @@ from app.modules.market_data.api.quote.router import router as quote_router
 from app.modules.users.views import current_active_user
 from fastapi import APIRouter, Depends
 
-router = APIRouter(dependencies=[Depends(current_active_user)])
+router = APIRouter(prefix='/market_data', dependencies=[Depends(current_active_user)])
 router.include_router(index_router)
 router.include_router(quote_router)
 router.include_router(asset_router)

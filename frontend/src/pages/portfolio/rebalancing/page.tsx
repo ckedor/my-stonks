@@ -23,6 +23,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import AppCard from '@/components/ui/AppCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { REBALANCING_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
@@ -237,7 +238,7 @@ export default function RebalancingPage() {
 
   const { data: fetchedData } = useCachedData<RebalancingResponse>(
     portfolioId ? `rebalancing:${portfolioId}` : null,
-    useCallback(() => api.get<RebalancingResponse>(`/portfolio/${portfolioId}/rebalancing`).then(r => r.data), [portfolioId]),
+    useCallback(() => api.get<RebalancingResponse>(REBALANCING_ROUTES.byPortfolio(portfolioId!)).then(r => r.data), [portfolioId]),
     { enabled: !!portfolioId },
   )
 
@@ -363,7 +364,7 @@ export default function RebalancingPage() {
             })),
           })),
       }
-      await api.put(`/portfolio/${selectedPortfolio.id}/rebalancing`, payload)
+      await api.put(REBALANCING_ROUTES.byPortfolio(selectedPortfolio.id), payload)
       setSnackbar({
         open: true,
         message: 'Targets salvos com sucesso!',

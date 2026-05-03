@@ -8,20 +8,10 @@ from app.modules.portfolio.service.portfolio_position_service import (
 )
 from fastapi import APIRouter, Depends, Query
 
-router = APIRouter()
+router = APIRouter(prefix='/position', tags=['Portfolio Position'])
 
 
-@router.get('/{portfolio_id}/returns', tags=['Portfolio Data'])
-async def get_portfolio_returns(
-    portfolio_id: int,
-    currency: str = Query('BRL'),
-    session=Depends(get_session),
-):
-    service = PortfolioPositionService(session)
-    return await service.get_portfolio_returns(portfolio_id, currency)
-
-
-@router.get('/{portfolio_id}/position', tags=['Portfolio Data'])
+@router.get('/{portfolio_id}')
 async def get_portfolio_position(
     portfolio_id: int,
     most_recent: bool = Query(True),
@@ -36,7 +26,17 @@ async def get_portfolio_position(
     return await service.get_portfolio_position_history(portfolio_id, asset_id, currency=currency)
 
 
-@router.get('/{portfolio_id}/patrimony_evolution', tags=['Portfolio Data'])
+@router.get('/{portfolio_id}/returns')
+async def get_portfolio_returns(
+    portfolio_id: int,
+    currency: str = Query('BRL'),
+    session=Depends(get_session),
+):
+    service = PortfolioPositionService(session)
+    return await service.get_portfolio_returns(portfolio_id, currency)
+
+
+@router.get('/{portfolio_id}/patrimony_evolution')
 async def get_patrimony_evolution(
     portfolio_id: int,
     asset_id: int = Query(None),
@@ -49,7 +49,7 @@ async def get_patrimony_evolution(
     return await service.get_patrimony_evolution(portfolio_id, asset_id, asset_type_id, asset_type_ids, currency=currency)
 
 
-@router.get('/{portfolio_id}/analysis', tags=['Portfolio Data'])
+@router.get('/{portfolio_id}/analysis')
 async def get_portfolio_analysis(
     portfolio_id: int,
     currency: str = Query('BRL'),
@@ -59,7 +59,7 @@ async def get_portfolio_analysis(
     return await service.get_portfolio_stats(portfolio_id, currency=currency)
 
 
-@router.get('/{portfolio_id}/category/returns', tags=['Portfolio Category Data'])
+@router.get('/{portfolio_id}/category/returns')
 async def get_category_returns(
     portfolio_id: int,
     category_id: int = Query(None),
@@ -71,7 +71,7 @@ async def get_category_returns(
     return await service.get_category_returns(portfolio_id, category_id, most_recent, currency)
 
 
-@router.get('/{portfolio_id}/category/{category_id}/analysis', tags=['Portfolio Category Data'])
+@router.get('/{portfolio_id}/category/{category_id}/analysis')
 async def get_category_analysis(
     portfolio_id: int,
     category_id: int,
@@ -82,10 +82,7 @@ async def get_category_analysis(
     return await service.get_category_stats(portfolio_id, category_id, currency=currency)
 
 
-# --- Portfolio Asset Data ---
-
-
-@router.get('/{portfolio_id}/asset/{asset_id}/returns', tags=['Portfolio Asset Data'])
+@router.get('/{portfolio_id}/asset/{asset_id}/returns')
 async def get_asset_returns(
     portfolio_id: int,
     asset_id: int,
@@ -101,7 +98,7 @@ async def get_asset_returns(
     return df_response(asset_returns)
 
 
-@router.get('/{portfolio_id}/asset/{asset_id}/details', tags=['Portfolio Asset Data'], response_model=AssetDetailsWithPosition)
+@router.get('/{portfolio_id}/asset/{asset_id}/details', response_model=AssetDetailsWithPosition)
 async def get_asset_details(
     portfolio_id: int,
     asset_id: int,
@@ -112,7 +109,7 @@ async def get_asset_details(
     return await service.get_asset_details(portfolio_id, asset_id, currency=currency)
 
 
-@router.get('/{portfolio_id}/asset/{asset_id}/analysis', tags=['Portfolio Asset Data'])
+@router.get('/{portfolio_id}/asset/{asset_id}/analysis')
 async def get_asset_analysis(
     portfolio_id: int,
     asset_id: int,

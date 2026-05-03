@@ -1,3 +1,4 @@
+import { TRANSACTION_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
@@ -48,7 +49,7 @@ export default function Trades({ assetId, assetTypes, currencyId }: TradesProps)
       params.currency_id = currencyId
     }
 
-    const { data } = await api.get(`/portfolio/transaction/${selectedPortfolio.id}`, { params })
+    const { data } = await api.get(TRANSACTION_ROUTES.list, { params: { portfolio_id: selectedPortfolio.id, ...params } })
 
     setTrades(data.sort((a: Trade, b: Trade) => new Date(b.date).getTime() - new Date(a.date).getTime()))
     setLoading(false)

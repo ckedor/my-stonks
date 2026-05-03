@@ -1,5 +1,6 @@
 
 import AssetDrawer from '@/components/AssetDrawer'
+import { CATEGORY_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
@@ -153,7 +154,7 @@ export default function AssetList({ positions, groupBy = 'category', onGroupByCh
   const confirmCategoryChange = async () => {
     if (!confirmDialog.assetId || !confirmDialog.categoryId) return
     try {
-      await api.post('/portfolio/category/category_assignment', {
+      await api.post(CATEGORY_ROUTES.assignment, {
         asset_id: confirmDialog.assetId,
         category_id: confirmDialog.categoryId,
         portfolio_id: selectedPortfolio?.id,

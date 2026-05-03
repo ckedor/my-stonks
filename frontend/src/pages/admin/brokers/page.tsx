@@ -1,6 +1,7 @@
 import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
 import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { BROKER_ROUTES, INDEX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
 import {
@@ -74,8 +75,8 @@ export default function AdminBrokersPage() {
     setLoading(true)
     try {
       const [brokersRes, currenciesRes] = await Promise.all([
-        api.get('/broker'),
-        api.get('/market_data/currency'),
+        api.get(BROKER_ROUTES.list),
+        api.get(INDEX_ROUTES.currency),
       ])
       setBrokers(brokersRes.data)
       setFilteredBrokers(brokersRes.data)
@@ -106,7 +107,7 @@ export default function AdminBrokersPage() {
   const confirmDelete = async () => {
     if (!selectedBroker) return
     try {
-      await api.delete(`/broker/${selectedBroker.id}`)
+      await api.delete(BROKER_ROUTES.byId(selectedBroker.id))
       setSnackbar({ open: true, message: 'Corretora excluída com sucesso', severity: 'success' })
       fetchData()
     } catch (error) {
@@ -121,10 +122,10 @@ export default function AdminBrokersPage() {
   const handleSave = async (data: any) => {
     try {
       if (selectedBroker) {
-        await api.put(`/broker/${selectedBroker.id}`, data)
+        await api.put(BROKER_ROUTES.byId(selectedBroker.id), data)
         setSnackbar({ open: true, message: 'Corretora atualizada com sucesso', severity: 'success' })
       } else {
-        await api.post('/broker', data)
+        await api.post(BROKER_ROUTES.create, data)
         setSnackbar({ open: true, message: 'Corretora criada com sucesso', severity: 'success' })
       }
       fetchData()

@@ -4,6 +4,7 @@ import PortfolioReturnsChart from '@/components/PortfolioReturnsChart'
 import Trades from '@/components/Trades'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { ASSET_TYPES } from '@/constants/assetTypes'
+import { POSITION_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
@@ -21,14 +22,14 @@ export default function CriptoPage() {
 
   const { data: positionData } = useCachedData<PortfolioPositionEntry[]>(
     portfolioId ? `cripto:positions:${portfolioId}:${currency}` : null,
-    useCallback(() => api.get(`/portfolio/${portfolioId}/cripto/position`, {
-      params: { currency },
+    useCallback(() => api.get(POSITION_ROUTES.byPortfolio(portfolioId!), {
+      params: { asset_type_id: ASSET_TYPES.CRIPTO, currency },
     }).then(r => r.data), [portfolioId, currency]),
     { enabled: !!portfolioId },
   )
   const { data: patrimonyData } = useCachedData<PatrimonyEntry[]>(
     portfolioId ? `cripto:patrimony:${portfolioId}:${currency}` : null,
-    useCallback(() => api.get(`/portfolio/${portfolioId}/patrimony_evolution`, {
+    useCallback(() => api.get(POSITION_ROUTES.patrimonyEvolution(portfolioId!), {
       params: { asset_type_id: ASSET_TYPES.CRIPTO, currency },
     }).then(r => r.data), [portfolioId, currency]),
     { enabled: !!portfolioId },

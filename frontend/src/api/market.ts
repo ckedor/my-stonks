@@ -1,11 +1,12 @@
 import type { CandleDataPoint } from '@/components/charts/CandleChart'
+import { INDEX_ROUTES, QUOTE_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import type { ReturnsEntry } from '@/types'
 
 export type BenchmarksPayload = Record<string, ReturnsEntry[]>
 
 export const fetchBenchmarks = (): Promise<BenchmarksPayload> =>
-  api.get<BenchmarksPayload>('/market_data/indexes/time_series').then((r) => r.data)
+  api.get<BenchmarksPayload>(INDEX_ROUTES.timeSeries).then((r) => r.data)
 
 export interface QuoteResponse {
   ticker: string
@@ -15,7 +16,7 @@ export interface QuoteResponse {
 }
 
 export const fetchAssetQuotes = (ticker: string, assetType?: string): Promise<QuoteResponse> =>
-  api.get<QuoteResponse>('/market_data/quotes', { params: { ticker, asset_type: assetType } }).then((r) => r.data)
+  api.get<QuoteResponse>(QUOTE_ROUTES.get, { params: { ticker, asset_type: assetType } }).then((r) => r.data)
 
 export function quotesToCandleData(quotes: QuoteResponse['quotes']): CandleDataPoint[] {
   return quotes.map((q) => ({

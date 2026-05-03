@@ -1,4 +1,5 @@
 
+import { ASSET_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { Asset } from '@/types'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
@@ -50,12 +51,12 @@ export default function AssetSelector({ value, onChange, initialAsset }: AssetSe
   }, [initialAsset])
 
   const fetchTypes = useCallback(async () => {
-    const res = await api.get('assets/types')
+    const res = await api.get(ASSET_ROUTES.type)
     setAssetTypes(res.data)
   }, [])
 
   const fetchAssets = useCallback(async () => {
-    const res = await api.get('assets/assets')
+    const res = await api.get(ASSET_ROUTES.list)
     setAssets(res.data)
   }, [])
 

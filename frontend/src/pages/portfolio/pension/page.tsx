@@ -4,6 +4,7 @@ import PortfolioReturnsChart from '@/components/PortfolioReturnsChart'
 import Trades from '@/components/Trades'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { ASSET_TYPES } from '@/constants/assetTypes'
+import { POSITION_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
@@ -19,12 +20,16 @@ export default function PensionPage() {
 
   const { data: positionData } = useCachedData<PortfolioPositionEntry[]>(
     portfolioId ? `pension:positions:${portfolioId}` : null,
-    useCallback(() => api.get(`/portfolio/${portfolioId}/pension/position`).then(r => r.data), [portfolioId]),
+    useCallback(() => api.get(POSITION_ROUTES.byPortfolio(portfolioId!), {
+      params: { asset_type_id: ASSET_TYPES.PREV },
+    }).then(r => r.data), [portfolioId]),
     { enabled: !!portfolioId },
   )
   const { data: patrimonyData } = useCachedData<PatrimonyEntry[]>(
     portfolioId ? `pension:patrimony:${portfolioId}` : null,
-    useCallback(() => api.get(`/portfolio/${portfolioId}/patrimony_evolution?asset_type_id=${ASSET_TYPES.PREV}`).then(r => r.data), [portfolioId]),
+    useCallback(() => api.get(POSITION_ROUTES.patrimonyEvolution(portfolioId!), {
+      params: { asset_type_id: ASSET_TYPES.PREV },
+    }).then(r => r.data), [portfolioId]),
     { enabled: !!portfolioId },
   )
 

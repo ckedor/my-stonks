@@ -1,22 +1,23 @@
 import AppCard from '@/components/ui/AppCard'
+import { ASSET_ROUTES } from '@/constants/routes'
 import { useMarketStore } from '@/stores/market'
 import { useTradeFormStore } from '@/stores/trade-form'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import SearchIcon from '@mui/icons-material/Search'
 import {
-  Box,
-  Chip,
-  FormControl,
-  Grid,
-  IconButton,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Pagination,
-  Select,
-  TextField,
-  Tooltip,
-  Typography,
+    Box,
+    Chip,
+    FormControl,
+    Grid,
+    IconButton,
+    InputAdornment,
+    InputLabel,
+    MenuItem,
+    Pagination,
+    Select,
+    TextField,
+    Tooltip,
+    Typography,
 } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -47,8 +48,8 @@ export default function MarketAtivosPage() {
       setError(null)
       try {
         const [assetsRes, typesRes] = await Promise.all([
-          api.get('/assets/assets'),
-          api.get('/assets/types'),
+          api.get(ASSET_ROUTES.list),
+          api.get(ASSET_ROUTES.type),
         ])
         setAssets(assetsRes.data)
         setAssetTypes(typesRes.data)

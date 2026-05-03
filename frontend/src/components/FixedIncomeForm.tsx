@@ -1,22 +1,23 @@
 
 import { ASSET_CLASS } from '@/constants/assetClass'
 import { FIXED_INCOME_TYPES } from '@/constants/fixedIncomeTypes'
+import { ASSET_ROUTES, INDEX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { Asset } from '@/types'
 import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Drawer,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Snackbar,
-  Stack,
-  TextField,
-  Typography,
+    Alert,
+    Box,
+    Button,
+    CircularProgress,
+    Drawer,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    Snackbar,
+    Stack,
+    TextField,
+    Typography,
 } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import dayjs, { Dayjs } from 'dayjs'
@@ -72,9 +73,9 @@ export default function FixedIncomeForm({ open, assetTypeId, onClose }: Props) {
     if (!open) return
     setFetching(true)
     Promise.all([
-      api.get('/assets/fixed_income/types'),
-      api.get('/market_data/indexes'),
-      api.get('assets/types'),
+      api.get(ASSET_ROUTES.fixedIncomeType),
+      api.get(INDEX_ROUTES.list),
+      api.get(ASSET_ROUTES.type),
     ])
       .then(([fiRes, idxRes, atRes]) => {
         setFiTypes(fiRes.data ?? [])
@@ -135,7 +136,7 @@ export default function FixedIncomeForm({ open, assetTypeId, onClose }: Props) {
         fee: Number(fee) / 100,
         maturity_date: maturity.format('YYYY-MM-DD'),
       }
-      const resp = await api.post('/assets/fixed_income', payload)
+      const resp = await api.post(ASSET_ROUTES.fixedIncome, payload)
       onClose(resp.data as Asset)
       setNickname('')
       setMaturity(dayjs().add(1, 'year'))

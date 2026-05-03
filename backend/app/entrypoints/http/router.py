@@ -1,6 +1,6 @@
-from app.modules.ai import router as ai_router
-from app.modules.market_data import router as market_data_router
-from app.modules.portfolio import router as portfolio_router
+from app.modules.ai.api.routes import router as ai_router
+from app.modules.market_data.api import router as market_data_router
+from app.modules.portfolio.api.router import router as portfolio_router
 from fastapi import APIRouter
 
 router = APIRouter()

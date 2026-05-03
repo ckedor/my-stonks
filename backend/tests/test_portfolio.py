@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
 import pytest
-
 from app.infra.db.models.portfolio import CustomCategory, Portfolio
 from app.modules.users.models import User
 
@@ -16,7 +15,7 @@ async def test_get_portfolios(client, db):
     db.add(category)
     db.commit()
 
-    response = await client.get('/portfolio/portfolios')
+    response = await client.get('/portfolio')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()

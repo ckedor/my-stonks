@@ -1,6 +1,7 @@
 
 import AppCard from '@/components/ui/AppCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { INCOME_TAX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import {
     Table,
@@ -40,7 +41,7 @@ export default function DarfSummaryTable({ portfolioId, fiscalYear }: Props) {
     async function fetchData() {
       setLoading(true)
       try {
-        const res = await api.get(`/portfolio/${portfolioId}/income_tax/darf`, {
+        const res = await api.get(INCOME_TAX_ROUTES.darf(portfolioId), {
           params: { fiscal_year: fiscalYear },
         })
         setData(res.data)

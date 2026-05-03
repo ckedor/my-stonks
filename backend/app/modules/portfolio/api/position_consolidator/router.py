@@ -22,7 +22,7 @@ from app.modules.portfolio.tasks.set_portfolio_returns_cache import (
 from app.modules.users.views import current_superuser
 from fastapi import APIRouter, Depends
 
-router = APIRouter(tags=['Portfolio Consolidator'], dependencies=[Depends(current_superuser)])
+router = APIRouter(prefix='/position_consolidator', tags=['Portfolio Position Consolidator'], dependencies=[Depends(current_superuser)])
 
 
 async def _recalculate_assets_in_parallel(
@@ -70,7 +70,7 @@ async def consolidate_portfolio_asset(
     return {'message': 'OK'}
 
 
-@router.post('/{portfolio_id}/recalculate_all_positions')
+@router.post('/{portfolio_id}/recalculate_all_position')
 async def recalculate_all_positions(
     portfolio_id: int,
     session = Depends(get_session)

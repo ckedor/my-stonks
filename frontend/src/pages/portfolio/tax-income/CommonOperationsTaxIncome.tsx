@@ -1,6 +1,7 @@
 
 import AppCard from '@/components/ui/AppCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { INCOME_TAX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import {
     Table,
@@ -36,7 +37,7 @@ export default function CommonOperationsTaxIncome({ portfolioId, fiscalYear }: P
       setLoading(true)
       try {
         const res = await api.get(
-          `/portfolio/${portfolioId}/income_tax/variable_income/common_operations`,
+          INCOME_TAX_ROUTES.commonOperation(portfolioId),
           {
             params: { fiscal_year: fiscalYear },
           }

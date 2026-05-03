@@ -1,3 +1,4 @@
+import { POSITION_ROUTES, TRANSACTION_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
@@ -69,8 +70,12 @@ export default function AssetAveragePriceChart({ size, assetId }: Props) {
       setLoading(true)
       try {
         const [historyRes, transactionsRes] = await Promise.all([
-          api.get(`/portfolio/${selectedPortfolio.id}/position?most_recent=false&asset_id=${assetId}&currency=${currency}`),
-          api.get(`/portfolio/transaction/${selectedPortfolio.id}?asset_id=${assetId}`),
+          api.get(POSITION_ROUTES.byPortfolio(selectedPortfolio.id), {
+            params: { most_recent: false, asset_id: assetId, currency },
+          }),
+          api.get(TRANSACTION_ROUTES.list, {
+            params: { portfolio_id: selectedPortfolio.id, asset_id: assetId },
+          }),
         ])
 
         const historyData = historyRes.data.map((h: any) => ({

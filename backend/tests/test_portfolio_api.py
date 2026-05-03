@@ -52,7 +52,7 @@ async def _create_portfolio(client, name='Carteira Principal', benchmark_id=6):
             }
         ],
     }
-    return await client.post('/portfolio/create', json=payload)
+    return await client.post('/portfolio', json=payload)
 
 
 def _seed_portfolio(db, name='Carteira Test', user_id=1):
@@ -81,7 +81,7 @@ class TestPortfolioCRUD:
         await _create_portfolio(client, name='Portfolio 1')
         await _create_portfolio(client, name='Portfolio 2')
 
-        response = await client.get('/portfolio/list')
+        response = await client.get('/portfolio')
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -91,7 +91,7 @@ class TestPortfolioCRUD:
 
     @pytest.mark.asyncio
     async def test_list_portfolios_empty(self, client):
-        response = await client.get('/portfolio/list')
+        response = await client.get('/portfolio')
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []
@@ -106,13 +106,13 @@ class TestPortfolioCRUD:
             'name': 'Nome Atualizado',
             'user_categories': [],
         }
-        response = await client.put('/portfolio/', json=update_payload)
+        response = await client.put(f'/portfolio/{portfolio_id}', json=update_payload)
 
         assert response.status_code == HTTPStatus.OK
         assert response.json()['message'] == 'Portfolio updated successfully.'
 
         # Verify name changed
-        list_resp = await client.get('/portfolio/list')
+        list_resp = await client.get('/portfolio')
         names = [p['name'] for p in list_resp.json()]
         assert 'Nome Atualizado' in names
 
@@ -125,7 +125,7 @@ class TestPortfolioCRUD:
 
         assert response.status_code == HTTPStatus.OK
 
-        list_resp = await client.get('/portfolio/list')
+        list_resp = await client.get('/portfolio')
         assert list_resp.json() == []
 
     @pytest.mark.asyncio
@@ -163,7 +163,7 @@ class TestTransactions:
             'quantity': 100,
             'price': 35.50,
         }
-        response = await client.post('/portfolio/transaction/', json=payload)
+        response = await client.post('/portfolio/transaction', json=payload)
 
         assert response.status_code == HTTPStatus.OK
 
@@ -191,7 +191,7 @@ class TestTransactions:
         db.add(txn)
         db.commit()
 
-        response = await client.get(f'/portfolio/transaction/{portfolio.id}')
+        response = await client.get(f'/portfolio/transaction', params={'portfolio_id': portfolio.id})
 
         assert response.status_code == HTTPStatus.OK
 
@@ -239,7 +239,7 @@ class TestDividends:
             'date': '2025-03-15',
             'amount': 1.50,
         }
-        response = await client.post('/portfolio/dividends/', json=payload)
+        response = await client.post('/portfolio/dividend', json=payload)
 
         assert response.status_code == HTTPStatus.OK
 
@@ -257,7 +257,7 @@ class TestDividends:
         db.add(div)
         db.commit()
 
-        response = await client.get(f'/portfolio/dividends/{portfolio.id}')
+        response = await client.get(f'/portfolio/dividend', params={'portfolio_id': portfolio.id})
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -282,7 +282,7 @@ class TestDividends:
             'id': div.id,
             'amount': 2.75,
         }
-        response = await client.put('/portfolio/dividends/', json=update_payload)
+        response = await client.put(f'/portfolio/dividend/{div.id}', json=update_payload)
 
         assert response.status_code == HTTPStatus.OK
 
@@ -301,14 +301,14 @@ class TestDividends:
         db.commit()
         db.refresh(div)
 
-        response = await client.delete(f'/portfolio/dividends/{div.id}')
+        response = await client.delete(f'/portfolio/dividend/{div.id}')
 
         assert response.status_code == HTTPStatus.OK
         assert db.query(Dividend).filter_by(id=div.id).first() is None
 
     @pytest.mark.asyncio
     async def test_delete_nonexistent_dividend(self, client):
-        response = await client.delete('/portfolio/dividends/99999')
+        response = await client.delete('/portfolio/dividend/99999')
 
         assert response.status_code == HTTPStatus.NOT_FOUND
 
@@ -332,7 +332,7 @@ class TestCategories:
                 },
             ],
         }
-        response = await client.post('/portfolio/category/save', json=payload)
+        response = await client.post('/portfolio/category', json=payload)
 
         assert response.status_code == HTTPStatus.OK
 
@@ -376,7 +376,7 @@ class TestCategories:
             'category_id': cat.id,
             'portfolio_id': portfolio.id,
         }
-        response = await client.post('/portfolio/category/category_assignment', json=payload)
+        response = await client.post('/portfolio/category/assignment', json=payload)
 
         assert response.status_code == HTTPStatus.OK
 
@@ -390,7 +390,7 @@ class TestUserConfiguration:
     async def test_get_user_configurations(self, client, db):
         portfolio = _seed_portfolio(db)
 
-        response = await client.get(f'/portfolio/{portfolio.id}/user_configurations')
+        response = await client.get(f'/portfolio/user_configuration/{portfolio.id}')
 
         assert response.status_code == HTTPStatus.OK
 
@@ -404,7 +404,7 @@ class TestRebalancing:
     async def test_get_rebalancing_empty_portfolio(self, client, db):
         portfolio = _seed_portfolio(db)
 
-        response = await client.get(f'/portfolio/{portfolio.id}/rebalancing')
+        response = await client.get(f'/portfolio/rebalancing/{portfolio.id}')
 
         assert response.status_code == HTTPStatus.OK
 
@@ -438,7 +438,7 @@ class TestRebalancing:
             ],
         }
         response = await client.put(
-            f'/portfolio/{portfolio.id}/rebalancing',
+            f'/portfolio/rebalancing/{portfolio.id}',
             json=payload,
         )
 
@@ -454,7 +454,7 @@ class TestPosition:
     async def test_get_portfolio_position(self, client, db):
         portfolio = _seed_portfolio(db)
 
-        response = await client.get(f'/portfolio/{portfolio.id}/position')
+        response = await client.get(f'/portfolio/position/{portfolio.id}')
 
         assert response.status_code == HTTPStatus.OK
 
@@ -462,7 +462,7 @@ class TestPosition:
     async def test_get_portfolio_returns(self, client, db):
         portfolio = _seed_portfolio(db)
 
-        response = await client.get(f'/portfolio/{portfolio.id}/returns')
+        response = await client.get(f'/portfolio/position/{portfolio.id}/returns')
 
         assert response.status_code == HTTPStatus.OK
 
@@ -470,7 +470,7 @@ class TestPosition:
     async def test_get_patrimony_evolution(self, client, db):
         portfolio = _seed_portfolio(db)
 
-        response = await client.get(f'/portfolio/{portfolio.id}/patrimony_evolution')
+        response = await client.get(f'/portfolio/position/{portfolio.id}/patrimony_evolution')
 
         assert response.status_code == HTTPStatus.OK
 
@@ -485,7 +485,7 @@ class TestIncomeTax:
         portfolio = _seed_portfolio(db)
 
         response = await client.get(
-            f'/portfolio/{portfolio.id}/income_tax/assets_and_rights',
+            f'/portfolio/income_tax/{portfolio.id}/assets_and_rights',
             params={'fiscal_year': 2024},
         )
 
@@ -496,7 +496,7 @@ class TestIncomeTax:
         portfolio = _seed_portfolio(db)
 
         response = await client.get(
-            f'/portfolio/{portfolio.id}/income_tax/darf',
+            f'/portfolio/income_tax/{portfolio.id}/darf',
             params={'fiscal_year': 2024},
         )
 

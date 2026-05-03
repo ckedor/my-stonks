@@ -10,6 +10,7 @@ import PortfolioReturnsChart from '@/components/PortfolioReturnsChart'
 import RiskMetricsPanel from '@/components/RiskMetricsPanel'
 import RollingCagrChart from '@/components/RollingCagrChart'
 import Trades from '@/components/Trades'
+import { DIVIDEND_ROUTES, POSITION_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
@@ -68,8 +69,8 @@ export default function AssetDetailPanel({ assetId, portfolioId }: AssetDetailPa
   const fetcher = useCallback(async () => {
     const [asset, patrimonyRes, dividendRes, analysis, assetReturnsMap] = await Promise.all([
       fetchAssetDetails(portfolioId, assetId, currency),
-      api.get(`/portfolio/${portfolioId}/patrimony_evolution`, { params: { asset_id: assetId, currency } }),
-      api.get(`/portfolio/dividends/${portfolioId}/`, { params: { asset_id: assetId, currency } }),
+      api.get(POSITION_ROUTES.patrimonyEvolution(portfolioId), { params: { asset_id: assetId, currency } }),
+      api.get(DIVIDEND_ROUTES.list, { params: { portfolio_id: portfolioId, asset_id: assetId, currency } }),
       fetchAssetAnalysis(portfolioId, assetId, currency),
       fetchAssetReturns(portfolioId, assetId, currency).catch(() => ({})),
     ])
@@ -97,8 +98,8 @@ export default function AssetDetailPanel({ assetId, portfolioId }: AssetDetailPa
       // Fetch all data without intermediate store updates
       const [freshAsset, patrimonyRes, dividendRes, freshAnalysis, assetReturnsMap] = await Promise.all([
         fetchAssetDetails(portfolioId, assetId, currency),
-        api.get(`/portfolio/${portfolioId}/patrimony_evolution`, { params: { asset_id: assetId, currency } }),
-        api.get(`/portfolio/dividends/${portfolioId}/`, { params: { asset_id: assetId, currency } }),
+        api.get(POSITION_ROUTES.patrimonyEvolution(portfolioId), { params: { asset_id: assetId, currency } }),
+        api.get(DIVIDEND_ROUTES.list, { params: { portfolio_id: portfolioId, asset_id: assetId, currency } }),
         fetchAssetAnalysis(portfolioId, assetId, currency),
         fetchAssetReturns(portfolioId, assetId, currency).catch(() => ({})),
       ])

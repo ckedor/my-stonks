@@ -1,5 +1,6 @@
 
 import { syncPortfolios } from '@/actions/portfolio'
+import { CATEGORY_ROUTES, INDEX_ROUTES, PORTFOLIO_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { Delete } from '@mui/icons-material'
@@ -79,7 +80,7 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
 
   const fetchBenchmarks = async () => {
     try {
-      const { data } = await api.get<BenchmarkOption[]>('/market_data/indexes')
+      const { data } = await api.get<BenchmarkOption[]>(INDEX_ROUTES.list)
       setBenchmarks(data)
     } catch (err) {
       console.error('Erro ao carregar benchmarks', err)
@@ -107,14 +108,14 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
     setLoading(true)
     try {
       if (isEdit) {
-        await api.put('/portfolio/update', {
+        await api.put(PORTFOLIO_ROUTES.byId(portfolio?.id ?? ''), {
           id: portfolio?.id,
           name,
           user_categories: categories,
         })
         if (onSave) onSave(portfolio?.id)
       } else {
-        const { data } = await api.post('/portfolio/create', {
+        const { data } = await api.post(PORTFOLIO_ROUTES.create, {
           name,
           user_categories: categories,
         })
@@ -134,7 +135,7 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
   const handleDeletePortfolio = async () => {
     if (!portfolio?.id) return
     try {
-      await api.delete(`/portfolio/${portfolio.id}`)
+      await api.delete(PORTFOLIO_ROUTES.byId(portfolio.id))
       setConfirmDelete(false)
       onClose()
       if (onSave) onSave(null)
@@ -160,7 +161,7 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
 
     if (cat.id) {
       try {
-        await api.delete(`/portfolio/category/${cat.id}`, {
+        await api.delete(CATEGORY_ROUTES.byId(cat.id), {
           data: { portfolio_id: portfolio?.id },
         })
         await syncPortfolios(true)

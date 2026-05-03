@@ -1,5 +1,6 @@
 // app/portfolio/[portfolio_id]/assets/page.tsx
 
+import { POSITION_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
@@ -20,7 +21,7 @@ export default function PortfolioAssetsPage() {
     useCallback(() => {
       const params: Record<string, string> = { currency }
       if (groupBy === 'broker') params.group_by_broker = 'true'
-      return api.get(`/portfolio/${portfolioId}/position`, { params }).then(r => r.data)
+      return api.get(POSITION_ROUTES.byPortfolio(portfolioId!), { params }).then(r => r.data)
     }, [portfolioId, groupBy, currency]),
     { enabled: !!portfolioId },
   )

@@ -4,6 +4,7 @@ import PortfolioReturnsChart from '@/components/PortfolioReturnsChart'
 import Trades from '@/components/Trades'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { ASSET_TYPES } from '@/constants/assetTypes'
+import { DIVIDEND_ROUTES, POSITION_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
@@ -44,21 +45,21 @@ export default function FixedIncomePage() {
 
   const { data: positionData } = useCachedData<FixedIncomePositionEntry[]>(
     portfolioId ? `fixed-income:positions:${portfolioId}:${currency}` : null,
-    useCallback(() => api.get(`/portfolio/${portfolioId}/fixed_income/position`, {
-      params: { currency },
+    useCallback(() => api.get(POSITION_ROUTES.byPortfolio(portfolioId!), {
+      params: { asset_type_ids: asset_type_ids, currency },
     }).then(r => r.data), [portfolioId, currency]),
     { enabled: !!portfolioId },
   )
   const { data: dividendsData } = useCachedData<Dividend[]>(
     portfolioId ? `fixed-income:dividends:${portfolioId}:${currency}` : null,
-    useCallback(() => api.get(`/portfolio/dividends/${portfolioId}`, {
-      params: { asset_type_ids, currency },
+    useCallback(() => api.get(DIVIDEND_ROUTES.list, {
+      params: { portfolio_id: portfolioId, asset_type_ids, currency },
     }).then(r => r.data), [portfolioId, currency]),
     { enabled: !!portfolioId },
   )
   const { data: patrimonyRaw } = useCachedData<PatrimonyEntry[]>(
     portfolioId ? `fixed-income:patrimony:${portfolioId}:${currency}` : null,
-    useCallback(() => api.get(`/portfolio/${portfolioId}/patrimony_evolution`, {
+    useCallback(() => api.get(POSITION_ROUTES.patrimonyEvolution(portfolioId!), {
       params: { asset_type_ids, currency },
     }).then(r => r.data), [portfolioId, currency]),
     { enabled: !!portfolioId },

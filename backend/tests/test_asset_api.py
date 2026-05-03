@@ -34,7 +34,7 @@ def _seed_asset(db, ticker='PETR4', name='Petrobras', asset_type_id=4, exchange_
 # ---------------------------------------------------------------------------
 @pytest.mark.asyncio
 async def test_list_assets_empty(client):
-    response = await client.get('/assets/assets')
+    response = await client.get('/market_data/asset')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == []
@@ -44,7 +44,7 @@ async def test_list_assets_empty(client):
 async def test_list_assets_returns_seeded(client, db):
     _seed_asset(db)
 
-    response = await client.get('/assets/assets')
+    response = await client.get('/market_data/asset')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -60,7 +60,7 @@ async def test_list_assets_returns_seeded(client, db):
 async def test_delete_asset(client, db):
     asset = _seed_asset(db)
 
-    response = await client.delete(f'/assets/assets/{asset.id}')
+    response = await client.delete(f'/market_data/asset/{asset.id}')
 
     assert response.status_code == HTTPStatus.OK
 
@@ -74,7 +74,7 @@ async def test_delete_asset(client, db):
 # ---------------------------------------------------------------------------
 @pytest.mark.asyncio
 async def test_list_asset_types(client):
-    response = await client.get('/assets/types')
+    response = await client.get('/market_data/asset/type')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -98,7 +98,7 @@ async def test_create_fixed_income(client, db):
         'asset_type_id': 8,          # CDB
     }
 
-    response = await client.post('/assets/fixed_income', json=payload)
+    response = await client.post('/market_data/asset/fixed_income', json=payload)
 
     assert response.status_code == HTTPStatus.OK
 
@@ -114,7 +114,7 @@ async def test_create_fixed_income(client, db):
 
 @pytest.mark.asyncio
 async def test_list_fixed_income_types(client):
-    response = await client.get('/assets/fixed_income/types')
+    response = await client.get('/market_data/asset/fixed_income/type')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -128,7 +128,7 @@ async def test_list_fixed_income_types(client):
 # ---------------------------------------------------------------------------
 @pytest.mark.asyncio
 async def test_list_fii_segments(client):
-    response = await client.get('/assets/fiis/segments')
+    response = await client.get('/market_data/asset/fii/segment')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -140,7 +140,7 @@ async def test_list_fii_segments(client):
 # ---------------------------------------------------------------------------
 @pytest.mark.asyncio
 async def test_list_events_empty(client):
-    response = await client.get('/assets/events')
+    response = await client.get('/market_data/asset/event')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == []
@@ -157,7 +157,7 @@ async def test_create_event(client, db):
         'factor': 2.0,
         'type': 'SPLIT',
     }
-    response = await client.post('/assets/event', json=payload)
+    response = await client.post('/market_data/asset/event', json=payload)
 
     assert response.status_code == HTTPStatus.OK
 
@@ -178,9 +178,9 @@ async def test_create_and_list_events(client, db):
         'factor': 2.0,
         'type': 'SPLIT',
     }
-    await client.post('/assets/event', json=payload)
+    await client.post('/market_data/asset/event', json=payload)
 
-    response = await client.get('/assets/events')
+    response = await client.get('/market_data/asset/event')
     data = response.json()
     assert len(data) == 1
     assert data[0]['type'] == 'SPLIT'
@@ -198,7 +198,7 @@ async def test_update_event(client, db):
         'factor': 2.0,
         'type': 'SPLIT',
     }
-    await client.post('/assets/event', json=create_payload)
+    await client.post('/market_data/asset/event', json=create_payload)
 
     event = db.query(Event).filter_by(asset_id=asset.id).first()
     assert event is not None
@@ -211,7 +211,7 @@ async def test_update_event(client, db):
         'factor': 3.0,
         'type': 'SPLIT',
     }
-    response = await client.put('/assets/event', json=update_payload)
+    response = await client.put(f'/market_data/asset/event/{event.id}', json=update_payload)
     assert response.status_code == HTTPStatus.OK
 
     db.expire_all()

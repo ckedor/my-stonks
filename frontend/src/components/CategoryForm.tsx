@@ -1,6 +1,7 @@
 
 // components/CategoryForm.tsx
 import { syncPortfolios } from '@/actions/portfolio'
+import { CATEGORY_ROUTES, INDEX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
 import AddIcon from '@mui/icons-material/Add'
@@ -66,7 +67,7 @@ export default function CategoryForm({ open, onClose, onSave }: CategoryFormProp
 
   const fetchBenchmarks = async () => {
     try {
-      const { data } = await api.get<BenchmarkOption[]>('/market_data/indexes')
+      const { data } = await api.get<BenchmarkOption[]>(INDEX_ROUTES.list)
       setBenchmarks(data)
     } catch (err) {
       console.error('Erro ao carregar benchmarks', err)
@@ -102,7 +103,7 @@ export default function CategoryForm({ open, onClose, onSave }: CategoryFormProp
     const category = categories[index]
     if (category.id) {
       try {
-        await api.delete(`/portfolio/category/${category.id}`, {
+        await api.delete(CATEGORY_ROUTES.byId(category.id), {
           data: { portfolio_id: selectedPortfolio?.id },
         })
       } catch (err) {
@@ -120,7 +121,7 @@ export default function CategoryForm({ open, onClose, onSave }: CategoryFormProp
   const handleSave = async () => {
     setLoading(true)
     try {
-      await api.post('/portfolio/category/save', { categories })
+      await api.post(CATEGORY_ROUTES.save, { categories })
       await syncPortfolios(true)
       setSuccessOpen(true)
       if (onSave) onSave()

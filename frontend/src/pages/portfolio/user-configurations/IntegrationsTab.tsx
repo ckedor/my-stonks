@@ -1,3 +1,4 @@
+import { USER_CONFIGURATION_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
 import {
@@ -51,7 +52,7 @@ export default function IntegrationsTab() {
   const fetchConfigurations = async () => {
     setLoading(true)
     try {
-      const res = await api.get(`/portfolio/${selectedPortfolio?.id}/user_configurations`)
+      const res = await api.get(USER_CONFIGURATION_ROUTES.byPortfolio(selectedPortfolio?.id ?? ''))
       setConfigurations(res.data.configurations)
     } catch (err) {
       console.log('Erro ao carregar configurações:', err)
@@ -63,7 +64,7 @@ export default function IntegrationsTab() {
 
   const handleToggle = async (name: string, enabled: boolean) => {
     try {
-      await api.put(`/portfolio/${selectedPortfolio?.id}/user_configuration`, {
+      await api.put(USER_CONFIGURATION_ROUTES.byPortfolio(selectedPortfolio?.id ?? ''), {
         configuration: name,
         enabled: !enabled,
       })

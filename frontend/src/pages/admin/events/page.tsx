@@ -1,6 +1,7 @@
 import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
 import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { ASSET_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
 import {
@@ -83,8 +84,8 @@ export default function AdminEventsPage() {
     setLoading(true)
     try {
       const [eventsRes, assetsRes] = await Promise.all([
-        api.get('/assets/events'),
-        api.get('/assets/assets'),
+        api.get(ASSET_ROUTES.event),
+        api.get(ASSET_ROUTES.list),
       ])
       setEvents(eventsRes.data)
       setFilteredEvents(eventsRes.data)
@@ -115,7 +116,7 @@ export default function AdminEventsPage() {
   const confirmDelete = async () => {
     if (!selectedEvent) return
     try {
-      await api.delete(`/assets/event/${selectedEvent.id}`)
+      await api.delete(ASSET_ROUTES.eventById(selectedEvent.id))
       setSnackbar({ open: true, message: 'Evento excluído com sucesso', severity: 'success' })
       fetchData()
     } catch (error) {
@@ -130,10 +131,10 @@ export default function AdminEventsPage() {
   const handleSave = async (data: any) => {
     try {
       if (selectedEvent) {
-        await api.put('/assets/event', { ...data, id: selectedEvent.id })
+        await api.put(ASSET_ROUTES.eventById(selectedEvent.id), data)
         setSnackbar({ open: true, message: 'Evento atualizado com sucesso', severity: 'success' })
       } else {
-        await api.post('/assets/event', data)
+        await api.post(ASSET_ROUTES.event, data)
         setSnackbar({ open: true, message: 'Evento criado com sucesso', severity: 'success' })
       }
       fetchData()

@@ -11,10 +11,10 @@ from app.modules.market_data.api.broker.schemas import (
 from app.modules.market_data.service.brokers_service import BrokersService
 from fastapi import APIRouter, Depends, status
 
-router = APIRouter(prefix='/broker', tags=['Brokers'])
+router = APIRouter(prefix='/broker', tags=['Broker'])
 
 
-@router.get('/', response_model=List[Broker])
+@router.get('', response_model=List[Broker])
 async def list_brokers(
     session=Depends(get_session),
 ):
@@ -33,7 +33,7 @@ async def get_broker(
     return await service.get_broker(broker_id)
 
 
-@router.post('/', response_model=Broker, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=Broker, status_code=status.HTTP_201_CREATED)
 async def create_broker(
     broker_data: BrokerCreate,
     session=Depends(get_session),

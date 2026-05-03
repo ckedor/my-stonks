@@ -138,16 +138,8 @@ class PortfolioPositionService:
             return pd.DataFrame(columns=['date', 'aported'])
         transactions_df = pd.DataFrame(rows)
         transactions_df['date'] = pd.to_datetime(transactions_df['date'])
-        usd_brl_df = await self.market_data_service.get_usd_brl_history(transactions_df['date'].min())
-        transactions_df = transactions_df.merge(usd_brl_df[['date', 'usdbrl']], on='date', how='left')
-        if currency == 'USD':
-            transactions_df['amount'] = transactions_df.apply(
-                lambda row: row['quantity'] * row['price'] / (row['usdbrl'] if row['currency_id'] == CURRENCY.BRL else 1), axis=1
-            )
-        else:
-            transactions_df['amount'] = transactions_df.apply(
-                lambda row: row['quantity'] * row['price'] * (row['usdbrl'] if row['currency_id'] == CURRENCY.USD else 1), axis=1
-            )
+        price_col = 'price_usd' if currency == 'USD' else 'price'
+        transactions_df['amount'] = transactions_df['quantity'] * transactions_df[price_col].fillna(0)
         total_aported = transactions_df.groupby('date')['amount'].sum().reset_index()
         total_aported.rename(columns={'amount': 'aported'}, inplace=True)
         return total_aported

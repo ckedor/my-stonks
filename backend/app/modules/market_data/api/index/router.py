@@ -18,7 +18,7 @@ from app.modules.users.models import User
 from app.modules.users.views import current_superuser
 from fastapi import APIRouter, Depends
 
-router = APIRouter(prefix='/market_data', tags=['Market Data'])
+router = APIRouter(prefix='/index', tags=['Index'])
 
 
 @router.get('/currency', response_model=List[Currency])
@@ -30,16 +30,7 @@ async def list_currencies(
     return await service.list_currencies()
 
 
-@router.get('/indexes', response_model=List[MarketIndex])
-async def list_indexes(
-    session=Depends(get_session),
-):
-    """List all available market indexes"""
-    service = MarketDataService(session)
-    return await service.list_indexes()
-
-
-@router.get('/indexes/time_series', response_model=MarketIndexesTimeSeries)
+@router.get('/time_series', response_model=MarketIndexesTimeSeries)
 async def get_indexes_time_series(
     session=Depends(get_session),
 ):
@@ -48,7 +39,7 @@ async def get_indexes_time_series(
     return await service.get_indexes_history()
 
 
-@router.get('/indexes/usd_brl', response_model=USD_BRL_History)
+@router.get('/usd_brl', response_model=USD_BRL_History)
 async def get_usd_brl_history(
     session=Depends(get_session),
 ):
@@ -57,7 +48,7 @@ async def get_usd_brl_history(
     return await service.get_usd_brl_history(as_df=False)
 
 
-@router.post('/indexes/consolidate_history')
+@router.post('/consolidate_history')
 async def consolidate_market_indexes_history(
     _: User = Depends(current_superuser),
     session=Depends(get_session),
@@ -67,3 +58,12 @@ async def consolidate_market_indexes_history(
     await service.consolidate_market_indexes_history()
     run_task(set_indexes_history_cache)
     return {'message': 'OK'}
+
+
+@router.get('', response_model=List[MarketIndex])
+async def list_indexes(
+    session=Depends(get_session),
+):
+    """List all available market indexes"""
+    service = MarketDataService(session)
+    return await service.list_indexes()

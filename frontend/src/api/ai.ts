@@ -1,3 +1,4 @@
+import { AI_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 
 export interface AIFeature {
@@ -13,10 +14,10 @@ export interface AIFeatureUpdate {
 }
 
 export const fetchAIFeatures = (): Promise<AIFeature[]> =>
-  api.get<AIFeature[]>('/ai/features').then((r) => r.data)
+  api.get<AIFeature[]>(AI_ROUTES.feature).then((r) => r.data)
 
 export const updateAIFeature = (id: number, data: AIFeatureUpdate): Promise<AIFeature> =>
-  api.patch<AIFeature>(`/ai/features/${id}`, data).then((r) => r.data)
+  api.patch<AIFeature>(AI_ROUTES.featureById(id), data).then((r) => r.data)
 
 export interface AssetOverviewAndNews {
   feature_key: string
@@ -33,7 +34,7 @@ export const fetchAssetOverviewAndNews = (
   forceGenerate = false,
 ): Promise<AssetOverviewAndNews> =>
   api
-    .get<AssetOverviewAndNews>('/ai/asset_overview_and_news', {
+    .get<AssetOverviewAndNews>(AI_ROUTES.assetOverviewAndNews, {
       params: { ticker, force_generate: forceGenerate },
     })
     .then((r) => r.data)
