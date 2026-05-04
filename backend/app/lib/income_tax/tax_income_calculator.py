@@ -1,5 +1,6 @@
 import pandas as pd
-from app.lib.income_tax.constants import (
+
+from .constants import (
     FREE_TAX_LIMIT_CRYPTO,
     FREE_TAX_LIMIT_STOCK,
     TAX_RATE_CRYPTO,
