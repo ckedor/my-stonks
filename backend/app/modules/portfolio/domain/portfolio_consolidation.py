@@ -49,6 +49,9 @@ def consolidate_positions(
 
     position_df = build_position_df(transactions_df, prices_df, dividends_agg)
 
+    if position_df.empty:
+        return position_df
+
     calculate_returns(position_df)
     return position_df
 
@@ -176,6 +179,10 @@ def build_position_df(
     ).cumsum()
 
     position_df['quantity'] = raw_qty.cumsum().round(6)
+    position_df = trim_trailing_zero_positions(position_df)
+
+    if position_df.empty:
+        return position_df
 
     if not dividends_agg.empty:
         position_df = position_df.merge(dividends_agg, on='date', how='left')
@@ -187,6 +194,22 @@ def build_position_df(
     position_df['dividend_usd'] = position_df['dividend_usd'].fillna(0.0)
 
     return position_df
+
+
+def trim_trailing_zero_positions(position_df: pd.DataFrame) -> pd.DataFrame:
+    """Remove only the zero-position tail after an asset's final exit.
+
+    Zero quantities followed by a later non-zero quantity are preserved because
+    they represent a period between a full sale and a repurchase.
+    """
+    if position_df.empty or position_df['quantity'].iloc[-1] != 0:
+        return position_df
+
+    nonzero_positions = position_df.index[position_df['quantity'] != 0]
+    if nonzero_positions.empty:
+        return position_df.iloc[0:0].copy()
+
+    return position_df.loc[:nonzero_positions[-1]].copy()
 
 
 def calculate_returns(position_df: pd.DataFrame) -> pd.DataFrame:

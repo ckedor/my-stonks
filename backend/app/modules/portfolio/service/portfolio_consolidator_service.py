@@ -160,6 +160,14 @@ class PortfolioConsolidatorService:
     async def _persist_positions_db(
         self, position_df: pd.DataFrame, min_date: pd.Timestamp, asset: Asset, portfolio_id: int
     ):
+        if position_df.empty:
+            await self.repo.delete(
+                Position,
+                by={'portfolio_id': portfolio_id, 'asset_id': asset.id},
+            )
+            await self.session.commit()
+            return
+
         position_df['asset_id'] = asset.id
         position_df['portfolio_id'] = portfolio_id
         position_df = position_df[Position.COLUMNS]
