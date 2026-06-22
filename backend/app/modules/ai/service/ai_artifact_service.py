@@ -8,13 +8,15 @@ from app.infra.db.models.ai_feature import AIFeature
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.modules.ai.domain.feature_keys import AIFeatureKey
 from app.modules.ai.domain.inputs import AIArtifactInput
+from app.modules.ai.domain.provider import AIProvider
 from app.modules.ai.service.handlers import ARTIFACT_HANDLERS, AIResponse
 
 
 class AIArtifactService:
-    def __init__(self, session):
+    def __init__(self, session, provider: AIProvider):
         self.session = session
         self.repo = SQLAlchemyRepository(session)
+        self.provider = provider
 
     async def get_or_generate_artifact(
         self,
@@ -67,7 +69,7 @@ class AIArtifactService:
                 f'Expected input of type {handler_cls.input_schema.__name__} '
                 f'for feature {feature_key.value}, got {type(input).__name__}'
             )
-        handler = handler_cls(self.session)
+        handler = handler_cls(self.session, self.provider)
         return await handler.generate(input)
 
     async def _persist_artifact(

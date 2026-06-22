@@ -1,7 +1,6 @@
 from app.infra.db.session import get_session
-from app.modules.portfolio.service.portfolio_income_tax_service import (
-    PortfolioIncomeTaxService,
-)
+from app.modules.portfolio.service.portfolio_income_tax_service import \
+    PortfolioIncomeTaxService
 from fastapi import APIRouter, Depends, Query
 
 router = APIRouter(prefix='/income_tax', tags=['Income Tax'])

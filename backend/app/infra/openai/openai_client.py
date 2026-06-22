@@ -1,6 +1,4 @@
-# app/infra/openai/openai_client.py
-import json
-from typing import Any, Optional
+from functools import lru_cache
 
 from app.config.settings import settings
 from app.infra.exceptions import (
@@ -9,6 +7,11 @@ from app.infra.exceptions import (
     IntegrationRateLimited,
     IntegrationTimeout,
     IntegrationUnavailable,
+)
+from app.modules.ai.domain.provider import (
+    AIGenerationRequest,
+    AIGenerationResult,
+    AIProvider,
 )
 from openai import (
     APIConnectionError,
@@ -20,37 +23,30 @@ from openai import (
 )
 
 PROVIDER = 'openai'
-DEFAULT_TEMPERATURE = 0.2
+SERVER_ERROR_STATUS = 500
 
 
-class OpenAIClient:
+class OpenAIProvider:
     def __init__(self, model: str = 'gpt-4o-mini'):
-        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        self._client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = model
 
-    async def chat(
-        self,
-        messages: list[dict[str, str]],
-        *,
-        model: Optional[str] = None,
-        temperature: float = DEFAULT_TEMPERATURE,
-        max_tokens: Optional[int] = None,
-        response_format: Optional[Any] = None,
-    ) -> str:
-        kwargs: dict[str, Any] = {
-            'model': model or self.model,
-            'messages': messages,
-            'temperature': temperature,
+    async def generate(self, request: AIGenerationRequest) -> AIGenerationResult:
+        model = request.model or self.model
+        kwargs = {
+            'model': model,
+            'input': request.prompt,
+            'temperature': request.temperature,
+            'store': False,
         }
 
-        if max_tokens is not None:
-            kwargs['max_tokens'] = max_tokens
-
-        if response_format is not None:
-            kwargs['response_format'] = response_format
+        if request.system:
+            kwargs['instructions'] = request.system
+        if request.max_output_tokens is not None:
+            kwargs['max_output_tokens'] = request.max_output_tokens
 
         try:
-            response = await self.client.chat.completions.create(**kwargs)
+            response = await self._client.responses.create(**kwargs)
         except APITimeoutError as e:
             raise IntegrationTimeout(provider=PROVIDER) from e
         except RateLimitError as e:
@@ -61,103 +57,30 @@ class OpenAIClient:
             raise IntegrationError(
                 provider=PROVIDER,
                 status_code=e.status_code,
-                retryable=e.status_code >= 500,
+                retryable=e.status_code >= SERVER_ERROR_STATUS,
             ) from e
         except OpenAIError as e:
             raise IntegrationError(provider=PROVIDER) from e
 
-        content = response.choices[0].message.content
-        if content is None:
+        if not response.output_text:
             raise IntegrationBadResponse(
                 provider=PROVIDER, context={'reason': 'empty response'}
             )
-        return content
+        return AIGenerationResult(text=response.output_text, model=model)
 
-    async def ask(
-        self,
-        prompt: str,
-        *,
-        system: str = '',
-        model: Optional[str] = None,
-        temperature: float = 0.3,
-        max_tokens: Optional[int] = None,
-    ) -> str:
-        """
-        Uso: respostas naturais (chat, explicação, UX)
-        """
-        messages = []
+    async def aclose(self) -> None:
+        await self._client.close()
 
-        if system:
-            messages.append({'role': 'system', 'content': system})
 
-        messages.append({'role': 'user', 'content': prompt})
+@lru_cache(maxsize=1)
+def get_ai_provider() -> AIProvider:
+    """Return the process-wide AI provider and reuse its HTTP connection pool."""
+    return OpenAIProvider()
 
-        return await self.chat(
-            messages,
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
 
-    async def extract(
-        self,
-        prompt: str,
-        *,
-        system: str = '',
-        model: Optional[str] = None,
-        max_tokens: Optional[int] = None,
-    ) -> dict:
-        """
-        Uso: extrair dados estruturados (JSON)
-        """
-        base_system = "Return ONLY valid JSON. No explanation."
-
-        system_message = f"{base_system}\n{system}" if system else base_system
-
-        messages = [
-            {'role': 'system', 'content': system_message},
-            {'role': 'user', 'content': prompt},
-        ]
-
-        response = await self.chat(
-            messages,
-            model=model,
-            temperature=0.0,
-            max_tokens=max_tokens,
-            response_format={'type': 'json_object'},
-        )
-
-        try:
-            return json.loads(response)
-        except json.JSONDecodeError as e:
-            raise IntegrationBadResponse(
-                provider=PROVIDER,
-                context={'sample': response[:200]},
-            ) from e
-
-    async def analyze(
-        self,
-        prompt: str,
-        *,
-        system: str = '',
-        model: Optional[str] = None,
-        max_tokens: Optional[int] = None,
-    ) -> str:
-        """
-        Uso: lógica, finanças, decisões → determinístico
-        """
-        base_system = "Be precise, deterministic, and avoid speculation."
-
-        system_message = f"{base_system}\n{system}" if system else base_system
-
-        messages = [
-            {'role': 'system', 'content': system_message},
-            {'role': 'user', 'content': prompt},
-        ]
-
-        return await self.chat(
-            messages,
-            model=model,
-            temperature=0.0,
-            max_tokens=max_tokens,
-        )
+async def close_ai_provider() -> None:
+    """Release resources held by the process-wide provider, if initialized."""
+    if get_ai_provider.cache_info().currsize:
+        provider = get_ai_provider()
+        await provider.aclose()
+        get_ai_provider.cache_clear()

@@ -9,6 +9,7 @@ import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useTradeFormStore } from '@/stores/trade-form'
 import { Box, Button, Grid, Tab, Tabs, Typography } from '@mui/material'
 import { useState } from 'react'
+import PortfolioMonthlyAportsChart from '../wealth/PortfolioMonthlyAportsChart'
 import OverviewDividendsChart from './OverviewDividendsChart'
 import OverviewPatrimonyChart from './OverviewPatrimonyChart'
 import OverviewReturnsChart from './OverviewReturnsChart'
@@ -158,6 +159,7 @@ export default function PortfolioOverviewPage() {
           >
             <Tab label="Proventos" />
             <Tab label="Patrimônio" />
+            <Tab label="Aportes" />
           </Tabs>
 
           {bottomTab === 0 && (
@@ -169,6 +171,9 @@ export default function PortfolioOverviewPage() {
               selected={selectedCategory}
               size={320}
             />
+          )}
+          {bottomTab === 2 && (
+            <PortfolioMonthlyAportsChart height={320} groupBy="month" defaultRange="max" />
           )}
         </Grid>
       </Grid>

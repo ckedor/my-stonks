@@ -1,4 +1,5 @@
 from app.infra.db.session import get_session
+from app.infra.openai.openai_client import get_ai_provider
 from app.modules.ai.api.schemas import (
     AIFeatureResponse,
     AIFeatureUpdate,
@@ -6,6 +7,7 @@ from app.modules.ai.api.schemas import (
 )
 from app.modules.ai.domain.feature_keys import AIFeatureKey
 from app.modules.ai.domain.inputs import AssetOverviewAndNewsInput
+from app.modules.ai.domain.provider import AIProvider
 from app.modules.ai.service.ai_artifact_service import AIArtifactService
 from app.modules.ai.service.ai_feature_service import AIFeatureService
 from app.modules.users.views import current_active_user, current_superuser
@@ -41,8 +43,9 @@ async def get_asset_overview_and_news(
     ),
     _: object = Depends(current_active_user),
     session=Depends(get_session),
+    provider: AIProvider = Depends(get_ai_provider),
 ):
-    ai_artifact_service = AIArtifactService(session)
+    ai_artifact_service = AIArtifactService(session, provider)
     return await ai_artifact_service.get_or_generate_artifact(
         feature_key=AIFeatureKey.ASSET_OVERVIEW_AND_NEWS,
         input=AssetOverviewAndNewsInput(ticker=ticker),
@@ -51,4 +54,3 @@ async def get_asset_overview_and_news(
 
 
 router.include_router(feature_router)
-

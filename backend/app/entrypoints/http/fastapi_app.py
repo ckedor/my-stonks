@@ -23,6 +23,7 @@ from app.infra.exceptions import (
     IntegrationTimeout,
     IntegrationUnavailable,
 )
+from app.infra.openai.openai_client import close_ai_provider
 from app.modules.users.views import setup_user_views
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -86,7 +87,10 @@ async def lifespan(app: FastAPI):
 
     logger.info("🚀 Disparando consolidate_indexes_history no startup")
     run_task(consolidate_indexes_history)
-    yield
+    try:
+        yield
+    finally:
+        await close_ai_provider()
 
 
 def create_app() -> FastAPI:

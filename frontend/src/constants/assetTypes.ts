@@ -12,4 +12,5 @@ export const ASSET_TYPES = {
   CRA: 11,
   REIT: 12,
   CRIPTO: 13,
+  LCA: 14,
 } as const

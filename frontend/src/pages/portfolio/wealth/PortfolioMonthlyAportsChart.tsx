@@ -32,7 +32,7 @@ function toTimeSeries(
 export default function PortfolioMonthlyAportsChart({
   height = 400,
   groupBy = 'month',
-  defaultRange = '1y',
+  defaultRange = 'max',
 }: Props) {
   const rows = usePatrimonyStore(s => s.patrimony) as PatrimonyEvolutionRow[]
   const loading = usePatrimonyStore(s => s.loading)

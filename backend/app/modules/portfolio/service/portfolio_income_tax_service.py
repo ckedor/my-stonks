@@ -21,6 +21,8 @@ _ASSET_TYPE_TO_TAXABLE: dict[ASSET_TYPE, TaxableAssetType] = {
     ASSET_TYPE.CRIPTO: TaxableAssetType.CRIPTO,
 }
 
+_EXEMPT_DIVIDEND_ASSET_TYPES: list[ASSET_TYPE] = [ASSET_TYPE.FII, ASSET_TYPE.CRI, ASSET_TYPE.CRA, ASSET_TYPE.LCA]
+
 class PortfolioIncomeTaxService:
     def __init__(self, session):
         self.session = session
@@ -66,6 +68,18 @@ class PortfolioIncomeTaxService:
         df['position_previous_year'] = df['position_previous_year'].round(2)
         df['position_fiscal_year'] = df['position_fiscal_year'].round(2)
 
+        exempt_dividends_rows = await self.repo.get_exempt_dividends_summary(
+            portfolio_id=portfolio_id,
+            start_date=pd.to_datetime(f'{fiscal_year}-01-01').date(),
+            end_date=pd.to_datetime(f'{fiscal_year}-12-31').date(),
+            asset_type_ids=[int(asset_type) for asset_type in _EXEMPT_DIVIDEND_ASSET_TYPES],
+            currency='BRL',
+        )
+        exempt_dividends_by_asset = {
+            row['asset_id']: float(row['total_dividends'] or 0) for row in exempt_dividends_rows
+        }
+        df['exempt_dividends'] = df['asset_id'].map(exempt_dividends_by_asset).fillna(0.0).round(2)
+
         # Exclui previdência (PGBL)
         df = df[df['type_id'] != ASSET_TYPE.PREV]
 
@@ -80,6 +94,7 @@ class PortfolioIncomeTaxService:
         final_df = df[[
             'grupo', 'codigo', 'discriminacao',
             'position_previous_year', 'position_fiscal_year',
+            'exempt_dividends',
             'codigo_negociacao', 'negociado_em_bolsa', 'locale', 'cnpj',
             'broker_name',
         ]]

@@ -12,6 +12,7 @@ interface AssetTaxInfo {
   discriminacao: string
   position_previous_year: number
   position_fiscal_year: number
+  exempt_dividends: number
   codigo_negociacao: string
   negociado_em_bolsa: boolean
   locale: string
@@ -66,6 +67,7 @@ export default function AssetsAndRights({ fiscalYear, portfolioId }: AssetsAndRi
             <TableCell>Código de Negociação</TableCell>
             <TableCell>31/12/{fiscalYear - 1}</TableCell>
             <TableCell>31/12/{fiscalYear}</TableCell>
+            <TableCell>Dividendos Isentos ({fiscalYear})</TableCell>
           </TableRow>
         </TableHead>
 
@@ -87,6 +89,11 @@ export default function AssetsAndRights({ fiscalYear, portfolioId }: AssetsAndRi
               </TableCell>
               <TableCell>
                 {item.position_fiscal_year.toLocaleString('pt-BR', {
+                  maximumFractionDigits: 2,
+                })}
+              </TableCell>
+              <TableCell>
+                {item.exempt_dividends.toLocaleString('pt-BR', {
                   maximumFractionDigits: 2,
                 })}
               </TableCell>

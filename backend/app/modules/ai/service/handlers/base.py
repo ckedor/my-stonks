@@ -4,6 +4,7 @@ from typing import ClassVar, Generic, TypeVar
 
 from app.modules.ai.domain.feature_keys import AIFeatureKey
 from app.modules.ai.domain.inputs import AIArtifactInput
+from app.modules.ai.domain.provider import AIProvider
 
 TInput = TypeVar('TInput', bound=AIArtifactInput)
 
@@ -21,8 +22,9 @@ class AIArtifactHandler(ABC, Generic[TInput]):
     feature_key: ClassVar[AIFeatureKey]
     input_schema: ClassVar[type[AIArtifactInput]]
 
-    def __init__(self, session):
+    def __init__(self, session, provider: AIProvider):
         self.session = session
+        self.provider = provider
 
     @abstractmethod
     async def generate(self, input: TInput) -> AIResponse:

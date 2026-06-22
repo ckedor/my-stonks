@@ -1,6 +1,6 @@
 from datetime import date as date_type
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import pandas as pd
 from app.infra.db.models.asset import Asset, AssetClass, AssetType
@@ -9,17 +9,11 @@ from app.infra.db.models.asset_fii import FII, FIISegment
 from app.infra.db.models.asset_fixed_income import FixedIncome
 from app.infra.db.models.asset_treasury_bond import TreasuryBond
 from app.infra.db.models.market_data import Index
-from app.infra.db.models.portfolio import (
-    Broker,
-    CategoryReturn,
-    CustomCategory,
-    CustomCategoryAssignment,
-    Dividend,
-    Portfolio,
-    PortfolioReturn,
-    Position,
-    Transaction,
-)
+from app.infra.db.models.portfolio import (Broker, CategoryReturn,
+                                           CustomCategory,
+                                           CustomCategoryAssignment, Dividend,
+                                           Portfolio, PortfolioReturn,
+                                           Position, Transaction)
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from sqlalchemy import Date, and_, cast, desc, func, literal, select
 from sqlalchemy.orm import joinedload
@@ -264,6 +258,36 @@ class PortfolioRepository(SQLAlchemyRepository):
             stmt = stmt.where(Dividend.asset_id == filters.asset_id)
         if filters.asset_type_ids:
             stmt = stmt.where(Asset.asset_type_id.in_(filters.asset_type_ids))
+
+        result = await self.session.execute(stmt)
+        return result.mappings().all()
+
+    async def get_exempt_dividends_summary(
+        self,
+        portfolio_id: int,
+        start_date: date_type,
+        end_date: date_type,
+        asset_type_ids: Sequence[int],
+        currency: str = 'BRL',
+    ) -> list[dict]:
+        amount_col = Dividend.amount_usd if currency == 'USD' else Dividend.amount
+
+        stmt = (
+            select(
+                Asset.id.label('asset_id'),
+                Asset.ticker,
+                AssetType.short_name.label('asset_type'),
+                func.sum(amount_col).label('total_dividends'),
+            )
+            .join(Asset, Dividend.asset_id == Asset.id)
+            .join(AssetType, Asset.asset_type_id == AssetType.id)
+            .where(Dividend.portfolio_id == portfolio_id)
+            .where(Dividend.date >= start_date)
+            .where(Dividend.date <= end_date)
+            .where(Asset.asset_type_id.in_(asset_type_ids))
+            .group_by(Asset.id, Asset.ticker, AssetType.short_name)
+            .order_by(desc(func.sum(amount_col)))
+        )
 
         result = await self.session.execute(stmt)
         return result.mappings().all()

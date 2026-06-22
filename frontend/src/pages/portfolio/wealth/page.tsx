@@ -211,12 +211,12 @@ export default function PortfolioPatrimonyEvolution() {
           />
           </AppCard>
         </Grid>
-        <Grid size={{ md: 6, sm: 12 }} sx={{ mt: 0, mb: 4, pl: 2.5, pr: 4 }}>
+        <Grid size={12} sx={{ mt: 0, mb: 4 }}>
           <AppCard>
             <PortfolioMonthlyAportsChart
             height={300}
             groupBy="month"
-            defaultRange="1y"
+            defaultRange="max"
           />
           </AppCard>
         </Grid>
