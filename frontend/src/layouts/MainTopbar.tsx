@@ -83,6 +83,7 @@ const mercadoColumns = [
   {
     title: 'Mercado',
     items: [
+      { text: 'Visão geral', path: '/market/overview' },
       { text: 'Ativos', path: '/market/assets' },
     ],
   },

@@ -1,4 +1,3 @@
-import AssetDrawer from '@/components/AssetDrawer'
 import { useCurrency } from '@/hooks/useCurrency'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { useAnalysisStore } from '@/stores/portfolio/analysis'
@@ -9,6 +8,7 @@ import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useTradeFormStore } from '@/stores/trade-form'
 import { Box, Button, Grid, Tab, Tabs, Typography } from '@mui/material'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import PortfolioMonthlyAportsChart from '../wealth/PortfolioMonthlyAportsChart'
 import OverviewDividendsChart from './OverviewDividendsChart'
 import OverviewPatrimonyChart from './OverviewPatrimonyChart'
@@ -19,6 +19,7 @@ import PositionTable from './PositionTable'
 
 export default function PortfolioOverviewPage() {
   const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const navigate = useNavigate()
   const userCategories = selectedPortfolio?.custom_categories ?? []
   const { openTradeForm } = useTradeFormStore()
 
@@ -46,7 +47,6 @@ export default function PortfolioOverviewPage() {
 
   const [selectedCategory, setSelectedCategory] = useState<string>('portfolio')
   const [bottomTab, setBottomTab] = useState(0)
-  const [drawerAssetId, setDrawerAssetId] = useState<number | null>(null)
 
   if (loading) {
     return <OverviewSkeleton />
@@ -116,7 +116,7 @@ export default function PortfolioOverviewPage() {
             positions={positions}
             selectedCategory={selectedCategory}
             onCategorySelect={setSelectedCategory}
-            onAssetSelect={setDrawerAssetId}
+            onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
           />
         </Grid>
       </Grid>
@@ -128,7 +128,7 @@ export default function PortfolioOverviewPage() {
             positions={positions}
             selectedCategory={selectedCategory}
             onCategorySelect={setSelectedCategory}
-            onAssetSelect={setDrawerAssetId}
+            onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
           />
         </Grid>
         <Grid size={{ xs: 12, lg: 7 }}>
@@ -173,16 +173,10 @@ export default function PortfolioOverviewPage() {
             />
           )}
           {bottomTab === 2 && (
-            <PortfolioMonthlyAportsChart height={320} groupBy="month" defaultRange="max" />
+            <PortfolioMonthlyAportsChart height={320} groupBy="month" defaultRange="max" title={null} />
           )}
         </Grid>
       </Grid>
-
-      <AssetDrawer
-        assetId={drawerAssetId}
-        open={drawerAssetId !== null}
-        onClose={() => setDrawerAssetId(null)}
-      />
     </Box>
   )
 }

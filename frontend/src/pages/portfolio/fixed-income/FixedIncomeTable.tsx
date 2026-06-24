@@ -1,7 +1,9 @@
 
 import AppTable, { TableColumn, TableRowData } from '@/components/ui/app-table'
+import { formatFixedIncomeDescription } from '@/lib/utils/fixedIncome'
 import { FixedIncomePositionEntry } from '@/types'
 import { useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 type Props = {
   data: FixedIncomePositionEntry[]
@@ -18,23 +20,15 @@ function getTipo(bond: FixedIncomePositionEntry): string {
     return String(bond.treasury_bond_type)
   }
 
-  const indexador = bond.fixed_income_index_name || ''
-  const fee = bond.fixed_income_fee
-
-  if (!indexador || fee === null || fee === undefined) return bond.fixed_income_type
-
-  if (bond.fixed_income_type === 'Index+') {
-    return `${indexador} + ${(fee * 100).toFixed(2).replace('.', ',')}%`
-  }
-
-  if (bond.fixed_income_type === '%Index') {
-    return `${(fee * 100).toFixed(2).replace('.', ',')}% do ${indexador}`
-  }
-
-  return bond.fixed_income_type
+  return formatFixedIncomeDescription({
+    typeName: bond.fixed_income_type,
+    indexName: bond.fixed_income_index_name,
+    fee: bond.fixed_income_fee,
+  })
 }
 
 export default function FixedIncomeTable({ data }: Props) {
+  const navigate = useNavigate()
   const columns: TableColumn[] = [
     { key: 'ativo', label: 'Ativo', type: 'text' },
     { key: 'tipo', label: 'Tipo', type: 'text' },
@@ -51,7 +45,7 @@ export default function FixedIncomeTable({ data }: Props) {
     const total = data.reduce((acc, bond) => acc + bond.value, 0)
 
     return data.map((bond) => ({
-      id: bond.ticker,
+      id: bond.asset_id,
       ativo: bond.ticker,
       tipo: getTipo(bond),
       vencimento: formatDate(bond.fixed_income_maturity_date || bond.treasury_bond_maturity_date),
@@ -83,5 +77,15 @@ export default function FixedIncomeTable({ data }: Props) {
     }
   }, [rows])
 
-  return <AppTable columns={columns} rows={rows} totalRow={totalRow} size="small" />
+  return (
+    <AppTable
+      columns={columns}
+      rows={rows}
+      totalRow={totalRow}
+      size="small"
+      onRowClick={(id) => {
+        if (id !== 'total') navigate(`/portfolio/asset/${id}`)
+      }}
+    />
+  )
 }

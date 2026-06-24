@@ -1,7 +1,6 @@
 import { fetchAssetAnalysis, fetchAssetDetails, fetchAssetReturns, recalculateAssetPosition } from '@/api/portfolio'
 import AssetAveragePriceChart from '@/components/AssetAveragePriceChart'
 import AssetDetailPanelSkeleton from '@/components/AssetDetailPanelSkeleton'
-import AssetDetailsCard from '@/components/AssetDetailsCard'
 import DividendForm from '@/components/DividendForm'
 import DrawdownChart from '@/components/DrawdownChart'
 import PortfolioDividendsChart from '@/components/PortfolioDividendsChart'
@@ -14,26 +13,25 @@ import { DIVIDEND_ROUTES, POSITION_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
+import { formatFixedIncomeDescription, formatFixedIncomeFee } from '@/lib/utils/fixedIncome'
 import { useDataCacheStore } from '@/stores/data-cache'
+import { usePositionsStore } from '@/stores/portfolio/positions'
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useTradeFormStore } from '@/stores/trade-form'
 import { Asset, AssetAnalysis, Dividend } from '@/types'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import PaymentsIcon from '@mui/icons-material/Payments'
 import RefreshIcon from '@mui/icons-material/Refresh'
-import { Alert, Box, Button, Chip, CircularProgress, Snackbar, Tab, Tabs, Typography } from '@mui/material'
-import { useCallback, useState } from 'react'
+import { Alert, Box, Button, Chip, CircularProgress, Snackbar, Stack, Tab, Tabs, Typography } from '@mui/material'
+import { type ReactNode, useCallback, useState } from 'react'
 
-type TabKey = 'rentabilidade' | 'risco' | 'patrimonio' | 'posicao' | 'impacto' | 'trades' | 'fundamentos'
+type TabKey = 'rentabilidade' | 'risco' | 'posicao' | 'trades'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'rentabilidade', label: 'Rentabilidade' },
   { key: 'risco', label: 'Risco' },
-  { key: 'patrimonio', label: 'Patrimônio' },
-  { key: 'posicao', label: 'Construção de Posição' },
-  { key: 'impacto', label: 'Impacto na Carteira' },
+  { key: 'posicao', label: 'Posição' },
   { key: 'trades', label: 'Trades' },
-  { key: 'fundamentos', label: 'Fundamentos' },
 ]
 
 function EmptyTabContent({ label }: { label: string }) {
@@ -51,18 +49,66 @@ function EmptyTabContent({ label }: { label: string }) {
   )
 }
 
+function formatReturn(value: number | null | undefined) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) {
+    return { text: '—', color: 'text.secondary' }
+  }
+
+  const pct = Number(value) * 100
+  return {
+    text: `${pct >= 0 ? '+' : ''}${pct.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}%`,
+    color: pct > 0 ? 'success.main' : pct < 0 ? 'error.main' : 'text.primary',
+  }
+}
+
+function formatMetricPercent(value: number | null | undefined) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return '—'
+  return `${Number(value).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}%`
+}
+
+function MetricItem({
+  label,
+  value,
+  color,
+}: {
+  label: string
+  value: string
+  color?: string
+}) {
+  return (
+    <Box sx={{ minWidth: { xs: 128, sm: 'auto' } }}>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>
+        {label}
+      </Typography>
+      <Typography variant="body1" sx={{ fontWeight: 700, color: color ?? 'text.primary', lineHeight: 1.35 }}>
+        {value}
+      </Typography>
+    </Box>
+  )
+}
+
 interface AssetDetailPanelProps {
   assetId: number
   portfolioId: number
+  assetSelector?: ReactNode
 }
 
-export default function AssetDetailPanel({ assetId, portfolioId }: AssetDetailPanelProps) {
+export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }: AssetDetailPanelProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('rentabilidade')
   const [recalculating, setRecalculating] = useState(false)
   const [dividendFormOpen, setDividendFormOpen] = useState(false)
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' })
   const { openTradeForm } = useTradeFormStore()
-  const { currency } = useCurrency()
+  const { currency, format: formatCurrency } = useCurrency()
+  const positions = usePositionsStore((s) => s.positions)
+  const formatRoundedCurrency = (value: number) =>
+    formatCurrency(Math.round(value)).replace(/,\d{2}$/, '')
 
   const cacheKey = `asset-detail:${portfolioId}:${assetId}:${currency}`
 
@@ -128,10 +174,19 @@ export default function AssetDetailPanel({ assetId, portfolioId }: AssetDetailPa
     })
   }
 
+  const formatSignedPercent = (value: number) => (
+    `${value >= 0 ? '+' : ''}${value.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}%`
+  )
+
   const asset = assetBundle?.asset
   const patrimonyEvolution = assetBundle?.patrimony ?? []
   const dividends = assetBundle?.dividends ?? []
   const analysis = assetBundle?.analysis ?? null
+  const totalPortfolioValue = positions.reduce((sum, position) => sum + position.value, 0)
+  const assetPct = totalPortfolioValue > 0 && asset ? (asset.value / totalPortfolioValue) * 100 : 0
 
   if (!assetBundle) {
     return <AssetDetailPanelSkeleton />
@@ -145,6 +200,19 @@ export default function AssetDetailPanel({ assetId, portfolioId }: AssetDetailPa
     )
   }
 
+  const accReturn = formatReturn(asset.acc_return)
+  const twelveReturn = formatReturn(asset.twelve_months_return)
+  const cagr = analysis?.performance_metrics.cagr ?? asset.cagr
+  const maxDrawdown = analysis?.risk_metrics.drawdown.stats.max_drawdown
+  const fixedIncomeDescription = asset.fixed_income
+    ? formatFixedIncomeDescription({
+        typeName: asset.fixed_income.fixed_income_type?.name,
+        typeId: asset.fixed_income.fixed_income_type_id,
+        indexName: asset.fixed_income.index?.short_name ?? asset.fixed_income.index?.name,
+        fee: asset.fixed_income.fee,
+      })
+    : ''
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'rentabilidade':
@@ -154,20 +222,12 @@ export default function AssetDetailPanel({ assetId, portfolioId }: AssetDetailPa
               <Box
                 display="flex"
                 flexWrap="wrap"
-                gap={1}
+                gap={0.75}
                 alignItems="center"
-                sx={{
-                  px: 1,
-                  py: 1,
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: 'action.hover',
-                  borderRadius: 1,
-                  mb: -2,
-                }}
+                sx={{ mb: -2 }}
               >
                 <Chip
-                  label={`CAGR ${analysis.performance_metrics.cagr.toFixed(2)}%`}
+                  label={`CAGR ${formatSignedPercent(analysis.performance_metrics.cagr)}`}
                   size="small"
                   sx={{
                     fontWeight: 700,
@@ -178,9 +238,9 @@ export default function AssetDetailPanel({ assetId, portfolioId }: AssetDetailPa
                   }}
                 />
                 {Object.entries(analysis.performance_metrics.benchmarks_metrics).map(([name, bm]) => (
-                  <Box key={name} display="flex" alignItems="center" gap={0.5}>
+                  <Box key={name} display="flex" alignItems="center" gap={0.75}>
                     <Chip
-                      label={`α ${name} ${bm.alpha >= 0 ? '+' : ''}${bm.alpha.toFixed(2)}%`}
+                      label={`α ${name} ${formatSignedPercent(bm.alpha)}`}
                       size="small"
                       sx={{
                         fontWeight: 600,
@@ -191,9 +251,17 @@ export default function AssetDetailPanel({ assetId, portfolioId }: AssetDetailPa
                         borderColor: 'divider',
                       }}
                     />
-                    <Typography variant="caption" color="text.secondary">
-                      β {bm.beta.toFixed(2)} · ρ {bm.correlation.toFixed(2)}
-                    </Typography>
+                    <Chip
+                      label={`β ${name} ${bm.beta.toFixed(2)}`}
+                      size="small"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        bgcolor: 'transparent',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    />
                   </Box>
                 ))}
               </Box>
@@ -222,114 +290,166 @@ export default function AssetDetailPanel({ assetId, portfolioId }: AssetDetailPa
         ) : (
           <EmptyTabContent label="Risco — dados não disponíveis" />
         )
-      case 'patrimonio':
+      case 'posicao':
         return (
           <Box display="flex" flexDirection="column" gap={4}>
+            <AssetAveragePriceChart size={420} assetId={assetId} />
+            {asset.fixed_income && fixedIncomeDescription && (
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, minmax(130px, 1fr))' },
+                  gap: 2,
+                  maxWidth: 820,
+                }}
+              >
+                <MetricItem label="Tipo RF" value={fixedIncomeDescription} />
+                {asset.fixed_income.index?.name && <MetricItem label="Índice" value={asset.fixed_income.index.name} />}
+                {asset.fixed_income.fee != null && <MetricItem label="Taxa" value={formatFixedIncomeFee(asset.fixed_income.fee)} />}
+                {asset.fixed_income.maturity_date && <MetricItem label="Vencimento" value={String(asset.fixed_income.maturity_date)} />}
+              </Box>
+            )}
             <PortfolioPatrimonyChart
               patrimonyEvolution={patrimonyEvolution}
               selected={'portfolio'}
-              size={350}
+              size={320}
               hideContributions
             />
-            <PortfolioDividendsChart dividends={dividends} selected={'portfolio'} size={300} />
+            <PortfolioDividendsChart dividends={dividends} selected={'portfolio'} size={280} />
           </Box>
         )
-      case 'posicao':
-        return <AssetAveragePriceChart size={450} assetId={assetId} />
-      case 'impacto':
-        return <EmptyTabContent label="Impacto na Carteira" />
       case 'trades':
         return <Trades assetId={assetId} />
-      case 'fundamentos':
-        return <EmptyTabContent label="Fundamentos" />
       default:
         return null
     }
   }
 
   return (
-    <Box display="flex" sx={{ height: '100vh' }}>
+    <Box>
+      <Box
+        sx={{
+          pb: 2.75,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
         <Box
           sx={{
-            width: 440,
-            minWidth: 360,
-            flexShrink: 0,
-            borderRight: '1px solid',
-            borderColor: 'divider',
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) auto' },
+            gap: { xs: 2, md: 4 },
+            alignItems: 'start',
           }}
         >
-          <Box sx={{ flex: 1, overflow: 'auto' }}>
-            <AssetDetailsCard asset={asset} embedded analysis={analysis} />
+          <Box minWidth={0} maxWidth={720}>
+            <Typography variant="h3" sx={{ fontWeight: 760, lineHeight: 1, mb: 1 }}>
+              {asset.ticker}
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Typography variant="body1" color="text.secondary" sx={{ mr: 0.5 }}>
+                {asset.name}
+              </Typography>
+              <Chip label={asset.asset_type?.short_name} size="small" variant="outlined" />
+              <Chip label={asset.asset_type?.asset_class?.name} size="small" sx={{ bgcolor: 'action.hover' }} />
+            </Stack>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1, px: 4, py: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+          {assetSelector && (
+            <Box sx={{ justifySelf: { xs: 'start', md: 'end' } }}>
+              {assetSelector}
+            </Box>
+          )}
+        </Box>
+
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) auto' },
+            gap: 2,
+            alignItems: 'end',
+            mt: 3,
+          }}
+        >
+          <Stack
+            direction="row"
+            spacing={{ xs: 2, md: 3 }}
+            useFlexGap
+            flexWrap="wrap"
+            sx={{ maxWidth: 1180 }}
+          >
+            <MetricItem label="Posição" value={formatRoundedCurrency(asset.value)} />
+            {asset.fixed_income && fixedIncomeDescription && (
+              <MetricItem label="Indexador" value={fixedIncomeDescription} />
+            )}
+            <MetricItem label="Quantidade" value={asset.quantity.toLocaleString('pt-BR', { maximumFractionDigits: 8 })} />
+            <MetricItem label="Preço atual" value={formatRoundedCurrency(asset.price)} />
+            <MetricItem label="Preço médio" value={formatRoundedCurrency(asset.average_price)} />
+            <MetricItem label="Peso" value={`${assetPct.toFixed(1).replace('.', ',')}%`} />
+            <MetricItem label="12m" value={twelveReturn.text} color={twelveReturn.color} />
+            <MetricItem label="CAGR" value={formatMetricPercent(cagr)} color={cagr != null && cagr > 0 ? 'success.main' : cagr != null && cagr < 0 ? 'error.main' : undefined} />
+            <MetricItem label="Acumulado" value={accReturn.text} color={accReturn.color} />
+          </Stack>
+
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent={{ xs: 'flex-start', lg: 'flex-end' }}>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddShoppingCartIcon />}
+              onClick={handleBuy}
+              sx={{ textTransform: 'none' }}
+            >
+              Comprar
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<PaymentsIcon />}
+              onClick={() => setDividendFormOpen(true)}
+              sx={{ textTransform: 'none' }}
+            >
+              Provento
+            </Button>
             <Button
               variant="outlined"
               size="small"
               startIcon={recalculating ? <CircularProgress size={16} /> : <RefreshIcon />}
               onClick={handleRecalculate}
               disabled={recalculating}
-              sx={{ flex: 1, textTransform: 'none' }}
+              sx={{ textTransform: 'none' }}
             >
               {recalculating ? 'Recalculando...' : 'Recalcular'}
             </Button>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddShoppingCartIcon />}
-              onClick={handleBuy}
-              sx={{ flex: 1, textTransform: 'none' }}
-            >
-              Comprar
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<PaymentsIcon />}
-              onClick={() => setDividendFormOpen(true)}
-              sx={{ flex: 1, textTransform: 'none' }}
-            >
-              Provento
-            </Button>
-          </Box>
+          </Stack>
         </Box>
+      </Box>
 
-        {/* Right side: Tabs + Content */}
-        <Box flex={1} minWidth={0} display="flex" flexDirection="column" sx={{ height: '100%' }}>
-          {/* Tabs bar */}
-          <Tabs
-            value={activeTab}
-            onChange={(_, v) => setActiveTab(v)}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-              minHeight: 42,
-              '& .MuiTabs-flexContainer': {
-                justifyContent: 'flex-end',
-              },
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                minHeight: 42,
-                fontWeight: 500,
-                fontSize: '0.85rem',
-                py: 0,
-              },
-            }}
-          >
-            {TABS.map((tab) => (
-              <Tab key={tab.key} value={tab.key} label={tab.label} />
-            ))}
-          </Tabs>
+      <Tabs
+        value={activeTab}
+        onChange={(_, v) => setActiveTab(v)}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{
+          mt: 1,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          minHeight: 44,
+          '& .MuiTab-root': {
+            textTransform: 'none',
+            minHeight: 44,
+            fontWeight: 600,
+            fontSize: '0.9rem',
+            px: 2,
+          },
+        }}
+      >
+        {TABS.map((tab) => (
+          <Tab key={tab.key} value={tab.key} label={tab.label} />
+        ))}
+      </Tabs>
 
-          {/* Tab content */}
-          <Box sx={{ p: 2, flex: 1, overflow: 'auto' }}>
-            {renderTabContent()}
-          </Box>
-        </Box>
+      <Box sx={{ py: 3 }}>
+        {renderTabContent()}
+      </Box>
 
       <Snackbar
         open={snackbar.open}

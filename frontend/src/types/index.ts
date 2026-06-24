@@ -136,10 +136,12 @@ export interface Asset {
   value: number
   acc_return: number | null
   twelve_months_return: number | null
+  cagr?: number | null
   fixed_income?: {
-    fee: number
+    fee: number | null
     maturity_date: Date
-    index?: { name: string }
+    fixed_income_type_id?: number | null
+    index?: { name: string; short_name?: string | null }
     fixed_income_type?: { name: string }
   }
   fund?: {

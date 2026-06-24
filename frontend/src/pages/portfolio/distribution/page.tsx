@@ -1,4 +1,3 @@
-import AssetDrawer from '@/components/AssetDrawer'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { POSITION_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
@@ -8,6 +7,7 @@ import PortfolioHeatMap from '@/pages/portfolio/asset/PortfolioHeatMap'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { Box, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import { useCallback, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const METRIC_OPTIONS: { value: DistributionMetric; label: string }[] = [
   { value: 'twelve_months_return', label: 'Rent. 12M' },
@@ -18,10 +18,10 @@ const METRIC_OPTIONS: { value: DistributionMetric; label: string }[] = [
 
 export default function DistributionPage() {
   const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const navigate = useNavigate()
   const portfolioId = selectedPortfolio?.id
 
   const [metric, setMetric] = useState<DistributionMetric>('twelve_months_return')
-  const [drawerAssetId, setDrawerAssetId] = useState<number | null>(null)
 
   const { data: positions } = useCachedData<any[]>(
     portfolioId ? `distribution:positions:${portfolioId}` : null,
@@ -35,8 +35,8 @@ export default function DistributionPage() {
   const loading = !positions && !!portfolioId
 
   const handleAssetSelect = useCallback((assetId: number) => {
-    setDrawerAssetId(assetId)
-  }, [])
+    navigate(`/portfolio/asset/${assetId}`)
+  }, [navigate])
 
   return (
     <Box pt={2}>
@@ -76,12 +76,6 @@ export default function DistributionPage() {
           </Box>
         </Box>
       )}
-
-      <AssetDrawer
-        assetId={drawerAssetId}
-        open={drawerAssetId !== null}
-        onClose={() => setDrawerAssetId(null)}
-      />
     </Box>
   )
 }

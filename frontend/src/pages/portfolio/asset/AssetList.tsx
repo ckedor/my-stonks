@@ -1,5 +1,3 @@
-
-import AssetDrawer from '@/components/AssetDrawer'
 import { CATEGORY_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
@@ -27,6 +25,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers'
 import { Dayjs } from 'dayjs'
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 interface Position {
   ticker: string
@@ -91,10 +90,10 @@ function MiniDonut({ value, color, size = 32 }: { value: number; color: string; 
 
 export default function AssetList({ positions, groupBy = 'category', onGroupByChange }: AssetListProps) {
   const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const navigate = useNavigate()
   const userCategories = selectedPortfolio?.custom_categories ?? []
   const [search, setSearch] = useState('')
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null)
-  const [drawerAssetId, setDrawerAssetId] = useState<number | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
     categoryId: number | null
@@ -275,7 +274,7 @@ export default function AssetList({ positions, groupBy = 'category', onGroupByCh
                 return (
                   <Box
                     key={pos.asset_id}
-                    onClick={() => setDrawerAssetId(pos.asset_id)}
+                    onClick={() => navigate(`/portfolio/asset/${pos.asset_id}`)}
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: GRID_COLS,
@@ -374,13 +373,6 @@ export default function AssetList({ positions, groupBy = 'category', onGroupByCh
           )
         })}
       </Box>
-
-      {/* Asset Drawer */}
-      <AssetDrawer
-        assetId={drawerAssetId}
-        open={!!drawerAssetId}
-        onClose={() => setDrawerAssetId(null)}
-      />
 
       {/* Category change confirmation dialog */}
       <Dialog

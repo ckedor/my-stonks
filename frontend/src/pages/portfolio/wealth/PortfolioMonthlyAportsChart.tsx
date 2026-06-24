@@ -15,6 +15,7 @@ interface Props {
   height?: number
   groupBy?: GroupBy
   defaultRange?: DateRangeKey
+  title?: string | null
 }
 
 function toTimeSeries(
@@ -33,6 +34,7 @@ export default function PortfolioMonthlyAportsChart({
   height = 400,
   groupBy = 'month',
   defaultRange = 'max',
+  title = 'Aportes Mensais',
 }: Props) {
   const rows = usePatrimonyStore(s => s.patrimony) as PatrimonyEvolutionRow[]
   const loading = usePatrimonyStore(s => s.loading)
@@ -47,7 +49,7 @@ export default function PortfolioMonthlyAportsChart({
       data={data}
       loading={loading}
       height={height}
-      title="Aportes Mensais"
+      title={title ?? undefined}
       emptyMessage="Sem dados de aportes para exibir."
       colorMode="profit-loss"
       valueType="currency"

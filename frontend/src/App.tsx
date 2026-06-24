@@ -12,7 +12,9 @@ import AdminUsersPage from "./pages/admin/users/page";
 import LoginPage from "./pages/login";
 import MarketAssetPage from "./pages/market/asset/page";
 import MarketAtivosPage from "./pages/market/ativos/page";
+import MarketOverviewPage from "./pages/market/overview/page";
 import PortfolioAssetsPage from "./pages/portfolio/asset";
+import PortfolioAssetPage from "./pages/portfolio/asset/[id]/page";
 import DistributionPage from "./pages/portfolio/distribution/page";
 import PortfolioDividendsPage from "./pages/portfolio/dividends/page";
 import PortfolioOverviewPage from "./pages/portfolio/overview";
@@ -34,6 +36,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/portfolio/overview" replace /> },
       { path: "portfolio/overview", element: <PortfolioOverviewPage /> },
       { path: "portfolio/asset", element: <PortfolioAssetsPage /> },
+      { path: "portfolio/asset/:id", element: <PortfolioAssetPage /> },
       { path: "portfolio/distribution", element: <DistributionPage /> },
       { path: "portfolio/dividends", element: <PortfolioDividendsPage /> },
       { path: "portfolio/returns", element: <PortfolioReturnsPage /> },
@@ -46,6 +49,7 @@ const router = createBrowserRouter([
       { path: "portfolio/user-configurations/theme-editor", element: <ThemeEditorPage /> },
       { path: "portfolio/user-configurations/theme-editor/:id", element: <ThemeEditorPage /> },
       { path: "market/assets", element: <MarketAtivosPage /> },
+      { path: "market/overview", element: <MarketOverviewPage /> },
       { path: "market/asset/:id", element: <MarketAssetPage /> },
     ],
   },

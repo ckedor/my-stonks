@@ -1,4 +1,5 @@
 import { useCurrency } from '@/hooks/useCurrency'
+import { formatFixedIncomeDescription, formatFixedIncomeFee } from '@/lib/utils/fixedIncome'
 import { usePositionsStore } from '@/stores/portfolio/positions'
 import { Asset, AssetAnalysis } from '@/types'
 import { Box, Card, CardContent, Chip, CircularProgress, Divider, Stack, Typography } from '@mui/material'
@@ -43,6 +44,14 @@ export default function AssetDetailsCard({ asset, embedded, analysis }: AssetDet
   const accReturn = formatReturn(asset.acc_return)
   const twelveReturn = formatReturn(asset.twelve_months_return)
   const { format: formatCurrency } = useCurrency()
+  const fixedIncomeDescription = asset.fixed_income
+    ? formatFixedIncomeDescription({
+        typeName: asset.fixed_income.fixed_income_type?.name,
+        typeId: asset.fixed_income.fixed_income_type_id,
+        indexName: asset.fixed_income.index?.short_name ?? asset.fixed_income.index?.name,
+        fee: asset.fixed_income.fee,
+      })
+    : ''
 
   const positions = usePositionsStore((s) => s.positions)
   const totalPortfolioValue = positions.reduce((sum, p) => sum + p.value, 0)
@@ -208,13 +217,13 @@ export default function AssetDetailsCard({ asset, embedded, analysis }: AssetDet
               <InfoRow label="Índice" value={asset.fixed_income.index.name} />
             )}
             {asset.fixed_income.fee != null && (
-              <InfoRow label="Taxa" value={`${(asset.fixed_income.fee * 100).toFixed(2)}%`} />
+              <InfoRow label="Taxa" value={formatFixedIncomeFee(asset.fixed_income.fee)} />
             )}
             {asset.fixed_income.maturity_date && (
               <InfoRow label="Vencimento" value={String(asset.fixed_income.maturity_date)} />
             )}
-            {asset.fixed_income.fixed_income_type?.name && (
-              <InfoRow label="Tipo RF" value={asset.fixed_income.fixed_income_type.name} />
+            {fixedIncomeDescription && (
+              <InfoRow label="Tipo RF" value={fixedIncomeDescription} />
             )}
           </>
         )}

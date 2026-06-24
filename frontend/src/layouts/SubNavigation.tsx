@@ -39,6 +39,7 @@ const carteiraNav: NavItem[] = [
 ]
 
 const mercadoNav: NavItem[] = [
+  { text: 'Visão geral', path: '/market/overview' },
   { text: 'Ativos', path: '/market/assets' },
 ]
 
