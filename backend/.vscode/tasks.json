@@ -4,17 +4,23 @@
     {
       "label": "Start PostgreSQL (Docker)",
       "type": "shell",
-      "command": "docker-compose up -d db",
+      "command": "docker compose up -d --wait db",
       "problemMatcher": [],
       "group": "build"
     },
     {
       "label": "Start Redis (Docker)",
       "type": "shell",
-      "command": "docker-compose up -d redis",
+      "command": "docker compose up -d redis",
       "options": {
         "cwd": "${workspaceFolder}"
       },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Database Migrations",
+      "type": "shell",
+      "command": "./.venv/bin/alembic upgrade head",
       "problemMatcher": []
     },
     {
@@ -22,8 +28,9 @@
       "dependsOn": [
         "Start PostgreSQL (Docker)",
         "Start Redis (Docker)",
+        "Run Database Migrations",
       ],
-      "dependsOrder": "parallel"
+      "dependsOrder": "sequence"
     },
   ]
 }

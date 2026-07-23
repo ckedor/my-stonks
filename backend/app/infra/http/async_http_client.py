@@ -8,13 +8,9 @@ from typing import Any, Literal, Optional
 
 import httpx
 from app.config.logger import logger
-from app.infra.exceptions import (
-    IntegrationBadResponse,
-    IntegrationError,
-    IntegrationRateLimited,
-    IntegrationTimeout,
-    IntegrationUnavailable,
-)
+from app.infra.exceptions import (IntegrationBadResponse, IntegrationError,
+                                  IntegrationRateLimited, IntegrationTimeout,
+                                  IntegrationUnavailable)
 
 
 def translate_httpx_error(exc: Exception, *, provider: str) -> IntegrationError:
@@ -74,7 +70,7 @@ class AsyncHttpClient:
         timeout: float = 10.0,
         max_retries: int = 3,
         backoff_factor: float = 1.0,
-        retry_statuses: tuple = (429, 500, 502, 503, 504),
+        retry_statuses: tuple = (500, 502, 503, 504),
     ):
         self.provider = provider
         self.base_url = base_url.rstrip('/')

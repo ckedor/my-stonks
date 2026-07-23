@@ -106,6 +106,57 @@ class BrapiClient:
             'quotes': quotes,
         }
 
+    async def get_crypto_quotes(
+        self,
+        ticker: str,
+        start_date=None,
+        end_date=None,
+        currency: str = 'USD',
+        interval: str = '1d',
+    ) -> Dict[str, Any]:
+        """Fetch cryptocurrency OHLCV history from ``GET /api/v2/crypto``."""
+        range_param = self._brapi_range_from_init_date(start_date)
+        response = await self._get(
+            '/v2/crypto',
+            {
+                'coin': ticker.upper(),
+                'currency': currency,
+                'range': range_param,
+                'interval': interval,
+            },
+        )
+
+        coins = response.get('coins') or []
+        coin = next(
+            (item for item in coins if item.get('coin', '').upper() == ticker.upper()),
+            None,
+        )
+        history = coin.get('historicalDataPrice') if coin else None
+        if not history:
+            return {
+                'ticker': ticker,
+                'currency': coin.get('currency', currency) if coin else currency,
+                'quotes': [],
+            }
+
+        df = pd.DataFrame(history)
+        df['date'] = pd.to_datetime(df['date'], unit='s').dt.normalize()
+        df = df.drop_duplicates(subset=['date']).sort_values('date')
+
+        if start_date:
+            start_date = pd.to_datetime(start_date).normalize()
+            df = df[df['date'] >= start_date]
+        if end_date:
+            end_date = pd.to_datetime(end_date).normalize()
+            df = df[df['date'] <= end_date]
+
+        quote_columns = ['date', 'open', 'high', 'low', 'close', 'volume']
+        return {
+            'ticker': ticker,
+            'currency': coin.get('currency', currency),
+            'quotes': df[quote_columns].to_dict(orient='records'),
+        }
+
     async def get_dividends(
         self, tickers: Union[str, List[str]], range: str = '1y'
     ) -> List[Dict[str, Any]]:

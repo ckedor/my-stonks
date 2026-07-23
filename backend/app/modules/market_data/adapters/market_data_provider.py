@@ -3,7 +3,9 @@ import asyncio
 from typing import Callable
 
 import pandas as pd
+from app.config.logger import logger
 from app.core.exceptions import NotFoundError, ValidationError
+from app.infra.exceptions import IntegrationError
 from app.infra.db.models.constants.asset_type import ASSET_TYPE
 from app.infra.db.models.constants.fii_segments import FIISegment
 from app.infra.db.models.constants.index import INDEX
@@ -93,12 +95,12 @@ class MarketDataProvider:
         async def fetch_provents(ticker):
             try:
                 return await self.status_invest_client.get_provents_df(ticker, max=max)
-            except Exception as e:
+            except Exception:
                 raise
 
         tasks = [fetch_provents(ticker) for ticker in tickers]
         results = await asyncio.gather(*tasks)
-        
+
         provents_df = pd.concat(results, ignore_index=True) if results else pd.DataFrame()
         return provents_df
 
@@ -169,7 +171,7 @@ class MarketDataProvider:
             lambda: self.brapi_client.get_quotes(ticker, start_date, end_date, interval='1d'),
             lambda: self.alphavantage_client.get_quotes(ticker, init_date=start_date, end_date=end_date, is_b3=(exchange == EXCHANGE.B3)),
         ])
-    
+
     async def _get_quotes_with_fallback(self, providers: list[Callable]) -> dict:
         for provider in providers:
             quotes = await provider()
@@ -178,18 +180,34 @@ class MarketDataProvider:
         raise NotFoundError("No quotes found in any provider: " + ", ".join([p.__name__ for p in providers]))
 
     async def _get_quotes_crypto(self, ticker: str, start_date: pd.Timestamp, end_date: pd.Timestamp, **_):
+        try:
+            quotes = await self.brapi_client.get_crypto_quotes(
+                ticker,
+                start_date=start_date,
+                end_date=end_date,
+            )
+            if quotes.get('quotes'):
+                return quotes
+            logger.warning('brapi returned no crypto quotes for %s; using fallback', ticker)
+        except IntegrationError as exc:
+            logger.warning(
+                'brapi crypto request failed for %s; using CryptoCompare fallback: %s',
+                ticker,
+                exc,
+            )
+
         return await self.crypto_compare_client.get_quotes(
             ticker,
             start_date=start_date,
             end_date=end_date,
         )
-    
+
     async def _get_quotes_prev(self, ticker: str, start_date: pd.Timestamp, **_):
         return await self.mais_retorno_client.get_quotes(
             extract_digits(ticker),
             start_date=start_date,
         )
-    
+
     async def _get_quotes_treasury(self, treasury_type: str, treasury_maturity_date: str, start_date: pd.Timestamp, end_date: pd.Timestamp, **_):
         if not treasury_type or not treasury_maturity_date:
             raise ValidationError("Treasury type and maturity date are required for treasury quotes")
@@ -209,4 +227,4 @@ class MarketDataProvider:
             self.crypto_compare_client.aclose(),
             self.status_invest_client.aclose(),
             self.tesouro_client.aclose(),
-        )        
+        )
