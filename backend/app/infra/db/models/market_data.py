@@ -1,11 +1,13 @@
 from sqlalchemy import (
     Column,
     Date,
+    DateTime,
     ForeignKey,
     Integer,
     Numeric,
     String,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.orm import relationship
 
@@ -63,13 +65,37 @@ class AssetPriceHistory(Base):
 
     id = Column(Integer, primary_key=True)
     asset_id = Column(Integer, ForeignKey('asset.asset.id'), nullable=False)
+    currency_id = Column(Integer, ForeignKey('asset.currency.id'), nullable=True)
     date = Column(Date, nullable=False)
     open = Column(Numeric(18, 8), nullable=True)
     close = Column(Numeric(18, 8), nullable=True)
+    adjusted_close = Column(Numeric(18, 8), nullable=True)
     high = Column(Numeric(18, 8), nullable=True)
     low = Column(Numeric(18, 8), nullable=True)
+    volume = Column(Numeric(24, 8), nullable=True)
+    source = Column(String(50), nullable=False, server_default='unknown')
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
 
     asset = relationship('Asset', lazy='joined')
+    currency = relationship('Currency', lazy='joined')
+
+    COLUMNS = [
+        'asset_id',
+        'currency_id',
+        'date',
+        'open',
+        'close',
+        'adjusted_close',
+        'high',
+        'low',
+        'volume',
+        'source',
+    ]
 
     def __repr__(self):
-        return f'{self.series.symbol} - {self.date}'
+        return f'{self.asset.ticker} - {self.date}'

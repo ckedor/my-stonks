@@ -4,6 +4,7 @@ import { PieLabelRenderProps } from 'recharts'
 
 type OuterLabelProps = PieLabelRenderProps & {
   labels: string[]
+  minPercentage: number
 }
 
 export default function OuterLabel({
@@ -11,8 +12,10 @@ export default function OuterLabel({
   cy,
   midAngle,
   outerRadius,
+  percent,
   index,
   labels,
+  minPercentage,
 }: OuterLabelProps) {
   const theme = useTheme()
 
@@ -21,7 +24,8 @@ export default function OuterLabel({
     typeof cx !== 'number' ||
     typeof cy !== 'number' ||
     typeof midAngle !== 'number' ||
-    typeof outerRadius !== 'number'
+    typeof outerRadius !== 'number' ||
+    Number(percent) * 100 < minPercentage
   ) {
     return null
   }

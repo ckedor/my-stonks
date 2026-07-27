@@ -3,7 +3,11 @@
 Async HTTP client with retry, exponential backoff, and error translation.
 """
 
+# The HTTP client exposes the request options supported by httpx.
+# ruff: noqa: PLR0913
+
 import asyncio
+from http import HTTPStatus
 from typing import Any, Literal, Optional
 
 import httpx
@@ -21,9 +25,9 @@ def translate_httpx_error(exc: Exception, *, provider: str) -> IntegrationError:
         status = exc.response.status_code
         url = str(exc.request.url).split('?')[0]
         detail = f'{provider} returned {status} for {url}'
-        if status == 429:
-            return IntegrationRateLimited(provider=provider, status_code=429)
-        if status >= 500:
+        if status == HTTPStatus.TOO_MANY_REQUESTS:
+            return IntegrationRateLimited(provider=provider, status_code=status)
+        if status >= HTTPStatus.INTERNAL_SERVER_ERROR:
             return IntegrationUnavailable(message=detail, provider=provider, status_code=status)
         return IntegrationError(message=detail, provider=provider, status_code=status)
     if isinstance(exc, (httpx.ConnectError, httpx.RemoteProtocolError)):
@@ -138,6 +142,11 @@ class AsyncHttpClient:
         request_headers = {**self.default_headers, **(headers or {})}
         safe_path = path.split('?')[0]
         log_extra = {'provider': self.provider, 'method': method, 'path': safe_path}
+        request_params = (
+            {name: value for name, value in params.items() if value is not None}
+            if params is not None
+            else None
+        )
 
         last_exception: Exception | None = None
 
@@ -146,7 +155,7 @@ class AsyncHttpClient:
                 response = await client.request(
                     method=method,
                     url=path,
-                    params=params,
+                    params=request_params,
                     json=json,
                     data=data,
                     headers=request_headers,
@@ -174,6 +183,16 @@ class AsyncHttpClient:
                     raise_bad_response(exc, provider=self.provider, sample=response.text)
 
             except httpx.HTTPStatusError as exc:
+                response_url = str(exc.request.url).split('?')[0]
+                response_text = exc.response.text or '<empty response>'
+                logger.error(
+                    'Integration request failed: provider=%s method=%s url=%s status=%s response=%s',
+                    self.provider,
+                    method,
+                    response_url,
+                    exc.response.status_code,
+                    response_text,
+                )
                 raise_for_provider(exc, provider=self.provider)
 
             except httpx.TimeoutException as exc:

@@ -79,6 +79,7 @@ export default function PositionPieChart({ positions, selectedCategory, onCatego
       isCurrency
       height={350}
       onItemClick={handleItemClick}
+      minOuterLabelPercentage={1}
     />
   )
 }

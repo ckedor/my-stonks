@@ -12,6 +12,7 @@ from app.core.exceptions import (
     PermissionDeniedError,
     ValidationError,
 )
+from app.entrypoints.http.module_docs import setup_module_docs
 from app.entrypoints.http.router import router as main_router
 from app.infra.exceptions import (
     CacheError,
@@ -99,6 +100,7 @@ def create_app() -> FastAPI:
         description='API for portfolio consolidation',
         version='1.0.0',
         lifespan=lifespan,
+        docs_url=None,
     )
 
     app.add_middleware(
@@ -112,9 +114,10 @@ def create_app() -> FastAPI:
     app.add_middleware(SessionMiddleware, secret_key=settings.JWT_SECRET)
 
     setup_user_views(app)
-    
+
     app.include_router(main_router)
+    setup_module_docs(app)
 
     register_exception_handlers(app)
-        
+
     return app

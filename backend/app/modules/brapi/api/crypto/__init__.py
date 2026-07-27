@@ -1,0 +1,1 @@
+"""brapi Criptomoedas API."""

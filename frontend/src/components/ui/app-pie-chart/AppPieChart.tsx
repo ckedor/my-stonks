@@ -12,6 +12,7 @@ type AppPieChartProps = {
   isCurrency?: boolean
   colors?: string[]
   onItemClick?: (label: string) => void
+  minOuterLabelPercentage?: number
 }
 
 export default function AppPieChart({
@@ -20,6 +21,7 @@ export default function AppPieChart({
   isCurrency = false,
   colors,
   onItemClick,
+  minOuterLabelPercentage = 0,
 }: AppPieChartProps) {
   const theme = useTheme()
   const { format: formatCurrency } = useCurrency()
@@ -73,7 +75,13 @@ export default function AppPieChart({
             stroke="none"
             isAnimationActive={false}
             labelLine={false}
-            label={(props) => <OuterLabel {...props} labels={labels} />}
+            label={(props) => (
+              <OuterLabel
+                {...props}
+                labels={labels}
+                minPercentage={minOuterLabelPercentage}
+              />
+            )}
             startAngle={90}
             endAngle={-270}
             tooltipType="none"
