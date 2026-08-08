@@ -1,11 +1,13 @@
-from app.infra.db.session import get_session
+from app.infra.db.dependencies import get_portfolio_repository
+from app.infra.db.unit_of_work import UnitOfWork, get_uow
+from app.modules.portfolio.repositories import PortfolioRepository
 from app.modules.portfolio.api.portfolio.schemas import (
     CreatePortfolioRequest,
     Portfolio,
     UpdatePortfolioRequest,
 )
 from app.modules.portfolio.service.portfolio_base_service import PortfolioBaseService
-from app.modules.users.models import User
+from app.modules.users.domain import User
 from app.modules.users.views import current_active_user
 from fastapi import APIRouter, Depends
 
@@ -25,9 +27,9 @@ router = APIRouter(prefix='/portfolio', dependencies=[Depends(current_active_use
 @router.get('', response_model=list[Portfolio])
 async def list_user_portfolios(
 	user: User = Depends(current_active_user),
-	session=Depends(get_session),
+	repository: PortfolioRepository = Depends(get_portfolio_repository),
 ):
-	service = PortfolioBaseService(session)
+	service = PortfolioBaseService(repository=repository)
 	return await service.list_user_portfolios(user.id)
 
 
@@ -35,9 +37,9 @@ async def list_user_portfolios(
 async def create_portfolio(
 	portfolio: CreatePortfolioRequest,
 	user: User = Depends(current_active_user),
-	session=Depends(get_session),
+	uow: UnitOfWork = Depends(get_uow),
 ):
-	service = PortfolioBaseService(session)
+	service = PortfolioBaseService(uow=uow)
 	return await service.create_portfolio(portfolio, user.id)
 
 
@@ -45,9 +47,9 @@ async def create_portfolio(
 async def update_portfolio(
 	portfolio_id: int,
 	payload: UpdatePortfolioRequest,
-	session=Depends(get_session),
+	uow: UnitOfWork = Depends(get_uow),
 ):
-	service = PortfolioBaseService(session)
+	service = PortfolioBaseService(uow=uow)
 	payload = payload.model_copy(update={'id': portfolio_id})
 	await service.update_portfolio(payload)
 	return {'message': 'Portfolio updated successfully.'}
@@ -56,9 +58,9 @@ async def update_portfolio(
 @router.delete('/{portfolio_id}')
 async def delete_portfolio(
 	portfolio_id: int,
-	session=Depends(get_session),
+	uow: UnitOfWork = Depends(get_uow),
 ):
-	service = PortfolioBaseService(session)
+	service = PortfolioBaseService(uow=uow)
 	await service.delete_portfolio(portfolio_id)
 	return {'message': 'Portfolio deleted successfully.'}
 

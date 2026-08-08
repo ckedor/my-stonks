@@ -20,7 +20,7 @@ class AlphaVantageClient:
     def __init__(self):
         self.alpha_vantage_key = settings.ALPHAVANTAGE_KEY
 
-    def _get_price_history_df_sync(self, symbol):
+    def _get_quotes_df_sync(self, symbol):
         """Synchronous version - called via to_thread."""
         try:
             ts = TimeSeries(key=self.alpha_vantage_key)
@@ -54,9 +54,9 @@ class AlphaVantageClient:
         except Exception as e:
             raise_for_provider(e, provider=PROVIDER)
 
-    async def get_price_history_df(self, symbol):
+    async def get_quotes_df(self, symbol):
         """Async wrapper using to_thread to avoid blocking."""
-        return await asyncio.to_thread(self._get_price_history_df_sync, symbol)
+        return await asyncio.to_thread(self._get_quotes_df_sync, symbol)
 
     async def get_quotes(
         self,
@@ -67,8 +67,8 @@ class AlphaVantageClient:
     ) -> dict:
         if is_b3 and not symbol.endswith('.SA'):
             symbol += '.SA'
-            
-        df = await self.get_price_history_df(symbol)
+
+        df = await self.get_quotes_df(symbol)
         if end_date:
             end_date = pd.to_datetime(end_date).normalize()
             df = df[df['date'] <= end_date]

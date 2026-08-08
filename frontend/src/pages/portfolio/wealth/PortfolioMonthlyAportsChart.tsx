@@ -16,6 +16,7 @@ interface Props {
   groupBy?: GroupBy
   defaultRange?: DateRangeKey
   title?: string | null
+  fitContainer?: boolean
 }
 
 function toTimeSeries(
@@ -35,6 +36,7 @@ export default function PortfolioMonthlyAportsChart({
   groupBy = 'month',
   defaultRange = '1y',
   title = 'Aportes Mensais',
+  fitContainer = false,
 }: Props) {
   const rows = usePatrimonyStore(s => s.patrimony) as PatrimonyEvolutionRow[]
   const loading = usePatrimonyStore(s => s.loading)
@@ -60,6 +62,7 @@ export default function PortfolioMonthlyAportsChart({
       defaultRange={defaultRange}
       labelSide="right"
       showGroupBySelector
+      fitContainer={fitContainer}
     />
   )
 }

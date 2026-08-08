@@ -10,10 +10,8 @@ from http import HTTPStatus
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from app.infra.db.models.asset import Asset
-from app.infra.db.models.market_data import Index
-from app.infra.db.models.portfolio import (
-    Broker,
+from app.modules.market_data.domain.assets import Asset, Broker
+from app.modules.portfolio.domain.entities import (
     CustomCategory,
     Dividend,
     Portfolio,

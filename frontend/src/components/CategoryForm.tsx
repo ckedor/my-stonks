@@ -1,6 +1,6 @@
 
 // components/CategoryForm.tsx
-import { syncPortfolios } from '@/actions/portfolio'
+import { syncPortfolios, syncReturns } from '@/actions/portfolio'
 import { CATEGORY_ROUTES, INDEX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
@@ -25,7 +25,7 @@ import {
     TextField,
     Typography,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 interface BenchmarkOption {
   id: number
@@ -48,7 +48,10 @@ interface CategoryFormProps {
 
 export default function CategoryForm({ open, onClose, onSave }: CategoryFormProps) {
   const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
-  const userCategories = selectedPortfolio?.custom_categories ?? []
+  const userCategories = useMemo(
+    () => selectedPortfolio?.custom_categories ?? [],
+    [selectedPortfolio?.custom_categories]
+  )
 
   const [categories, setCategories] = useState<Category[]>([])
   const [benchmarks, setBenchmarks] = useState<BenchmarkOption[]>([])
@@ -106,6 +109,10 @@ export default function CategoryForm({ open, onClose, onSave }: CategoryFormProp
         await api.delete(CATEGORY_ROUTES.byId(category.id), {
           data: { portfolio_id: selectedPortfolio?.id },
         })
+        if (selectedPortfolio) {
+          await syncPortfolios(true)
+          await syncReturns(selectedPortfolio.id, true)
+        }
       } catch (err) {
         console.error('Erro ao deletar categoria', err)
         setError('Erro ao deletar categoria')
@@ -123,6 +130,7 @@ export default function CategoryForm({ open, onClose, onSave }: CategoryFormProp
     try {
       await api.post(CATEGORY_ROUTES.save, { categories })
       await syncPortfolios(true)
+      if (selectedPortfolio) await syncReturns(selectedPortfolio.id, true)
       setSuccessOpen(true)
       if (onSave) onSave()
     } catch (err) {

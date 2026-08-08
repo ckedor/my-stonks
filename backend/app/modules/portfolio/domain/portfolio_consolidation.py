@@ -1,10 +1,9 @@
 import numpy as np
 import pandas as pd
-from app.infra.db.models.constants.asset_type import ASSET_TYPE
-from app.infra.db.models.constants.currency import CURRENCY
+from app.modules.market_data.domain.constants import ASSET_TYPE, CURRENCY
 from app.lib.finance.trade import average_price
 
-DELTA_DAYS_FOR_PORTFOLIO_CONSOLIDATION = 10
+DELTA_DAYS_FOR_PORTFOLIO_CONSOLIDATION = 5
 
 FIXED_INCOME_ASSET_TYPE_IDS = {
     ASSET_TYPE.CRI,

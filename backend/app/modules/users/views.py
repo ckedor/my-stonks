@@ -1,10 +1,11 @@
 from typing import List
 
 from app.config.settings import settings
-from app.infra.db.session import get_session
+from app.infra.db.dependencies import get_repository
+from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.modules.users.db import get_user_db
 from app.modules.users.manager import UserManager
-from app.modules.users.models import User
+from app.modules.users.domain import User
 from app.modules.users.schemas import UserCreate, UserRead, UserUpdate
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi_users import FastAPIUsers
@@ -42,6 +43,7 @@ if settings.ENVIRONMENT in {'development', 'local'}:
     async def current_user():
         return User(
             id=1,
+            username='dev',
             email='dev@local',
             hashed_password='fake',
             is_active=True,
@@ -86,8 +88,5 @@ def setup_user_views(app: FastAPI):
     )
 
     @app.get('/users', response_model=List[UserRead], tags=['Usuários'])
-    async def list_users(session=Depends(get_session)):
-        from sqlalchemy import select
-
-        result = await session.execute(select(User).order_by(User.id))
-        return result.scalars().all()
+    async def list_users(repository: SQLAlchemyRepository = Depends(get_repository)):
+        return await repository.get(User, order_by='id')

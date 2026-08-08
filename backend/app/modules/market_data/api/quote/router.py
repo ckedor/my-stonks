@@ -1,56 +1,60 @@
-"""Asset price quote routes."""
+"""Persisted and on-demand asset quote routes."""
 
-from app.infra.db.session import get_session
-from app.modules.market_data.api.quote.schemas import QuoteResponse
-from app.modules.market_data.domain.enums import EXCHANGE
-from app.modules.market_data.service.market_data_service import MarketDataService
+from datetime import date
+
 from fastapi import APIRouter, Depends, Query
 
-router = APIRouter(prefix='/quote', tags=['Quote'])
+from app.composition.market_data import (
+    get_on_demand_quote_read_service,
+    get_persisted_quote_read_service,
+)
+from app.modules.market_data.api.quote.schemas import (
+    OnDemandQuotesResponse,
+    PersistedQuotesResponse,
+)
+from app.modules.market_data.service.quote_service import (
+    OnDemandQuoteReadService,
+    PersistedQuoteReadService,
+)
+
+router = APIRouter(prefix='/quotes', tags=['Quotes'])
+MAX_ASSETS_PER_PERSISTED_QUERY = 100
+MAX_TICKER_LENGTH = 30
 
 
-@router.get('', response_model=QuoteResponse)
-async def get_asset_quotes(
-    ticker: str,
-    session=Depends(get_session),
-    asset_type: str | None = Query(
+@router.get('/persisted', response_model=list[PersistedQuotesResponse])
+async def get_persisted_quotes(
+    asset_ids: list[int] | None = Query(
         default=None,
-        description="Asset type (STOCK, ETF, FII, etc)",
+        max_length=MAX_ASSETS_PER_PERSISTED_QUERY,
     ),
-    exchange: EXCHANGE | None = Query(
+    tickers: list[str] | None = Query(
         default=None,
-        description="Exchange code (B3, NASDAQ, NYSE, etc)",
+        max_length=MAX_ASSETS_PER_PERSISTED_QUERY,
     ),
-    date: str | None = Query(
-        default=None,
-        description="Specific date (YYYY-MM-DD)",
-    ),
-    start_date: str | None = Query(
-        default=None,
-        description="Range start date (YYYY-MM-DD)",
-    ),
-    end_date: str | None = Query(
-        default=None,
-        description="Range end date (YYYY-MM-DD)",
-    ),
-    treasury_type: str | None = Query(
-        default=None,
-        description="Treasury bond type (for Brazilian treasury bonds)",
-    ),
-    treasury_maturity_date: str | None = Query(
-        default=None,
-        description="Treasury maturity date (for Brazilian treasury bonds)",
-    ),
+    asset_type_id: int | None = Query(default=None),
+    start_date: date | None = Query(default=None),
+    service: PersistedQuoteReadService = Depends(get_persisted_quote_read_service),
 ):
-    """Get asset price quotes (OHLCV data). Supports single date or range."""
-    service = MarketDataService(session)
-    return await service.get_asset_quotes(
-        ticker,
-        asset_type,
-        exchange,
-        date,
-        start_date,
-        end_date,
-        treasury_type,
-        treasury_maturity_date,
+    return await service.get_quotes(
+        asset_ids=asset_ids,
+        tickers=tickers,
+        asset_type_id=asset_type_id,
+        start_date=start_date,
+    )
+
+
+@router.get('/on-demand', response_model=OnDemandQuotesResponse)
+async def get_on_demand_quotes(
+    ticker: str = Query(min_length=1, max_length=MAX_TICKER_LENGTH),
+    asset_type_id: int = Query(ge=1),
+    start_date: date | None = Query(default=None),
+    exchange: str | None = Query(default=None, max_length=10),
+    service: OnDemandQuoteReadService = Depends(get_on_demand_quote_read_service),
+):
+    return await service.get_quotes(
+        ticker=ticker,
+        asset_type_id=asset_type_id,
+        start_date=start_date,
+        exchange=exchange,
     )

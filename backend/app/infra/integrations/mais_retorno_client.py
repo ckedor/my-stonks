@@ -19,7 +19,7 @@ class MaisRetornoClient:
         slug = response[0]['slug']
         return slug
 
-    async def get_fund_price_history_df(self, fund_legal_id: str, init_date: datetime) -> pd.DataFrame:
+    async def get_fund_quotes_df(self, fund_legal_id: str, init_date: datetime) -> pd.DataFrame:
         slug = await self._get_slug_from_cnpj(fund_legal_id)
 
         start = int(init_date.timestamp() * 1000)
@@ -48,7 +48,7 @@ class MaisRetornoClient:
         start_date: datetime = None,
         end_date: datetime = None,
     ):
-        history_df = await self.get_fund_price_history_df(fund_legal_id, start_date)
+        history_df = await self.get_fund_quotes_df(fund_legal_id, start_date)
         if start_date:
             history_df = history_df[history_df['date'] >= pd.to_datetime(start_date).normalize()]
         if end_date:

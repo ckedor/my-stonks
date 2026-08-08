@@ -4,14 +4,13 @@ from enum import Enum
 from typing import Any, List, Optional, Type, TypeVar
 
 import pandas as pd
-from sqlalchemy import Date, DateTime, asc
+from sqlalchemy import Date, DateTime, asc, desc, inspect, select, text
 from sqlalchemy import delete as sqlalchemy_delete
-from sqlalchemy import desc, inspect, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm import selectinload
 
-ModelType = TypeVar('ModelType', bound=DeclarativeMeta)
+ModelType = TypeVar('ModelType')
 
 
 class SQLAlchemyRepository:
@@ -197,7 +196,8 @@ class SQLAlchemyRepository:
         if not unique_columns:
             raise ValueError("unique_columns must be provided for upsert operation")
 
-        table_name = f"{model.__table__.schema}.{model.__tablename__}"
+        table = model.__table__
+        table_name = f'{table.schema}.{table.name}' if table.schema else table.name
         model_columns = [col.name for col in inspect(model).columns]
         columns = list(data[0].keys())
 

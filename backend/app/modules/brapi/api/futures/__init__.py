@@ -1,1 +1,0 @@
-"""brapi Futuros API."""

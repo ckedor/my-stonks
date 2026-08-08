@@ -22,14 +22,6 @@ def test_module_openapi_schemas_partition_all_application_paths():
 
     assert set().union(*module_path_sets) == complete_paths
     assert sum(map(len, module_path_sets)) == len(complete_paths)
-    brapi_schema = build_module_openapi(
-        app,
-        next(module for module in MODULE_DOCS if module.slug == 'brapi'),
-    )
-    assert set(brapi_schema['components']['schemas']) == {
-        'HTTPValidationError',
-        'ValidationError',
-    }
 
 
 @pytest.mark.asyncio
@@ -40,16 +32,16 @@ async def test_module_swagger_page_uses_its_filtered_openapi_schema():
         transport=ASGITransport(app=app),
         base_url='http://test',
     ) as client:
-        docs_response = await client.get('/docs/brapi')
+        docs_response = await client.get('/docs/market-data')
         portfolio_docs_response = await client.get('/docs/portfolio')
-        schema_response = await client.get('/openapi/brapi.json')
+        schema_response = await client.get('/openapi/market-data.json')
         complete_docs_response = await client.get('/docs')
         module_index_response = await client.get('/docs/modules')
 
     assert docs_response.status_code == HTTPStatus.OK
-    assert '/openapi/brapi.json' in docs_response.text
+    assert '/openapi/market-data.json' in docs_response.text
     assert 'class="module-docs-nav"' in docs_response.text
-    assert 'href="/docs/brapi" aria-current="page"' in docs_response.text
+    assert 'href="/docs/market-data" aria-current="page"' in docs_response.text
     assert 'href="/docs/portfolio"' in docs_response.text
     assert 'background: #fafafa' in docs_response.text
     assert 'color: #3b4151' in docs_response.text
@@ -60,10 +52,7 @@ async def test_module_swagger_page_uses_its_filtered_openapi_schema():
     assert 'href="/docs/portfolio" aria-current="page"' in portfolio_docs_response.text
 
     assert schema_response.status_code == HTTPStatus.OK
-    assert all(
-        path.startswith('/brapi/')
-        for path in schema_response.json()['paths']
-    )
+    assert all(path.startswith('/market_data/') for path in schema_response.json()['paths'])
     assert complete_docs_response.status_code == HTTPStatus.OK
     assert 'href="/docs" aria-current="page"' in complete_docs_response.text
     assert f"url: '{app.openapi_url}'" in complete_docs_response.text

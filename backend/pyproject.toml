@@ -127,6 +127,7 @@ pytest = "^8.3.5"
 pytest-cov = "^6.1.1"
 taskipy = "^1.14.1"
 fastapi = {extras = ["standard"], version = "^0.115.12"}
+import-linter = "2.6"
 
 [tool.ruff]
 line-length = 100
@@ -148,6 +149,8 @@ pre_test = 'task lint'
 test = 'pytest --cov=app -vv'
 post_test = 'coverage html'
 lint = 'ruff check . && ruff check . --diff'
+architecture = 'lint-imports --config .importlinter'
+architecture_market_data = 'lint-imports --config .importlinter --contract market-data-domain-boundary --contract market-data-service-boundary --contract market-data-api-boundary --contract market-data-task-boundary --contract market-data-module-boundary'
 format = 'ruff check . --fix && ruff format .'
 create_migration = 'alembic revision --autogenerate -m' 
 migrate = 'alembic upgrade head'

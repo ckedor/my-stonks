@@ -3,13 +3,19 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Sequence
 
 import pandas as pd
-from app.infra.db.models.asset import Asset, AssetClass, AssetType
-from app.infra.db.models.asset_etf import ETF
-from app.infra.db.models.asset_fii import FII, FIISegment
-from app.infra.db.models.asset_fixed_income import FixedIncome
-from app.infra.db.models.asset_treasury_bond import TreasuryBond
-from app.infra.db.models.market_data import Index
-from app.infra.db.models.portfolio import (Broker, CategoryReturn,
+from app.modules.market_data.domain.assets import (
+    Asset,
+    AssetClass,
+    AssetType,
+    Broker,
+    ETF,
+    FII,
+    FIISegment,
+    FixedIncome,
+    TreasuryBond,
+)
+from app.modules.market_data.domain.market_data_series import MarketDataSeries
+from app.modules.portfolio.domain.entities import (CategoryReturn,
                                            CustomCategory,
                                            CustomCategoryAssignment, Dividend,
                                            Portfolio, PortfolioReturn,
@@ -29,6 +35,23 @@ def get_custom_category_subquery(portfolio_id):
 
 
 class PortfolioRepository(SQLAlchemyRepository):
+    async def get_broker_currency_for_asset(
+        self,
+        portfolio_id: int,
+        asset_id: int,
+    ) -> int | None:
+        stmt = (
+            select(Broker.currency_id)
+            .join(Transaction, Transaction.broker_id == Broker.id)
+            .where(
+                Transaction.asset_id == asset_id,
+                Transaction.portfolio_id == portfolio_id,
+            )
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     
     async def get_most_recent_asset_ids_from_position(
         self,
@@ -47,6 +70,7 @@ class PortfolioRepository(SQLAlchemyRepository):
             select(Position.asset_id)
             .where(Position.portfolio_id == portfolio_id)
             .where(Position.date > most_recent_date_subquery - timedelta(days=delta_days))
+            .where(Position.quantity != 0)
             .distinct()
         )  
         
@@ -66,8 +90,54 @@ class PortfolioRepository(SQLAlchemyRepository):
         )
         result = await self.session.execute(query)
         return list(result.scalars())
-    
-    
+
+    async def get_all_asset_ids_with_transactions(
+        self,
+        asset_type_ids: Sequence[int] | None = None,
+    ) -> list[int]:
+        """Return distinct asset IDs referenced by any portfolio transaction."""
+        stmt = select(Transaction.asset_id).distinct().order_by(Transaction.asset_id)
+        if asset_type_ids:
+            stmt = stmt.join(Asset, Asset.id == Transaction.asset_id).where(
+                Asset.asset_type_id.in_(asset_type_ids)
+            )
+        result = await self.session.execute(stmt)
+        return list(result.scalars())
+
+    async def get_recent_position_asset_ids(
+        self,
+        *,
+        window_days: int = 5,
+        asset_type_ids: Sequence[int] | None = None,
+    ) -> list[int]:
+        """Return held assets from the latest global position window.
+
+        The global maximum is intentional: a portfolio whose positions have
+        not been refreshed recently must not make old holdings eligible for
+        the daily quote ingestion.
+        """
+        latest_position_date = select(func.max(Position.date)).scalar_subquery()
+        stmt = (
+            select(Position.asset_id)
+            .where(
+                Position.date > latest_position_date - timedelta(days=window_days),
+                Position.quantity != 0,
+            )
+            .distinct()
+            .order_by(Position.asset_id)
+        )
+        if asset_type_ids:
+            stmt = stmt.join(Asset, Asset.id == Position.asset_id).where(
+                Asset.asset_type_id.in_(asset_type_ids)
+            )
+        result = await self.session.execute(stmt)
+        return list(result.scalars())
+
+    async def get_latest_position_date(self) -> date_type | None:
+        """Return the most recent snapshot date available in position."""
+        result = await self.session.execute(select(func.max(Position.date)))
+        return result.scalar_one_or_none()
+
     async def get_position_on_date_by_broker(
         self,
         portfolio_id: int,
@@ -166,7 +236,7 @@ class PortfolioRepository(SQLAlchemyRepository):
                 joinedload(Asset.fund),
                 joinedload(Asset.fixed_income)
                 .joinedload(FixedIncome.index)
-                .joinedload(Index.currency),
+                .joinedload(MarketDataSeries.currency),
                 joinedload(Asset.fixed_income).joinedload(FixedIncome.fixed_income_type),
                 joinedload(Asset.treasury_bond).joinedload(TreasuryBond.type),
             )
@@ -709,4 +779,3 @@ class PortfolioRepository(SQLAlchemyRepository):
 
         result = await self.session.execute(stmt)
         return result.mappings().all()
-

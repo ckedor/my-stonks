@@ -1,7 +1,7 @@
 from fastapi_users import BaseUserManager
 
 from app.config.settings import settings
-from app.modules.users.models import User
+from app.modules.users.domain import User
 
 
 class UserManager(BaseUserManager[User, int]):

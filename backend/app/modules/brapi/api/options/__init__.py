@@ -1,1 +1,0 @@
-"""brapi Opções API."""

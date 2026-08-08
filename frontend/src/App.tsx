@@ -7,9 +7,13 @@ import AdminAssetsPage from "./pages/admin/assets/page";
 import AdminBrokersPage from "./pages/admin/brokers/page";
 import DesignSystemPage from "./pages/admin/design-system/page";
 import AdminEventsPage from "./pages/admin/events/page";
+import AdminQuoteIngestionPage from "./pages/admin/quote-ingestion/page";
+import AdminMarketDataSeriesIngestionPage from "./pages/admin/market-data-series-ingestion/page";
+import AdminUsdBrlIngestionPage from "./pages/admin/usd-brl-ingestion/page";
 import AdminLayout from "./pages/admin/layout";
 import AdminUsersPage from "./pages/admin/users/page";
 import LoginPage from "./pages/login";
+import ArchitecturePage from "./pages/architecture/ArchitecturePage";
 import MarketAssetPage from "./pages/market/asset/page";
 import MarketAtivosPage from "./pages/market/ativos/page";
 import MarketOverviewPage from "./pages/market/overview/page";
@@ -51,6 +55,7 @@ const router = createBrowserRouter([
       { path: "market/assets", element: <MarketAtivosPage /> },
       { path: "market/overview", element: <MarketOverviewPage /> },
       { path: "market/asset/:id", element: <MarketAssetPage /> },
+      { path: "architecture", element: <ArchitecturePage /> },
     ],
   },
   {
@@ -63,6 +68,9 @@ const router = createBrowserRouter([
       { path: "users", element: <AdminUsersPage /> },
       { path: "design-system", element: <DesignSystemPage /> },
       { path: "ai-features", element: <AdminAIFeaturesPage /> },
+      { path: "quote-ingestion", element: <AdminQuoteIngestionPage /> },
+      { path: "market-data-series-ingestion", element: <AdminMarketDataSeriesIngestionPage /> },
+      { path: "usd-brl-ingestion", element: <AdminUsdBrlIngestionPage /> },
       { index: true, element: <Navigate to="/admin/assets" replace /> },
     ],
   },

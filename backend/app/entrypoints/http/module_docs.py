@@ -16,16 +16,12 @@ class ModuleDocs:
     path_prefixes: tuple[str, ...]
 
     def includes(self, path: str) -> bool:
-        return any(
-            path == prefix or path.startswith(f'{prefix}/')
-            for prefix in self.path_prefixes
-        )
+        return any(path == prefix or path.startswith(f'{prefix}/') for prefix in self.path_prefixes)
 
 
 MODULE_DOCS = (
     ModuleDocs('users', 'Usuários e autenticação', ('/auth', '/users')),
     ModuleDocs('ai', 'Inteligência artificial', ('/ai',)),
-    ModuleDocs('brapi', 'brapi v2', ('/brapi',)),
     ModuleDocs('market-data', 'Dados de mercado', ('/market_data',)),
     ModuleDocs('portfolio', 'Portfólio', ('/portfolio',)),
     ModuleDocs('system', 'Sistema', ('/hc',)),
@@ -180,9 +176,7 @@ def build_module_openapi(app: FastAPI, module: ModuleDocs) -> dict[str, Any]:
     }
     if 'tags' in complete_schema:
         module_schema['tags'] = [
-            tag
-            for tag in complete_schema['tags']
-            if tag.get('name') in used_tags
+            tag for tag in complete_schema['tags'] if tag.get('name') in used_tags
         ]
     return module_schema
 
@@ -205,7 +199,7 @@ def _navigation_html(root_path: str, current_slug: str | None) -> str:
     ]
     rendered_links = ''.join(
         f'<a class="module-docs-nav__link" href="{escape(href)}"'
-        f'{" aria-current=\"page\"" if slug == current_slug else ""}>'
+        f'{' aria-current="page"' if slug == current_slug else ""}>'
         f'{escape(label)}</a>'
         for slug, label, href in links
     )
@@ -249,8 +243,7 @@ def _module_index_endpoint(app: FastAPI):
     async def module_index(request: Request) -> HTMLResponse:
         root_path = request.scope.get('root_path', '').rstrip('/')
         links = ''.join(
-            f'<li><a href="{root_path}/docs/{escape(module.slug)}">'
-            f'{escape(module.title)}</a></li>'
+            f'<li><a href="{root_path}/docs/{escape(module.slug)}">{escape(module.title)}</a></li>'
             for module in MODULE_DOCS
         )
         return HTMLResponse(

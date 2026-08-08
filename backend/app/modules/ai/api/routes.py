@@ -1,4 +1,6 @@
-from app.infra.db.session import get_session
+from app.infra.db.dependencies import get_repository
+from app.infra.db.repositories.base_repository import SQLAlchemyRepository
+from app.infra.db.unit_of_work import UnitOfWork, get_uow
 from app.infra.openai.openai_client import get_ai_provider
 from app.modules.ai.api.schemas import (
     AIFeatureResponse,
@@ -20,18 +22,28 @@ feature_router = APIRouter(prefix='/feature', dependencies=[Depends(current_supe
 
 
 @feature_router.get('', response_model=list[AIFeatureResponse])
-async def list_features(session=Depends(get_session)):
-    return await AIFeatureService(session).list()
+async def list_features(repository: SQLAlchemyRepository = Depends(get_repository)):
+    service = AIFeatureService(repository=repository)
+    return await service.list()
 
 
 @feature_router.get('/{feature_id}', response_model=AIFeatureResponse)
-async def get_feature(feature_id: int, session=Depends(get_session)):
-    return await AIFeatureService(session).get(feature_id)
+async def get_feature(
+    feature_id: int,
+    repository: SQLAlchemyRepository = Depends(get_repository),
+):
+    service = AIFeatureService(repository=repository)
+    return await service.get(feature_id)
 
 
 @feature_router.patch('/{feature_id}', response_model=AIFeatureResponse)
-async def update_feature(feature_id: int, payload: AIFeatureUpdate, session=Depends(get_session)):
-    return await AIFeatureService(session).update(feature_id, payload)
+async def update_feature(
+    feature_id: int,
+    payload: AIFeatureUpdate,
+    uow: UnitOfWork = Depends(get_uow),
+):
+    service = AIFeatureService(uow=uow)
+    return await service.update(feature_id, payload)
 
 
 @router.get('/asset_overview_and_news', response_model=AssetOverviewAndNewsResponse)
@@ -42,10 +54,11 @@ async def get_asset_overview_and_news(
         description='If true, forces a fresh generation even when existing artifact is still valid',
     ),
     _: object = Depends(current_active_user),
-    session=Depends(get_session),
+    repository: SQLAlchemyRepository = Depends(get_repository),
+    uow: UnitOfWork = Depends(get_uow),
     provider: AIProvider = Depends(get_ai_provider),
 ):
-    ai_artifact_service = AIArtifactService(session, provider)
+    ai_artifact_service = AIArtifactService(repository, uow, provider)
     return await ai_artifact_service.get_or_generate_artifact(
         feature_key=AIFeatureKey.ASSET_OVERVIEW_AND_NEWS,
         input=AssetOverviewAndNewsInput(ticker=ticker),

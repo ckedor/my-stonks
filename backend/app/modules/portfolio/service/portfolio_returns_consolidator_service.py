@@ -5,68 +5,75 @@ Service to consolidate portfolio and category returns into the database.
 
 import pandas as pd
 from app.config.logger import logger
-from app.infra.db.models.portfolio import (
+from app.modules.portfolio.domain.entities import (
     CategoryReturn,
     CustomCategory,
-    CustomCategoryAssignment,
     PortfolioReturn,
 )
 from app.lib.finance.performance_metrics import cagr
 from app.lib.utils.df import rows_to_df
-from app.modules.portfolio.domain.returns import (
-    calculate_category_acc_return,
-    calculate_portfolio_acc_return,
-    calculate_portfolio_daily_returns,
-)
+from app.modules.portfolio.domain.returns import calculate_portfolio_daily_returns
 from app.modules.portfolio.repositories import PortfolioRepository
+from app.infra.db.unit_of_work import UnitOfWork
 
 
 class PortfolioReturnsConsolidatorService:
-    def __init__(self, session):
-        self.session = session
-        self.repo = PortfolioRepository(session)
+    def __init__(self, uow: UnitOfWork):
+        self.uow = uow
 
     async def consolidate_returns(self, portfolio_id: int):
         logger.info(f"Consolidando retornos do portfolio {portfolio_id}")
 
-        portfolio_position_df = rows_to_df(
-            await self.repo.get_portfolio_position(portfolio_id),
-            datetime_cols=['date'],
-            numeric_fillna_cols=['dividend', 'dividend_usd'],
-        )
+        async with self.uow as uow:
+            portfolio_position_df = rows_to_df(
+                await uow.portfolios.get_portfolio_position(portfolio_id),
+                datetime_cols=['date'],
+                numeric_fillna_cols=['dividend', 'dividend_usd'],
+            )
+            if portfolio_position_df.empty:
+                logger.warning(f"Sem posições para portfolio {portfolio_id}")
+                return
 
-        if portfolio_position_df.empty:
-            logger.warning(f"Sem posições para portfolio {portfolio_id}")
-            return
-
-        pos_df = calculate_portfolio_daily_returns(portfolio_position_df)
-
-        await self._consolidate_portfolio_returns(pos_df, portfolio_id)
-        await self._consolidate_category_returns(pos_df, portfolio_id)
-
-        await self.session.commit()
+            pos_df = calculate_portfolio_daily_returns(portfolio_position_df)
+            await self._consolidate_portfolio_returns(
+                uow.portfolios,
+                pos_df,
+                portfolio_id,
+            )
+            await self._consolidate_category_returns(
+                uow.portfolios,
+                pos_df,
+                portfolio_id,
+            )
         logger.info(f"Retornos consolidados com sucesso para portfolio {portfolio_id}")
 
     async def consolidate_category_returns(self, portfolio_id: int):
         logger.info(f"Consolidando retornos das categorias do portfolio {portfolio_id}")
 
-        portfolio_position_df = rows_to_df(
-            await self.repo.get_portfolio_position(portfolio_id),
-            datetime_cols=['date'],
-            numeric_fillna_cols=['dividend', 'dividend_usd'],
-        )
+        async with self.uow as uow:
+            portfolio_position_df = rows_to_df(
+                await uow.portfolios.get_portfolio_position(portfolio_id),
+                datetime_cols=['date'],
+                numeric_fillna_cols=['dividend', 'dividend_usd'],
+            )
+            if portfolio_position_df.empty:
+                logger.warning(f"Sem posições para portfolio {portfolio_id}")
+                return
 
-        if portfolio_position_df.empty:
-            logger.warning(f"Sem posições para portfolio {portfolio_id}")
-            return
-
-        pos_df = calculate_portfolio_daily_returns(portfolio_position_df)
-        await self._consolidate_category_returns(pos_df, portfolio_id)
-
-        await self.session.commit()
+            pos_df = calculate_portfolio_daily_returns(portfolio_position_df)
+            await self._consolidate_category_returns(
+                uow.portfolios,
+                pos_df,
+                portfolio_id,
+            )
         logger.info(f"Retornos das categorias consolidados para portfolio {portfolio_id}")
 
-    async def _consolidate_portfolio_returns(self, pos_df: pd.DataFrame, portfolio_id: int):
+    async def _consolidate_portfolio_returns(
+        self,
+        repository: PortfolioRepository,
+        pos_df: pd.DataFrame,
+        portfolio_id: int,
+    ):
         df = pos_df.copy()
 
         # BRL
@@ -103,13 +110,18 @@ class PortfolioReturnsConsolidatorService:
         grouped['date'] = grouped['date'].dt.date
 
         records = grouped[PortfolioReturn.COLUMNS].to_dict(orient='records')
-        await self.repo.upsert_bulk(
+        await repository.upsert_bulk(
             PortfolioReturn, records, unique_columns=['portfolio_id', 'date']
         )
 
-    async def _consolidate_category_returns(self, pos_df: pd.DataFrame, portfolio_id: int):
+    async def _consolidate_category_returns(
+        self,
+        repository: PortfolioRepository,
+        pos_df: pd.DataFrame,
+        portfolio_id: int,
+    ):
         # Build category name -> id mapping
-        categories = await self.repo.get(
+        categories = await repository.get(
             CustomCategory, by={'portfolio_id': portfolio_id}
         )
         if not categories:
@@ -187,7 +199,7 @@ class PortfolioReturnsConsolidatorService:
             all_records.extend(cat_df[CategoryReturn.COLUMNS].to_dict(orient='records'))
 
         if all_records:
-            await self.repo.upsert_bulk(
+            await repository.upsert_bulk(
                 CategoryReturn,
                 all_records,
                 unique_columns=['portfolio_id', 'custom_category_id', 'date'],

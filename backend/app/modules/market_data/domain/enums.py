@@ -19,6 +19,6 @@ class AssetType(StrEnum):
 
 
 class EXCHANGE(StrEnum):
-    B3 = "B3"
-    NASDAQ = "NASDAQ"
-    NYSE = "NYSE"
+    B3 = 'B3'
+    NASDAQ = 'NASDAQ'
+    NYSE = 'NYSE'

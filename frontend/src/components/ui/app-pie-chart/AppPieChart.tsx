@@ -31,6 +31,7 @@ export default function AppPieChart({
   const textMain = theme.palette.text.primary
 
   const labels = data.map((item) => item.label)
+  const total = data.reduce((sum, item) => sum + item.value, 0)
 
   return (
     <Box
@@ -53,7 +54,12 @@ export default function AppPieChart({
             outerRadius="82%"
             isAnimationActive={false}
             labelLine={false}
-            label={PercentageLabel}
+            label={(props) => (
+              <PercentageLabel
+                {...props}
+                minPercentage={minOuterLabelPercentage}
+              />
+            )}
             startAngle={90}
             endAngle={-270}
             stroke={bgPage}
@@ -88,11 +94,13 @@ export default function AppPieChart({
           />
 
           <Tooltip
-            formatter={(value: number) =>
-              isCurrency
+            formatter={(value: number, name: string) => {
+              const percentage = total > 0 ? (Number(value) / total) * 100 : 0
+              const formattedValue = isCurrency
                 ? formatCurrency(value)
                 : value
-            }
+              return [`${formattedValue} (${percentage.toFixed(1)}%)`, name]
+            }}
           />
         </PieChart>
       </ResponsiveContainer>

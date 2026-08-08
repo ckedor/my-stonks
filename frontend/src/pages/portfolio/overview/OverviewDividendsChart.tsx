@@ -62,7 +62,7 @@ export default function OverviewDividendsChart({ dividends, selected, size = 340
   }
 
   return (
-    <Box>
+    <Box sx={{ height: size, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <Stack direction="row" justifyContent="flex-end" alignItems="baseline" sx={{ mb: 2 }}>
         <Stack direction="row" spacing={0.5} alignItems="baseline">
           <Typography variant="body2" color="text.secondary">
@@ -74,8 +74,9 @@ export default function OverviewDividendsChart({ dividends, selected, size = 340
         </Stack>
       </Stack>
 
-      <ResponsiveContainer width="100%" height={size}>
-        <BarChart data={data} margin={{ left: 0, right: 0, top: 5, bottom: 5 }}>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ left: 0, right: 0, top: 5, bottom: 5 }}>
           <XAxis
             dataKey="month"
             stroke={labelColor}
@@ -119,8 +120,9 @@ export default function OverviewDividendsChart({ dividends, selected, size = 340
             fill={theme.palette.primary.main}
             radius={[4, 4, 0, 0]}
           />
-        </BarChart>
-      </ResponsiveContainer>
+          </BarChart>
+        </ResponsiveContainer>
+      </Box>
     </Box>
   )
 }

@@ -1,8 +1,7 @@
 
-import { syncPortfolios } from '@/actions/portfolio'
+import { syncPortfolios, syncReturns } from '@/actions/portfolio'
 import { CATEGORY_ROUTES, INDEX_ROUTES, PORTFOLIO_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
-import { usePortfolioStore } from '@/stores/portfolio'
 import { Delete } from '@mui/icons-material'
 import {
     Alert,
@@ -63,7 +62,6 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
   const [error, setError] = useState<string | null>(null)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [successOpen, setSuccessOpen] = useState(false)
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
 
   useEffect(() => {
     if (open) {
@@ -113,6 +111,8 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
           name,
           user_categories: categories,
         })
+        await syncPortfolios(true)
+        if (portfolio?.id) await syncReturns(portfolio.id, true)
         if (onSave) onSave(portfolio?.id)
       } else {
         const { data } = await api.post(PORTFOLIO_ROUTES.create, {
@@ -165,6 +165,7 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
           data: { portfolio_id: portfolio?.id },
         })
         await syncPortfolios(true)
+        if (portfolio?.id) await syncReturns(portfolio.id, true)
       } catch (err) {
         console.error('Erro ao deletar categoria', err)
         setError('Erro ao deletar categoria.')

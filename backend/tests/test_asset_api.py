@@ -8,8 +8,7 @@ from datetime import date
 from http import HTTPStatus
 
 import pytest
-from app.infra.db.models.asset import Asset, AssetType, Event
-from app.infra.db.models.asset_fixed_income import FixedIncome
+from app.modules.market_data.domain.assets import Asset, AssetType, Event, FixedIncome
 
 
 # ---------------------------------------------------------------------------

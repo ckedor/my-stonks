@@ -1,4 +1,3 @@
-import { usePortfolioStore } from '@/stores/portfolio'
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import {
     Box,
@@ -32,7 +31,6 @@ interface Props {
 
 export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', selectedCategory = 'portfolio' }: Props) {
   const { categoryReturns, benchmarks, loading } = useReturnsStore()
-  const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
   const theme = useTheme()
 
   const portfolioColor = theme.palette.primary.main
@@ -153,19 +151,16 @@ export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', 
       if (map[date]) map[date]['benchmark'] = value * 100
     }
     return Object.values(map).sort((a, b) => dayjs(a.date as string).unix() - dayjs(b.date as string).unix())
-  }, [categoryReturns, benchmarks, selectedBenchmark, filteredDates])
+  }, [categoryReturns, benchmarks, selectedBenchmark, filteredDates, seriesKey])
 
   // Get return values for the period
   const portfolioReturn = data.length ? (data[data.length - 1]['portfolio'] as number) ?? 0 : 0
   const benchmarkReturn = data.length ? (data[data.length - 1]['benchmark'] as number) ?? 0 : 0
 
-  // Period end date
-  const periodEndDate = data.length ? dayjs(data[data.length - 1]['date'] as string) : null
-
   const gradientId = 'overviewPortfolioGradient'
 
   return (
-    <Box>
+    <Box sx={{ height: size, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       {/* Header: returns + benchmark selector */}
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={2}>
         <Box>
@@ -265,12 +260,13 @@ export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', 
 
       {/* Chart */}
       {loading ? (
-        <Box height={size} display="flex" justifyContent="center" alignItems="center">
+        <Box sx={{ flex: 1, minHeight: 0 }} display="flex" justifyContent="center" alignItems="center">
           <CircularProgress size={48} thickness={4} />
         </Box>
       ) : (
-        <ResponsiveContainer width="100%" height={size}>
-          <ComposedChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={portfolioColor} stopOpacity={0.12} />
@@ -312,8 +308,9 @@ export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', 
               activeDot={{ r: 3, strokeWidth: 0, fill: benchmarkColor }}
               name="benchmark"
             />
-          </ComposedChart>
-        </ResponsiveContainer>
+            </ComposedChart>
+          </ResponsiveContainer>
+        </Box>
       )}
     </Box>
   )

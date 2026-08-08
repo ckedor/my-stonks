@@ -1,3 +1,4 @@
+from datetime import date
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -7,6 +8,8 @@ import pytest
 from app.infra.exceptions import IntegrationRateLimited
 from app.infra.integrations.brapi_client import BrapiClient
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
+
+EXPECTED_CRYPTO_CLOSE = 100_000
 
 
 @pytest.mark.asyncio
@@ -78,35 +81,48 @@ async def test_brapi_crypto_quotes_follow_documented_contract():
 @pytest.mark.asyncio
 async def test_crypto_uses_brapi_as_primary_provider():
     provider = MarketDataProvider.__new__(MarketDataProvider)
-    expected = {'ticker': 'BTC', 'currency': 'USD', 'quotes': [{'close': 100_000}]}
-    provider.brapi_client = SimpleNamespace(get_crypto_quotes=AsyncMock(return_value=expected))
+    expected = {
+        'ticker': 'BTC',
+        'currency': 'USD',
+        'quotes': [{'date': '2025-01-01', 'close': 100_000}],
+    }
+    provider.brapi_client = SimpleNamespace(
+        _brapi_range_from_init_date=lambda _: 'max',
+        get_crypto_quotes=AsyncMock(return_value=expected),
+    )
     provider.crypto_compare_client = SimpleNamespace(get_quotes=AsyncMock())
 
-    result = await provider._get_quotes_crypto('BTC', None, None)
+    result = await provider._fetch_crypto_quotes(
+        ticker='BTC',
+        start_date=None,
+        exchange=None,
+    )
 
-    assert result == expected
+    assert result.ticker == 'BTC'
+    assert result.currency == 'USD'
+    assert result.quotes[0].close == EXPECTED_CRYPTO_CLOSE
     provider.brapi_client.get_crypto_quotes.assert_awaited_once()
     provider.crypto_compare_client.get_quotes.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_crypto_falls_back_to_crypto_compare_when_brapi_is_rate_limited():
+async def test_crypto_propagates_provider_rate_limit_without_legacy_fallback():
     provider = MarketDataProvider.__new__(MarketDataProvider)
-    fallback = {'ticker': 'BTC', 'currency': 'USD', 'quotes': [{'close': 99_000}]}
     provider.brapi_client = SimpleNamespace(
+        _brapi_range_from_init_date=lambda _: '1mo',
         get_crypto_quotes=AsyncMock(
             side_effect=IntegrationRateLimited(provider='brapi'),
-        )
+        ),
     )
     provider.crypto_compare_client = SimpleNamespace(
-        get_quotes=AsyncMock(return_value=fallback),
+        get_quotes=AsyncMock(),
     )
 
-    result = await provider._get_quotes_crypto('BTC', '2025-01-01', '2025-01-31')
+    with pytest.raises(IntegrationRateLimited):
+        await provider._fetch_crypto_quotes(
+            ticker='BTC',
+            start_date=date(2025, 1, 1),
+            exchange=None,
+        )
 
-    assert result == fallback
-    provider.crypto_compare_client.get_quotes.assert_awaited_once_with(
-        'BTC',
-        start_date='2025-01-01',
-        end_date='2025-01-31',
-    )
+    provider.crypto_compare_client.get_quotes.assert_not_awaited()

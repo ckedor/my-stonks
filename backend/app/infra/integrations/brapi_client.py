@@ -290,8 +290,8 @@ class BrapiClient:  # noqa: PLR0904 - the public methods mirror the upstream API
 
         return 'max'
 
-    async def _fetch_price_df(self, ticker: str, init_date, interval: str = '1d') -> pd.DataFrame:
-        """Fetch raw price data without filling missing days."""
+    async def _fetch_quotes_df(self, ticker: str, init_date, interval: str = '1d') -> pd.DataFrame:
+        """Fetch raw quote data without filling missing days."""
         range_param = self._brapi_range_from_init_date(init_date)
         asset_quotes = await self._get_quotes([ticker], range_param, interval)
 
@@ -303,33 +303,10 @@ class BrapiClient:  # noqa: PLR0904 - the public methods mirror the upstream API
         df = df.drop_duplicates(subset=['date'])
         return df
 
-    async def get_price_history_df(self, ticker: str, init_date, interval: str = '1d') -> pd.DataFrame:
-        df = await self._fetch_price_df(ticker, init_date, interval)
+    async def get_quotes_df(self, ticker: str, init_date, interval: str = '1d') -> pd.DataFrame:
+        df = await self._fetch_quotes_df(ticker, init_date, interval)
         df = extend_values_to_today(df)
         return df
-
-    async def get_quotes(
-        self,
-        ticker: str,
-        init_date,
-        end_date=None,
-        interval: str = '1d'
-    ) -> Dict[str, Any]:
-        df = await self._fetch_price_df(ticker, init_date, interval)
-        if end_date:
-            end_date = pd.to_datetime(end_date).normalize()
-            df = df[df['date'] <= end_date]
-        if init_date:
-            init_date = pd.to_datetime(init_date).normalize()
-            df = df[df['date'] >= init_date]
-
-        currency = df['currency'].iloc[0] if not df.empty else None
-        quotes = df[['date', 'open', 'high', 'low', 'close', 'volume']].to_dict(orient='records')
-        return {
-            'ticker': ticker,
-            'currency': currency,
-            'quotes': quotes,
-        }
 
     async def get_crypto_quotes(
         self,

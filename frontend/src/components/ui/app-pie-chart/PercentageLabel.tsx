@@ -2,6 +2,10 @@
 import { useTheme } from '@mui/material'
 import { PieLabelRenderProps } from 'recharts'
 
+type PercentageLabelProps = PieLabelRenderProps & {
+  minPercentage: number
+}
+
 export default function PercentageLabel({
   cx,
   cy,
@@ -9,8 +13,11 @@ export default function PercentageLabel({
   innerRadius,
   outerRadius,
   percent,
-}: PieLabelRenderProps) {
+  minPercentage,
+}: PercentageLabelProps) {
   const theme = useTheme()
+
+  if (Number(percent) * 100 < minPercentage) return null
   
   const RADIAN = Math.PI / 180
   const radius = Number(innerRadius) + (Number(outerRadius) - Number(innerRadius)) * 0.5

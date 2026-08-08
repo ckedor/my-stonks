@@ -1,17 +1,13 @@
 # tests/test_market_data_api.py
-"""
-E2E tests for the Market Data API.
-- /market_data/currency and /market_data/indexes are pure DB reads.
-- /market_data/quotes depends on an external MarketDataProvider, so we mock it.
-- /market_data/indexes/time_series and usd_brl depend on index_history rows.
-"""
+"""E2E tests for the Market Data API."""
 
 from datetime import date, datetime
 from http import HTTPStatus
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from app.infra.db.models.market_data import IndexHistory
+from app.modules.market_data.domain.market_data_series import MarketDataSeriesHistory
+from app.modules.market_data.domain.usd_brl import UsdBrlHistory
 
 
 # ---------------------------------------------------------------------------
@@ -56,7 +52,7 @@ async def test_indexes_time_series_empty(client):
 @pytest.mark.asyncio
 async def test_indexes_time_series_with_data(client, db):
     """Seed index_history and verify the time series endpoint returns data."""
-    ih = IndexHistory(index_id=6, date=date(2025, 1, 2), close=130000)
+    ih = MarketDataSeriesHistory(series_id=6, date=date(2025, 1, 2), close=130000)
     db.add(ih)
     db.commit()
 
@@ -80,7 +76,11 @@ async def test_usd_brl_history_empty(client):
 
 @pytest.mark.asyncio
 async def test_usd_brl_history_with_data(client, db):
-    ih = IndexHistory(index_id=1, date=date(2025, 1, 2), close=5.25)
+    ih = UsdBrlHistory(
+        date=date(2025, 1, 2),
+        usd_to_brl_rate=5.25,
+        source='test',
+    )
     db.add(ih)
     db.commit()
 
@@ -99,7 +99,7 @@ async def test_get_quotes_mocked(client):
     """Mock the external market data provider to return quotes."""
     mock_quotes = {
         'ticker': 'PETR4',
-        'asset_type': 'STOCK',
+        'asset_type_id': 4,
         'currency': 'BRL',
         'quotes': [
             {
@@ -114,13 +114,13 @@ async def test_get_quotes_mocked(client):
     }
 
     with patch(
-        'app.modules.market_data.service.market_data_service.MarketDataService.get_asset_quotes',
+        'app.modules.market_data.service.quote_service.OnDemandQuoteReadService.get_quotes',
         new_callable=AsyncMock,
         return_value=mock_quotes,
     ):
         response = await client.get(
-            '/market_data/quote',
-            params={'ticker': 'PETR4', 'asset_type': 'STOCK'},
+            '/market_data/quotes/on-demand',
+            params={'ticker': 'PETR4', 'asset_type_id': 4},
         )
 
     assert response.status_code == HTTPStatus.OK
@@ -139,7 +139,8 @@ async def test_consolidate_history_returns_ok(client):
     We mock the service method to verify the route + auth works E2E.
     """
     with patch(
-        'app.modules.market_data.service.market_data_service.MarketDataService.consolidate_market_indexes_history',
+        'app.modules.market_data.service.data_ingestion_service.'
+        'MarketDataIngestionTriggerService.trigger_series_and_usd_brl',
         new_callable=AsyncMock,
     ):
         response = await client.post('/market_data/index/consolidate_history')

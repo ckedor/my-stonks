@@ -43,9 +43,10 @@ import {
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-export type Section = 'carteira' | 'mercado'
+type Section = 'carteira' | 'mercado' | 'architecture'
 
-export function getCurrentSection(pathname: string): Section {
+function getCurrentSection(pathname: string): Section {
+  if (pathname.startsWith('/architecture')) return 'architecture'
   if (pathname.startsWith('/market')) return 'mercado'
   return 'carteira'
 }
@@ -163,11 +164,6 @@ export default function MainTopbar() {
     setOpenForm(true)
   }
 
-  const handleSectionClick = (section: Section) => {
-    if (section === 'carteira') navigate('/portfolio/overview')
-    else navigate('/market/assets')
-  }
-
   // Mega-menu column component
   const MegaMenuContent = ({ columns, onClose }: { columns: typeof carteiraColumns; onClose: () => void }) => (
     <Box sx={{ display: 'flex', gap: 8, p: 4, minWidth: 480 }}>
@@ -275,6 +271,21 @@ export default function MainTopbar() {
             >
               <MegaMenuContent columns={mercadoColumns} onClose={() => setMercadoAnchor(null)} />
             </Popover>
+
+            <Button
+              onClick={() => navigate('/architecture')}
+              sx={{
+                textTransform: 'none',
+                fontWeight: currentSection === 'architecture' ? 'bold' : 'normal',
+                color: 'topbar.text',
+                borderBottom: currentSection === 'architecture' ? 2 : 0,
+                borderColor: 'topbar.text',
+                borderRadius: 0,
+                px: 1.5,
+              }}
+            >
+              Arquitetura
+            </Button>
           </Box>
 
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>

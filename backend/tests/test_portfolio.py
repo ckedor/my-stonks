@@ -1,8 +1,8 @@
 from http import HTTPStatus
 
 import pytest
-from app.infra.db.models.portfolio import CustomCategory, Portfolio
-from app.modules.users.models import User
+from app.modules.portfolio.domain.entities import CustomCategory, Portfolio
+from app.modules.users.domain import User
 
 
 @pytest.mark.asyncio

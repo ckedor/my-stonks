@@ -4,6 +4,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { ASSET_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
+import axios from 'axios'
 import {
     Alert,
     Box,
@@ -73,6 +74,12 @@ const ETF_TYPES = new Set([1, 12]) // ETF, REIT
 const FIXED_INCOME_TYPES = new Set([8, 9, 10, 11, 14]) // CDB, DEB, CRI, CRA, LCA
 const FUND_TYPES = new Set([7, 6]) // FI, PREV
 const TREASURY_TYPES = new Set([3]) // TREASURY
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (!axios.isAxiosError(error)) return fallback
+  const message = error.response?.data?.message
+  return typeof message === 'string' ? message : fallback
+}
 
 export default function AdminAssetsPage() {
   const [assets, setAssets] = useState<AssetRow[]>([])
@@ -215,7 +222,11 @@ export default function AdminAssetsPage() {
       fetchData()
     } catch (error) {
       console.error('Erro ao excluir:', error)
-      setSnackbar({ open: true, message: 'Erro ao excluir ativo', severity: 'error' })
+      setSnackbar({
+        open: true,
+        message: getApiErrorMessage(error, 'Erro ao excluir ativo'),
+        severity: 'error',
+      })
     } finally {
       setDeleteDialogOpen(false)
       setSelectedAsset(null)
@@ -234,6 +245,11 @@ export default function AdminAssetsPage() {
       fetchData()
     } catch (error) {
       console.error('Erro ao salvar:', error)
+      setSnackbar({
+        open: true,
+        message: getApiErrorMessage(error, 'Erro ao salvar ativo'),
+        severity: 'error',
+      })
       throw error
     }
   }
@@ -405,7 +421,8 @@ export default function AdminAssetsPage() {
         <DialogContent>
           <DialogContentText>
             Tem certeza que deseja excluir o ativo <strong>{selectedAsset?.ticker || selectedAsset?.name}</strong>? Esta
-            ação não pode ser desfeita.
+            ação não pode ser desfeita. Ativos com histórico de carteira não são excluídos; nesses casos, altere o
+            ticker mantendo o mesmo ativo.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

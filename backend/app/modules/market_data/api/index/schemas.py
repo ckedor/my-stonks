@@ -14,15 +14,22 @@ class Currency(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class MarketIndex(BaseModel):
+class MarketDataSeriesResponse(BaseModel):
     id: int
     short_name: str
     name: str
     symbol: str
     currency_id: int | None = None
+    series_type: str
+    value_type: str
+    frequency: str
     currency: Currency | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class MarketIndex(MarketDataSeriesResponse):
+    """Compatibility response name for the former index routes."""
 
 
 class IndexPoint(BaseModel):
@@ -34,8 +41,14 @@ class IndexPoint(BaseModel):
 
 class MarketIndexesTimeSeries(RootModel[Dict[str, List[IndexPoint]]]):
     """Maps each index (ex: 'S&P500', 'USD/BRL') to its time series"""
+
     pass
 
 
-class USD_BRL_History(RootModel[List[IndexPoint]]):
+class UsdBrlPoint(BaseModel):
+    date: date
+    usdbrl: float
+
+
+class USD_BRL_History(RootModel[List[UsdBrlPoint]]):
     model_config = ConfigDict(from_attributes=True)

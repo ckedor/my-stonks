@@ -2,8 +2,9 @@
 
 from typing import Optional
 
-from app.modules.market_data.api.index.schemas import Currency
 from pydantic import BaseModel, ConfigDict
+
+from app.modules.market_data.api.index.schemas import Currency
 
 
 class BrokerCreate(BaseModel):

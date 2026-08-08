@@ -36,6 +36,7 @@ export interface TimeSeriesPoint {
 interface Props {
   data: TimeSeriesPoint[]
   height?: number
+  fitContainer?: boolean
   title?: string
   emptyMessage?: string
   loading?: boolean
@@ -77,9 +78,21 @@ function buildTicks(domain: [number, number], step: number) {
   return out
 }
 
+function computeNiceTickStep(domain: [number, number], targetTicks = 5) {
+  const span = Math.abs(domain[1] - domain[0])
+  if (!Number.isFinite(span) || span === 0) return 1
+
+  const roughStep = span / targetTicks
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep))
+  const normalized = roughStep / magnitude
+  const niceNormalized = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10
+  return niceNormalized * magnitude
+}
+
 export function AppBarChart({
   data,
   height = 260,
+  fitContainer = false,
   title,
   emptyMessage = 'Sem dados para exibir.',
   loading = false,
@@ -94,7 +107,7 @@ export function AppBarChart({
   currency = 'BRL',
   locale = 'pt-BR',
   fontSize = 13,
-  yTickStep = 20000,
+  yTickStep,
 }: Props) {
   const theme = useTheme()
 
@@ -136,7 +149,7 @@ export function AppBarChart({
 
     setRange(next)
     didInitRange.current = true
-  }, [showRangePicker, effectiveRangeOptions, defaultRange])
+  }, [showRangePicker, effectiveRangeOptions, defaultRange, range])
 
   const filtered = useMemo(() => {
     if (!data?.length) return []
@@ -162,13 +175,18 @@ export function AppBarChart({
     return computeDomain(chartData.map((d) => d.y))
   }, [chartData])
 
+  const effectiveYTickStep = useMemo(
+    () => yTickStep ?? computeNiceTickStep(rawDomain),
+    [rawDomain, yTickStep]
+  )
+
   const steppedDomain = useMemo<[number, number]>(() => {
-    return toSteppedDomain(rawDomain, yTickStep)
-  }, [rawDomain, yTickStep])
+    return toSteppedDomain(rawDomain, effectiveYTickStep)
+  }, [rawDomain, effectiveYTickStep])
 
   const yTicks = useMemo(() => {
-    return buildTicks(steppedDomain, yTickStep)
-  }, [steppedDomain, yTickStep])
+    return buildTicks(steppedDomain, effectiveYTickStep)
+  }, [steppedDomain, effectiveYTickStep])
 
   const formatAxisValue = useMemo(() => {
     return createNumberFormatter({
@@ -216,7 +234,19 @@ export function AppBarChart({
   }
 
   return (
-    <Box sx={{ mt: title || showRangePicker ? 2 : 0, ml: 1.8, mr: 1.8 }}>
+    <Box
+      sx={{
+        mt: fitContainer ? 0 : title || showRangePicker ? 2 : 0,
+        ml: 1.8,
+        mr: 1.8,
+        ...(fitContainer && {
+          height,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+        }),
+      }}
+    >
       {(title || showRangePicker || showGroupBySelector) && (
         <Stack
           direction="row"
@@ -250,9 +280,13 @@ export function AppBarChart({
         </Stack>
       )}
 
-      <Box height={height}>
+      <Box sx={fitContainer ? { flex: 1, minHeight: 0 } : { height }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ left: 10 }}>
+          <BarChart
+            key={`${range}:${currentGroupBy}:${steppedDomain.join(':')}`}
+            data={chartData}
+            margin={{ left: 10 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
 
             <XAxis

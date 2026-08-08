@@ -1,4 +1,4 @@
-import { fetchAssetQuotes, quotesToCandleData, type QuoteResponse } from '@/api/market'
+import { fetchOnDemandAssetQuotes, quotesToCandleData, type QuotesResponse } from '@/api/market'
 import CandleChart from '@/components/charts/CandleChart'
 import AppCard from '@/components/ui/AppCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
@@ -8,23 +8,6 @@ import { Box, Breadcrumbs, Chip, Grid, Link as MuiLink, Typography } from '@mui/
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import AssetAIOverviewCard from './AssetAIOverviewCard'
-
-const ASSET_TYPE_MAP: Record<number, string> = {
-  1: 'ETF',
-  2: 'FII',
-  3: 'TREASURY',
-  4: 'STOCK',
-  5: 'BDR',
-  6: 'PREV',
-  7: 'FI',
-  8: 'CDB',
-  9: 'DEB',
-  10: 'CRI',
-  11: 'CRA',
-  12: 'REIT',
-  13: 'CRIPTO',
-  14: 'LCA',
-}
 
 export default function MarketAssetPage() {
   const { id } = useParams<{ id: string }>()
@@ -37,16 +20,15 @@ export default function MarketAssetPage() {
 
   const ticker = asset?.ticker
 
-  const [quotes, setQuotes] = useState<QuoteResponse | null>(null)
+  const [quotes, setQuotes] = useState<QuotesResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!asset) return
-    const assetType = ASSET_TYPE_MAP[asset.asset_type_id]
     setLoading(true)
     setError(null)
-    fetchAssetQuotes(asset.ticker, assetType)
+    fetchOnDemandAssetQuotes(asset.ticker, asset.asset_type_id)
       .then(setQuotes)
       .catch(() => setError('Erro ao carregar cotações'))
       .finally(() => setLoading(false))

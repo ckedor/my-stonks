@@ -37,10 +37,21 @@ export const useReturnsStore = create<ReturnsState>()(
           categoryReturns: { ...state.categoryReturns, [name]: returns },
         })),
       setAllCategoryReturns: (categories, cagrs) =>
-        set((state) => ({
-          categoryReturns: { ...state.categoryReturns, ...categories },
-          categoryCagr: cagrs ? { ...state.categoryCagr, ...cagrs } : state.categoryCagr,
-        })),
+        set((state) => {
+          const portfolioReturns = state.categoryReturns.portfolio
+          const portfolioCagr = state.categoryCagr.portfolio
+
+          return {
+            categoryReturns: {
+              ...(portfolioReturns ? { portfolio: portfolioReturns } : {}),
+              ...categories,
+            },
+            categoryCagr: {
+              ...(portfolioCagr !== undefined ? { portfolio: portfolioCagr } : {}),
+              ...(cagrs ?? {}),
+            },
+          }
+        }),
       addAssetReturns: (assetReturns) =>
         set((state) => ({
           assetReturns: { ...state.assetReturns, ...assetReturns },

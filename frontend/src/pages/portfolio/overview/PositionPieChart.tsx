@@ -6,14 +6,18 @@ import AppPieChart from '../../../components/ui/app-pie-chart'
 
 interface PositionPieChartProps {
   positions: PortfolioPositionEntry[]
+  height?: number
   selectedCategory: string
   onCategorySelect?: (category: string) => void
   onAssetSelect?: (assetId: number) => void
 }
 
-export default function PositionPieChart({ positions, selectedCategory, onCategorySelect, onAssetSelect }: PositionPieChartProps) {
+export default function PositionPieChart({ positions, height = 350, selectedCategory, onCategorySelect, onAssetSelect }: PositionPieChartProps) {
   const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
-  const userCategories = selectedPortfolio?.custom_categories ?? []
+  const userCategories = useMemo(
+    () => selectedPortfolio?.custom_categories ?? [],
+    [selectedPortfolio?.custom_categories],
+  )
 
   const { data, colors, assetIdMap } = useMemo((): { data: Array<{ label: string; value: number }>; colors: string[]; assetIdMap: Record<string, number> } => {
     if (!positions) return { data: [], colors: [], assetIdMap: {} }
@@ -77,7 +81,7 @@ export default function PositionPieChart({ positions, selectedCategory, onCatego
       data={data}
       colors={colors}
       isCurrency
-      height={350}
+      height={height}
       onItemClick={handleItemClick}
       minOuterLabelPercentage={1}
     />

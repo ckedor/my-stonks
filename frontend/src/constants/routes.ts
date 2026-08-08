@@ -56,7 +56,17 @@ export const INDEX_ROUTES = {
 } as const
 
 export const QUOTE_ROUTES = {
-  get: `${MARKET_DATA}/quote`,
+  persisted: `${MARKET_DATA}/quotes/persisted`,
+  onDemand: `${MARKET_DATA}/quotes/on-demand`,
+} as const
+
+export const DATA_INGESTION_ROUTES = {
+  list: (ingestionType: string) =>
+    `${MARKET_DATA}/ingestions/${ingestionType}`,
+  byId: (ingestionType: string, executionId: number | string) =>
+    `${MARKET_DATA}/ingestions/${ingestionType}/${executionId}`,
+  run: (ingestionType: string) =>
+    `${MARKET_DATA}/ingestions/${ingestionType}`,
 } as const
 
 // ---------------------------------------------------------------------------

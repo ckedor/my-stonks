@@ -1,24 +1,31 @@
-"""Asset price quote schemas."""
+"""Asset quote schemas."""
 
-import datetime
-from typing import List, Optional
+from datetime import date
 
 from pydantic import BaseModel
 
 
-class OHLCV(BaseModel):
-    """Open, High, Low, Close, Volume data point"""
-    date: datetime.datetime
-    close: float
-    open: Optional[float] = None
-    high: Optional[float] = None
-    low: Optional[float] = None
-    volume: Optional[int] = None
-
-
 class QuoteResponse(BaseModel):
-    """Response containing asset quotes/price history"""
+    date: date
+    close: float | None
+    open: float | None = None
+    high: float | None = None
+    low: float | None = None
+    adjusted_close: float | None = None
+    volume: float | None = None
+    currency_id: int | None = None
+    source: str | None = None
+
+
+class PersistedQuotesResponse(BaseModel):
+    asset_id: int
     ticker: str
-    asset_type: str
-    currency: Optional[str] = None
-    quotes: List[OHLCV]
+    asset_type_id: int
+    quotes: list[QuoteResponse]
+
+
+class OnDemandQuotesResponse(BaseModel):
+    ticker: str
+    asset_type_id: int
+    currency: str | None = None
+    quotes: list[QuoteResponse]

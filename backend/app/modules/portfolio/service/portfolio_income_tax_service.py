@@ -4,9 +4,8 @@ Portfolio income tax service - handles tax calculations and reports.
 """
 
 import pandas as pd
-from app.infra.db.models.asset import Event
-from app.infra.db.models.constants.asset_type import ASSET_TYPE
-from app.infra.db.models.constants.currency import CURRENCY
+from app.modules.market_data.domain.assets import Event
+from app.modules.market_data.domain.constants import ASSET_TYPE, CURRENCY
 from app.lib.finance.trade import profits_by_month_df
 from app.lib.income_tax.constants import TaxableAssetType
 from app.lib.income_tax.tax_income_calculator import TaxIncomeCalculator
@@ -24,9 +23,8 @@ _ASSET_TYPE_TO_TAXABLE: dict[ASSET_TYPE, TaxableAssetType] = {
 _EXEMPT_DIVIDEND_ASSET_TYPES: list[ASSET_TYPE] = [ASSET_TYPE.FII, ASSET_TYPE.CRI, ASSET_TYPE.CRA, ASSET_TYPE.LCA]
 
 class PortfolioIncomeTaxService:
-    def __init__(self, session):
-        self.session = session
-        self.repo = PortfolioRepository(session)
+    def __init__(self, repository: PortfolioRepository):
+        self.repo = repository
 
     async def get_assets_and_rights(self, portfolio_id: int, fiscal_year: int) -> dict:
         last_day_fiscal_year = pd.to_datetime(f'{fiscal_year}-12-31')

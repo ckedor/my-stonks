@@ -22,8 +22,7 @@ class AIArtifactHandler(ABC, Generic[TInput]):
     feature_key: ClassVar[AIFeatureKey]
     input_schema: ClassVar[type[AIArtifactInput]]
 
-    def __init__(self, session, provider: AIProvider):
-        self.session = session
+    def __init__(self, provider: AIProvider):
         self.provider = provider
 
     @abstractmethod

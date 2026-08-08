@@ -1,5 +1,5 @@
 from app.entrypoints.worker.task_runner import run_task
-from app.infra.db.session import get_session
+from app.infra.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.portfolio.service.portfolio_category_service import (
     PortfolioCategoryService,
 )
@@ -19,9 +19,9 @@ router = APIRouter(prefix='/category', tags=['Portfolio Category'])
 @router.post('')
 async def save_custom_category(
     payload: SaveCategoriesRequest,
-    session=Depends(get_session),
+    uow: UnitOfWork = Depends(get_uow),
 ):
-    service = PortfolioCategoryService(session)
+    service = PortfolioCategoryService(uow=uow)
     await service.save_custom_categories(payload.categories)
     return {'message': 'Custom category saved successfully.'}
 
@@ -29,9 +29,9 @@ async def save_custom_category(
 @router.delete('/{category_id}')
 async def delete_custom_category(
     category_id: int,
-    session=Depends(get_session),
+    uow: UnitOfWork = Depends(get_uow),
 ):
-    service = PortfolioCategoryService(session)
+    service = PortfolioCategoryService(uow=uow)
     await service.delete_custom_category(category_id)
     return {'message': 'Custom category deleted successfully.'}
 
@@ -39,9 +39,9 @@ async def delete_custom_category(
 @router.post('/assignment')
 async def assign_category_to_assets(
     payload: CategoryAssignmentRequest,
-    session=Depends(get_session),
+    uow: UnitOfWork = Depends(get_uow),
 ):
-    service = PortfolioCategoryService(session)
+    service = PortfolioCategoryService(uow=uow)
     await service.assign_category_to_asset(payload)
 
     run_task(set_patrimony_evolution_cache, payload.portfolio_id)

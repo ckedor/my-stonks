@@ -2,9 +2,8 @@ import os
 import sys
 from logging.config import fileConfig
 
-from sqlalchemy import create_engine, engine_from_config, pool
-
 from alembic import context
+from sqlalchemy import create_engine, engine_from_config, pool
 
 # 📁 Caminho da aplicação
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -12,10 +11,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # 📦 Configurações
 from app.config.settings import settings
 
-# 📥 Models
-from app.infra.db import models
+# 📥 Tables and imperative mappings
+from app.infra.db import bootstrap as _db_bootstrap  # noqa: F401
 from app.infra.db.base import Base
-from app.modules.users import models
 
 # 🎯 Metadata para o autogenerate funcionar
 target_metadata = Base.metadata
@@ -35,6 +33,7 @@ def run_migrations_offline() -> None:
     context.configure(
         url=url,
         target_metadata=target_metadata,
+        include_schemas=True,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
@@ -66,6 +65,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
+            include_schemas=True,
             compare_type=True,  # detecta mudanças nos tipos das colunas
         )
 

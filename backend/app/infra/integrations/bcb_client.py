@@ -5,6 +5,9 @@ import pandas as pd
 from app.core.exceptions import ValidationError
 from app.infra.http import AsyncHttpClient
 
+IPCA_INCREMENTAL_LOOKBACK_MONTHS = 6
+DEFAULT_INCREMENTAL_LOOKBACK_MONTHS = 2
+
 
 class BCBClient:
     def __init__(self):
@@ -51,9 +54,12 @@ class BCBClient:
         endpoint = self.index_endpoints[index_name.upper()]
 
         if init_date:
-            from_date = init_date - pd.DateOffset(
-                months=2
-            )  # o bcb dá erro no IPCA se não vem valor então no minimo 2 meses de janela
+            lookback_months = (
+                IPCA_INCREMENTAL_LOOKBACK_MONTHS
+                if index_name.upper() == 'IPCA'
+                else DEFAULT_INCREMENTAL_LOOKBACK_MONTHS
+            )
+            from_date = pd.Timestamp(init_date) - pd.DateOffset(months=lookback_months)
             endpoint += f'&dataInicial={from_date.strftime("%d/%m/%Y")}'
         else:
             from_date = datetime.today() - pd.DateOffset(years=10)
@@ -61,6 +67,8 @@ class BCBClient:
 
         data = await self.http.request('GET', endpoint)
         df = pd.DataFrame(data)
+        if df.empty:
+            return pd.DataFrame(columns=['date', 'value'])
         df['value'] = df['valor'].str.replace(',', '.').astype(float)
         df['date'] = pd.to_datetime(df['data'], format='%d/%m/%Y')
 

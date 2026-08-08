@@ -3,9 +3,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.core.exceptions import NotFoundError
-from app.infra.db.models.ai_artifact import AIArtifact
-from app.infra.db.models.ai_feature import AIFeature
+from app.modules.ai.domain.entities import AIArtifact, AIFeature
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
+from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.ai.domain.feature_keys import AIFeatureKey
 from app.modules.ai.domain.inputs import AIArtifactInput
 from app.modules.ai.domain.provider import AIProvider
@@ -13,9 +13,14 @@ from app.modules.ai.service.handlers import ARTIFACT_HANDLERS, AIResponse
 
 
 class AIArtifactService:
-    def __init__(self, session, provider: AIProvider):
-        self.session = session
-        self.repo = SQLAlchemyRepository(session)
+    def __init__(
+        self,
+        repository: SQLAlchemyRepository,
+        uow: UnitOfWork,
+        provider: AIProvider,
+    ):
+        self.repository = repository
+        self.uow = uow
         self.provider = provider
 
     async def get_or_generate_artifact(
@@ -40,13 +45,13 @@ class AIArtifactService:
         return self._build_response(feature_key, input, artifact)
 
     async def _load_feature(self, feature_key: AIFeatureKey) -> AIFeature:
-        feature = await self.repo.get(AIFeature, by={'key': feature_key.value}, first=True)
+        feature = await self.repository.get(AIFeature, by={'key': feature_key.value}, first=True)
         if feature is None:
             raise NotFoundError(f'AI feature {feature_key.value} is not configured')
         return feature
 
     async def _find_artifact(self, feature_id: int, input_hash: str) -> AIArtifact | None:
-        return await self.repo.get(
+        return await self.repository.get(
             AIArtifact,
             by={'feature_id': feature_id, 'input_hash': input_hash},
             first=True,
@@ -69,7 +74,7 @@ class AIArtifactService:
                 f'Expected input of type {handler_cls.input_schema.__name__} '
                 f'for feature {feature_key.value}, got {type(input).__name__}'
             )
-        handler = handler_cls(self.session, self.provider)
+        handler = handler_cls(self.provider)
         return await handler.generate(input)
 
     async def _persist_artifact(
@@ -82,19 +87,22 @@ class AIArtifactService:
         now = datetime.now(timezone.utc)
         expires_at = now + timedelta(hours=feature.default_ttl_hours)
 
-        if artifact is None:
-            artifact = AIArtifact(feature_id=feature.id, input_hash=input_hash)
-            self.session.add(artifact)
+        async with self.uow as uow:
+            persisted_artifact = await uow.repository.get(
+                AIArtifact,
+                by={'feature_id': feature.id, 'input_hash': input_hash},
+                first=True,
+            )
+            if persisted_artifact is None:
+                persisted_artifact = AIArtifact(feature_id=feature.id, input_hash=input_hash)
+                await uow.repository.create(AIArtifact, [persisted_artifact])
 
-        artifact.summary = ai_response.summary
-        artifact.payload = ai_response.payload
-        artifact.model = ai_response.model
-        artifact.generated_at = now
-        artifact.expires_at = expires_at
-
-        await self.session.commit()
-        await self.session.refresh(artifact)
-        return artifact
+            persisted_artifact.summary = ai_response.summary
+            persisted_artifact.payload = ai_response.payload
+            persisted_artifact.model = ai_response.model
+            persisted_artifact.generated_at = now
+            persisted_artifact.expires_at = expires_at
+            return persisted_artifact
 
     @staticmethod
     def _build_response(

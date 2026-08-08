@@ -17,7 +17,7 @@ class CryptoCompareClient:
             headers={'accept': 'application/json'},
         )
 
-    async def get_crypto_price_history_df(
+    async def get_crypto_quotes_df(
         self, symbol: str, market: str = 'cadli', init_date: datetime = None
     ) -> pd.DataFrame:
         if init_date is None:
@@ -92,7 +92,7 @@ class CryptoCompareClient:
         start_date=None,
         end_date=None,
     ):
-        history_df = await self.get_crypto_price_history_df(ticker, init_date=start_date)
+        history_df = await self.get_crypto_quotes_df(ticker, init_date=start_date)
         if end_date:
             end_date = pd.to_datetime(end_date).normalize()
             history_df = history_df[history_df['date'] <= end_date]

@@ -3,18 +3,13 @@
 Portfolio position service - handles position queries and analysis.
 """
 
-import datetime
-from typing import Any
-
-import numpy as np
 import pandas as pd
 from app.core.exceptions import NotFoundError
-from app.infra.db.models.constants.currency import CURRENCY
-from app.infra.db.models.constants.index import INDEX
-from app.infra.db.models.portfolio import Position
+from app.modules.market_data.domain.constants import INDEX
+from app.modules.portfolio.domain.entities import Position
 from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
-from app.lib.utils.df import df_to_dict_list, df_to_named_dict, rows_to_df
+from app.lib.utils.df import df_to_dict_list, rows_to_df
 from app.lib.utils.fastapi import df_response
 from app.modules.market_data.api.asset.schemas import (
     AssetDetailsOut,
@@ -25,19 +20,24 @@ from app.modules.portfolio.domain.asset_analysis import calculate_returns_analys
 from app.modules.portfolio.domain.returns import (
     calculate_asset_acc_returns,
     calculate_portfolio_daily_returns,
-    calculate_returns_portfolio,
 )
 from app.modules.portfolio.repositories import PortfolioRepository
 
 
 class PortfolioPositionService:
-    def __init__(self, session):
-        self.session = session
-        self.repo = PortfolioRepository(session)
-        self.market_data_service = MarketDataService(session)
-        self.cache = RedisService()
+    def __init__(
+        self,
+        repository: PortfolioRepository,
+        market_data_service: MarketDataService,
+        cache: RedisService | None = None,
+    ):
+        self.repo = repository
+        self.market_data_service = market_data_service
+        self.cache = cache or RedisService()
 
-    async def get_asset_details(self, portfolio_id: int, asset_id: int = None, currency: str = 'BRL') -> dict:
+    async def get_asset_details(
+        self, portfolio_id: int, asset_id: int = None, currency: str = 'BRL'
+    ) -> dict:
         asset = await self.repo.get_asset_details(asset_id)
         if not asset:
             raise NotFoundError('Ativo não encontrado')
@@ -64,13 +64,11 @@ class PortfolioPositionService:
             'average_price': average_price,
             'value': (position.quantity * price),
             'acc_return': (None if pd.isna(acc_return_val) else acc_return_val),
-            'twelve_months_return': (
-                None if pd.isna(twelve_months_val) else twelve_months_val
-            ),
+            'twelve_months_return': (None if pd.isna(twelve_months_val) else twelve_months_val),
             'cagr': (None if pd.isna(cagr_val) else cagr_val),
         }
         return AssetDetailsWithPosition(**asset_serialized_with_position)
-    
+
     async def get_portfolio_analysis(self, portfolio_id: int) -> dict:
         portfolio_position_df = rows_to_df(
             await self.repo.get_portfolio_position(portfolio_id),
@@ -82,20 +80,24 @@ class PortfolioPositionService:
             return None
 
         returns = calculate_portfolio_daily_returns(portfolio_position_df)
-        returns['weighted_return'] = (returns['value'] / returns['net_value_day']) * returns['asset_return']
+        returns['weighted_return'] = (returns['value'] / returns['net_value_day']) * returns[
+            'asset_return'
+        ]
         grouped = returns.groupby('date')['weighted_return'].sum().reset_index()
-        
+
         portfolio_returns = grouped.set_index('date')['weighted_return']
         start_date = grouped['date'].min()
-            
+
         benchmarks = {}
         cdi_history = await self.market_data_service.get_index_history(start_date, INDEX.CDI)
         benchmarks['CDI'] = cdi_history
-    
+
         result = calculate_returns_analysis(portfolio_returns, benchmarks)
         return result
-    
-    async def get_asset_analysis(self, portfolio_id: int, asset_id: int, currency: str = 'BRL') -> dict:
+
+    async def get_asset_analysis(
+        self, portfolio_id: int, asset_id: int, currency: str = 'BRL'
+    ) -> dict:
         asset_position_df = rows_to_df(
             await self.repo.get_asset_position(
                 portfolio_id, [asset_id], start_date=None, end_date=None
@@ -110,10 +112,10 @@ class PortfolioPositionService:
         return_col = 'asset_return_usd' if currency == 'USD' else 'asset_return'
         returns = calculate_portfolio_daily_returns(asset_position_df)
         returns = returns[['date', return_col]].rename(columns={return_col: 'asset_return'})
-        
+
         asset_returns = returns.set_index('date')['asset_return']
         start_date = returns['date'].min()
-            
+
         benchmarks = {}
 
         cdi_history = await self.market_data_service.get_index_history(start_date, INDEX.CDI)
@@ -125,12 +127,10 @@ class PortfolioPositionService:
                 start_date, category.benchmark_id
             )
             benchmarks[category.benchmark.short_name] = benchmark_history
-        
 
         result = calculate_returns_analysis(asset_returns, benchmarks)
 
         return result
-
 
     async def get_aported_history(self, portfolio_id: int, currency: str = 'BRL'):
         rows = await self.repo.get_transactions(portfolio_id)
@@ -139,27 +139,34 @@ class PortfolioPositionService:
         transactions_df = pd.DataFrame(rows)
         transactions_df['date'] = pd.to_datetime(transactions_df['date'])
         price_col = 'price_usd' if currency == 'USD' else 'price'
-        transactions_df['amount'] = transactions_df['quantity'] * transactions_df[price_col].fillna(0)
+        transactions_df['amount'] = transactions_df['quantity'] * transactions_df[price_col].fillna(
+            0
+        )
         total_aported = transactions_df.groupby('date')['amount'].sum().reset_index()
         total_aported.rename(columns={'amount': 'aported'}, inplace=True)
         return total_aported
 
-    @cached(key_prefix="patrimony_evolution", cache=lambda self: self.cache, ttl=3600)
+    @cached(key_prefix='patrimony_evolution', cache=lambda self: self.cache, ttl=3600)
     async def get_patrimony_evolution(
-        self, 
+        self,
         portfolio_id: int,
-        asset_id: int = None, 
+        asset_id: int = None,
         asset_type_id: int = None,
         asset_type_ids: list = None,
         currency: str = 'BRL',
     ) -> pd.DataFrame:
         return await self.compute_patrimony_evolution(
-            portfolio_id, asset_id, asset_type_id, asset_type_ids, currency=currency,
+            portfolio_id,
+            asset_id,
+            asset_type_id,
+            asset_type_ids,
+            currency=currency,
         )
-        
+
     async def compute_patrimony_evolution(
-        self, portfolio_id: int,
-        asset_id: int = None, 
+        self,
+        portfolio_id: int,
+        asset_id: int = None,
         asset_type_id: int = None,
         asset_type_ids: list = None,
         currency: str = 'BRL',
@@ -192,22 +199,29 @@ class PortfolioPositionService:
         ).reset_index()
 
         result = total_df.merge(category_pivot, on='date', how='left')
-        
+
         aported_history = await self.get_aported_history(portfolio_id, currency=currency)
         result = result.merge(aported_history[['date', 'aported']], on='date', how='left')
-        result['acc_aported'] = (
-            result['aported']
-            .fillna(0)
-            .cumsum()
-        )
-        
+        result['acc_aported'] = result['aported'].fillna(0).cumsum()
+
         return df_to_dict_list(result)
 
     async def get_portfolio_returns(self, portfolio_id: int, currency: str = 'BRL'):
         return await self.repo.get_portfolio_returns(portfolio_id, currency) or None
 
-    async def get_category_returns(self, portfolio_id: int, custom_category_id: int = None, most_recent: bool = False, currency: str = 'BRL'):
-        return await self.repo.get_category_returns(portfolio_id, custom_category_id, most_recent, currency) or None
+    async def get_category_returns(
+        self,
+        portfolio_id: int,
+        custom_category_id: int = None,
+        most_recent: bool = False,
+        currency: str = 'BRL',
+    ):
+        return (
+            await self.repo.get_category_returns(
+                portfolio_id, custom_category_id, most_recent, currency
+            )
+            or None
+        )
 
     async def get_asset_acc_returns(
         self,
@@ -217,12 +231,14 @@ class PortfolioPositionService:
         end_date: str = None,
         currency: str = 'BRL',
     ):
-        daily_returns_df = await self.get_asset_returns(portfolio_id, asset_ids, start_date, end_date, currency=currency)
+        daily_returns_df = await self.get_asset_returns(
+            portfolio_id, asset_ids, start_date, end_date, currency=currency
+        )
         if daily_returns_df is None:
             return None
         returns_df = calculate_asset_acc_returns(daily_returns_df)
         return returns_df
-    
+
     async def get_asset_returns(
         self,
         portfolio_id: int,
@@ -232,9 +248,7 @@ class PortfolioPositionService:
         currency: str = 'BRL',
     ):
         asset_position_df = rows_to_df(
-            await self.repo.get_asset_position(
-                portfolio_id, asset_ids, start_date, end_date
-            ),
+            await self.repo.get_asset_position(portfolio_id, asset_ids, start_date, end_date),
             datetime_cols=['date'],
             numeric_fillna_cols=['dividend', 'dividend_usd'],
         )
@@ -248,20 +262,17 @@ class PortfolioPositionService:
         if currency == 'USD':
             result = result.rename(columns={return_col: 'asset_return'})
         return result
-    
 
     async def get_portfolio_position(
-        self, 
+        self,
         portfolio_id: int,
         date: pd.Timestamp = None,
-        asset_type_id = None,
+        asset_type_id=None,
         group_by_broker: bool = False,
         currency: str = 'BRL',
-        ) -> list:
+    ) -> list:
         if group_by_broker:
-            rows = await self.repo.get_position_on_date_by_broker(
-                portfolio_id, date, asset_type_id
-            )
+            rows = await self.repo.get_position_on_date_by_broker(portfolio_id, date, asset_type_id)
         else:
             rows = await self.repo.get_position_on_date(
                 portfolio_id, date, asset_type_id, currency=currency
@@ -321,8 +332,12 @@ class PortfolioPositionService:
         result = calculate_returns_analysis(returns_series, benchmarks)
         return result
 
-    async def get_category_stats(self, portfolio_id: int, custom_category_id: int, currency: str = 'BRL') -> dict:
-        rows = await self.repo.get_category_returns(portfolio_id, custom_category_id, currency=currency)
+    async def get_category_stats(
+        self, portfolio_id: int, custom_category_id: int, currency: str = 'BRL'
+    ) -> dict:
+        rows = await self.repo.get_category_returns(
+            portfolio_id, custom_category_id, currency=currency
+        )
         if not rows:
             return None
 

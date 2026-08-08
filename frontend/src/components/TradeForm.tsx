@@ -1,4 +1,3 @@
-import { ASSET_TYPES } from '@/constants/assetTypes'
 import { BROKER_ROUTES, QUOTE_ROUTES, TRANSACTION_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
@@ -28,13 +27,8 @@ import {
 } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import dayjs, { Dayjs } from 'dayjs'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import AssetSelector from './AssetSelector'
-
-type AssetTypeKey = keyof typeof ASSET_TYPES
-const ASSET_TYPE_BY_ID: Record<number, AssetTypeKey> = Object.fromEntries(
-  Object.entries(ASSET_TYPES).map(([k, v]) => [v as number, k as AssetTypeKey])
-) as Record<number, AssetTypeKey>
 
 interface Currency {
   id: number
@@ -54,10 +48,10 @@ interface Quote {
   date: string
 }
 
-interface QuoteResponse {
+interface QuotesResponse {
   quotes: Quote[]
   ticker: string
-  currency: string
+  currency: string | null
 }
 
 interface TradeFormProps {
@@ -139,19 +133,17 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
     }
   }, [open])
 
-  const assetTypeKey = useMemo<AssetTypeKey | null>(() => {
-    const id = selectedAsset?.asset_type_id
-    if (id == null) return null
-    return ASSET_TYPE_BY_ID[id] ?? null
-  }, [selectedAsset])
-
-  async function fetchAndSetPrice() {
-    if (!selectedAsset || !assetTypeKey || !date || isEdit) return
+  const fetchAndSetPrice = useCallback(async () => {
+    if (!selectedAsset || !date || isEdit) return
     setPriceLoading(true)
     try {
       const d = dayjs(date).format('YYYY-MM-DD')
-      const { data } = await api.get<QuoteResponse>(QUOTE_ROUTES.get, {
-        params: { ticker: selectedAsset.ticker, asset_type: assetTypeKey, date: d },
+      const { data } = await api.get<QuotesResponse>(QUOTE_ROUTES.onDemand, {
+        params: {
+          ticker: selectedAsset.ticker,
+          asset_type_id: selectedAsset.asset_type_id,
+          start_date: d,
+        },
       })
       const q =
         data.quotes.find((q) => dayjs(q.date).format('YYYY-MM-DD') === d) ??
@@ -163,11 +155,11 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
     } finally {
       setPriceLoading(false)
     }
-  }
+  }, [date, isEdit, selectedAsset])
 
   useEffect(() => {
     fetchAndSetPrice()
-  }, [selectedAsset, date, assetTypeKey])
+  }, [fetchAndSetPrice])
 
   const handleSubmit = async () => {
     setTouched(true)

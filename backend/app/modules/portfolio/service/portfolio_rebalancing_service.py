@@ -18,8 +18,8 @@ direct new money without selling existing positions.
 from typing import List
 
 from app.core.exceptions import BusinessRuleError
-from app.infra.db.models.portfolio import CustomCategory, CustomCategoryAssignment
-from app.infra.db.repositories.base_repository import SQLAlchemyRepository
+from app.modules.portfolio.domain.entities import CustomCategory, CustomCategoryAssignment
+from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.portfolio.api.rebalancing.schema import (
     AssetRebalancingEntry,
     CategoryRebalancingEntry,
@@ -30,14 +30,19 @@ from app.modules.portfolio.repositories import PortfolioRepository
 
 
 class PortfolioRebalancingService:
-    def __init__(self, session):
-        self.session = session
-        self.repo = PortfolioRepository(session)
-        self.base_repo = SQLAlchemyRepository(session)
+    def __init__(
+        self,
+        repository: PortfolioRepository | None = None,
+        uow: UnitOfWork | None = None,
+    ):
+        self.repository = repository
+        self.uow = uow
 
     async def get_rebalancing_data(self, portfolio_id: int) -> RebalancingResponse:
         """Return current positions enriched with target allocations and differences."""
-        rows = await self.repo.get_position_on_date(portfolio_id)
+        if self.repository is None:
+            raise RuntimeError('A repository is required for this read operation')
+        rows = await self.repository.get_position_on_date(portfolio_id)
 
         if not rows:
             return RebalancingResponse(
@@ -53,14 +58,11 @@ class PortfolioRebalancingService:
         total_value = sum(p['value'] for p in positions)
 
         # Load categories with their assignments (which hold asset-level targets)
-        categories = await self.base_repo.get(
+        categories = await self.repository.get(
             CustomCategory,
             by={'portfolio_id': portfolio_id},
             relations=['assignments'],
         )
-
-        # Build a map category_id → category object
-        category_map = {cat.id: cat for cat in categories}
 
         # Build a map (asset_id) → assignment for this portfolio
         assignment_map = {}
@@ -159,7 +161,19 @@ class PortfolioRebalancingService:
         - Sum of category target percentages must equal 100.
         - Sum of asset target percentages within each category must equal 100.
         """
+        if self.uow is None:
+            raise RuntimeError('A UnitOfWork is required for this write operation')
         portfolio_id = payload.portfolio_id
+
+        async with self.uow as uow:
+            await self._save_targets(uow.portfolios, payload, portfolio_id)
+
+    async def _save_targets(
+        self,
+        repository: PortfolioRepository,
+        payload: SaveTargetsRequest,
+        portfolio_id: int,
+    ) -> None:
 
         # Validate category sum
         cat_sum = sum(c.target_percentage for c in payload.categories)
@@ -172,14 +186,14 @@ class PortfolioRebalancingService:
         for cat in payload.categories:
             asset_sum = sum(a.target_percentage for a in cat.assets)
             if abs(asset_sum - 100) > 0.01:
-                category_obj = await self.base_repo.get(CustomCategory, id=cat.category_id)
+                category_obj = await repository.get(CustomCategory, id=cat.category_id)
                 cat_name = category_obj.name if category_obj else str(cat.category_id)
                 raise BusinessRuleError(
                     f'A soma dos percentuais dos ativos na categoria "{cat_name}" deve ser 100%. Atual: {asset_sum:.2f}%',
                 )
 
         # Verify all categories belong to this portfolio
-        portfolio_categories = await self.base_repo.get(
+        portfolio_categories = await repository.get(
             CustomCategory, by={'portfolio_id': portfolio_id}
         )
         portfolio_category_ids = {cat.id for cat in portfolio_categories}
@@ -192,14 +206,14 @@ class PortfolioRebalancingService:
 
         # Save category targets
         for cat in payload.categories:
-            await self.base_repo.update(CustomCategory, {
+            await repository.update(CustomCategory, {
                 'id': cat.category_id,
                 'target_percentage': cat.target_percentage,
             })
 
             # Save asset targets
             for asset in cat.assets:
-                assignment = await self.base_repo.get(
+                assignment = await repository.get(
                     CustomCategoryAssignment,
                     by={
                         'custom_category_id': cat.category_id,
@@ -208,9 +222,7 @@ class PortfolioRebalancingService:
                     first=True,
                 )
                 if assignment:
-                    await self.base_repo.update(CustomCategoryAssignment, {
+                    await repository.update(CustomCategoryAssignment, {
                         'id': assignment.id,
                         'target_percentage': asset.target_percentage,
                     })
-
-        await self.session.commit()

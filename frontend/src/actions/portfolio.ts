@@ -27,8 +27,6 @@ import { staleWhileRevalidate } from './sync'
 // ---------------------------------------------------------------------------
 
 export async function syncPortfolios(force = false): Promise<void> {
-  const store = usePortfolioStore.getState()
-
   await staleWhileRevalidate<Portfolio[]>({
     cacheKey: 'portfolios',
     fetcher: fetchPortfolios,
@@ -122,6 +120,8 @@ export async function syncReturns(portfolioId: number, force = false): Promise<v
         store.setAllCategoryReturns(catMap, cagrMap)
       },
     })
+  } else {
+    store.setAllCategoryReturns({}, {})
   }
 }
 

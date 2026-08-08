@@ -9,7 +9,7 @@
 # from alembic import command
 # from alembic.config import Config
 # from app.infra.db.base import Base
-# from app.modules.users.models import User
+# from app.modules.users.domain import User
 # from httpx import ASGITransport, AsyncClient
 # from sqlalchemy import create_engine
 # from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine

@@ -1,0 +1,155 @@
+[importlinter]
+root_package = app
+include_external_packages = True
+
+[importlinter:contract:domain-independence]
+name = Domain does not import application layers
+type = forbidden
+source_modules =
+    app.modules.*.domain
+forbidden_modules =
+    app.modules.*.api
+    app.modules.*.service
+    app.modules.*.repositories
+    app.modules.*.adapters
+    app.modules.*.tasks
+    app.infra
+    app.entrypoints
+    app.composition
+allow_indirect_imports = True
+
+[importlinter:contract:infra-boundary]
+name = Infrastructure does not import API, services, or composition
+type = forbidden
+source_modules =
+    app.infra
+    app.modules.*.repositories
+    app.modules.*.adapters
+forbidden_modules =
+    app.modules.*.api
+    app.modules.*.service
+    app.modules.*.tasks
+    app.entrypoints
+    app.composition
+allow_indirect_imports = True
+
+[importlinter:contract:service-boundary]
+name = Services do not import API or composition
+type = forbidden
+source_modules =
+    app.modules.*.service
+forbidden_modules =
+    app.modules.*.api
+    app.modules.*.tasks
+    app.entrypoints
+    app.composition
+allow_indirect_imports = True
+
+[importlinter:contract:api-boundary]
+name = API does not import persistence or providers directly
+type = forbidden
+source_modules =
+    app.modules.*.api
+forbidden_modules =
+    app.modules.*.repositories
+    app.modules.*.adapters
+    app.infra.db.unit_of_work
+    app.infra.integrations
+    app.infra.redis
+    sqlalchemy
+allow_indirect_imports = True
+
+[importlinter:contract:market-data-module-boundary]
+name = Market data does not import repositories from other modules
+type = forbidden
+source_modules =
+    app.modules.market_data.api
+    app.modules.market_data.domain
+    app.modules.market_data.service
+forbidden_modules =
+    app.modules.ai.repositories
+    app.modules.portfolio.repositories
+    app.modules.users.repositories
+    app.modules.*.infra
+allow_indirect_imports = True
+
+[importlinter:contract:portfolio-module-boundary]
+name = Portfolio does not import repositories from other modules
+type = forbidden
+source_modules =
+    app.modules.portfolio.api
+    app.modules.portfolio.domain
+    app.modules.portfolio.service
+forbidden_modules =
+    app.modules.ai.repositories
+    app.modules.market_data.repositories
+    app.modules.users.repositories
+    app.modules.*.infra
+allow_indirect_imports = True
+
+[importlinter:contract:ai-module-boundary]
+name = AI does not import repositories from other modules
+type = forbidden
+source_modules =
+    app.modules.ai.api
+    app.modules.ai.domain
+    app.modules.ai.service
+forbidden_modules =
+    app.modules.market_data.repositories
+    app.modules.portfolio.repositories
+    app.modules.users.repositories
+    app.modules.*.infra
+allow_indirect_imports = True
+
+[importlinter:contract:market-data-domain-boundary]
+name = Market data domain is independent
+type = forbidden
+source_modules =
+    app.modules.market_data.domain
+forbidden_modules =
+    app.modules.market_data.api
+    app.modules.market_data.service
+    app.modules.market_data.repositories
+    app.modules.market_data.adapters
+    app.modules.market_data.tasks
+    app.infra
+    app.entrypoints
+    app.composition
+allow_indirect_imports = True
+
+[importlinter:contract:market-data-service-boundary]
+name = Market data services do not import entrypoints or composition
+type = forbidden
+source_modules =
+    app.modules.market_data.service
+forbidden_modules =
+    app.modules.market_data.api
+    app.modules.market_data.tasks
+    app.entrypoints
+    app.composition
+allow_indirect_imports = True
+
+[importlinter:contract:market-data-api-boundary]
+name = Market data API contains transport concerns only
+type = forbidden
+source_modules =
+    app.modules.market_data.api
+forbidden_modules =
+    app.modules.market_data.repositories
+    app.modules.market_data.adapters
+    app.modules.market_data.tasks
+    app.infra
+    sqlalchemy
+allow_indirect_imports = True
+
+[importlinter:contract:market-data-task-boundary]
+name = Market data tasks are thin entrypoints
+type = forbidden
+source_modules =
+    app.modules.market_data.tasks
+forbidden_modules =
+    app.modules.market_data.repositories
+    app.modules.market_data.adapters
+    app.infra
+    sqlalchemy
+allow_indirect_imports = True

@@ -5,9 +5,8 @@ from app.modules.portfolio.repositories.portfolio_repository import PortfolioRep
 
 
 class PortfolioReportsService:
-    def __init__(self, session):
-        self.session = session
-        self.repo: PortfolioRepository = PortfolioRepository(session)
+    def __init__(self, repository: PortfolioRepository):
+        self.repo = repository
 
     async def generate_performance_statement(
         self,
@@ -40,6 +39,6 @@ class PortfolioReportsService:
         )
         return df_to_xlsx_response(
             position_history_df, 
-            filename=f'performance_statement.xlsx',
+            filename='performance_statement.xlsx',
             sheet_name='Performance Statement'
         )

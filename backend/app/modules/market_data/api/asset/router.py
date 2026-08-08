@@ -2,7 +2,9 @@
 
 from typing import List
 
-from app.infra.db.session import get_session
+from fastapi import APIRouter, Depends
+
+from app.composition.market_data import get_asset_read_service, get_asset_write_service
 from app.modules.market_data.api.asset.schemas import (
     AssetCreate,
     AssetDetailsOut,
@@ -16,7 +18,6 @@ from app.modules.market_data.api.asset.schemas import (
 )
 from app.modules.market_data.service.asset_service import AssetService
 from app.modules.users.views import current_superuser
-from fastapi import APIRouter, Depends
 
 router = APIRouter(prefix='/asset', tags=['Asset'])
 
@@ -26,74 +27,66 @@ router = APIRouter(prefix='/asset', tags=['Asset'])
 # ---------------------------------------------------------------------------
 @router.get('/type', response_model=List[AssetType])
 async def list_asset_types(
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_read_service),
 ):
     """List all asset types."""
-    service = AssetService(session)
     return await service.list_asset_types()
 
 
 @router.post('/fixed_income')
 async def create_fixed_income(
     fixed_income: FixedIncomeAsset,
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_write_service),
 ):
     """Create a new fixed income asset."""
-    service = AssetService(session)
     return await service.create_fixed_income(fixed_income.model_dump())
 
 
 @router.get('/fixed_income/type', response_model=List[FixedIncomeType])
 async def list_fixed_income_types(
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_read_service),
 ):
     """List all fixed income types."""
-    service = AssetService(session)
     return await service.list_fixed_income_types()
 
 
 @router.get('/fii/segment')
 async def list_fii_segments(
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_read_service),
 ):
     """List FII segments."""
-    service = AssetService(session)
     return await service.list_fii_segments()
 
 
 @router.get('/etf/segment')
 async def list_etf_segments(
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_read_service),
 ):
     """List all ETF segments."""
-    service = AssetService(session)
     return await service.list_etf_segments()
 
 
 @router.get('/treasury_bond/type', response_model=List[TreasuryBondTypeOut])
 async def list_treasury_bond_types(
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_read_service),
 ):
     """List all treasury bond types."""
-    service = AssetService(session)
     return await service.list_treasury_bond_types()
 
 
 @router.get('/exchange', response_model=List[ExchangeOut])
 async def list_exchanges(
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_read_service),
 ):
     """List all exchanges."""
-    service = AssetService(session)
     return await service.list_exchanges()
 
 
 @router.get('/index')
 async def list_indexes(
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_read_service),
 ):
     """List all indexes (for fixed income reference)."""
-    service = AssetService(session)
     return await service.list_indexes()
 
 
@@ -106,20 +99,18 @@ async def list_indexes(
     dependencies=[Depends(current_superuser)],
 )
 async def list_events(
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_read_service),
 ):
     """List all asset events."""
-    service = AssetService(session)
     return await service.list_events()
 
 
 @router.post('/event', dependencies=[Depends(current_superuser)])
 async def create_event(
     event: AssetEvent,
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_write_service),
 ):
     """Create a new asset event."""
-    service = AssetService(session)
     return await service.create_event(event)
 
 
@@ -127,10 +118,9 @@ async def create_event(
 async def update_event(
     event_id: int,
     event: AssetEvent,
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_write_service),
 ):
     """Update an asset event."""
-    service = AssetService(session)
     payload = event.model_copy(update={'id': event_id})
     return await service.update_event(payload)
 
@@ -138,10 +128,9 @@ async def update_event(
 @router.delete('/event/{event_id}', dependencies=[Depends(current_superuser)])
 async def delete_event(
     event_id: int,
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_write_service),
 ):
     """Delete an asset event."""
-    service = AssetService(session)
     await service.delete_event(event_id)
     return {'message': 'OK'}
 
@@ -151,30 +140,27 @@ async def delete_event(
 # ---------------------------------------------------------------------------
 @router.get('')
 async def list_assets(
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_read_service),
 ):
     """List all assets (cached for 24h)."""
-    service = AssetService(session)
     return await service.list_assets()
 
 
 @router.post('')
 async def create_asset(
     data: AssetCreate,
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_write_service),
 ):
     """Create a new asset with subclass data."""
-    service = AssetService(session)
     return await service.create_asset(data.model_dump())
 
 
 @router.get('/{asset_id}', response_model=AssetDetailsOut)
 async def get_asset(
     asset_id: int,
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_read_service),
 ):
     """Get a single asset with all details."""
-    service = AssetService(session)
     return await service.get_asset(asset_id)
 
 
@@ -182,18 +168,16 @@ async def get_asset(
 async def update_asset(
     asset_id: int,
     data: AssetUpdate,
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_write_service),
 ):
     """Update an asset with subclass data."""
-    service = AssetService(session)
     return await service.update_asset({**data.model_dump(), 'id': asset_id})
 
 
 @router.delete('/{asset_id}')
 async def delete_asset(
     asset_id: int,
-    session=Depends(get_session),
+    service: AssetService = Depends(get_asset_write_service),
 ):
     """Delete an asset by ID."""
-    service = AssetService(session)
     return await service.delete_asset(asset_id)

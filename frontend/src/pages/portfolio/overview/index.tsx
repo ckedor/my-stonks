@@ -1,5 +1,4 @@
 import { useCurrency } from '@/hooks/useCurrency'
-import { usePortfolioStore } from '@/stores/portfolio'
 import { useAnalysisStore } from '@/stores/portfolio/analysis'
 import { useDividendsStore } from '@/stores/portfolio/dividends'
 import { usePatrimonyStore } from '@/stores/portfolio/patrimony'
@@ -17,10 +16,12 @@ import OverviewSkeleton from './OverviewSkeleton'
 import PositionPieChart from './PositionPieChart'
 import PositionTable from './PositionTable'
 
+const OVERVIEW_PANEL_HEIGHT = 360
+const OVERVIEW_TABS_HEIGHT = 44
+const OVERVIEW_TAB_CHART_HEIGHT = OVERVIEW_PANEL_HEIGHT - OVERVIEW_TABS_HEIGHT
+
 export default function PortfolioOverviewPage() {
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
   const navigate = useNavigate()
-  const userCategories = selectedPortfolio?.custom_categories ?? []
   const { openTradeForm } = useTradeFormStore()
 
   const positions = usePositionsStore(s => s.positions)
@@ -109,11 +110,12 @@ export default function PortfolioOverviewPage() {
       {/* ── Row 1: Returns chart (70%) + Pie (30%) ── */}
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 8 }}>
-          <OverviewReturnsChart size={360} selectedCategory={selectedCategory} />
+          <OverviewReturnsChart size={OVERVIEW_PANEL_HEIGHT} selectedCategory={selectedCategory} />
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
           <PositionPieChart
             positions={positions}
+            height={OVERVIEW_PANEL_HEIGHT}
             selectedCategory={selectedCategory}
             onCategorySelect={setSelectedCategory}
             onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
@@ -132,49 +134,64 @@ export default function PortfolioOverviewPage() {
           />
         </Grid>
         <Grid size={{ xs: 12, lg: 7 }}>
-          <Tabs
-            value={bottomTab}
-            onChange={(_, v) => setBottomTab(v)}
-            sx={{
-              minHeight: 32,
-              mb: 1.5,
-              '& .MuiTabs-indicator': {
-                height: 2,
-                borderRadius: 1,
-              },
-              '& .MuiTab-root': {
+          <Box sx={{ height: OVERVIEW_PANEL_HEIGHT, display: 'flex', flexDirection: 'column' }}>
+            <Tabs
+              value={bottomTab}
+              onChange={(_, v) => setBottomTab(v)}
+              sx={{
                 minHeight: 32,
-                textTransform: 'none',
-                fontSize: 13,
-                fontWeight: 500,
-                px: 1.5,
-                py: 0.3,
-                color: 'text.secondary',
-                '&.Mui-selected': {
-                  fontWeight: 600,
-                  color: 'text.primary',
+                mb: 1.5,
+                flexShrink: 0,
+                '& .MuiTabs-indicator': {
+                  height: 2,
+                  borderRadius: 1,
                 },
-              },
-            }}
-          >
-            <Tab label="Proventos" />
-            <Tab label="Patrimônio" />
-            <Tab label="Aportes" />
-          </Tabs>
+                '& .MuiTab-root': {
+                  minHeight: 32,
+                  textTransform: 'none',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  px: 1.5,
+                  py: 0.3,
+                  color: 'text.secondary',
+                  '&.Mui-selected': {
+                    fontWeight: 600,
+                    color: 'text.primary',
+                  },
+                },
+              }}
+            >
+              <Tab label="Proventos" />
+              <Tab label="Patrimônio" />
+              <Tab label="Aportes" />
+            </Tabs>
 
-          {bottomTab === 0 && (
-            <OverviewDividendsChart dividends={dividends} selected={selectedCategory} size={320} />
-          )}
-          {bottomTab === 1 && (
-            <OverviewPatrimonyChart
-              patrimonyEvolution={patrimonyEvolution}
-              selected={selectedCategory}
-              size={320}
-            />
-          )}
-          {bottomTab === 2 && (
-            <PortfolioMonthlyAportsChart height={320} groupBy="month" defaultRange="max" title={null} />
-          )}
+            <Box sx={{ flex: 1, minHeight: 0 }}>
+              {bottomTab === 0 && (
+                <OverviewDividendsChart
+                  dividends={dividends}
+                  selected={selectedCategory}
+                  size={OVERVIEW_TAB_CHART_HEIGHT}
+                />
+              )}
+              {bottomTab === 1 && (
+                <OverviewPatrimonyChart
+                  patrimonyEvolution={patrimonyEvolution}
+                  selected={selectedCategory}
+                  size={OVERVIEW_TAB_CHART_HEIGHT}
+                />
+              )}
+              {bottomTab === 2 && (
+                <PortfolioMonthlyAportsChart
+                  height={OVERVIEW_TAB_CHART_HEIGHT}
+                  groupBy="month"
+                  defaultRange="1y"
+                  title={null}
+                  fitContainer
+                />
+              )}
+            </Box>
+          </Box>
         </Grid>
       </Grid>
     </Box>
