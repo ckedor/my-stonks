@@ -3,6 +3,7 @@ import { forceRefreshAll } from '@/actions/portfolio'
 import CategoryForm from '@/components/CategoryForm'
 import DividendForm from '@/components/DividendForm'
 import PortfolioForm from '@/components/PortfolioForm'
+import { fetchFavoriteAssets, type FavoriteAsset } from '@/api/market'
 import { useAuthStore } from '@/stores/auth'
 import { useCurrencyStore } from '@/stores/currency'
 import { usePortfolioStore } from '@/stores/portfolio'
@@ -31,11 +32,9 @@ import {
   IconButton,
   ListItemIcon,
   ListItemText,
-  ListSubheader,
   Menu,
   MenuItem,
   Popover,
-  Select,
   Snackbar,
   Toolbar,
   Typography
@@ -43,10 +42,9 @@ import {
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-type Section = 'carteira' | 'mercado' | 'architecture'
+type Section = 'carteira' | 'mercado'
 
 function getCurrentSection(pathname: string): Section {
-  if (pathname.startsWith('/architecture')) return 'architecture'
   if (pathname.startsWith('/market')) return 'mercado'
   return 'carteira'
 }
@@ -103,6 +101,8 @@ export default function MainTopbar() {
   const [selected, setSelected] = useState<number | null>(selectedPortfolio?.id ?? null)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
+  const [portfolioAnchorEl, setPortfolioAnchorEl] = useState<null | HTMLElement>(null)
+  const portfolioMenuOpen = Boolean(portfolioAnchorEl)
 
   const [openForm, setOpenForm] = useState(false)
   const [editMode, setEditMode] = useState(false)
@@ -110,6 +110,16 @@ export default function MainTopbar() {
   // Section mega-menu anchors
   const [carteiraAnchor, setCarteiraAnchor] = useState<null | HTMLElement>(null)
   const [mercadoAnchor, setMercadoAnchor] = useState<null | HTMLElement>(null)
+
+  // Loaded when the menu opens, so the shortcut reflects the latest ranking
+  // without costing a request on every page.
+  const [favorites, setFavorites] = useState<FavoriteAsset[]>([])
+  useEffect(() => {
+    if (!mercadoAnchor) return
+    fetchFavoriteAssets(5)
+      .then(setFavorites)
+      .catch(() => undefined)
+  }, [mercadoAnchor])
 
   // Quick actions menu
   const [actionsAnchor, setActionsAnchor] = useState<null | HTMLElement>(null)
@@ -269,23 +279,51 @@ export default function MainTopbar() {
               disableScrollLock
               slotProps={{ paper: { sx: { mt: 1, borderRadius: 2, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' } } }}
             >
-              <MegaMenuContent columns={mercadoColumns} onClose={() => setMercadoAnchor(null)} />
+              <Box sx={{ display: 'flex' }}>
+                <MegaMenuContent columns={mercadoColumns} onClose={() => setMercadoAnchor(null)} />
+                {favorites.length > 0 && (
+                  <Box sx={{ py: 4, pr: 4, minWidth: 190 }}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 700, mb: 2, color: 'text.primary', letterSpacing: 0.3 }}
+                    >
+                      Mais acessados
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {favorites.map((asset) => (
+                        <Typography
+                          key={asset.id}
+                          onClick={() => {
+                            navigate(`/market/asset/${asset.id}`)
+                            setMercadoAnchor(null)
+                          }}
+                          sx={{
+                            py: 1,
+                            px: 1.5,
+                            mx: -1.5,
+                            cursor: 'pointer',
+                            borderRadius: 1,
+                            color: 'text.secondary',
+                            fontSize: '0.9rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            gap: 2,
+                            '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
+                          }}
+                        >
+                          <span>{asset.ticker ?? asset.name}</span>
+                          <Box component="span" sx={{ opacity: 0.6, fontSize: '0.78rem' }}>
+                            {asset.visit_count}
+                          </Box>
+                        </Typography>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
             </Popover>
 
-            <Button
-              onClick={() => navigate('/architecture')}
-              sx={{
-                textTransform: 'none',
-                fontWeight: currentSection === 'architecture' ? 'bold' : 'normal',
-                color: 'topbar.text',
-                borderBottom: currentSection === 'architecture' ? 2 : 0,
-                borderColor: 'topbar.text',
-                borderRadius: 0,
-                px: 1.5,
-              }}
-            >
-              Arquitetura
-            </Button>
+            
           </Box>
 
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -293,55 +331,67 @@ export default function MainTopbar() {
               <CircularProgress size={24} />
             ) : (
               <>
-                <Select
-                  MenuProps={{ disableScrollLock: true }}
-                  value={selected ?? ''}
-                  onChange={(e) => {
-                    const value = Number(e.target.value)
-                    if (value === -1) {
-                      handleOpenEdit()
-                      return
-                    }
-                    if (value === -2) {
-                      handleOpenCreate()
-                      return
-                    }
-                    setSelected(value)
-                    const portfolio = portfolios.find((p) => p.id === value)
-                    if (portfolio) setSelectedPortfolio(portfolio)
+                <Button
+                  onClick={(e) => setPortfolioAnchorEl(e.currentTarget)}
+                  endIcon={
+                    <ExpandMore
+                      sx={{
+                        transition: 'transform 150ms',
+                        transform: portfolioMenuOpen ? 'rotate(180deg)' : 'none',
+                      }}
+                    />
+                  }
+                  disableRipple
+                  sx={{
+                    // The topbar has its own palette: `inherit` resolves to the
+                    // page text colour and disappears against a dark bar.
+                    color: 'topbar.text',
+                    textTransform: 'none',
+                    fontSize: 15,
+                    fontWeight: 600,
+                    px: 1,
+                    py: 0.25,
+                    minWidth: 0,
+                    borderRadius: 1.5,
+                    '& .MuiButton-endIcon': { ml: 0.5, opacity: 0.7 },
+                    '&:hover': { bgcolor: 'topbar.activeBg' },
                   }}
-                  size="small"
-                  IconComponent={ExpandMore}
-                  sx={{ 
-                    minWidth: 150, 
-                    bgcolor: 'background.paper',
-                    borderRadius: 1,
-                  }}
-                  renderValue={(value) => portfolios.find((p) => p.id === value)?.name || ''}
+                >
+                  {selectedPortfolio?.name ?? 'Carteira'}
+                </Button>
+
+                <Menu
+                  anchorEl={portfolioAnchorEl}
+                  open={portfolioMenuOpen}
+                  onClose={() => setPortfolioAnchorEl(null)}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                  disableScrollLock
+                  slotProps={{ paper: { sx: { minWidth: 200, mt: 0.5 } } }}
                 >
                   {portfolios.map((p) => (
-                    <MenuItem key={p.id} value={p.id}>
+                    <MenuItem
+                      key={p.id}
+                      selected={p.id === selected}
+                      onClick={() => {
+                        setSelected(p.id)
+                        setSelectedPortfolio(p)
+                        setPortfolioAnchorEl(null)
+                      }}
+                    >
                       {p.name}
                     </MenuItem>
                   ))}
-                  <ListSubheader>──────────</ListSubheader>
-                  <MenuItem value={-1}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <EditIcon sx={{ color: 'primary.main' }} fontSize="small" />
-                      <Typography sx={{ fontStyle: 'italic', color: 'primary.main' }}>
-                        Editar Carteira
-                      </Typography>
-                    </Box>
+                  <Divider />
+                  <MenuItem onClick={() => { setPortfolioAnchorEl(null); handleOpenEdit() }}>
+                    <EditIcon sx={{ color: 'primary.main', mr: 1 }} fontSize="small" />
+                    <Typography sx={{ color: 'primary.main' }}>Editar carteira</Typography>
                   </MenuItem>
-                  <MenuItem value={-2}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <AddIcon sx={{ color: 'primary.main' }} fontSize="small" />
-                      <Typography sx={{ fontStyle: 'italic', color: 'primary.main' }}>
-                        Nova Carteira
-                      </Typography>
-                    </Box>
+                  <MenuItem onClick={() => { setPortfolioAnchorEl(null); handleOpenCreate() }}>
+                    <AddIcon sx={{ color: 'primary.main', mr: 1 }} fontSize="small" />
+                    <Typography sx={{ color: 'primary.main' }}>Nova carteira</Typography>
                   </MenuItem>
-                </Select>
+                </Menu>
               </>
             )}
 

@@ -5,7 +5,6 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from app.composition.market_data import (
-    get_market_data_ingestion_trigger_service,
     get_market_data_read_service,
 )
 from app.modules.market_data.api.index.schemas import (
@@ -15,11 +14,6 @@ from app.modules.market_data.api.index.schemas import (
     USD_BRL_History,
 )
 from app.modules.market_data.service.market_data_service import MarketDataReadService
-from app.modules.market_data.service.data_ingestion_service import (
-    MarketDataIngestionTriggerService,
-)
-from app.modules.users.domain import User
-from app.modules.users.views import current_superuser
 
 router = APIRouter(prefix='/index', tags=['Market Data Series'])
 
@@ -43,15 +37,6 @@ async def get_usd_brl_history(
     service: MarketDataReadService = Depends(get_market_data_read_service),
 ):
     return await service.get_usd_brl_history(as_df=False)
-
-
-@router.post('/consolidate_history')
-async def consolidate_market_indexes_history(
-    _: User = Depends(current_superuser),
-    service: MarketDataIngestionTriggerService = Depends(get_market_data_ingestion_trigger_service),
-):
-    await service.trigger_series_and_usd_brl()
-    return {'message': 'OK'}
 
 
 @router.get('', response_model=List[MarketIndex])

@@ -89,7 +89,8 @@ def test_usd_brl_history_is_a_separate_table():
     assert set(usd_brl_history_table.columns.keys()) == {
         'id',
         'date',
-        'usd_to_brl_rate',
+        'usd_brl',
+        'brl_usd',
         'source',
         'updated_at',
     }

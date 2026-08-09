@@ -7,6 +7,7 @@ from app.modules.portfolio.domain.portfolio_consolidation import (
     DELTA_DAYS_FOR_PORTFOLIO_CONSOLIDATION,
 )
 from app.modules.portfolio.repositories.portfolio_repository import PortfolioRepository
+from tests.fakes import FakeUnitOfWork
 from app.modules.portfolio.service.portfolio_consolidator_service import (
     PortfolioConsolidatorService,
 )
@@ -42,8 +43,8 @@ async def test_portfolio_consolidation_uses_only_recent_non_zero_positions():
         get_asset_ids_with_transactions=AsyncMock(return_value=[99]),
     )
     service = PortfolioConsolidatorService(
-        repository=repository,
-        market_data_service=SimpleNamespace(),
+        uow=FakeUnitOfWork(portfolios=repository),
+        provider=SimpleNamespace(),
     )
 
     result = await service.get_asset_ids_to_consolidate(portfolio_id=3)

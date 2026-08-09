@@ -12,6 +12,16 @@ def run_task(task_func, *args, **kwargs):
     return task_func.delay(*args, **kwargs)
 
 
+def run_task_by_name(task_name: str, *args, **kwargs):
+    """Dispatch a task the caller must not import.
+
+    Lets an entrypoint in one module enqueue a job owned by another without
+    taking a code dependency on it, which is how the quote-ingestion route
+    reaches the portfolio task that selects held assets.
+    """
+    return celery_app.send_task(task_name, args=args, kwargs=kwargs)
+
+
 def celery_async_task(name: str | None = None, **task_kwargs):
     def decorator(async_fn):
         task_name = name or async_fn.__name__

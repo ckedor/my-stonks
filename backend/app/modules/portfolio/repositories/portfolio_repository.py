@@ -35,6 +35,27 @@ def get_custom_category_subquery(portfolio_id):
 
 
 class PortfolioRepository(SQLAlchemyRepository):
+    async def count_asset_references(self, asset_id: int) -> dict[str, int]:
+        """Count the portfolio records that still point at an asset.
+
+        Lives here because these are portfolio entities; asset deletion asks
+        for it through the unit of work rather than querying them itself.
+        """
+        reference_models = {
+            'transactions': Transaction,
+            'positions': Position,
+            'dividends': Dividend,
+            'category_assignments': CustomCategoryAssignment,
+        }
+        references: dict[str, int] = {}
+        for name, model in reference_models.items():
+            count = await self.session.scalar(
+                select(func.count()).select_from(model).where(model.asset_id == asset_id)
+            )
+            if count:
+                references[name] = int(count)
+        return references
+
     async def get_broker_currency_for_asset(
         self,
         portfolio_id: int,
@@ -254,6 +275,16 @@ class PortfolioRepository(SQLAlchemyRepository):
         )
         result = await self.session.execute(stmt)
         return result.unique().scalars().all()
+
+    async def get_all_portfolios(self) -> list[Portfolio]:
+        """Every portfolio in the application, for administrative reads.
+
+        Unlike ``get_user_portfolios`` this is not scoped to one user. The
+        owner is carried as ``user_id``; resolving it to a person belongs to
+        the users module.
+        """
+        result = await self.session.execute(select(Portfolio).order_by(Portfolio.name))
+        return list(result.scalars().all())
 
     async def get_transactions(
         self,

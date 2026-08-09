@@ -1,12 +1,13 @@
 from collections.abc import Callable
 from datetime import date, timedelta
+from decimal import Decimal
 
 from app.config.logger import logger
 from app.core.exceptions import ValidationError
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.domain.ingestion import DataIngestionType
-from app.modules.market_data.domain.usd_brl import UsdBrlHistory
+from app.modules.market_data.domain.usd_brl import UsdBrlHistory, invert_rate
 from app.modules.market_data.service.data_ingestion_service import DataIngestionService
 
 USD_BRL_DATASET_ID = 1
@@ -79,20 +80,27 @@ class UsdBrlIngestionService:
                     lambda value: value.date() if hasattr(value, 'date') else value
                 )
                 history_df = history_df[history_dates >= start_date]
-            rows = [
-                {
+            # Both directions are assembled here so that no consumer of the
+            # table ever has to invert the rate itself.
+            rows = []
+            for row in history_df.to_dict(orient='records'):
+                usd_brl = Decimal(str(row['usd_brl']))
+                if usd_brl <= 0:
+                    logger.warning('Ignoring non-positive USD/BRL rate on %s', row['date'])
+                    continue
+                rows.append({
                     'date': row['date'],
-                    'usd_to_brl_rate': row['usd_to_brl_rate'],
+                    'usd_brl': usd_brl,
+                    'brl_usd': invert_rate(usd_brl),
                     'source': 'bcb',
-                }
-                for row in history_df.to_dict(orient='records')
-            ]
+                })
             async with self.uow_factory() as uow:
                 await uow.market_data.upsert_bulk(
                     UsdBrlHistory,
                     rows,
                     unique_columns=['date'],
                 )
+                await uow.commit()
             await self.ingestion_service.finish_attempt(
                 current_execution_id,
                 attempt_id,

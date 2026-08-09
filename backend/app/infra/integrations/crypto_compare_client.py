@@ -1,5 +1,5 @@
 # app/infra/integrations/crypto_compare_client.py
-from datetime import datetime
+from datetime import datetime, time
 
 import pandas as pd
 from app.config.settings import settings
@@ -22,6 +22,9 @@ class CryptoCompareClient:
     ) -> pd.DataFrame:
         if init_date is None:
             init_date = datetime(2015, 1, 1)
+        elif not isinstance(init_date, datetime):
+            # Callers work in `date`; the API timestamps compare as `datetime`.
+            init_date = datetime.combine(init_date, time.min)
         instrument = symbol + '-USD'
 
         limit = 2000

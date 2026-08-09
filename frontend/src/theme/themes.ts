@@ -64,6 +64,16 @@ export interface ThemePaletteConfig {
 /* ──────────────────────────────────────────────
    Shared component overrides
    ────────────────────────────────────────────── */
+/* Opening a select or menu made MUI lock body scroll and compensate the
+   scrollbar with `padding-right`, which showed up as a gap along the right
+   edge of the app. Declared once here so no component has to remember
+   `disableScrollLock`. Dialogs and drawers keep the lock: for a real modal,
+   freezing the page behind it is the wanted behaviour. */
+const overlayComponents = {
+  MuiPopover: { defaultProps: { disableScrollLock: true } },
+  MuiMenu: { defaultProps: { disableScrollLock: true } },
+}
+
 const lightComponents = {
   MuiAppBar: {
     styleOverrides: {
@@ -95,6 +105,7 @@ const lightComponents = {
       },
     },
   },
+  ...overlayComponents,
 }
 
 const darkComponents = {
@@ -123,6 +134,7 @@ const darkComponents = {
       },
     },
   },
+  ...overlayComponents,
 }
 
 const baseTypography = {

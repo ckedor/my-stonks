@@ -4,7 +4,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, status
 
-from app.composition.market_data import get_broker_read_service, get_broker_write_service
+from app.composition.market_data import get_broker_service
 from app.modules.market_data.api.broker.schemas import (
     Broker,
     BrokerCreate,
@@ -17,7 +17,7 @@ router = APIRouter(prefix='/broker', tags=['Broker'])
 
 @router.get('', response_model=List[Broker])
 async def list_brokers(
-    service: BrokersService = Depends(get_broker_read_service),
+    service: BrokersService = Depends(get_broker_service),
 ):
     """List all brokers"""
     return await service.list_brokers()
@@ -26,7 +26,7 @@ async def list_brokers(
 @router.get('/{broker_id}', response_model=Broker)
 async def get_broker(
     broker_id: int,
-    service: BrokersService = Depends(get_broker_read_service),
+    service: BrokersService = Depends(get_broker_service),
 ):
     """Get a specific broker by ID"""
     return await service.get_broker(broker_id)
@@ -35,7 +35,7 @@ async def get_broker(
 @router.post('', response_model=Broker, status_code=status.HTTP_201_CREATED)
 async def create_broker(
     broker_data: BrokerCreate,
-    service: BrokersService = Depends(get_broker_write_service),
+    service: BrokersService = Depends(get_broker_service),
 ):
     """Create a new broker"""
     return await service.create_broker(
@@ -49,7 +49,7 @@ async def create_broker(
 async def update_broker(
     broker_id: int,
     broker_data: BrokerUpdate,
-    service: BrokersService = Depends(get_broker_write_service),
+    service: BrokersService = Depends(get_broker_service),
 ):
     """Update an existing broker"""
     return await service.update_broker(
@@ -63,7 +63,7 @@ async def update_broker(
 @router.delete('/{broker_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_broker(
     broker_id: int,
-    service: BrokersService = Depends(get_broker_write_service),
+    service: BrokersService = Depends(get_broker_service),
 ):
     """Delete a broker"""
     await service.delete_broker(broker_id)

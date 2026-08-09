@@ -15,13 +15,12 @@ import MenuIcon from '@mui/icons-material/Menu'
 import {
     AppBar,
     Box,
+    Button,
     CircularProgress,
     Divider,
     IconButton,
-    ListSubheader,
     Menu,
     MenuItem,
-    Select,
     Toolbar,
     Typography
 } from '@mui/material'
@@ -46,6 +45,8 @@ export default function Topbar({
   const [selected, setSelected] = useState<number | null>(selectedPortfolio?.id ?? null)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
+  const [portfolioAnchorEl, setPortfolioAnchorEl] = useState<null | HTMLElement>(null)
+  const portfolioMenuOpen = Boolean(portfolioAnchorEl)
   const [openForm, setOpenForm] = useState(false)
   const [editMode, setEditMode] = useState(false)
 
@@ -78,38 +79,65 @@ export default function Topbar({
             ) : (
               <>
               
-              <Select
-                value={selected ?? ''}
-                onChange={(e) => {
-                  const value = Number(e.target.value)
-                  if (value === -1) { handleOpenEdit(); return }
-                  if (value === -2) { handleOpenCreate(); return }
-                  setSelected(value)
-                  const portfolio = portfolios.find((p) => p.id === value)
-                  if (portfolio) setSelectedPortfolio(portfolio)
+              <Button
+                onClick={(e) => setPortfolioAnchorEl(e.currentTarget)}
+                endIcon={
+                  <ExpandMore
+                    sx={{
+                      transition: 'transform 150ms',
+                      transform: portfolioMenuOpen ? 'rotate(180deg)' : 'none',
+                    }}
+                  />
+                }
+                disableRipple
+                sx={{
+                  color: 'inherit',
+                  textTransform: 'none',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  px: 1,
+                  py: 0.25,
+                  minWidth: 0,
+                  borderRadius: 1.5,
+                  '& .MuiButton-endIcon': { ml: 0.5, opacity: 0.6 },
+                  '&:hover': { bgcolor: 'action.hover' },
                 }}
-                size="small"
-                IconComponent={ExpandMore}
-                sx={{ minWidth: 150, bgcolor: 'background.default' }}
-                renderValue={(value) => portfolios.find((p) => p.id === value)?.name || ''}
+              >
+                {selectedPortfolio?.name ?? 'Carteira'}
+              </Button>
+
+              <Menu
+                anchorEl={portfolioAnchorEl}
+                open={portfolioMenuOpen}
+                onClose={() => setPortfolioAnchorEl(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                slotProps={{ paper: { sx: { minWidth: 200, mt: 0.5 } } }}
               >
                 {portfolios.map((p) => (
-                  <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+                  <MenuItem
+                    key={p.id}
+                    selected={p.id === selected}
+                    onClick={() => {
+                      setSelected(p.id)
+                      setSelectedPortfolio(p)
+                      setPortfolioAnchorEl(null)
+                    }}
+                  >
+                    {p.name}
+                  </MenuItem>
                 ))}
-                <ListSubheader>──────────</ListSubheader>
-                <MenuItem value={-1}>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <EditIcon sx={{ color: 'primary.main' }} fontSize="small" />
-                    <Typography sx={{ fontStyle: 'italic', color: 'primary.main' }}>Editar Carteira</Typography>
-                  </Box>
+                <Divider />
+                <MenuItem onClick={() => { setPortfolioAnchorEl(null); handleOpenEdit() }}>
+                  <EditIcon sx={{ color: 'primary.main', mr: 1 }} fontSize="small" />
+                  <Typography sx={{ color: 'primary.main' }}>Editar carteira</Typography>
                 </MenuItem>
-                <MenuItem value={-2}>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <AddIcon sx={{ color: 'primary.main' }} fontSize="small" />
-                    <Typography sx={{ fontStyle: 'italic', color: 'primary.main' }}>Nova Carteira</Typography>
-                  </Box>
+                <MenuItem onClick={() => { setPortfolioAnchorEl(null); handleOpenCreate() }}>
+                  <AddIcon sx={{ color: 'primary.main', mr: 1 }} fontSize="small" />
+                  <Typography sx={{ color: 'primary.main' }}>Nova carteira</Typography>
                 </MenuItem>
-              </Select>
+              </Menu>
+
               <RecalculatePortfolioButton />
               </>
             )}

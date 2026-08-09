@@ -5,35 +5,30 @@ Portfolio dividend service - handles dividend management.
 
 import pandas as pd
 from app.modules.market_data.domain.constants import CURRENCY
+from app.modules.market_data.domain.usd_brl import usd_brl_history_to_df
 from app.modules.portfolio.domain.entities import Dividend
 from app.infra.db.unit_of_work import UnitOfWork
-from app.modules.market_data.service.market_data_service import MarketDataService
-from app.modules.portfolio.api.dividend.schema import DividendFilters
 from app.modules.portfolio.repositories import PortfolioRepository
+from app.modules.portfolio.api.dividend.schema import DividendFilters
 
 
 class PortfolioDividendService:
-    def __init__(
-        self,
-        *,
-        market_data_service: MarketDataService,
-        repository: PortfolioRepository | None = None,
-        uow: UnitOfWork | None = None,
-    ):
-        self.market_data_service = market_data_service
-        self.repository = repository
+    def __init__(self, uow: UnitOfWork):
         self.uow = uow
 
-    async def _get_usdbrl_rate(self, date, market_data_repository) -> float:
-        df = await self.market_data_service.get_usd_brl_history(
-            start_date=pd.Timestamp(date) - pd.DateOffset(days=10),
-            repository=market_data_repository,
+    @staticmethod
+    async def _get_usd_brl_rate(date, market_data_repository) -> tuple[float, float]:
+        """Both rate directions in effect on or before ``date``."""
+        history = await market_data_repository.get_usd_brl_history(
+            (pd.Timestamp(date) - pd.DateOffset(days=10)).date()
         )
+        df = usd_brl_history_to_df(history)
         df = df.sort_values('date')
         df = df[df['date'] <= pd.Timestamp(date)]
         if df.empty:
             raise ValueError(f'USD/BRL rate not found for date {date}')
-        return float(df.iloc[-1]['usdbrl'])
+        latest = df.iloc[-1]
+        return float(latest['usd_brl']), float(latest['brl_usd'])
 
     @staticmethod
     async def _get_broker_currency(
@@ -55,14 +50,14 @@ class PortfolioDividendService:
         repository: PortfolioRepository,
         market_data_repository,
     ) -> dict:
-        rate = await self._get_usdbrl_rate(data['date'], market_data_repository)
+        usd_brl, brl_usd = await self._get_usd_brl_rate(data['date'], market_data_repository)
         currency_id = await self._get_broker_currency(repository, portfolio_id, asset_id)
 
         if currency_id == CURRENCY.USD:
             data['amount_usd'] = data['amount']
-            data['amount'] *= rate
+            data['amount'] *= usd_brl
         else:
-            data['amount_usd'] = data['amount'] / rate
+            data['amount_usd'] = data['amount'] * brl_usd
 
         return data
 
@@ -72,16 +67,12 @@ class PortfolioDividendService:
         filters: DividendFilters,
         currency: str = 'BRL',
     ) -> pd.DataFrame:
-        if self.repository is None:
-            raise RuntimeError('A repository is required for this read operation')
-        dividends = await self.repository.get_portfolio_dividends(
-            portfolio_id, filters, currency=currency
-        )
-        return dividends
+        async with self.uow as uow:
+            return await uow.portfolios.get_portfolio_dividends(
+                portfolio_id, filters, currency=currency
+            )
 
     async def create_dividend(self, dividend_data):
-        if self.uow is None:
-            raise RuntimeError('A UnitOfWork is required for this write operation')
         async with self.uow as uow:
             data = dividend_data.dict()
             data = await self._fill_dual_currency(
@@ -91,11 +82,11 @@ class PortfolioDividendService:
                 uow.portfolios,
                 uow.market_data,
             )
-            return await uow.portfolios.create(Dividend, data)
+            created = await uow.portfolios.create(Dividend, data)
+            await uow.commit()
+            return created
 
     async def update_dividend(self, dividend_data):
-        if self.uow is None:
-            raise RuntimeError('A UnitOfWork is required for this write operation')
         async with self.uow as uow:
             existing_dividend = await uow.portfolios.get(Dividend, dividend_data.id)
             if not existing_dividend:
@@ -111,13 +102,15 @@ class PortfolioDividendService:
                     uow.portfolios,
                     uow.market_data,
                 )
-            return await uow.portfolios.update(Dividend, update_data)
+            updated = await uow.portfolios.update(Dividend, update_data)
+            await uow.commit()
+            return updated
 
     async def delete_dividend(self, dividend_id: int):
-        if self.uow is None:
-            raise RuntimeError('A UnitOfWork is required for this write operation')
         async with self.uow as uow:
             existing_dividend = await uow.portfolios.get(Dividend, dividend_id)
             if not existing_dividend:
                 return None
-            return await uow.portfolios.delete(Dividend, dividend_id)
+            deleted = await uow.portfolios.delete(Dividend, dividend_id)
+            await uow.commit()
+            return deleted

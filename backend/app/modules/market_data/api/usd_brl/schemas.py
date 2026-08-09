@@ -13,7 +13,8 @@ class UsdBrlConversionRequest(BaseModel):
 
 class UsdBrlHistoryPoint(BaseModel):
     date: date
-    usd_to_brl_rate: Decimal
+    usd_brl: Decimal
+    brl_usd: Decimal
     source: str
 
     model_config = {'from_attributes': True}

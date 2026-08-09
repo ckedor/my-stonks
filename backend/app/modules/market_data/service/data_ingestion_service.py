@@ -3,23 +3,22 @@ from datetime import datetime, timezone
 
 from app.core.exceptions import AlreadyExistsError, NotFoundError
 from app.infra.db.unit_of_work import UnitOfWork
-from app.infra.exceptions import IntegrationUnavailable
 from app.modules.market_data.domain.ingestion import (
     DataIngestionAttempt,
     DataIngestionType,
 )
-from app.modules.market_data.repositories.ingestion_repository import DataIngestionRepository
 
 
 class DataIngestionReadService:
-    def __init__(self, repository: DataIngestionRepository):
-        self.repository = repository
+    def __init__(self, uow: UnitOfWork):
+        self.uow = uow
 
     async def list_executions(self, *, ingestion_type: DataIngestionType, limit: int):
-        return await self.repository.list_executions(
-            ingestion_type=ingestion_type,
-            limit=limit,
-        )
+        async with self.uow as uow:
+            return await uow.ingestions.list_executions(
+                ingestion_type=ingestion_type,
+                limit=limit,
+            )
 
     async def get_execution(
         self,
@@ -28,13 +27,14 @@ class DataIngestionReadService:
         ingestion_type: DataIngestionType,
         include_attempts: bool = False,
     ):
-        execution = await self.repository.get_execution(
-            execution_id,
-            include_attempts=include_attempts,
-        )
-        if execution is None or execution.ingestion_type != ingestion_type.value:
-            raise NotFoundError('Data ingestion execution not found')
-        return execution
+        async with self.uow as uow:
+            execution = await uow.ingestions.get_execution(
+                execution_id,
+                include_attempts=include_attempts,
+            )
+            if execution is None or execution.ingestion_type != ingestion_type.value:
+                raise NotFoundError('Data ingestion execution not found')
+            return execution
 
     async def list_quote_executions(self, *, limit: int):
         return await self.list_executions(
@@ -81,14 +81,13 @@ class DataIngestionService:
         self,
         *,
         uow_factory: Callable[[], UnitOfWork],
-        enqueue_ingestion: Callable[[DataIngestionType, int, bool], str],
     ):
         self.uow_factory = uow_factory
-        self.enqueue_ingestion = enqueue_ingestion
 
     async def maintain_history(self) -> None:
         async with self.uow_factory() as uow:
             await uow.ingestions.maintain_execution_history()
+            await uow.commit()
 
     async def request_manual_execution(
         self,
@@ -113,21 +112,15 @@ class DataIngestionService:
                 item_ids=item_ids,
                 requested_by_user_id=requested_by_user_id,
             )
-            execution_id = execution.id
+            await uow.commit()
+            return execution
 
-        try:
-            task_id = self.enqueue_ingestion(
-                ingestion_type,
-                execution_id,
-                force_full_history,
-            )
-            async with self.uow_factory() as uow:
-                execution = await uow.ingestions.get_execution(execution_id)
-                execution.task_id = task_id
-        except Exception as exc:
-            await self.fail(execution_id, exc)
-            raise IntegrationUnavailable(provider='task_queue') from exc
-        return execution
+    async def set_task_id(self, execution_id: int, task_id: str):
+        async with self.uow_factory() as uow:
+            execution = await uow.ingestions.get_execution(execution_id)
+            execution.task_id = task_id
+            await uow.commit()
+            return execution
 
     async def request_quote_execution(
         self,
@@ -182,6 +175,8 @@ class DataIngestionService:
             if execution_id is None:
                 active = await uow.ingestions.get_active_execution(ingestion_type)
                 if active is not None:
+                    # keep the history maintenance above even though we bail out
+                    await uow.commit()
                     return None
                 execution = await uow.ingestions.create_execution(
                     ingestion_type=ingestion_type,
@@ -194,10 +189,12 @@ class DataIngestionService:
                 if execution is None or execution.ingestion_type != ingestion_type.value:
                     raise NotFoundError('Data ingestion execution not found')
             if execution.status != 'queued':
+                await uow.commit()
                 return None
             execution.status = 'running'
             execution.started_at = datetime.now(timezone.utc)
             execution.error = None
+            await uow.commit()
             return (
                 execution.id,
                 bool(execution.force_full_history),
@@ -215,6 +212,7 @@ class DataIngestionService:
             execution = await uow.ingestions.get_execution(execution_id)
             execution.total_items = len(item_ids)
             execution.parameters = parameters
+            await uow.commit()
 
     async def start_attempt(
         self,
@@ -233,6 +231,7 @@ class DataIngestionService:
                 source=source,
                 parameters=parameters,
             )
+            await uow.commit()
             return attempt.id
 
     async def finish_attempt(  # noqa: PLR0913
@@ -262,6 +261,7 @@ class DataIngestionService:
                 execution.succeeded_items += 1
             else:
                 execution.failed_items += 1
+            await uow.commit()
 
     async def finish(self, execution_id: int) -> None:
         async with self.uow_factory() as uow:
@@ -273,6 +273,7 @@ class DataIngestionService:
                 execution.status = 'failure'
             else:
                 execution.status = 'partial_success'
+            await uow.commit()
 
     async def fail(self, execution_id: int, error: Exception) -> None:
         async with self.uow_factory() as uow:
@@ -281,20 +282,4 @@ class DataIngestionService:
                 execution.status = 'failure'
                 execution.error = str(error) or error.__class__.__name__
                 execution.finished_at = datetime.now(timezone.utc)
-
-
-class MarketDataIngestionTriggerService:
-    """Compatibility operation for triggering both former index ingestions."""
-
-    def __init__(
-        self,
-        *,
-        enqueue_series: Callable[[], None],
-        enqueue_usd_brl: Callable[[], None],
-    ) -> None:
-        self.enqueue_series = enqueue_series
-        self.enqueue_usd_brl = enqueue_usd_brl
-
-    async def trigger_series_and_usd_brl(self) -> None:
-        self.enqueue_series()
-        self.enqueue_usd_brl()
+            await uow.commit()

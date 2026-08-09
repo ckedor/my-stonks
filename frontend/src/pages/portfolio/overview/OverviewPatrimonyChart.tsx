@@ -15,7 +15,7 @@ import {
 interface Props {
   patrimonyEvolution: PatrimonyEntry[]
   selected: string
-  size?: number
+  size?: number | string
   loading?: boolean
 }
 

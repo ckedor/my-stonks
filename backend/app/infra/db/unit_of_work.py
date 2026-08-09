@@ -14,7 +14,12 @@ from app.modules.portfolio.repositories.portfolio_repository import PortfolioRep
 
 
 class UnitOfWork:
-    """Transaction boundary for database writes."""
+    """The persistence entry point for application services.
+
+    Entering opens the session scope and exposes the repositories. Reads just
+    use them and leave. Writes call ``commit()`` before leaving; anything not
+    committed is rolled back on exit.
+    """
 
     def __init__(
         self,
@@ -36,6 +41,9 @@ class UnitOfWork:
         self.portfolios = PortfolioRepository(self._session)
         return self
 
+    async def commit(self) -> None:
+        await self._session.commit()
+
     async def __aexit__(
         self,
         exc_type: type[BaseException] | None,
@@ -46,13 +54,11 @@ class UnitOfWork:
             return
 
         try:
-            if exc_type is None:
-                try:
-                    await self._session.commit()
-                except Exception:
-                    await self._session.rollback()
-                    raise
-            else:
+            # Only roll back explicitly on the error path: ``rollback()`` expires
+            # every instance in the identity map, and services hand loaded ORM
+            # objects back to their callers. ``close()`` already discards any
+            # uncommitted work at the connection level without expiring them.
+            if exc_type is not None:
                 await self._session.rollback()
         finally:
             await self._session.close()
@@ -65,5 +71,6 @@ def get_uow() -> UnitOfWork:
 
 
 def get_uow_factory() -> Callable[[], UnitOfWork]:
-    """FastAPI dependency for services with multiple transaction boundaries."""
+    """For services that need several independent transactions, such as
+    concurrent ingestion fan-out. A single UnitOfWork cannot be entered twice."""
     return UnitOfWork

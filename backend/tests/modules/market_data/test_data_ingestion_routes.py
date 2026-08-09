@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi import FastAPI
@@ -39,26 +39,38 @@ async def test_market_data_series_route_leaves_item_selection_to_backend():
         'upserted_rows': 0,
         'error': None,
     }
-    write_service = SimpleNamespace(request_series_execution=AsyncMock(return_value=execution))
+    requested_execution = SimpleNamespace(**execution)
+    write_service = SimpleNamespace(
+        request_series_execution=AsyncMock(return_value=requested_execution),
+        set_task_id=AsyncMock(return_value=requested_execution),
+        fail=AsyncMock(),
+    )
     app = FastAPI()
     app.include_router(router, prefix='/market_data')
     app.dependency_overrides[current_superuser] = lambda: SimpleNamespace(id=7)
     app.dependency_overrides[get_data_ingestion_service] = lambda: write_service
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url='http://test',
-    ) as client:
-        response = await client.post(
-            '/market_data/ingestions/market_data_series',
-            json={'force_full_history': False},
-        )
+    with patch(
+        'app.modules.market_data.api.ingestion.router.run_task',
+        return_value=SimpleNamespace(id='task-4'),
+    ) as run_task:
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url='http://test',
+        ) as client:
+            response = await client.post(
+                '/market_data/ingestions/market_data_series',
+                json={'force_full_history': False},
+            )
 
     assert response.status_code == HTTP_OK
     write_service.request_series_execution.assert_awaited_once_with(
         requested_by_user_id=7,
         force_full_history=False,
     )
+    run_task.assert_called_once()
+    write_service.set_task_id.assert_awaited_once_with(4, 'task-4')
+    write_service.fail.assert_not_awaited()
 
 
 @pytest.mark.asyncio

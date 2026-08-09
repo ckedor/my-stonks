@@ -1,7 +1,12 @@
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
+
+import pandas as pd
+
+CLOSE_PRICES_DF_COLUMNS = ['date', 'close', 'currency']
 
 
 @dataclass(frozen=True)
@@ -47,6 +52,8 @@ class FetchedQuotes:
     source: str
     parameters: dict[str, Any]
     quotes: list[Quote] = field(default_factory=list)
+    #: Provider-hosted brand image for the ticker, when it offers one.
+    logo_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -83,3 +90,32 @@ class QuoteIngestionResult:
     @property
     def upserted_rows(self) -> int:
         return sum(item.upserted_rows for item in self.assets)
+
+
+def persisted_close_prices_df(quotes: Sequence['Quote']) -> pd.DataFrame:
+    """Daily close prices in the quote's own currency, forward-filled up to today.
+
+    Quotes without a close price are ignored. Returns an empty frame when none
+    of them carries a close, so callers can report missing history explicitly
+    instead of silently falling back to a provider.
+    """
+    # ``close`` arrives as Decimal from the database. The frames it is combined
+    # with (exchange rates, computed prices) are float, and Decimal does not
+    # support arithmetic with float, so normalize here rather than at each use.
+    rows = [
+        {'date': quote.date, 'close': float(quote.close), 'currency': quote.currency_id}
+        for quote in quotes
+        if quote.close is not None
+    ]
+    if not rows:
+        return pd.DataFrame(columns=CLOSE_PRICES_DF_COLUMNS)
+
+    df = pd.DataFrame(rows)
+    df['date'] = pd.to_datetime(df['date'])
+    full_range = pd.DataFrame({
+        'date': pd.date_range(start=df['date'].min(), end=datetime.today(), freq='D')
+    })
+    df = pd.merge(full_range, df, on='date', how='left')
+    df['close'] = df['close'].ffill()
+    df['currency'] = df['currency'].ffill()
+    return df[CLOSE_PRICES_DF_COLUMNS]

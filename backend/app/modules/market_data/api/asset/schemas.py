@@ -1,6 +1,6 @@
 """Asset domain schemas (assets, types, FII/ETF/fixed income, events, exchanges)."""
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -9,6 +9,8 @@ from pydantic import BaseModel, ConfigDict
 class AssetClass(BaseModel):
     id: int
     name: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AssetType(BaseModel):
@@ -257,4 +259,26 @@ class ExchangeOut(BaseModel):
     id: int
     code: str
     name: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FavoriteAssetType(BaseModel):
+    id: int
+    short_name: str
+    name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FavoriteAsset(BaseModel):
+    """An asset the user returns to, ranked by how often they open it."""
+
+    id: int
+    ticker: Optional[str]
+    name: str
+    asset_type_id: int
+    asset_type: FavoriteAssetType
+    visit_count: int
+    last_visited_at: Optional[datetime]
+
     model_config = ConfigDict(from_attributes=True)

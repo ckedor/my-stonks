@@ -6,8 +6,7 @@ import pandas as pd
 import pytest
 
 from app.core.exceptions import NotFoundError
-from app.modules.market_data.domain.quote import Quote
-from app.modules.market_data.service.market_data_service import MarketDataReadService
+from app.modules.market_data.domain.quote import Quote, persisted_close_prices_df
 from app.modules.portfolio.service.portfolio_consolidator_service import (
     PortfolioConsolidatorService,
 )
@@ -15,8 +14,31 @@ from app.modules.portfolio.service.portfolio_consolidator_service import (
 PERSISTED_CLOSE = 31.25
 
 
+def test_persisted_close_prices_use_the_quote_currency():
+    quotes = [
+        Quote(
+            asset_id=7,
+            currency_id=1,
+            date=date.today(),
+            close=PERSISTED_CLOSE,
+        )
+    ]
+
+    result = persisted_close_prices_df(quotes)
+
+    assert result.iloc[-1]['close'] == PERSISTED_CLOSE
+    assert result.iloc[-1]['currency'] == 1
+
+
+def test_persisted_close_prices_are_empty_without_a_close():
+    quotes = [Quote(asset_id=7, currency_id=1, date=date.today(), close=None)]
+
+    assert persisted_close_prices_df(quotes).empty
+    assert persisted_close_prices_df([]).empty
+
+
 @pytest.mark.asyncio
-async def test_persisted_close_price_read_never_calls_provider():
+async def test_variable_income_consolidation_reads_persisted_quotes_only():
     quote_repository = SimpleNamespace(
         get_quotes=AsyncMock(
             return_value=[
@@ -30,71 +52,33 @@ async def test_persisted_close_price_read_never_calls_provider():
         )
     )
     provider = SimpleNamespace(fetch_quotes=AsyncMock())
-    service = MarketDataReadService(
-        quote_repository=quote_repository,
-        provider=provider,
-    )
+    asset = SimpleNamespace(id=7, ticker='PETR4', asset_type=SimpleNamespace(id=4))
 
-    result = await service.get_asset_close_prices(
-        asset_id=7,
-        ticker='PETR4',
-        init_date=pd.Timestamp(date.today()),
-    )
-
-    quote_repository.get_quotes.assert_awaited_once_with([7], start_date=date.today())
-    provider.fetch_quotes.assert_not_awaited()
-    assert result.iloc[0]['close'] == PERSISTED_CLOSE
-
-
-@pytest.mark.asyncio
-async def test_missing_persisted_history_is_explicit():
-    service = MarketDataReadService(
-        quote_repository=SimpleNamespace(get_quotes=AsyncMock(return_value=[])),
-    )
-
-    with pytest.raises(NotFoundError, match='No persisted quotes'):
-        await service.get_asset_close_prices(
-            asset_id=7,
-            ticker='PETR4',
-            init_date=pd.Timestamp(date.today()),
-        )
-
-
-@pytest.mark.asyncio
-async def test_variable_income_consolidation_delegates_to_persisted_quote_reader():
-    expected = pd.DataFrame([
-        {
-            'date': pd.Timestamp(date.today()),
-            'close': PERSISTED_CLOSE,
-            'currency': 1,
-        }
-    ])
-    read_service = SimpleNamespace(get_asset_close_prices=AsyncMock(return_value=expected))
-    repository = SimpleNamespace()
-    quote_repository = SimpleNamespace()
-    service = PortfolioConsolidatorService(
-        repository=repository,
-        market_data_service=read_service,
-    )
-    asset = SimpleNamespace(
-        id=7,
-        ticker='PETR4',
-        asset_type=SimpleNamespace(id=4),
-    )
-
-    result = await service._get_asset_prices(
+    result = await PortfolioConsolidatorService._get_asset_prices(
         asset,
         transaction_rows=[],
         dividends_df=pd.DataFrame(),
         init_date=pd.Timestamp(date.today()),
-        repository=repository,
+        repository=SimpleNamespace(),
         quote_repository=quote_repository,
     )
 
-    read_service.get_asset_close_prices.assert_awaited_once_with(
-        asset_id=7,
-        ticker='PETR4',
-        init_date=pd.Timestamp(date.today()),
-        quote_repository=quote_repository,
-    )
-    assert result is expected
+    quote_repository.get_quotes.assert_awaited_once_with([7], start_date=date.today())
+    provider.fetch_quotes.assert_not_awaited()
+    assert result.iloc[-1]['close'] == PERSISTED_CLOSE
+
+
+@pytest.mark.asyncio
+async def test_missing_persisted_history_is_explicit():
+    quote_repository = SimpleNamespace(get_quotes=AsyncMock(return_value=[]))
+    asset = SimpleNamespace(id=7, ticker='PETR4', asset_type=SimpleNamespace(id=4))
+
+    with pytest.raises(NotFoundError, match='No persisted quotes'):
+        await PortfolioConsolidatorService._get_asset_prices(
+            asset,
+            transaction_rows=[],
+            dividends_df=pd.DataFrame(),
+            init_date=pd.Timestamp(date.today()),
+            repository=SimpleNamespace(),
+            quote_repository=quote_repository,
+        )

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -78,51 +78,101 @@ async def test_brapi_crypto_quotes_follow_documented_contract():
     await client.aclose()
 
 
-@pytest.mark.asyncio
-async def test_crypto_uses_brapi_as_primary_provider():
-    provider = MarketDataProvider.__new__(MarketDataProvider)
-    expected = {
-        'ticker': 'BTC',
-        'currency': 'USD',
-        'quotes': [{'date': '2025-01-01', 'close': 100_000}],
-    }
-    provider.brapi_client = SimpleNamespace(
-        _brapi_range_from_init_date=lambda _: 'max',
-        get_crypto_quotes=AsyncMock(return_value=expected),
-    )
-    provider.crypto_compare_client = SimpleNamespace(get_quotes=AsyncMock())
+def crypto_history_df() -> pd.DataFrame:
+    return pd.DataFrame([
+        {
+            'date': pd.Timestamp('2025-01-01'),
+            'open': 99_000,
+            'high': 101_000,
+            'low': 98_000,
+            'close': EXPECTED_CRYPTO_CLOSE,
+            'volume': 120,
+            'currency': 'USD',
+        }
+    ])
 
-    result = await provider._fetch_crypto_quotes(
-        ticker='BTC',
-        start_date=None,
-        exchange=None,
+
+@pytest.mark.asyncio
+async def test_crypto_uses_crypto_compare_for_its_deeper_history():
+    """Brapi caps crypto at 1000 daily points, which leaves older positions
+    unpriced, so CryptoCompare is the source."""
+    provider = MarketDataProvider.__new__(MarketDataProvider)
+    provider.crypto_compare_client = SimpleNamespace(
+        get_crypto_quotes_df=AsyncMock(return_value=crypto_history_df()),
     )
+    provider.brapi_client = SimpleNamespace(get_crypto_quotes=AsyncMock())
+
+    result = await provider._fetch_crypto_quotes(ticker='BTC', start_date=None, exchange=None)
 
     assert result.ticker == 'BTC'
     assert result.currency == 'USD'
+    assert result.source == 'cryptocompare'
     assert result.quotes[0].close == EXPECTED_CRYPTO_CLOSE
-    provider.brapi_client.get_crypto_quotes.assert_awaited_once()
-    provider.crypto_compare_client.get_quotes.assert_not_awaited()
+    provider.crypto_compare_client.get_crypto_quotes_df.assert_awaited_once()
+    provider.brapi_client.get_crypto_quotes.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_crypto_propagates_provider_rate_limit_without_legacy_fallback():
+async def test_crypto_forwards_the_requested_start_date():
     provider = MarketDataProvider.__new__(MarketDataProvider)
-    provider.brapi_client = SimpleNamespace(
-        _brapi_range_from_init_date=lambda _: '1mo',
-        get_crypto_quotes=AsyncMock(
-            side_effect=IntegrationRateLimited(provider='brapi'),
+    provider.crypto_compare_client = SimpleNamespace(
+        get_crypto_quotes_df=AsyncMock(return_value=crypto_history_df()),
+    )
+
+    await provider._fetch_crypto_quotes(
+        ticker='BTC',
+        start_date=date(2025, 1, 1),
+        exchange=None,
+    )
+
+    _, kwargs = provider.crypto_compare_client.get_crypto_quotes_df.await_args
+    # The client compares against API timestamps, so it needs a datetime.
+    assert isinstance(kwargs['init_date'], datetime)
+    assert kwargs['init_date'].date() == date(2025, 1, 1)
+
+
+@pytest.mark.asyncio
+async def test_crypto_falls_back_to_brapi_when_the_deep_provider_refuses():
+    """CryptoCompare's free tier is metered, so a refusal must not leave the
+    screen empty when brapi can still answer with a shorter history."""
+    provider = MarketDataProvider.__new__(MarketDataProvider)
+    provider.crypto_compare_client = SimpleNamespace(
+        get_crypto_quotes_df=AsyncMock(
+            side_effect=IntegrationRateLimited(provider='cryptocompare'),
         ),
     )
-    provider.crypto_compare_client = SimpleNamespace(
-        get_quotes=AsyncMock(),
+    provider.brapi_client = SimpleNamespace(
+        get_crypto_quotes=AsyncMock(
+            return_value={
+                'currency': 'USD',
+                'quotes': [{'date': '2025-01-01', 'close': EXPECTED_CRYPTO_CLOSE}],
+            }
+        ),
+    )
+    provider._fetch_crypto_logo = AsyncMock(return_value=None)
+
+    result = await provider._fetch_crypto_quotes(
+        ticker='BTC',
+        start_date=date(2025, 1, 1),
+        exchange=None,
     )
 
-    with pytest.raises(IntegrationRateLimited):
-        await provider._fetch_crypto_quotes(
-            ticker='BTC',
-            start_date=date(2025, 1, 1),
-            exchange=None,
-        )
+    assert result.source == 'brapi'
+    assert result.currency == 'USD'
+    assert result.quotes[0].close == EXPECTED_CRYPTO_CLOSE
+    provider.brapi_client.get_crypto_quotes.assert_awaited_once()
 
-    provider.crypto_compare_client.get_quotes.assert_not_awaited()
+
+@pytest.mark.asyncio
+async def test_crypto_does_not_call_the_fallback_when_the_deep_provider_answers():
+    provider = MarketDataProvider.__new__(MarketDataProvider)
+    provider.crypto_compare_client = SimpleNamespace(
+        get_crypto_quotes_df=AsyncMock(return_value=crypto_history_df()),
+    )
+    provider.brapi_client = SimpleNamespace(get_crypto_quotes=AsyncMock())
+    provider._fetch_crypto_logo = AsyncMock(return_value=None)
+
+    result = await provider._fetch_crypto_quotes(ticker='BTC', start_date=None, exchange=None)
+
+    assert result.source == 'cryptocompare'
+    provider.brapi_client.get_crypto_quotes.assert_not_awaited()

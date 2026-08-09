@@ -117,7 +117,7 @@ def map_assets() -> None:
         ETF,
         etf_table,
         properties={
-            'segment': relationship(ETFSegment),
+            'segment': relationship(ETFSegment, lazy='joined'),
             'asset': relationship(Asset, back_populates='etf'),
         },
     )
@@ -125,7 +125,7 @@ def map_assets() -> None:
         FII,
         fii_table,
         properties={
-            'segment': relationship(FIISegment),
+            'segment': relationship(FIISegment, lazy='joined'),
             'asset': relationship(Asset, back_populates='fii', lazy='joined'),
         },
     )

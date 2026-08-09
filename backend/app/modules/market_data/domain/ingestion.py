@@ -32,22 +32,6 @@ class DataIngestionExecution:
     error: str | None = None
     attempts: list['DataIngestionAttempt'] = field(default_factory=list)
 
-    @property
-    def total_assets(self) -> int:
-        return self.total_items
-
-    @property
-    def processed_assets(self) -> int:
-        return self.processed_items
-
-    @property
-    def succeeded_assets(self) -> int:
-        return self.succeeded_items
-
-    @property
-    def failed_assets(self) -> int:
-        return self.failed_items
-
 
 @dataclass(eq=False, kw_only=True)
 class DataIngestionAttempt:
@@ -63,16 +47,3 @@ class DataIngestionAttempt:
     fetched_rows: int = 0
     upserted_rows: int = 0
     error: str | None = None
-
-    @property
-    def asset_id(self) -> int | None:
-        return self.item_id
-
-    @property
-    def ticker(self) -> str:
-        return self.item_label
-
-    @property
-    def asset_type_id(self) -> int | None:
-        value = self.parameters.get('asset_type_id')
-        return int(value) if value is not None else None

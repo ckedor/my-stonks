@@ -5,14 +5,17 @@ from datetime import date
 from fastapi import APIRouter, Depends, Query
 
 from app.composition.market_data import (
+    get_asset_quote_history_service,
     get_on_demand_quote_read_service,
     get_persisted_quote_read_service,
 )
 from app.modules.market_data.api.quote.schemas import (
+    AssetQuoteHistoryResponse,
     OnDemandQuotesResponse,
     PersistedQuotesResponse,
 )
 from app.modules.market_data.service.quote_service import (
+    AssetQuoteHistoryService,
     OnDemandQuoteReadService,
     PersistedQuoteReadService,
 )
@@ -42,6 +45,16 @@ async def get_persisted_quotes(
         asset_type_id=asset_type_id,
         start_date=start_date,
     )
+
+
+@router.get('/asset/{asset_id}', response_model=AssetQuoteHistoryResponse)
+async def get_asset_quote_history(
+    asset_id: int,
+    start_date: date | None = Query(default=None),
+    service: AssetQuoteHistoryService = Depends(get_asset_quote_history_service),
+):
+    """Quote history for one asset, from storage when it exists."""
+    return await service.get_history(asset_id=asset_id, start_date=start_date)
 
 
 @router.get('/on-demand', response_model=OnDemandQuotesResponse)

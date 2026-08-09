@@ -1,13 +1,19 @@
 # tests/test_market_data_api.py
 """E2E tests for the Market Data API."""
 
-from datetime import date, datetime
+from datetime import date
+from decimal import Decimal
 from http import HTTPStatus
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from app.modules.market_data.domain.market_data_series import MarketDataSeriesHistory
-from app.modules.market_data.domain.usd_brl import UsdBrlHistory
+from app.modules.market_data.domain.usd_brl import UsdBrlHistory, invert_rate
+
+EXPECTED_CURRENCY_COUNT = 2
+# USD/BRL is no longer one of them: it has its own table.
+EXPECTED_SERIES_COUNT = 6
+EXPECTED_INGESTION_TASK_COUNT = 2
 
 
 # ---------------------------------------------------------------------------
@@ -19,7 +25,7 @@ async def test_list_currencies(client):
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
-    assert len(data) >= 2
+    assert len(data) >= EXPECTED_CURRENCY_COUNT
     codes = {c['code'] for c in data}
     assert {'BRL', 'USD'}.issubset(codes)
 
@@ -33,7 +39,7 @@ async def test_list_indexes(client):
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
-    assert len(data) >= 7
+    assert len(data) >= EXPECTED_SERIES_COUNT
     short_names = {i['short_name'] for i in data}
     assert {'CDI', 'IBOVESPA', 'S&P500', 'IFIX'}.issubset(short_names)
 
@@ -78,7 +84,8 @@ async def test_usd_brl_history_empty(client):
 async def test_usd_brl_history_with_data(client, db):
     ih = UsdBrlHistory(
         date=date(2025, 1, 2),
-        usd_to_brl_rate=5.25,
+        usd_brl=Decimal('5.25'),
+        brl_usd=invert_rate(Decimal('5.25')),
         source='test',
     )
     db.add(ih)
@@ -135,15 +142,11 @@ async def test_get_quotes_mocked(client):
 @pytest.mark.asyncio
 async def test_consolidate_history_returns_ok(client):
     """
-    The consolidate endpoint calls external APIs and triggers tasks.
-    We mock the service method to verify the route + auth works E2E.
+    The consolidate endpoint explicitly dispatches both ingestion tasks.
     """
-    with patch(
-        'app.modules.market_data.service.data_ingestion_service.'
-        'MarketDataIngestionTriggerService.trigger_series_and_usd_brl',
-        new_callable=AsyncMock,
-    ):
+    with patch('app.modules.market_data.api.index.router.run_task') as run_task:
         response = await client.post('/market_data/index/consolidate_history')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'OK'}
+    assert run_task.call_count == EXPECTED_INGESTION_TASK_COUNT

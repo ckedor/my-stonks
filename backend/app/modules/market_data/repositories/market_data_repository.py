@@ -58,6 +58,22 @@ class MarketDataRepository(SQLAlchemyRepository):
         """Compatibility alias for existing portfolio read flows."""
         return await self.get_series_history(start_date, index_id=index_id)
 
+    async def get_series_history_entries(
+        self,
+        series_id: int,
+        start_date: date | None = None,
+    ) -> list[MarketDataSeriesHistory]:
+        """Return the persisted observations of one series, oldest first."""
+        stmt = (
+            select(MarketDataSeriesHistory)
+            .where(MarketDataSeriesHistory.series_id == series_id)
+            .order_by(MarketDataSeriesHistory.date)
+        )
+        if start_date is not None:
+            stmt = stmt.where(MarketDataSeriesHistory.date >= start_date)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def get_latest_series_dates(self, series_ids: list[int]) -> dict[int, date]:
         if not series_ids:
             return {}

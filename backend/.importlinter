@@ -60,15 +60,17 @@ forbidden_modules =
 allow_indirect_imports = True
 
 [importlinter:contract:market-data-module-boundary]
-name = Market data does not import repositories from other modules
+name = Market data does not depend on the portfolio or AI modules
 type = forbidden
 source_modules =
     app.modules.market_data.api
     app.modules.market_data.domain
     app.modules.market_data.service
+    app.modules.market_data.repositories
+    app.modules.market_data.tasks
 forbidden_modules =
-    app.modules.ai.repositories
-    app.modules.portfolio.repositories
+    app.modules.ai
+    app.modules.portfolio
     app.modules.users.repositories
     app.modules.*.infra
 allow_indirect_imports = True

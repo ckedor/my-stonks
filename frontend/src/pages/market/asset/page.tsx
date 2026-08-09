@@ -1,13 +1,17 @@
-import { fetchOnDemandAssetQuotes, quotesToCandleData, type QuotesResponse } from '@/api/market'
+import {
+  fetchAssetQuoteHistory,
+  quotesToCandleData,
+  recordAssetVisit,
+  type AssetQuoteHistory,
+} from '@/api/market'
 import CandleChart from '@/components/charts/CandleChart'
 import AppCard from '@/components/ui/AppCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { useMarketStore } from '@/stores/market'
 import NavigateNextIcon from '@mui/icons-material/NavigateNext'
-import { Box, Breadcrumbs, Chip, Grid, Link as MuiLink, Typography } from '@mui/material'
+import { Box, Breadcrumbs, Link as MuiLink, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import AssetAIOverviewCard from './AssetAIOverviewCard'
 
 export default function MarketAssetPage() {
   const { id } = useParams<{ id: string }>()
@@ -20,15 +24,19 @@ export default function MarketAssetPage() {
 
   const ticker = asset?.ticker
 
-  const [quotes, setQuotes] = useState<QuotesResponse | null>(null)
+  const [quotes, setQuotes] = useState<AssetQuoteHistory | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [logoFailed, setLogoFailed] = useState(false)
 
   useEffect(() => {
     if (!asset) return
     setLoading(true)
     setError(null)
-    fetchOnDemandAssetQuotes(asset.ticker, asset.asset_type_id)
+    setLogoFailed(false)
+    // Opening an asset is what ranks it among the user's favourites.
+    recordAssetVisit(asset.id)
+    fetchAssetQuoteHistory(asset.id)
       .then(setQuotes)
       .catch(() => setError('Erro ao carregar cotações'))
       .finally(() => setLoading(false))
@@ -50,16 +58,39 @@ export default function MarketAssetPage() {
         <Typography color="text.primary">{ticker}</Typography>
       </Breadcrumbs>
 
-      <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+      <Box display="flex" alignItems="center" gap={1.25} mb={0.5}>
+        {quotes?.logo_url && !logoFailed && (
+          <Box
+            component="img"
+            src={quotes.logo_url}
+            alt=""
+            // The provider advertises a logo for tickers it has no artwork for
+            // and the URL 404s, so the image itself is the only reliable signal.
+            onError={() => setLogoFailed(true)}
+            sx={{ width: 28, height: 28, borderRadius: 1, objectFit: 'contain' }}
+          />
+        )}
         <Typography variant="h5" fontWeight="bold">
           {ticker}
         </Typography>
-        {asset && (
-          <Chip
-            label={asset.asset_type?.short_name}
-            size="small"
-            variant="outlined"
-          />
+        {asset?.asset_type?.short_name && (
+          <Typography
+            component="span"
+            sx={{
+              color: 'text.secondary',
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              border: 0,
+              borderRadius: 1,
+              bgcolor: 'action.hover',
+              px: 0.75,
+              py: 0.25,
+            }}
+          >
+            {asset.asset_type.short_name}
+          </Typography>
         )}
       </Box>
       {asset && (
@@ -71,26 +102,22 @@ export default function MarketAssetPage() {
       {error ? (
         <Typography color="error">{error}</Typography>
       ) : (
-        <Grid container spacing={2} alignItems="stretch">
-          <Grid size={{ xs: 12, lg: 9 }}>
-            <AppCard title="Cotação">
-              <CandleChart
-                data={candleData}
-                height={500}
-                showVolume
-                showVolumeToggle
-                showRangePicker
-                showTimeframeSelector
-                defaultRange="1y"
-              />
-            </AppCard>
-          </Grid>
-          {ticker && (
-            <Grid size={{ xs: 12, lg: 3 }}>
-              <AssetAIOverviewCard ticker={ticker} />
-            </Grid>
-          )}
-        </Grid>
+        <AppCard title="Cotação">
+          <CandleChart
+            data={candleData}
+            height={500}
+            showVolume
+            showVolumeToggle
+            showRangePicker
+            showTimeframeSelector
+            showTypeToggle
+            showLogToggle
+            showMovingAverageToggle
+            showPerformance
+            defaultRange="1y"
+            persistKey={`market-asset:${ticker}`}
+          />
+        </AppCard>
       )}
     </Box>
   )

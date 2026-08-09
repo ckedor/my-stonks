@@ -12,7 +12,7 @@ type PatrimonyEvolutionRow = {
 }
 
 interface Props {
-  height?: number
+  height?: number | string
   groupBy?: GroupBy
   defaultRange?: DateRangeKey
   title?: string | null

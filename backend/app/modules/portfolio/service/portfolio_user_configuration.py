@@ -8,28 +8,20 @@ from app.modules.portfolio.domain.entities import ConfigurationName, PortfolioUs
 from app.modules.portfolio.api.user_configuration.schemas import (
     UserConfigurationUpdateRequest,
 )
-from app.modules.portfolio.repositories import PortfolioRepository
 from app.infra.db.unit_of_work import UnitOfWork
 
 
 class PortfolioUserConfigurationService:
-    def __init__(
-        self,
-        repository: PortfolioRepository | None = None,
-        uow: UnitOfWork | None = None,
-    ):
-        self.repository = repository
+    def __init__(self, uow: UnitOfWork):
         self.uow = uow
 
     async def get_user_configurations(self, portfolio_id: int):
-        if self.repository is None:
-            raise RuntimeError('A repository is required for this read operation')
-        user_configurations = await self.repository.get(
-            PortfolioUserConfiguration,
-            by={'portfolio_id': portfolio_id}
-        )
-
-        config_names = await self.repository.get(ConfigurationName)
+        async with self.uow as uow:
+            user_configurations = await uow.portfolios.get(
+                PortfolioUserConfiguration,
+                by={'portfolio_id': portfolio_id},
+            )
+            config_names = await uow.portfolios.get(ConfigurationName)
         name_options = [c.name for c in config_names]
 
         return {
@@ -56,8 +48,6 @@ class PortfolioUserConfigurationService:
         name = user_configuration_request.configuration
         enabled = user_configuration_request.enabled
 
-        if self.uow is None:
-            raise RuntimeError('A UnitOfWork is required for this write operation')
         async with self.uow as uow:
             config_names = await uow.portfolios.get(ConfigurationName, by={'name': name})
             if not config_names:
@@ -74,5 +64,6 @@ class PortfolioUserConfigurationService:
             if not existing_configs:
                 raise NotFoundError('Configuration not found.')
             existing_configs[0].enabled = enabled
+            await uow.commit()
 
         return {"detail": "Configuration updated successfully"}

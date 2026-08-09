@@ -18,7 +18,11 @@ usd_brl_history_table = Table(
     Base.metadata,
     Column('id', Integer, primary_key=True),
     Column('date', Date, nullable=False),
-    Column('usd_to_brl_rate', Numeric(18, 8), nullable=False),
+    # Both directions are stored so no consumer has to invert the rate.
+    Column('usd_brl', Numeric(18, 8), nullable=False),
+    # ``brl_usd`` sits around 0.19, so it needs more decimal places than
+    # ``usd_brl`` to carry the same relative precision.
+    Column('brl_usd', Numeric(20, 12), nullable=False),
     Column('source', String(50), nullable=False),
     Column(
         'updated_at',

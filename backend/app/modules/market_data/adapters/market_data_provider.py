@@ -5,7 +5,9 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
+from app.config.logger import logger
 from app.core.exceptions import ValidationError
+from app.lib.utils.df import extend_values_to_today
 from app.modules.market_data.domain.constants import ASSET_TYPE, FII_SEGMENT, INDEX
 from app.infra.integrations.bcb_client import BCBClient
 from app.infra.integrations.brapi_client import BrapiClient
@@ -46,6 +48,10 @@ STATUSINVEST_TO_INTERNAL_SEGMENT = {
 
 MARKET_TIMEZONE = ZoneInfo('America/Sao_Paulo')
 
+#: Served by brapi for assets it has no artwork for; it is the vendor's own
+#: mark, not the asset's.
+PROVIDER_PLACEHOLDER_LOGO = 'icons/BRAPI.svg'
+
 
 class MarketDataProvider:
     quote_source = 'brapi'
@@ -79,9 +85,14 @@ class MarketDataProvider:
             )
 
         else:
-            history_df = await self.brapi_client.get_quotes_df(
-                series.symbol, init_date=init_date, interval='1d'
+            history_df = await self._fetch_market_index_history(
+                series.symbol,
+                init_date=init_date,
             )
+            # These series have always been stored with non-trading days filled
+            # in from the previous close. Kept so migrating off the provider's
+            # v1 route changes the transport and nothing else.
+            history_df = extend_values_to_today(history_df)
 
         return history_df
 
@@ -137,7 +148,7 @@ class MarketDataProvider:
         init_date: pd.Timestamp = None,
     ) -> pd.DataFrame:
         history_df = await self.bcb_api_client.get_usd_brl_quotation(init_date=init_date)
-        return history_df.rename(columns={'value': 'usd_to_brl_rate'})
+        return history_df.rename(columns={'value': 'usd_brl'})
 
     async def get_all_fiis_df(self):
         fiis_df = await self.status_invest_client.get_fiis_df()
@@ -222,14 +233,69 @@ class MarketDataProvider:
             None,
         )
         history = (result or {}).get('data', {}).get('historicalDataPrice', [])
-        currency = 'BRL' if exchange in {None, EXCHANGE.B3, EXCHANGE.B3.value} else 'USD'
+        currency, logo_url = await self._fetch_quote_metadata(ticker, exchange=exchange)
         return FetchedQuotes(
             ticker=ticker,
             currency=currency,
             source='brapi',
             parameters=self._without_none(parameters),
             quotes=self._normalize_quotes(history),
+            logo_url=logo_url,
         )
+
+    async def _fetch_quote_metadata(
+        self,
+        ticker: str,
+        *,
+        exchange: str | None,
+    ) -> tuple[str, str | None]:
+        """The currency the provider prices this ticker in, and its logo.
+
+        The historical endpoint carries neither, so ask the quote endpoint,
+        which has both. Only if the provider stays silent do we fall back to
+        guessing the currency from the registered exchange -- a guess that reads
+        a missing exchange as Brazilian, which is how foreign ETFs ended up
+        priced in BRL.
+        """
+        fallback = 'BRL' if exchange in {None, EXCHANGE.B3, EXCHANGE.B3.value} else 'USD'
+        try:
+            response = await self.brapi_client.get_stock_quotes(symbols=ticker.upper())
+            for item in response.get('results', []):
+                data = item.get('data') or item
+                currency = data.get('currency')
+                if currency:
+                    return currency.upper(), self._usable_logo(
+                        data.get('logourl') or data.get('logoUrl')
+                    )
+        except Exception as exc:
+            logger.warning('Could not read the metadata of %s from the provider: %s', ticker, exc)
+        return fallback, None
+
+    async def fetch_asset_logo(self, ticker: str, asset_type_id: int) -> str | None:
+        """Brand image for a ticker, independent of its quote history."""
+        if asset_type_id == ASSET_TYPE.CRIPTO:
+            return await self._fetch_crypto_logo(ticker)
+        _, logo_url = await self._fetch_quote_metadata(ticker, exchange=None)
+        return logo_url
+
+    async def _fetch_crypto_logo(self, ticker: str) -> str | None:
+        """Coin artwork, which the history provider does not carry."""
+        try:
+            response = await self.brapi_client.get_crypto(coin=ticker.upper(), currency='USD')
+            for coin in response.get('coins', []):
+                if coin.get('coin', '').upper() == ticker.upper():
+                    return self._usable_logo(coin.get('coinImageUrl'))
+        except Exception as exc:
+            logger.warning('Could not read the logo of %s from the provider: %s', ticker, exc)
+        return None
+
+    @staticmethod
+    def _usable_logo(logo_url: str | None) -> str | None:
+        """Drop the provider's own placeholder, served for assets it has no
+        artwork for. Showing it would brand every fund with the vendor's logo."""
+        if not logo_url or PROVIDER_PLACEHOLDER_LOGO in logo_url:
+            return None
+        return logo_url
 
     async def _fetch_etf_quotes(
         self,
@@ -289,25 +355,58 @@ class MarketDataProvider:
         exchange: str | None,
     ) -> FetchedQuotes:
         del exchange
-        today = datetime.now(MARKET_TIMEZONE).date()
-        range_param = self.brapi_client._brapi_range_from_init_date(start_date)
+        logo_url = await self._fetch_crypto_logo(ticker)
+        # CryptoCompare goes back years further, so it is asked first. Its free
+        # tier is metered, though, so a refusal falls through to brapi rather
+        # than leaving the caller with nothing.
+        try:
+            history_df = await self.crypto_compare_client.get_crypto_quotes_df(
+                ticker,
+                init_date=pd.Timestamp(start_date).to_pydatetime() if start_date else None,
+            )
+            return FetchedQuotes(
+                ticker=ticker,
+                currency='USD',
+                source='cryptocompare',
+                logo_url=logo_url,
+                parameters={
+                    'instrument': f'{ticker.upper()}-USD',
+                    'currency': 'USD',
+                    'start_date': start_date.isoformat() if start_date else None,
+                    'interval': '1d',
+                },
+                quotes=[
+                    Quote(
+                        date=pd.Timestamp(item['date']).date(),
+                        open=item.get('open'),
+                        high=item.get('high'),
+                        low=item.get('low'),
+                        close=item.get('close'),
+                        volume=item.get('volume'),
+                    )
+                    for item in history_df.to_dict(orient='records')
+                ],
+            )
+        except Exception as exc:
+            logger.warning(
+                'CryptoCompare unavailable for %s (%s); falling back to brapi, '
+                'which caps history at 1000 daily points',
+                ticker,
+                exc,
+            )
+
         response = await self.brapi_client.get_crypto_quotes(
             ticker,
             start_date=start_date,
-            end_date=today,
             currency='USD',
             interval='1d',
         )
         return FetchedQuotes(
             ticker=ticker,
-            currency=response.get('currency'),
+            currency=response.get('currency') or 'USD',
             source='brapi',
-            parameters={
-                'coin': ticker.upper(),
-                'currency': 'USD',
-                'range': range_param,
-                'interval': '1d',
-            },
+            logo_url=logo_url,
+            parameters={'coin': ticker.upper(), 'currency': 'USD', 'interval': '1d'},
             quotes=[
                 Quote(
                     date=pd.Timestamp(item['date']).date(),

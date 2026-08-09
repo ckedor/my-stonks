@@ -18,32 +18,19 @@ from app.modules.portfolio.api.portfolio.schemas import (
     CreatePortfolioRequest,
     UpdatePortfolioRequest,
 )
-from app.modules.portfolio.repositories import PortfolioRepository
 
 
 class PortfolioBaseService:
     def __init__(
         self,
-        repository: PortfolioRepository | None = None,
-        uow: UnitOfWork | None = None,
+        uow: UnitOfWork,
         cache: RedisService | None = None,
     ):
-        self.repository = repository
         self.uow = uow
         self.cache = cache or RedisService()
 
-    def _read_repository(self) -> PortfolioRepository:
-        if self.repository is None:
-            raise RuntimeError('A repository is required for this read operation')
-        return self.repository
-
-    def _write_uow(self) -> UnitOfWork:
-        if self.uow is None:
-            raise RuntimeError('A UnitOfWork is required for this write operation')
-        return self.uow
-
     async def create_portfolio(self, portfolio: CreatePortfolioRequest, user_id: int):
-        async with self._write_uow() as uow:
+        async with self.uow as uow:
             id_list = await uow.portfolios.create(
                 Portfolio,
                 {'name': portfolio.name, 'user_id': user_id},
@@ -58,14 +45,19 @@ class PortfolioBaseService:
                 for cat in portfolio.user_categories
             ]
             await uow.portfolios.create(CustomCategory, categories)
+            await uow.commit()
             return id_list[0]
 
     async def list_user_portfolios(self, user_id: int) -> Portfolio:
-        portfolios = await self._read_repository().get_user_portfolios(user_id)
-        return portfolios
+        async with self.uow as uow:
+            return await uow.portfolios.get_user_portfolios(user_id)
 
-    async def update_portfolio(self, portfolio: UpdatePortfolioRequest) -> None:    
-        async with self._write_uow() as uow:
+    async def list_all_portfolios(self) -> list[Portfolio]:
+        async with self.uow as uow:
+            return await uow.portfolios.get_all_portfolios()
+
+    async def update_portfolio(self, portfolio: UpdatePortfolioRequest) -> None:
+        async with self.uow as uow:
             portfolio_obj = await uow.portfolios.get(Portfolio, portfolio.id)
             if not portfolio_obj:
                 raise NotFoundError('Portfolio não encontrado')
@@ -80,9 +72,10 @@ class PortfolioBaseService:
                     await uow.portfolios.create(CustomCategory, cat.model_dump())
                 else:
                     await uow.portfolios.update(CustomCategory, cat.model_dump())
+            await uow.commit()
 
     async def delete_portfolio(self, portfolio_id: int) -> None:
-        async with self._write_uow() as uow:
+        async with self.uow as uow:
             portfolio = await uow.portfolios.get(Portfolio, portfolio_id)
             if not portfolio:
                 raise NotFoundError('Portfolio não encontrado')
@@ -100,3 +93,4 @@ class PortfolioBaseService:
             await uow.portfolios.delete(Transaction, by={'portfolio_id': portfolio_id})
             await uow.portfolios.delete(Dividend, by={'portfolio_id': portfolio_id})
             await uow.portfolios.delete(Portfolio, portfolio_id)
+            await uow.commit()

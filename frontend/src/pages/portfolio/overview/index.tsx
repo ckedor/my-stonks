@@ -6,7 +6,7 @@ import { usePositionsStore } from '@/stores/portfolio/positions'
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useTradeFormStore } from '@/stores/trade-form'
 import { Box, Button, Grid, Tab, Tabs, Typography } from '@mui/material'
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PortfolioMonthlyAportsChart from '../wealth/PortfolioMonthlyAportsChart'
 import OverviewDividendsChart from './OverviewDividendsChart'
@@ -17,8 +17,6 @@ import PositionPieChart from './PositionPieChart'
 import PositionTable from './PositionTable'
 
 const OVERVIEW_PANEL_HEIGHT = 360
-const OVERVIEW_TABS_HEIGHT = 44
-const OVERVIEW_TAB_CHART_HEIGHT = OVERVIEW_PANEL_HEIGHT - OVERVIEW_TABS_HEIGHT
 
 export default function PortfolioOverviewPage() {
   const navigate = useNavigate()
@@ -48,6 +46,18 @@ export default function PortfolioOverviewPage() {
 
   const [selectedCategory, setSelectedCategory] = useState<string>('portfolio')
   const [bottomTab, setBottomTab] = useState(0)
+
+  // The chart matches the height the category list has with its drawers closed.
+  // Measured from the data, never from interaction, so expanding a category
+  // grows the list without dragging the chart along with it.
+  const positionListRef = useRef<HTMLDivElement>(null)
+  const [chartHeight, setChartHeight] = useState(OVERVIEW_PANEL_HEIGHT)
+
+  useLayoutEffect(() => {
+    const node = positionListRef.current
+    if (!node) return
+    setChartHeight(Math.max(node.offsetHeight, OVERVIEW_PANEL_HEIGHT))
+  }, [positions.length])
 
   if (loading) {
     return <OverviewSkeleton />
@@ -126,15 +136,17 @@ export default function PortfolioOverviewPage() {
       {/* ── Row 2: Position list + Dividends/Patrimony tab ── */}
       <Grid container spacing={3} sx={{ mt: 2 }} alignItems="flex-start">
         <Grid size={{ xs: 12, lg: 5 }}>
-          <PositionTable
-            positions={positions}
-            selectedCategory={selectedCategory}
-            onCategorySelect={setSelectedCategory}
-            onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
-          />
+          <Box ref={positionListRef}>
+            <PositionTable
+              positions={positions}
+              selectedCategory={selectedCategory}
+              onCategorySelect={setSelectedCategory}
+              onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
+            />
+          </Box>
         </Grid>
         <Grid size={{ xs: 12, lg: 7 }}>
-          <Box sx={{ height: OVERVIEW_PANEL_HEIGHT, display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ height: chartHeight, display: 'flex', flexDirection: 'column' }}>
             <Tabs
               value={bottomTab}
               onChange={(_, v) => setBottomTab(v)}
@@ -171,19 +183,19 @@ export default function PortfolioOverviewPage() {
                 <OverviewDividendsChart
                   dividends={dividends}
                   selected={selectedCategory}
-                  size={OVERVIEW_TAB_CHART_HEIGHT}
+                  size="100%"
                 />
               )}
               {bottomTab === 1 && (
                 <OverviewPatrimonyChart
                   patrimonyEvolution={patrimonyEvolution}
                   selected={selectedCategory}
-                  size={OVERVIEW_TAB_CHART_HEIGHT}
+                  size="100%"
                 />
               )}
               {bottomTab === 2 && (
                 <PortfolioMonthlyAportsChart
-                  height={OVERVIEW_TAB_CHART_HEIGHT}
+                  height="100%"
                   groupBy="month"
                   defaultRange="1y"
                   title={null}

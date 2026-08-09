@@ -4,41 +4,25 @@ from unittest.mock import AsyncMock
 import pytest
 from app.core.exceptions import BusinessRuleError
 from app.modules.market_data.service.asset_service import AssetService
+from tests.fakes import FakeUnitOfWork
 
 
 def build_service():
     repository = SimpleNamespace(
         get=AsyncMock(),
         delete=AsyncMock(),
-        get_portfolio_reference_counts=AsyncMock(return_value={}),
+        create=AsyncMock(),
         detach_ingestion_attempts=AsyncMock(),
     )
-
-    class FakeUnitOfWork:
-        def __init__(self):
-            self.repository = repository
-            self.assets = repository
-            self.exit_errors = []
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, exc_type, exc, traceback):
-            self.exit_errors.append(exc_type)
-
-    uow = FakeUnitOfWork()
-    service = AssetService(
-        uow=uow,
-        cache=SimpleNamespace(delete=AsyncMock()),
-    )
-    service.repo = repository
-    service.test_uow = uow
-    return service
+    portfolios = SimpleNamespace(count_asset_references=AsyncMock(return_value={}))
+    uow = FakeUnitOfWork(repository=repository, assets=repository, portfolios=portfolios)
+    service = AssetService(uow=uow, cache=SimpleNamespace(delete=AsyncMock()))
+    return service, uow
 
 
 @pytest.mark.asyncio
 async def test_update_asset_invalidates_old_and_new_ticker_cache_keys():
-    service = build_service()
+    service, uow = build_service()
     asset = SimpleNamespace(
         id=33,
         ticker='CPLE6',
@@ -46,7 +30,7 @@ async def test_update_asset_invalidates_old_and_new_ticker_cache_keys():
         asset_type_id=4,
         exchange_id=None,
     )
-    service.repo.get.return_value = asset
+    uow.assets.get.return_value = asset
     service._delete_subclass = AsyncMock()
     service._create_subclass = AsyncMock()
 
@@ -68,13 +52,13 @@ async def test_update_asset_invalidates_old_and_new_ticker_cache_keys():
 
 @pytest.mark.asyncio
 async def test_delete_asset_with_portfolio_history_is_rejected_without_deleting_data():
-    service = build_service()
-    service.repo.get.return_value = SimpleNamespace(
+    service, uow = build_service()
+    uow.assets.get.return_value = SimpleNamespace(
         id=33,
         ticker='CPLE3',
         asset_type_id=4,
     )
-    service.repo.get_portfolio_reference_counts.return_value = {
+    uow.portfolios.count_asset_references.return_value = {
         'transactions': 8,
         'positions': 486,
     }
@@ -82,5 +66,5 @@ async def test_delete_asset_with_portfolio_history_is_rejected_without_deleting_
     with pytest.raises(BusinessRuleError, match='não pode ser excluído'):
         await service.delete_asset(33)
 
-    service.repo.delete.assert_not_awaited()
-    assert service.test_uow.exit_errors == [BusinessRuleError]
+    uow.assets.delete.assert_not_awaited()
+    assert uow.exit_errors == [BusinessRuleError]

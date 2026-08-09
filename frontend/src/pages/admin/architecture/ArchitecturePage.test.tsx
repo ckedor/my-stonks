@@ -15,6 +15,6 @@ describe('ArchitecturePage', () => {
     expect(screen.getByText('Arquitetura da aplicação')).toBeInTheDocument()
     expect(screen.getByText('Celery Beat')).toBeInTheDocument()
     expect(screen.getByText('PostgreSQL')).toBeInTheDocument()
-    expect(screen.getByText('Market Data APIs')).toBeInTheDocument()
+    expect(screen.getByText('Brapi')).toBeInTheDocument()
   })
 })

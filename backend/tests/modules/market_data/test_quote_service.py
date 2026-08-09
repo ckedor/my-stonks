@@ -13,6 +13,7 @@ from app.modules.market_data.domain.quote import (
     FetchedQuotes,
     Quote,
 )
+from tests.fakes import FakeUnitOfWork
 from app.modules.market_data.service.quote_service import (
     QuoteService,
 )
@@ -61,19 +62,9 @@ def build_service(
     exit_errors = []
     created_uows = []
 
-    class FakeUnitOfWork:
-        def __init__(self):
-            self.assets = asset_repository
-            self.quotes = quote_repository
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, exc_type, exc, traceback):
-            exit_errors.append(exc_type)
-
     def uow_factory():
-        uow = FakeUnitOfWork()
+        uow = FakeUnitOfWork(assets=asset_repository, quotes=quote_repository)
+        uow.exit_errors = exit_errors
         created_uows.append(uow)
         return uow
 

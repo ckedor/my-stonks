@@ -37,6 +37,8 @@ export const ASSET_ROUTES = {
   treasuryBondType: `${MARKET_DATA}/asset/treasury_bond/type`,
   exchange: `${MARKET_DATA}/asset/exchange`,
   index: `${MARKET_DATA}/asset/index`,
+  favorites: `${MARKET_DATA}/asset/favorites`,
+  visit: (assetId: number | string) => `${MARKET_DATA}/asset/${assetId}/visit`,
   event: `${MARKET_DATA}/asset/event`,
   eventById: (eventId: number | string) => `${MARKET_DATA}/asset/event/${eventId}`,
 } as const
@@ -51,12 +53,23 @@ export const INDEX_ROUTES = {
   list: `${MARKET_DATA}/index`,
   timeSeries: `${MARKET_DATA}/index/time_series`,
   usdBrl: `${MARKET_DATA}/index/usd_brl`,
-  consolidateHistory: `${MARKET_DATA}/index/consolidate_history`,
   currency: `${MARKET_DATA}/index/currency`,
+} as const
+
+export const MARKET_DATA_SERIES_ROUTES = {
+  list: `${MARKET_DATA}/series`,
+  options: `${MARKET_DATA}/series/options`,
+  history: (seriesId: number | string) => `${MARKET_DATA}/series/${seriesId}/history`,
+} as const
+
+export const USD_BRL_ROUTES = {
+  history: `${MARKET_DATA}/usd-brl/history`,
+  convert: `${MARKET_DATA}/usd-brl/convert`,
 } as const
 
 export const QUOTE_ROUTES = {
   persisted: `${MARKET_DATA}/quotes/persisted`,
+  byAsset: (assetId: number | string) => `${MARKET_DATA}/quotes/asset/${assetId}`,
   onDemand: `${MARKET_DATA}/quotes/on-demand`,
 } as const
 
@@ -76,6 +89,7 @@ const PORTFOLIO = '/portfolio'
 
 export const PORTFOLIO_ROUTES = {
   list: PORTFOLIO,
+  all: `${PORTFOLIO}/all`,
   create: PORTFOLIO,
   byId: (portfolioId: number | string) => `${PORTFOLIO}/${portfolioId}`,
 } as const

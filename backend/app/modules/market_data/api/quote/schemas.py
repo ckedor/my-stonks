@@ -28,4 +28,15 @@ class OnDemandQuotesResponse(BaseModel):
     ticker: str
     asset_type_id: int
     currency: str | None = None
+    logo_url: str | None = None
+    quotes: list[QuoteResponse]
+
+
+class AssetQuoteHistoryResponse(BaseModel):
+    ticker: str
+    asset_type_id: int
+    currency: str | None = None
+    logo_url: str | None = None
+    #: Where the quotes came from: 'database' or 'provider'.
+    source: str
     quotes: list[QuoteResponse]

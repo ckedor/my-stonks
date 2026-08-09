@@ -121,17 +121,28 @@ def build_prices_df(
     """Convert close prices (in their native currency) into BRL/USD prices.
 
     ``close_prices_df`` must contain columns ``date``, ``close``, ``currency``
-    (currency as ``CURRENCY`` id). ``usd_brl_df`` must contain ``date`` and
-    ``usdbrl``.
+    (currency as ``CURRENCY`` id). ``usd_brl_df`` must contain ``date``,
+    ``usd_brl`` and ``brl_usd``: both directions come ready from ingestion, so
+    each conversion is a multiplication.
     """
-    df = close_prices_df.merge(usd_brl_df[['date', 'usdbrl']], on='date', how='left')
+    df = close_prices_df.merge(
+        usd_brl_df[['date', 'usd_brl', 'brl_usd']], on='date', how='left'
+    )
+    # Close prices run to today, but the rate is only published on business
+    # days. On a day without a publication the last published rate is the one
+    # in effect; without this, a weekend turns every foreign price into NaN.
+    df[['usd_brl', 'brl_usd']] = df[['usd_brl', 'brl_usd']].ffill()
 
     df['price'] = df.apply(
-        lambda row: row['close'] if row['currency'] == CURRENCY.BRL else row['close'] * row['usdbrl'],
+        lambda row: row['close']
+        if row['currency'] == CURRENCY.BRL
+        else row['close'] * row['usd_brl'],
         axis=1,
     )
     df['price_usd'] = df.apply(
-        lambda row: row['close'] if row['currency'] == CURRENCY.USD else row['close'] / row['usdbrl'],
+        lambda row: row['close']
+        if row['currency'] == CURRENCY.USD
+        else row['close'] * row['brl_usd'],
         axis=1,
     )
     df = df[['date', 'price', 'price_usd']]

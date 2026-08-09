@@ -28,6 +28,18 @@ class ASSET_TYPE(IntEnum):
     LCA = 14
 
 
+#: Asset types a market-data provider can return quotes for. Callers selecting
+#: assets to ingest filter by these.
+SUPPORTED_QUOTE_ASSET_TYPES = (
+    ASSET_TYPE.STOCK,
+    ASSET_TYPE.BDR,
+    ASSET_TYPE.ETF,
+    ASSET_TYPE.REIT,
+    ASSET_TYPE.FII,
+    ASSET_TYPE.CRIPTO,
+)
+
+
 class CURRENCY(IntEnum):
     BRL = 1
     USD = 2
@@ -55,7 +67,8 @@ class FII_SEGMENT(IntEnum):
 
 
 class INDEX(IntEnum):
-    USDBRL = 1
+    # No USDBRL member: the exchange rate is not a market-data series, it has
+    # its own table. See app.modules.market_data.domain.usd_brl.
     IPCA = 2
     CDI = 3
     IFIX = 4

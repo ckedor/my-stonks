@@ -1,21 +1,21 @@
-import AppCard from '@/components/ui/AppCard'
 import { ASSET_ROUTES } from '@/constants/routes'
 import { useMarketStore } from '@/stores/market'
 import { useTradeFormStore } from '@/stores/trade-form'
-import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import SearchIcon from '@mui/icons-material/Search'
+import ViewListIcon from '@mui/icons-material/ViewList'
+import ViewModuleIcon from '@mui/icons-material/ViewModule'
 import {
     Box,
-    Chip,
     FormControl,
     Grid,
-    IconButton,
     InputAdornment,
     InputLabel,
     MenuItem,
     Pagination,
     Select,
     TextField,
+    ToggleButton,
+    ToggleButtonGroup,
     Tooltip,
     Typography,
 } from '@mui/material'
@@ -23,8 +23,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import api from '../../../lib/api'
+import AssetCard from './AssetCard'
+import AssetListView from './AssetListView'
+import FavoriteAssets from './FavoriteAssets'
 
 const ITEMS_PER_PAGE = 24
+const VIEW_MODE_KEY = 'my-stonks:market:view-mode'
+
+type ViewMode = 'card' | 'list'
 
 export default function MarketAtivosPage() {
   const navigate = useNavigate()
@@ -40,6 +46,14 @@ export default function MarketAtivosPage() {
   const [selectedType, setSelectedType] = useState<number | ''>('')
   const [selectedClass, setSelectedClass] = useState<number | ''>('')
   const [page, setPage] = useState(1)
+
+  // Remembered so the browsing style survives a reload.
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => (localStorage.getItem(VIEW_MODE_KEY) as ViewMode | null) ?? 'card',
+  )
+  useEffect(() => {
+    localStorage.setItem(VIEW_MODE_KEY, viewMode)
+  }, [viewMode])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,18 +118,6 @@ export default function MarketAtivosPage() {
     if (!selectedClass) return assetTypes
     return assetTypes.filter((t) => t.asset_class_id === selectedClass)
   }, [assetTypes, selectedClass])
-
-  const getTypeColor = (typeName: string) => {
-    const colors: Record<string, 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'error'> = {
-      ETF: 'primary',
-      FII: 'secondary',
-      Ação: 'success',
-      BDR: 'warning',
-      'Renda Fixa': 'info',
-      Cripto: 'error',
-    }
-    return colors[typeName] || 'default'
-  }
 
   if (loading) return <LoadingSpinner />
 
@@ -194,88 +196,67 @@ export default function MarketAtivosPage() {
           </Select>
         </FormControl>
 
+        <ToggleButtonGroup
+          size="small"
+          exclusive
+          value={viewMode}
+          onChange={(_, value) => value && setViewMode(value as ViewMode)}
+        >
+          <ToggleButton value="card" sx={{ px: 1 }}>
+            <Tooltip title="Cards">
+              <ViewModuleIcon fontSize="small" />
+            </Tooltip>
+          </ToggleButton>
+          <ToggleButton value="list" sx={{ px: 1 }}>
+            <Tooltip title="Lista">
+              <ViewListIcon fontSize="small" />
+            </Tooltip>
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Box>
 
-      <Grid container spacing={2}>
-        {paginatedAssets.map((asset) => (
-          <Grid key={asset.id} size={{xs: 12, sm: 6, md: 4, lg: 3}}>
-            <AppCard
-              onClick={() => navigate(`/market/asset/${asset.id}`)}
-              sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                transition: 'background-color 0.2s',
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                  cursor: 'pointer',
-                },
-              }}
-            >
-              <Box sx={{ flex: 1 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                  <Typography variant="h6" fontWeight="bold" noWrap sx={{ flex: 1 }}>
-                    {asset.ticker || '—'}
-                  </Typography>
-                  <Chip
-                    label={asset.asset_type?.short_name}
-                    size="small"
-                    color={getTypeColor(asset.asset_type?.short_name)}
-                    variant="outlined"
-                  />
-                </Box>
+      <FavoriteAssets />
 
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    minHeight: 40,
-                  }}
-                  title={asset.name}
-                >
-                  {asset.name}
-                </Typography>
+      {viewMode === 'card' ? (
+        <Grid container spacing={2}>
+          {paginatedAssets.map((asset) => (
+            <Grid key={asset.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              <AssetCard
+                asset={asset}
+                onOpen={() => navigate(`/market/asset/${asset.id}`)}
+                onBuy={() =>
+                  openTradeForm({
+                    id: asset.id,
+                    ticker: asset.ticker,
+                    name: asset.name,
+                    asset_type_id: asset.asset_type_id,
+                  })
+                }
+              />
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <AssetListView
+          assets={paginatedAssets}
+          onOpen={(asset) => navigate(`/market/asset/${asset.id}`)}
+          onBuy={(asset) =>
+            openTradeForm({
+              id: asset.id,
+              // Assets without a ticker (fixed income) are still tradable.
+              ticker: asset.ticker ?? '',
+              name: asset.name,
+              asset_type_id: asset.asset_type_id,
+            })
+          }
+        />
+      )}
 
-                <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-                  <Chip
-                    label={asset.asset_type?.asset_class?.name}
-                    size="small"
-                    variant="filled"
-                    sx={{ fontSize: '0.7rem' }}
-                  />
-                  <Tooltip title="Comprar ativo">
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        openTradeForm({
-                          id: asset.id,
-                          ticker: asset.ticker,
-                          name: asset.name,
-                          asset_type_id: asset.asset_type_id,
-                        })
-                      }}
-                      sx={{ opacity: 0.7, '&:hover': { opacity: 1 } }}
-                    >
-                      <AddShoppingCartIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </Box>
-            </AppCard>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Pagination */}
       {totalPages > 1 && (
-        <Box display="flex" justifyContent="center" mt={4}>
+        <Box display="flex" justifyContent="center" alignItems="center" gap={2} mt={4}>
+          <Typography variant="body2" color="text.secondary">
+            {filteredAssets.length} ativos
+          </Typography>
           <Pagination
             count={totalPages}
             page={page}

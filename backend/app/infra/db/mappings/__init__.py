@@ -5,6 +5,7 @@ from app.infra.db.mappings.market_data_series import map_market_data_series
 from app.infra.db.mappings.portfolio import map_portfolio
 from app.infra.db.mappings.quote import map_quote
 from app.infra.db.mappings.users import map_users
+from app.infra.db.mappings.asset_visit import map_asset_visit
 from app.infra.db.mappings.usd_brl import map_usd_brl
 
 
@@ -15,6 +16,7 @@ def start_mappers() -> None:
     map_assets()
     map_portfolio()
     map_ai()
+    map_asset_visit()
     map_usd_brl()
     map_quote()
     map_data_ingestion()

@@ -35,7 +35,7 @@ export interface TimeSeriesPoint {
 
 interface Props {
   data: TimeSeriesPoint[]
-  height?: number
+  height?: number | string
   fitContainer?: boolean
   title?: string
   emptyMessage?: string

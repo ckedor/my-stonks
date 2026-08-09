@@ -47,5 +47,15 @@ class Portfolio(BaseModel):
     name: str
     user_id: int
     custom_categories: List[CustomCategory] = []
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PortfolioSummary(BaseModel):
+    """Portfolio identity without its categories, for administrative listings."""
+
+    id: int
+    name: str
+    user_id: int
+
     model_config = ConfigDict(from_attributes=True)

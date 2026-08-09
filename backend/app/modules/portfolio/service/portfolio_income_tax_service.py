@@ -11,7 +11,7 @@ from app.lib.income_tax.constants import TaxableAssetType
 from app.lib.income_tax.tax_income_calculator import TaxIncomeCalculator
 from app.lib.utils.df import rows_to_df
 from app.lib.utils.fastapi import df_response
-from app.modules.portfolio.repositories import PortfolioRepository
+from app.infra.db.unit_of_work import UnitOfWork
 
 _ASSET_TYPE_TO_TAXABLE: dict[ASSET_TYPE, TaxableAssetType] = {
     ASSET_TYPE.STOCK: TaxableAssetType.STOCK,
@@ -23,19 +23,26 @@ _ASSET_TYPE_TO_TAXABLE: dict[ASSET_TYPE, TaxableAssetType] = {
 _EXEMPT_DIVIDEND_ASSET_TYPES: list[ASSET_TYPE] = [ASSET_TYPE.FII, ASSET_TYPE.CRI, ASSET_TYPE.CRA, ASSET_TYPE.LCA]
 
 class PortfolioIncomeTaxService:
-    def __init__(self, repository: PortfolioRepository):
-        self.repo = repository
+    def __init__(self, uow: UnitOfWork):
+        self.uow = uow
 
     async def get_assets_and_rights(self, portfolio_id: int, fiscal_year: int) -> dict:
         last_day_fiscal_year = pd.to_datetime(f'{fiscal_year}-12-31')
         last_day_previous_year = pd.to_datetime(f'{fiscal_year - 1}-12-31')
 
+        async with self.uow as uow:
+            position_fy_rows = await uow.portfolios.get_position_on_date_by_broker(
+                portfolio_id, last_day_fiscal_year
+            )
+            position_prev_rows = await uow.portfolios.get_position_on_date_by_broker(
+                portfolio_id, last_day_previous_year
+            )
         position_dec_fy = rows_to_df(
-            await self.repo.get_position_on_date_by_broker(portfolio_id, last_day_fiscal_year),
+            position_fy_rows,
             datetime_cols=['date'],
         )
         position_dec_prev = rows_to_df(
-            await self.repo.get_position_on_date_by_broker(portfolio_id, last_day_previous_year),
+            position_prev_rows,
             datetime_cols=['date'],
         )
 
@@ -66,13 +73,14 @@ class PortfolioIncomeTaxService:
         df['position_previous_year'] = df['position_previous_year'].round(2)
         df['position_fiscal_year'] = df['position_fiscal_year'].round(2)
 
-        exempt_dividends_rows = await self.repo.get_exempt_dividends_summary(
-            portfolio_id=portfolio_id,
-            start_date=pd.to_datetime(f'{fiscal_year}-01-01').date(),
-            end_date=pd.to_datetime(f'{fiscal_year}-12-31').date(),
-            asset_type_ids=[int(asset_type) for asset_type in _EXEMPT_DIVIDEND_ASSET_TYPES],
-            currency='BRL',
-        )
+        async with self.uow as uow:
+            exempt_dividends_rows = await uow.portfolios.get_exempt_dividends_summary(
+                portfolio_id=portfolio_id,
+                start_date=pd.to_datetime(f'{fiscal_year}-01-01').date(),
+                end_date=pd.to_datetime(f'{fiscal_year}-12-31').date(),
+                asset_type_ids=[int(asset_type) for asset_type in _EXEMPT_DIVIDEND_ASSET_TYPES],
+                currency='BRL',
+            )
         exempt_dividends_by_asset = {
             row['asset_id']: float(row['total_dividends'] or 0) for row in exempt_dividends_rows
         }
@@ -198,12 +206,15 @@ class PortfolioIncomeTaxService:
             return f"Ativo {row['name']} ({row['ticker']}) via {broker}."
 
     async def get_fiis_operations_tax(self, portfolio_id: int, fiscal_year: int) -> dict:
-        rows = await self.repo.get_transactions(portfolio_id, asset_types_ids=[ASSET_TYPE.FII])
+        async with self.uow as uow:
+            rows = await uow.portfolios.get_transactions(
+                portfolio_id, asset_types_ids=[ASSET_TYPE.FII]
+            )
+            events = await uow.portfolios.get(Event, order_by="date asc")
         df = pd.DataFrame(rows)
         if not df.empty:
             df['date'] = pd.to_datetime(df['date'])
         
-        events = await self.repo.get(Event, order_by="date asc")
         df = self._apply_split_events(df, events)
         
         response = await self._calculate_tax(df, fiscal_year, ASSET_TYPE.FII)
@@ -216,21 +227,23 @@ class PortfolioIncomeTaxService:
         return df_response(grouped)
 
     async def get_common_operations_tax(self, portfolio_id: int, fiscal_year: int) -> dict:
-        br_stocks_rows = await self.repo.get_transactions(
-            portfolio_id,
-            asset_types_ids=[ASSET_TYPE.STOCK],
-            currency_id=CURRENCY.BRL,
-        )
+        async with self.uow as uow:
+            br_stocks_rows = await uow.portfolios.get_transactions(
+                portfolio_id,
+                asset_types_ids=[ASSET_TYPE.STOCK],
+                currency_id=CURRENCY.BRL,
+            )
+            br_etf_bdr_rows = await uow.portfolios.get_transactions(
+                portfolio_id,
+                asset_types_ids=[ASSET_TYPE.ETF, ASSET_TYPE.BDR],
+                currency_id=CURRENCY.BRL,
+            )
+
         br_stocks_df = pd.DataFrame(br_stocks_rows)
         if not br_stocks_df.empty:
             br_stocks_df['date'] = pd.to_datetime(br_stocks_df['date'])
         br_result = await self._calculate_tax(br_stocks_df, fiscal_year, ASSET_TYPE.STOCK)
 
-        br_etf_bdr_rows = await self.repo.get_transactions(
-            portfolio_id,
-            asset_types_ids=[ASSET_TYPE.ETF, ASSET_TYPE.BDR],
-            currency_id=CURRENCY.BRL,
-        )
         br_etf_bdr_df = pd.DataFrame(br_etf_bdr_rows)
         if not br_etf_bdr_df.empty:
             br_etf_bdr_df['date'] = pd.to_datetime(br_etf_bdr_df['date'])
@@ -289,14 +302,15 @@ class PortfolioIncomeTaxService:
         return monthly_df
 
     async def get_darf(self, portfolio_id: int, fiscal_year: int) -> dict:
-        rows = await self.repo.get_transactions(portfolio_id)
+        async with self.uow as uow:
+            rows = await uow.portfolios.get_transactions(portfolio_id)
+            events = await uow.portfolios.get(Event, order_by="date asc")
         if not rows:
             return {"cripto": pd.DataFrame(), "fiis": pd.DataFrame(), "br_stocks": pd.DataFrame(), "etf_bdr": pd.DataFrame()}
 
         transactions_df = pd.DataFrame(rows)
         transactions_df["date"] = pd.to_datetime(transactions_df["date"])
 
-        events = await self.repo.get(Event, order_by="date asc")
         transactions_df = self._apply_split_events(transactions_df, events)
 
         is_brl = transactions_df["currency_id"] == CURRENCY.BRL

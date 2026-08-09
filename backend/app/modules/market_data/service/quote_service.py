@@ -1,4 +1,5 @@
 import asyncio
+import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
@@ -6,8 +7,10 @@ from zoneinfo import ZoneInfo
 
 from app.config.logger import logger
 from app.core.exceptions import NotFoundError, ValidationError
+from app.infra.redis.decorators import cached
 from app.modules.market_data.domain.constants import CURRENCY_MAP
 from app.infra.db.unit_of_work import UnitOfWork
+from app.modules.market_data.repositories.asset_repository import AssetRepository
 from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.domain.quote import (
@@ -21,8 +24,6 @@ from app.modules.market_data.domain.ingestion import (
     DataIngestionAttempt,
     DataIngestionExecution,
 )
-from app.modules.market_data.repositories.asset_repository import AssetRepository
-from app.modules.market_data.repositories.quote_repository import QuoteRepository
 
 ASSET_CACHE_TTL_SECONDS = 600
 QUOTE_HISTORY_OVERLAP_DAYS = 7
@@ -42,14 +43,8 @@ class _AssetFetchOutcome:
 class PersistedQuoteReadService:
     """Read registered assets and their persisted quote history only."""
 
-    def __init__(
-        self,
-        *,
-        asset_repository: AssetRepository,
-        quote_repository: QuoteRepository,
-    ) -> None:
-        self.asset_repository = asset_repository
-        self.quote_repository = quote_repository
+    def __init__(self, uow: UnitOfWork) -> None:
+        self.uow = uow
 
     async def get_quotes(
         self,
@@ -68,60 +63,86 @@ class PersistedQuoteReadService:
         if symbols and asset_type_id is None:
             raise ValidationError('asset_type_id is required when using tickers')
 
-        if ids:
-            assets = await self.asset_repository.get_by_ids(ids)
-            assets_by_key = {asset.id: asset for asset in assets}
-            ordered_assets = [assets_by_key[value] for value in ids if value in assets_by_key]
-            missing = [value for value in ids if value not in assets_by_key]
-        else:
-            assets = await self.asset_repository.get_by_tickers(symbols, int(asset_type_id))
-            assets_by_key = {asset.ticker.upper(): asset for asset in assets}
-            ordered_assets = [assets_by_key[value] for value in symbols if value in assets_by_key]
-            missing = [value for value in symbols if value not in assets_by_key]
+        async with self.uow as uow:
+            if ids:
+                assets = await uow.assets.get_by_ids(ids)
+                assets_by_key = {asset.id: asset for asset in assets}
+                ordered_assets = [assets_by_key[value] for value in ids if value in assets_by_key]
+                missing = [value for value in ids if value not in assets_by_key]
+            else:
+                assets = await uow.assets.get_by_tickers(symbols, int(asset_type_id))
+                assets_by_key = {asset.ticker.upper(): asset for asset in assets}
+                ordered_assets = [
+                    assets_by_key[value] for value in symbols if value in assets_by_key
+                ]
+                missing = [value for value in symbols if value not in assets_by_key]
 
-        if missing:
-            raise NotFoundError('Some assets were not found', context={'missing': missing})
+            if missing:
+                raise NotFoundError('Some assets were not found', context={'missing': missing})
 
-        rows = await self.quote_repository.get_quotes(
-            [asset.id for asset in ordered_assets],
-            start_date=start_date,
-        )
-        quotes_by_asset: dict[int, list[dict]] = {asset.id: [] for asset in ordered_assets}
-        for row in rows:
-            quotes_by_asset[row.asset_id].append(self._quote_to_dict(row))
-        return [
-            {
-                'asset_id': asset.id,
-                'ticker': asset.ticker,
-                'asset_type_id': asset.asset_type_id,
-                'quotes': quotes_by_asset[asset.id],
-            }
-            for asset in ordered_assets
-        ]
+            rows = await uow.quotes.get_quotes(
+                [asset.id for asset in ordered_assets],
+                start_date=start_date,
+            )
+            quotes_by_asset: dict[int, list[dict]] = {asset.id: [] for asset in ordered_assets}
+            for row in rows:
+                quotes_by_asset[row.asset_id].append(self._quote_to_dict(row))
+            return [
+                {
+                    'asset_id': asset.id,
+                    'ticker': asset.ticker,
+                    'asset_type_id': asset.asset_type_id,
+                    'quotes': quotes_by_asset[asset.id],
+                }
+                for asset in ordered_assets
+            ]
+
+    @staticmethod
+    def _number(value) -> float | None:
+        """A finite float, or None. Providers use NaN to mean "no value"."""
+        if value is None:
+            return None
+        number = float(value)
+        return number if math.isfinite(number) else None
 
     @staticmethod
     def _quote_to_dict(quote: Quote) -> dict:
+        # Every value here is JSON-native: these dicts are serialized straight
+        # into responses and into the cache.
         return {
-            'date': quote.date,
-            'open': float(quote.open) if quote.open is not None else None,
-            'high': float(quote.high) if quote.high is not None else None,
-            'low': float(quote.low) if quote.low is not None else None,
-            'close': float(quote.close) if quote.close is not None else None,
-            'adjusted_close': (
-                float(quote.adjusted_close) if quote.adjusted_close is not None else None
-            ),
-            'volume': float(quote.volume) if quote.volume is not None else None,
+            'date': quote.date.isoformat(),
+            'open': PersistedQuoteReadService._number(quote.open),
+            'high': PersistedQuoteReadService._number(quote.high),
+            'low': PersistedQuoteReadService._number(quote.low),
+            'close': PersistedQuoteReadService._number(quote.close),
+            'adjusted_close': PersistedQuoteReadService._number(quote.adjusted_close),
+            'volume': PersistedQuoteReadService._number(quote.volume),
             'currency_id': quote.currency_id,
             'source': quote.source,
         }
 
 
+#: How long a provider quote read stays reusable. Intraday screens refresh
+#: often, and the upstream series barely moves within a couple of minutes.
+ON_DEMAND_QUOTES_TTL_SECONDS = 120
+
+
 class OnDemandQuoteReadService:
-    """Read provider quotes without accessing or mutating application storage."""
+    """Read provider quotes without accessing or mutating application storage.
 
-    def __init__(self, provider: MarketDataProvider) -> None:
+    Reads are cached briefly: the same ticker opened repeatedly hits the
+    provider once, and the cache fills on miss rather than being warmed.
+    """
+
+    def __init__(self, provider: MarketDataProvider, cache: RedisService | None = None) -> None:
         self.provider = provider
+        self.cache = cache or RedisService()
 
+    @cached(
+        key_prefix='on_demand_quotes',
+        cache=lambda self: self.cache,
+        ttl=ON_DEMAND_QUOTES_TTL_SECONDS,
+    )
     async def get_quotes(
         self,
         *,
@@ -140,11 +161,63 @@ class OnDemandQuoteReadService:
             'ticker': fetched.ticker,
             'asset_type_id': asset_type_id,
             'currency': fetched.currency,
+            'logo_url': fetched.logo_url,
             'quotes': [PersistedQuoteReadService._quote_to_dict(item) for item in fetched.quotes],
         }
 
+    #: Artwork changes far more slowly than prices, so it is held for a day.
+    ASSET_LOGO_TTL_SECONDS = 86400
+
+    @cached(key_prefix='asset_logo', cache=lambda self: self.cache, ttl=ASSET_LOGO_TTL_SECONDS)
+    async def get_logo(self, *, ticker: str, asset_type_id: int) -> dict:
+        return {'logo_url': await self.provider.fetch_asset_logo(ticker, asset_type_id)}
+
     async def aclose(self) -> None:
         await self.provider.close()
+
+
+class AssetQuoteHistoryService:
+    """Quote history for one asset, preferring what we already store.
+
+    Persisted history is free, complete for everything we ingest, and costs no
+    provider quota, so it answers whenever it exists. The provider is asked only
+    for assets that have never been ingested -- browsing the catalogue, mostly.
+    """
+
+    def __init__(
+        self,
+        *,
+        persisted: PersistedQuoteReadService,
+        on_demand: OnDemandQuoteReadService,
+    ) -> None:
+        self.persisted = persisted
+        self.on_demand = on_demand
+
+    async def get_history(self, *, asset_id: int, start_date: date | None = None) -> dict:
+        entries = await self.persisted.get_quotes(asset_ids=[asset_id], start_date=start_date)
+        entry = entries[0]
+        ticker, asset_type_id = entry['ticker'], entry['asset_type_id']
+        logo = await self.on_demand.get_logo(ticker=ticker, asset_type_id=asset_type_id)
+
+        if entry['quotes']:
+            return {
+                'ticker': ticker,
+                'asset_type_id': asset_type_id,
+                'currency': None,
+                'logo_url': logo['logo_url'],
+                'source': 'database',
+                'quotes': entry['quotes'],
+            }
+
+        fetched = await self.on_demand.get_quotes(
+            ticker=ticker,
+            asset_type_id=asset_type_id,
+            start_date=start_date,
+        )
+        return {**fetched, 'logo_url': logo['logo_url'], 'source': 'provider'}
+
+    async def aclose(self) -> None:
+        await self.on_demand.aclose()
 
 
 class QuoteService:
@@ -162,9 +235,6 @@ class QuoteService:
         self.cache = cache
         self.max_concurrent_requests = max(1, max_concurrent_requests)
         self.today = today or self._market_today
-
-    def _provider(self) -> MarketDataProvider:
-        return self.provider
 
     async def ingest_quotes(
         self,
@@ -228,6 +298,7 @@ class QuoteService:
                     parameters=parameters,
                 )
                 pending_fetches.append((asset, start_date, attempt_id, parameters))
+            await uow.commit()
 
         semaphore = asyncio.Semaphore(self.max_concurrent_requests)
         tasks = [
@@ -268,7 +339,7 @@ class QuoteService:
     ) -> _AssetFetchOutcome:
         try:
             async with semaphore:
-                fetched = await self._provider().fetch_quotes(
+                fetched = await self.provider.fetch_quotes(
                     ticker=asset.ticker,
                     asset_type_id=asset.asset_type_id,
                     start_date=start_date,
@@ -309,18 +380,19 @@ class QuoteService:
             logger.warning('Quote ingestion failed for %s: %s', asset.ticker, error)
             async with self.uow_factory() as uow:
                 await self._finish_attempt(
-                    getattr(uow, 'ingestions', None),
+                    uow.ingestions,
                     outcome.attempt_id,
                     execution_id=execution_id,
                     status='failure',
                     parameters=outcome.parameters,
                     error=error,
                 )
+                await uow.commit()
             return AssetQuoteIngestionResult(
                 asset_id=asset.id,
                 ticker=asset.ticker,
                 status='failure',
-                source=self._provider().quote_source,
+                source=self.provider.quote_source,
                 error=error,
             )
 
@@ -345,7 +417,7 @@ class QuoteService:
                 quote_repo = uow.quotes
                 await quote_repo.upsert_quotes(rows)
                 await self._finish_attempt(
-                    getattr(uow, 'ingestions', None),
+                    uow.ingestions,
                     outcome.attempt_id,
                     execution_id=execution_id,
                     status='success',
@@ -353,6 +425,7 @@ class QuoteService:
                     fetched_rows=len(rows),
                     upserted_rows=len(rows),
                 )
+                await uow.commit()
             return AssetQuoteIngestionResult(
                 asset_id=asset.id,
                 ticker=asset.ticker,
@@ -366,13 +439,14 @@ class QuoteService:
             logger.warning('Quote ingestion failed for %s: %s', asset.ticker, error)
             async with self.uow_factory() as uow:
                 await self._finish_attempt(
-                    getattr(uow, 'ingestions', None),
+                    uow.ingestions,
                     outcome.attempt_id,
                     execution_id=execution_id,
                     status='failure',
                     parameters=outcome.parameters,
                     error=error,
                 )
+                await uow.commit()
             return AssetQuoteIngestionResult(
                 asset_id=asset.id,
                 ticker=asset.ticker,
@@ -527,7 +601,7 @@ class QuoteService:
             execution_id=execution_id,
             item_id=asset.id,
             item_label=asset.ticker,
-            source=self._provider().quote_source,
+            source=self.provider.quote_source,
             parameters=parameters,
         )
         return attempt.id

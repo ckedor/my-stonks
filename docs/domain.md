@@ -58,7 +58,7 @@ The canonical code identifier for an asset type is its uppercase key.
 
 | Canonical term | pt-BR | Definition |
 | --- | --- | --- |
-| Market data series | Série de dados de mercado | Registered and explicitly typed time series used as a market indicator, fixed-income indexer, or performance reference. Its metadata is stored separately from its history. Examples include CDI, IPCA, IFIX, S&P 500, IBOVESPA, and NASDAQ. |
+| Market data series | Série de dados de mercado | Registered and explicitly typed time series used as a market indicator, fixed-income indexer, or performance reference. Its metadata is stored separately from its history. Examples include CDI, IPCA, IFIX, S&P 500, IBOVESPA, and NASDAQ. The USD/BRL exchange rate is not one of them. |
 | Market data series history | Histórico da série de dados de mercado | Persisted chronological observations belonging to one market-data series. OHLC fields may be used by market indexes; scalar indicators primarily use the close value. |
 | Market index | Índice de mercado | A `market_index` type of market-data series, such as IFIX, S&P 500, IBOVESPA, or NASDAQ. |
 | Benchmark | Referência de desempenho | A market-data series selected to compare the performance of a portfolio, category, or asset. Benchmark is a role played by a series. |
@@ -70,7 +70,7 @@ The canonical code identifier for an asset type is its uppercase key.
 | Adjusted close | Fechamento ajustado | Close price adjusted by the data source for applicable corporate actions. |
 | OHLCV | OHLCV | Set of open, high, low, close, and traded volume fields carried by a quote. It is not a separate domain entity. |
 | Quote source | Fonte da cotação | Provider identifier retained with persisted quotes and ingestion attempts. |
-| Exchange rate | Taxa de câmbio | Conversion rate between currencies. The canonical USD/BRL rate expresses the BRL value of one USD and has a history table independent from market-data series history. |
+| Exchange rate | Taxa de câmbio | Conversion rate between currencies. It is not a market-data series: the canonical USD/BRL rate has its own history table, and every service that converts currency reads it from there. Each observation stores both directions — `usd_brl`, the BRL value of one USD, and `brl_usd`, its inverse — so consumers convert by multiplying and never divide. |
 
 ### Naming rules
 

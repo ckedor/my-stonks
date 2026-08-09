@@ -1,5 +1,4 @@
-from app.infra.db.dependencies import get_portfolio_repository
-from app.modules.portfolio.repositories import PortfolioRepository
+from app.composition.portfolio import get_portfolio_reports_service
 from app.modules.portfolio.domain.portfolio_reports import StatementScope
 from app.modules.portfolio.service.portfolio_reports_service import (
     PortfolioReportsService,
@@ -14,9 +13,8 @@ async def get_portfolio_returns(
     portfolio_id: int,
     asset_ids: list[int] | None = Query(default=None),
     scope: StatementScope = StatementScope.PORTFOLIO,
-    repository: PortfolioRepository = Depends(get_portfolio_repository),
+    service: PortfolioReportsService = Depends(get_portfolio_reports_service),
 ):
-    service = PortfolioReportsService(repository)
     return await service.generate_performance_statement(
         portfolio_id=portfolio_id,
         asset_ids=asset_ids,

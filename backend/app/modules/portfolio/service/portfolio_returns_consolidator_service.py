@@ -45,6 +45,7 @@ class PortfolioReturnsConsolidatorService:
                 pos_df,
                 portfolio_id,
             )
+            await uow.commit()
         logger.info(f"Retornos consolidados com sucesso para portfolio {portfolio_id}")
 
     async def consolidate_category_returns(self, portfolio_id: int):
@@ -66,6 +67,7 @@ class PortfolioReturnsConsolidatorService:
                 pos_df,
                 portfolio_id,
             )
+            await uow.commit()
         logger.info(f"Retornos das categorias consolidados para portfolio {portfolio_id}")
 
     async def _consolidate_portfolio_returns(

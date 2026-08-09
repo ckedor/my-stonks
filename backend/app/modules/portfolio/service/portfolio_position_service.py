@@ -8,6 +8,7 @@ from app.core.exceptions import NotFoundError
 from app.modules.market_data.domain.constants import INDEX
 from app.modules.portfolio.domain.entities import Position
 from app.infra.redis.decorators import cached
+from app.infra.db.unit_of_work import UnitOfWork
 from app.infra.redis.redis_service import RedisService
 from app.lib.utils.df import df_to_dict_list, rows_to_df
 from app.lib.utils.fastapi import df_response
@@ -15,48 +16,61 @@ from app.modules.market_data.api.asset.schemas import (
     AssetDetailsOut,
     AssetDetailsWithPosition,
 )
-from app.modules.market_data.service.market_data_service import MarketDataService
+from app.modules.market_data.service.market_data_service import MarketDataReadService
 from app.modules.portfolio.domain.asset_analysis import calculate_returns_analysis
 from app.modules.portfolio.domain.returns import (
     calculate_asset_acc_returns,
     calculate_portfolio_daily_returns,
 )
-from app.modules.portfolio.repositories import PortfolioRepository
+
+
+PATRIMONY_EVOLUTION_CACHE_PREFIX = 'patrimony_evolution'
 
 
 class PortfolioPositionService:
     def __init__(
         self,
-        repository: PortfolioRepository,
-        market_data_service: MarketDataService,
+        uow: UnitOfWork,
+        market_data_service: MarketDataReadService,
         cache: RedisService | None = None,
     ):
-        self.repo = repository
+        self.uow = uow
         self.market_data_service = market_data_service
         self.cache = cache or RedisService()
+
+    async def invalidate_cached_analytics(self, portfolio_id: int) -> None:
+        """Drop the derived reads a portfolio's positions feed.
+
+        Called by the write paths that recalculate positions. Nothing repopulates
+        the cache here: the next read misses and fills it with fresh data. The
+        trailing separator keeps portfolio 1 from matching portfolio 10.
+        """
+        await self.cache.delete_prefix(f'{PATRIMONY_EVOLUTION_CACHE_PREFIX}:{portfolio_id}:')
 
     async def get_asset_details(
         self, portfolio_id: int, asset_id: int = None, currency: str = 'BRL'
     ) -> dict:
-        asset = await self.repo.get_asset_details(asset_id)
-        if not asset:
-            raise NotFoundError('Ativo não encontrado')
+        async with self.uow as uow:
+            asset = await uow.portfolios.get_asset_details(asset_id)
+            if not asset:
+                raise NotFoundError('Ativo não encontrado')
 
-        position = await self.repo.get(
-            Position,
-            by={'portfolio_id': portfolio_id, 'asset_id': asset_id},
-            order_by='date desc',
-            first=True,
-        )
+            position = await uow.portfolios.get(
+                Position,
+                by={'portfolio_id': portfolio_id, 'asset_id': asset_id},
+                order_by='date desc',
+                first=True,
+            )
 
-        suffix = '_usd' if currency == 'USD' else ''
-        price = getattr(position, f'price{suffix}')
-        average_price = getattr(position, f'average_price{suffix}')
-        acc_return_val = getattr(position, f'acc_return{suffix}')
-        twelve_months_val = getattr(position, f'twelve_months_return{suffix}')
-        cagr_val = getattr(position, f'cagr{suffix}')
+            suffix = '_usd' if currency == 'USD' else ''
+            price = getattr(position, f'price{suffix}')
+            average_price = getattr(position, f'average_price{suffix}')
+            acc_return_val = getattr(position, f'acc_return{suffix}')
+            twelve_months_val = getattr(position, f'twelve_months_return{suffix}')
+            cagr_val = getattr(position, f'cagr{suffix}')
 
-        asset_serialized = AssetDetailsOut.model_validate(asset).model_dump()
+            asset_serialized = AssetDetailsOut.model_validate(asset).model_dump()
+
         asset_serialized_with_position = {
             **asset_serialized,
             'quantity': position.quantity,
@@ -70,8 +84,10 @@ class PortfolioPositionService:
         return AssetDetailsWithPosition(**asset_serialized_with_position)
 
     async def get_portfolio_analysis(self, portfolio_id: int) -> dict:
+        async with self.uow as uow:
+            position_rows = await uow.portfolios.get_portfolio_position(portfolio_id)
         portfolio_position_df = rows_to_df(
-            await self.repo.get_portfolio_position(portfolio_id),
+            position_rows,
             datetime_cols=['date'],
             numeric_fillna_cols=['dividend', 'dividend_usd'],
         )
@@ -98,10 +114,12 @@ class PortfolioPositionService:
     async def get_asset_analysis(
         self, portfolio_id: int, asset_id: int, currency: str = 'BRL'
     ) -> dict:
-        asset_position_df = rows_to_df(
-            await self.repo.get_asset_position(
+        async with self.uow as uow:
+            asset_position_rows = await uow.portfolios.get_asset_position(
                 portfolio_id, [asset_id], start_date=None, end_date=None
-            ),
+            )
+        asset_position_df = rows_to_df(
+            asset_position_rows,
             datetime_cols=['date'],
             numeric_fillna_cols=['dividend', 'dividend_usd'],
         )
@@ -121,19 +139,23 @@ class PortfolioPositionService:
         cdi_history = await self.market_data_service.get_index_history(start_date, INDEX.CDI)
         benchmarks['CDI'] = cdi_history
 
-        category = await self.repo.get_asset_category(portfolio_id, asset_id)
-        if category.benchmark_id != INDEX.CDI:
-            benchmark_history = await self.market_data_service.get_index_history(
-                start_date, category.benchmark_id
+        async with self.uow as uow:
+            category = await uow.portfolios.get_asset_category(portfolio_id, asset_id)
+            benchmark_id = category.benchmark_id
+            benchmark_name = category.benchmark.short_name if benchmark_id != INDEX.CDI else None
+
+        if benchmark_id != INDEX.CDI:
+            benchmarks[benchmark_name] = await self.market_data_service.get_index_history(
+                start_date, benchmark_id
             )
-            benchmarks[category.benchmark.short_name] = benchmark_history
 
         result = calculate_returns_analysis(asset_returns, benchmarks)
 
         return result
 
     async def get_aported_history(self, portfolio_id: int, currency: str = 'BRL'):
-        rows = await self.repo.get_transactions(portfolio_id)
+        async with self.uow as uow:
+            rows = await uow.portfolios.get_transactions(portfolio_id)
         if not rows:
             return pd.DataFrame(columns=['date', 'aported'])
         transactions_df = pd.DataFrame(rows)
@@ -171,13 +193,15 @@ class PortfolioPositionService:
         asset_type_ids: list = None,
         currency: str = 'BRL',
     ) -> pd.DataFrame:
-        portfolio_position_df = rows_to_df(
-            await self.repo.get_portfolio_position(
+        async with self.uow as uow:
+            position_rows = await uow.portfolios.get_portfolio_position(
                 portfolio_id,
                 asset_id=asset_id,
                 asset_type_id=asset_type_id,
                 asset_type_ids=asset_type_ids,
-            ),
+            )
+        portfolio_position_df = rows_to_df(
+            position_rows,
             datetime_cols=['date'],
             numeric_fillna_cols=['dividend', 'dividend_usd'],
         )
@@ -207,7 +231,8 @@ class PortfolioPositionService:
         return df_to_dict_list(result)
 
     async def get_portfolio_returns(self, portfolio_id: int, currency: str = 'BRL'):
-        return await self.repo.get_portfolio_returns(portfolio_id, currency) or None
+        async with self.uow as uow:
+            return await uow.portfolios.get_portfolio_returns(portfolio_id, currency) or None
 
     async def get_category_returns(
         self,
@@ -216,12 +241,11 @@ class PortfolioPositionService:
         most_recent: bool = False,
         currency: str = 'BRL',
     ):
-        return (
-            await self.repo.get_category_returns(
+        async with self.uow as uow:
+            rows = await uow.portfolios.get_category_returns(
                 portfolio_id, custom_category_id, most_recent, currency
             )
-            or None
-        )
+        return rows or None
 
     async def get_asset_acc_returns(
         self,
@@ -247,8 +271,12 @@ class PortfolioPositionService:
         end_date: str = None,
         currency: str = 'BRL',
     ):
+        async with self.uow as uow:
+            asset_position_rows = await uow.portfolios.get_asset_position(
+                portfolio_id, asset_ids, start_date, end_date
+            )
         asset_position_df = rows_to_df(
-            await self.repo.get_asset_position(portfolio_id, asset_ids, start_date, end_date),
+            asset_position_rows,
             datetime_cols=['date'],
             numeric_fillna_cols=['dividend', 'dividend_usd'],
         )
@@ -271,12 +299,15 @@ class PortfolioPositionService:
         group_by_broker: bool = False,
         currency: str = 'BRL',
     ) -> list:
-        if group_by_broker:
-            rows = await self.repo.get_position_on_date_by_broker(portfolio_id, date, asset_type_id)
-        else:
-            rows = await self.repo.get_position_on_date(
-                portfolio_id, date, asset_type_id, currency=currency
-            )
+        async with self.uow as uow:
+            if group_by_broker:
+                rows = await uow.portfolios.get_position_on_date_by_broker(
+                    portfolio_id, date, asset_type_id
+                )
+            else:
+                rows = await uow.portfolios.get_position_on_date(
+                    portfolio_id, date, asset_type_id, currency=currency
+                )
 
         pos_df = rows_to_df(
             rows,
@@ -294,8 +325,12 @@ class PortfolioPositionService:
     async def get_portfolio_position_history(
         self, portfolio_id: int, asset_id: int = None, currency: str = 'BRL'
     ) -> pd.DataFrame:
+        async with self.uow as uow:
+            position_rows = await uow.portfolios.get_portfolio_position(
+                portfolio_id, asset_id=asset_id
+            )
         pos_df = rows_to_df(
-            await self.repo.get_portfolio_position(portfolio_id, asset_id=asset_id),
+            position_rows,
             datetime_cols=['date'],
             numeric_fillna_cols=['dividend', 'dividend_usd'],
         )
@@ -311,12 +346,9 @@ class PortfolioPositionService:
 
         return df_response(pos_df)
 
-    async def get_consolidated_portfolio_returns(self, portfolio_id: int):
-        """Used by the cache task to pre-compute and store in Redis."""
-        return await self.repo.get_portfolio_returns(portfolio_id) or None
-
     async def get_portfolio_stats(self, portfolio_id: int, currency: str = 'BRL') -> dict:
-        rows = await self.repo.get_portfolio_returns(portfolio_id, currency)
+        async with self.uow as uow:
+            rows = await uow.portfolios.get_portfolio_returns(portfolio_id, currency)
         if not rows:
             return None
 
@@ -335,9 +367,10 @@ class PortfolioPositionService:
     async def get_category_stats(
         self, portfolio_id: int, custom_category_id: int, currency: str = 'BRL'
     ) -> dict:
-        rows = await self.repo.get_category_returns(
-            portfolio_id, custom_category_id, currency=currency
-        )
+        async with self.uow as uow:
+            rows = await uow.portfolios.get_category_returns(
+                portfolio_id, custom_category_id, currency=currency
+            )
         if not rows:
             return None
 
@@ -350,12 +383,19 @@ class PortfolioPositionService:
         cdi_history = await self.market_data_service.get_index_history(start_date, INDEX.CDI)
         benchmarks['CDI'] = cdi_history
 
-        category = await self.repo.get_asset_category_by_id(custom_category_id)
-        if category and category.benchmark_id and category.benchmark_id != INDEX.CDI:
-            benchmark_history = await self.market_data_service.get_index_history(
-                start_date, category.benchmark_id
+        async with self.uow as uow:
+            category = await uow.portfolios.get_asset_category_by_id(custom_category_id)
+            benchmark_id = category.benchmark_id if category else None
+            benchmark_name = (
+                category.benchmark.short_name
+                if benchmark_id and benchmark_id != INDEX.CDI
+                else None
             )
-            benchmarks[category.benchmark.short_name] = benchmark_history
+
+        if benchmark_name is not None:
+            benchmarks[benchmark_name] = await self.market_data_service.get_index_history(
+                start_date, benchmark_id
+            )
 
         result = calculate_returns_analysis(returns_series, benchmarks)
         return result

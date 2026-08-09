@@ -8,13 +8,11 @@ class MarketDataSeriesType(StrEnum):
     MARKET_INDEX = 'market_index'
     INTEREST_RATE = 'interest_rate'
     INFLATION_RATE = 'inflation_rate'
-    EXCHANGE_RATE = 'exchange_rate'
 
 
 class MarketDataSeriesValueType(StrEnum):
     LEVEL = 'level'
     PERCENTAGE = 'percentage'
-    EXCHANGE_RATE = 'exchange_rate'
 
 
 class MarketDataSeriesFrequency(StrEnum):

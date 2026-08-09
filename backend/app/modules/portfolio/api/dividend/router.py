@@ -1,7 +1,4 @@
-from app.composition.portfolio import (
-    get_portfolio_dividend_read_service,
-    get_portfolio_dividend_write_service,
-)
+from app.composition.portfolio import get_portfolio_dividend_service
 from app.modules.portfolio.api.dividend.schema import (
     Dividend,
     DividendCreateRequest,
@@ -22,7 +19,7 @@ async def list_dividends(
     portfolio_id: int = Query(...),
     filters: Annotated[DividendFilters, Depends()] = None,
     currency: str = Query('BRL'),
-    service: PortfolioDividendService = Depends(get_portfolio_dividend_read_service),
+    service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
 ):
     return await service.get_dividends(portfolio_id, filters, currency=currency)
 
@@ -30,7 +27,7 @@ async def list_dividends(
 @router.post('')
 async def create_dividend(
     dividend: DividendCreateRequest,
-    service: PortfolioDividendService = Depends(get_portfolio_dividend_write_service),
+    service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
 ):
     return await service.create_dividend(dividend)
 
@@ -39,7 +36,7 @@ async def create_dividend(
 async def update_dividend(
     dividend_id: int,
     dividend_data: DividendUpdateRequest,
-    service: PortfolioDividendService = Depends(get_portfolio_dividend_write_service),
+    service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
 ):
     payload = dividend_data.model_copy(update={'id': dividend_id})
     updated = await service.update_dividend(payload)
@@ -51,7 +48,7 @@ async def update_dividend(
 @router.delete('/{dividend_id}')
 async def delete_dividend(
     dividend_id: int,
-    service: PortfolioDividendService = Depends(get_portfolio_dividend_write_service),
+    service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
 ):
     deleted = await service.delete_dividend(dividend_id)
     if not deleted:

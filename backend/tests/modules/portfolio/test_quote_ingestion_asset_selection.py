@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from tests.fakes import FakeUnitOfWork
 from app.modules.portfolio.service.portfolio_quote_ingestion_service import (
     RECENT_POSITION_WINDOW_DAYS,
     PortfolioQuoteIngestionService,
@@ -16,7 +17,7 @@ async def test_incremental_selection_uses_portfolio_recent_position_rule():
         get_latest_position_date=AsyncMock(return_value=date(2026, 8, 8)),
         get_recent_position_asset_ids=AsyncMock(return_value=[10, 20]),
     )
-    service = PortfolioQuoteIngestionService(repository)
+    service = PortfolioQuoteIngestionService(FakeUnitOfWork(portfolios=repository))
 
     selection = await service.get_assets_requiring_quote_ingestion(
         full_history=False,
@@ -37,7 +38,7 @@ async def test_full_selection_uses_all_portfolio_transactions():
     repository = SimpleNamespace(
         get_all_asset_ids_with_transactions=AsyncMock(return_value=[10, 30]),
     )
-    service = PortfolioQuoteIngestionService(repository)
+    service = PortfolioQuoteIngestionService(FakeUnitOfWork(portfolios=repository))
 
     selection = await service.get_assets_requiring_quote_ingestion(
         full_history=True,

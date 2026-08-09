@@ -9,7 +9,7 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recha
 interface Props {
   dividends: Dividend[]
   selected: string
-  size?: number
+  size?: number | string
 }
 
 export default function OverviewDividendsChart({ dividends, selected, size = 340 }: Props) {

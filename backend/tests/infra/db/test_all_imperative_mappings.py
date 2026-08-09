@@ -10,6 +10,7 @@ from app.modules.market_data.domain.ingestion import (
     DataIngestionAttempt,
     DataIngestionExecution,
 )
+from app.modules.market_data.domain.asset_visit import AssetVisit
 from app.modules.market_data.domain.market_data_series import (
     MarketDataSeries,
     MarketDataSeriesHistory,
@@ -56,11 +57,12 @@ PERSISTED_ENTITIES = [
     MarketDataSeries,
     MarketDataSeriesHistory,
     UsdBrlHistory,
+    AssetVisit,
     Quote,
     DataIngestionExecution,
     DataIngestionAttempt,
 ]
-EXPECTED_PERSISTED_ENTITY_COUNT = 38
+EXPECTED_PERSISTED_ENTITY_COUNT = 39
 
 
 def test_every_persisted_entity_is_one_mapped_domain_dataclass():

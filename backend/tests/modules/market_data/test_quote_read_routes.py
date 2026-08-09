@@ -41,6 +41,7 @@ async def test_on_demand_route_delegates_without_storage_dependencies():
         'ticker': 'PETR4',
         'asset_type_id': 4,
         'currency': 'BRL',
+        'logo_url': 'https://icons.brapi.dev/icons/PETR4.svg',
         'quotes': [],
     }
     service = SimpleNamespace(get_quotes=AsyncMock(return_value=payload))

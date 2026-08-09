@@ -46,54 +46,43 @@ TREASURY_TYPES = {ASSET_TYPE.TREASURY}
 class AssetService:
     def __init__(
         self,
-        repository: SQLAlchemyRepository | None = None,
-        uow: UnitOfWork | None = None,
+        uow: UnitOfWork,
         cache: RedisService | None = None,
     ):
-        self.repository = repository
         self.uow = uow
         self.cache = cache or RedisService()
 
-    def _read_repository(self) -> SQLAlchemyRepository:
-        if self.repository is None:
-            raise RuntimeError('A repository is required for this read operation')
-        return self.repository
-
-    def _write_uow(self) -> UnitOfWork:
-        if self.uow is None:
-            raise RuntimeError('A UnitOfWork is required for this write operation')
-        return self.uow
-
     @cached(key_prefix='assets_list', cache=lambda self: self.cache, ttl=86400)
     async def list_assets(self):
-        assets = await self._read_repository().get(Asset, order_by='ticker')
-        return [
-            {
-                'id': a.id,
-                'ticker': a.ticker,
-                'name': a.name,
-                'asset_type_id': a.asset_type_id,
-                'asset_type': {
-                    'id': a.asset_type.id,
-                    'short_name': a.asset_type.short_name,
-                    'name': a.asset_type.name,
-                    'asset_class_id': a.asset_type.asset_class_id,
-                    'asset_class': {
-                        'id': a.asset_type.asset_class.id,
-                        'name': a.asset_type.asset_class.name,
+        async with self.uow as uow:
+            assets = await uow.assets.get(Asset, order_by='ticker')
+            return [
+                {
+                    'id': a.id,
+                    'ticker': a.ticker,
+                    'name': a.name,
+                    'asset_type_id': a.asset_type_id,
+                    'asset_type': {
+                        'id': a.asset_type.id,
+                        'short_name': a.asset_type.short_name,
+                        'name': a.asset_type.name,
+                        'asset_class_id': a.asset_type.asset_class_id,
+                        'asset_class': {
+                            'id': a.asset_type.asset_class.id,
+                            'name': a.asset_type.asset_class.name,
+                        },
                     },
-                },
-            }
-            for a in assets
-        ]
+                }
+                for a in assets
+            ]
 
     async def delete_asset(self, asset_id: int):
-        async with self._write_uow() as uow:
+        async with self.uow as uow:
             asset = await uow.assets.get(Asset, id=asset_id)
             if not asset:
                 raise NotFoundError('Asset not found')
 
-            references = await uow.assets.get_portfolio_reference_counts(asset_id)
+            references = await uow.portfolios.count_asset_references(asset_id)
             if references:
                 raise BusinessRuleError(
                     'Ativo com histórico de carteira não pode ser excluído. '
@@ -108,6 +97,7 @@ class AssetService:
             await uow.assets.detach_ingestion_attempts(asset_id)
             await self._delete_subclass(uow.assets, asset_id)
             await uow.assets.delete(Asset, asset_id)
+            await uow.commit()
         await self._invalidate_asset_cache(
             asset_id=asset_id,
             ticker=old_ticker,
@@ -116,8 +106,8 @@ class AssetService:
         return {'message': 'OK'}
 
     async def list_asset_types(self):
-        asset_types = await self._read_repository().get(AssetType)
-        return asset_types
+        async with self.uow as uow:
+            return await uow.assets.get(AssetType)
 
     async def create_fixed_income(self, fixed_income: dict):
         asset_obj = {
@@ -125,8 +115,8 @@ class AssetService:
             'name': fixed_income.get('name'),
             'asset_type_id': fixed_income.get('asset_type_id'),
         }
-        async with self._write_uow() as uow:
-            asset_ids = await uow.repository.create(Asset, asset_obj)
+        async with self.uow as uow:
+            asset_ids = await uow.assets.create(Asset, asset_obj)
             fixed_income_obj = {
                 'asset_id': asset_ids[0],
                 'maturity_date': fixed_income.get('maturity_date'),
@@ -134,7 +124,8 @@ class AssetService:
                 'index_id': fixed_income.get('index_id'),
                 'fixed_income_type_id': fixed_income.get('fixed_income_type_id'),
             }
-            await uow.repository.create(FixedIncome, fixed_income_obj)
+            await uow.assets.create(FixedIncome, fixed_income_obj)
+            await uow.commit()
         await self._invalidate_asset_cache(
             asset_id=asset_ids[0],
             ticker=asset_obj['ticker'],
@@ -143,38 +134,42 @@ class AssetService:
         return {'message': 'OK'}
 
     async def list_fixed_income_types(self):
-        fixed_income_types = await self._read_repository().get(FixedIncomeType)
-        return fixed_income_types
+        async with self.uow as uow:
+            return await uow.assets.get(FixedIncomeType)
 
     async def list_fii_segments(self):
-        fii_segments = await self._read_repository().get(FIISegment)
-        return fii_segments
+        async with self.uow as uow:
+            return await uow.assets.get(FIISegment)
 
     async def list_events(self):
-        events = await self._read_repository().get(Event)
-        return events
+        async with self.uow as uow:
+            return await uow.assets.get(Event)
 
     async def create_event(self, event):
-        async with self._write_uow() as uow:
-            await uow.repository.create(Event, event.model_dump())
+        async with self.uow as uow:
+            await uow.assets.create(Event, event.model_dump())
+            await uow.commit()
 
     async def update_event(self, event):
-        async with self._write_uow() as uow:
-            await uow.repository.update(Event, event.model_dump())
+        async with self.uow as uow:
+            await uow.assets.update(Event, event.model_dump())
+            await uow.commit()
 
     async def delete_event(self, event_id: int):
-        async with self._write_uow() as uow:
-            await uow.repository.delete(Event, event_id)
+        async with self.uow as uow:
+            await uow.assets.delete(Event, event_id)
+            await uow.commit()
 
     async def get_asset(self, asset_id: int):
-        asset = await self._read_repository().get(
-            Asset,
-            id=asset_id,
-            relations=['stock', 'fii', 'etf', 'fund', 'fixed_income', 'treasury_bond'],
-        )
-        if not asset:
-            raise NotFoundError('Asset not found')
-        return asset
+        async with self.uow as uow:
+            asset = await uow.assets.get(
+                Asset,
+                id=asset_id,
+                relations=['stock', 'fii', 'etf', 'fund', 'fixed_income', 'treasury_bond'],
+            )
+            if not asset:
+                raise NotFoundError('Asset not found')
+            return asset
 
     async def create_asset(self, data: dict):
         asset_type_id = data['asset_type_id']
@@ -184,10 +179,11 @@ class AssetService:
             'asset_type_id': asset_type_id,
             'exchange_id': data.get('exchange_id'),
         }
-        async with self._write_uow() as uow:
-            asset_ids = await uow.repository.create(Asset, asset_obj)
+        async with self.uow as uow:
+            asset_ids = await uow.assets.create(Asset, asset_obj)
             asset_id = asset_ids[0]
-            await self._create_subclass(uow.repository, asset_type_id, asset_id, data)
+            await self._create_subclass(uow.assets, asset_type_id, asset_id, data)
+            await uow.commit()
         await self._invalidate_asset_cache(
             asset_id=asset_id,
             ticker=asset_obj['ticker'],
@@ -199,8 +195,8 @@ class AssetService:
         asset_id = data['id']
         asset_type_id = data['asset_type_id']
 
-        async with self._write_uow() as uow:
-            asset = await uow.repository.get(Asset, id=asset_id)
+        async with self.uow as uow:
+            asset = await uow.assets.get(Asset, id=asset_id)
             if not asset:
                 raise NotFoundError('Asset not found')
 
@@ -210,13 +206,14 @@ class AssetService:
             asset.name = data['name']
             asset.asset_type_id = asset_type_id
             asset.exchange_id = data.get('exchange_id')
-            await self._delete_subclass(uow.repository, asset_id)
+            await self._delete_subclass(uow.assets, asset_id)
             await self._create_subclass(
-                uow.repository,
+                uow.assets,
                 asset_type_id,
                 asset_id,
                 data,
             )
+            await uow.commit()
         await self._invalidate_asset_cache(
             asset_id=asset_id,
             ticker=old_ticker,
@@ -331,14 +328,47 @@ class AssetService:
         except Exception:
             pass
 
+    async def record_visit(self, user_id: int, asset_id: int) -> None:
+        async with self.uow as uow:
+            asset = await uow.assets.get(Asset, id=asset_id)
+            if not asset:
+                raise NotFoundError('Asset not found')
+            await uow.assets.record_asset_visit(user_id, asset_id)
+            await uow.commit()
+
+    async def list_favorite_assets(self, user_id: int, limit: int = 8) -> list[dict]:
+        """Assets the user opens most, as a shortcut back to them."""
+        async with self.uow as uow:
+            rows = await uow.assets.get_most_visited_assets(user_id, limit)
+            return [
+                {
+                    'id': asset.id,
+                    'ticker': asset.ticker,
+                    'name': asset.name,
+                    'asset_type_id': asset.asset_type_id,
+                    'asset_type': {
+                        'id': asset.asset_type.id,
+                        'short_name': asset.asset_type.short_name,
+                        'name': asset.asset_type.name,
+                    },
+                    'visit_count': visit_count,
+                    'last_visited_at': last_visited_at,
+                }
+                for asset, visit_count, last_visited_at in rows
+            ]
+
     async def list_exchanges(self):
-        return await self._read_repository().get(Exchange)
+        async with self.uow as uow:
+            return await uow.assets.get(Exchange)
 
     async def list_etf_segments(self):
-        return await self._read_repository().get(ETFSegment)
+        async with self.uow as uow:
+            return await uow.assets.get(ETFSegment)
 
     async def list_treasury_bond_types(self):
-        return await self._read_repository().get(TreasuryBondType)
+        async with self.uow as uow:
+            return await uow.assets.get(TreasuryBondType)
 
     async def list_indexes(self):
-        return await self._read_repository().get(MarketDataSeries)
+        async with self.uow as uow:
+            return await uow.assets.get(MarketDataSeries)

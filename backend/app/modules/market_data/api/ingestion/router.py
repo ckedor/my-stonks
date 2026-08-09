@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 
+from app.entrypoints.worker.task_runner import run_task, run_task_by_name
+from app.infra.exceptions import IntegrationUnavailable
 from app.composition.market_data import (
     get_data_ingestion_read_service,
     get_data_ingestion_service,
@@ -15,8 +17,16 @@ from app.modules.market_data.service.data_ingestion_service import (
     DataIngestionReadService,
     DataIngestionService,
 )
+from app.modules.market_data.tasks.ingest_market_data_series import ingest_market_data_series
+from app.modules.market_data.tasks.ingest_quotes import ingest_quotes
+from app.modules.market_data.tasks.ingest_usd_brl import ingest_usd_brl
+
 from app.modules.users.domain import User
 from app.modules.users.views import current_superuser
+
+#: Owned by the portfolio module, dispatched by name so market data keeps no
+#: code dependency on it. See portfolio.tasks.ingest_quotes_for_held_assets.
+INGEST_QUOTES_FOR_HELD_ASSETS_TASK = 'ingest_quotes_for_held_assets'
 
 router = APIRouter(
     prefix='/ingestions',
@@ -50,11 +60,30 @@ async def run_quote_ingestion(
     user: User = Depends(current_superuser),
     service: DataIngestionService = Depends(get_data_ingestion_service),
 ):
-    return await service.request_quote_execution(
+    execution = await service.request_quote_execution(
         requested_by_user_id=user.id,
         item_ids=payload.item_ids,
         force_full_history=payload.force_full_history,
     )
+    try:
+        if payload.item_ids:
+            # The assets are already chosen: no selection step needed.
+            task = run_task(
+                ingest_quotes,
+                asset_ids=payload.item_ids,
+                execution_id=execution.id,
+                force_full_history=payload.force_full_history,
+            )
+        else:
+            task = run_task_by_name(
+                INGEST_QUOTES_FOR_HELD_ASSETS_TASK,
+                execution.id,
+                payload.force_full_history,
+            )
+        return await service.set_task_id(execution.id, task.id)
+    except Exception as exc:
+        await service.fail(execution.id, exc)
+        raise IntegrationUnavailable(provider='task_queue') from exc
 
 
 @router.get(
@@ -85,10 +114,20 @@ async def run_market_data_series_ingestion(
     user: User = Depends(current_superuser),
     service: DataIngestionService = Depends(get_data_ingestion_service),
 ):
-    return await service.request_series_execution(
+    execution = await service.request_series_execution(
         requested_by_user_id=user.id,
         force_full_history=payload.force_full_history,
     )
+    try:
+        task = run_task(
+            ingest_market_data_series,
+            execution.id,
+            payload.force_full_history,
+        )
+        return await service.set_task_id(execution.id, task.id)
+    except Exception as exc:
+        await service.fail(execution.id, exc)
+        raise IntegrationUnavailable(provider='task_queue') from exc
 
 
 @router.get('/usd_brl', response_model=list[DataIngestionExecutionResponse])
@@ -116,7 +155,17 @@ async def run_usd_brl_ingestion(
     user: User = Depends(current_superuser),
     service: DataIngestionService = Depends(get_data_ingestion_service),
 ):
-    return await service.request_usd_brl_execution(
+    execution = await service.request_usd_brl_execution(
         requested_by_user_id=user.id,
         force_full_history=payload.force_full_history,
     )
+    try:
+        task = run_task(
+            ingest_usd_brl,
+            execution.id,
+            payload.force_full_history,
+        )
+        return await service.set_task_id(execution.id, task.id)
+    except Exception as exc:
+        await service.fail(execution.id, exc)
+        raise IntegrationUnavailable(provider='task_queue') from exc

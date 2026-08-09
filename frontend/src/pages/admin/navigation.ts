@@ -12,12 +12,23 @@ export interface AdminNavigationSection {
 
 export const adminNavigationSections: AdminNavigationSection[] = [
   {
-    id: 'market-data',
-    label: 'Market Data',
+    id: 'registrations',
+    label: 'Cadastros',
     defaultPath: '/admin/assets',
     items: [
       { label: 'Ativos', path: '/admin/assets' },
       { label: 'Eventos', path: '/admin/events' },
+      { label: 'Corretoras', path: '/admin/brokers' },
+    ],
+  },
+  {
+    id: 'market-data',
+    label: 'Dados de Mercado',
+    defaultPath: '/admin/market-data/usd-brl',
+    items: [
+      { label: 'Dólar', path: '/admin/market-data/usd-brl' },
+      { label: 'Séries', path: '/admin/market-data/series' },
+      { label: 'Cotações de ativos', path: '/admin/market-data/quotes' },
     ],
   },
   {
@@ -31,13 +42,8 @@ export const adminNavigationSections: AdminNavigationSection[] = [
         path: '/admin/market-data-series-ingestion',
       },
       { label: 'USD/BRL', path: '/admin/usd-brl-ingestion' },
+      { label: 'Consolidação', path: '/admin/consolidation' },
     ],
-  },
-  {
-    id: 'registrations',
-    label: 'Cadastros',
-    defaultPath: '/admin/brokers',
-    items: [{ label: 'Corretoras', path: '/admin/brokers' }],
   },
   {
     id: 'users',
@@ -52,6 +58,7 @@ export const adminNavigationSections: AdminNavigationSection[] = [
     items: [
       { label: 'Recursos de IA', path: '/admin/ai-features' },
       { label: 'Design System', path: '/admin/design-system' },
+      { label: 'Arquitetura', path: '/admin/architecture' },
     ],
   },
 ]

@@ -1,3 +1,4 @@
+import math
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
@@ -192,6 +193,22 @@ class SQLAlchemyRepository:
         return [obj.id for obj in instances]
             
 
+    @staticmethod
+    def _persistable(value: Any) -> Any:
+        """Turn a missing numeric into NULL.
+
+        Rows built from DataFrames carry ``NaN`` where a provider had no value.
+        PostgreSQL ``numeric`` accepts NaN, so the write succeeds and the bad
+        value only surfaces later, when reading it back fails to serialize to
+        JSON. Absent means NULL, so normalize it here, at the single point where
+        DataFrame-shaped rows become SQL.
+        """
+        if isinstance(value, float) and not math.isfinite(value):
+            return None
+        if isinstance(value, Decimal) and not value.is_finite():
+            return None
+        return value
+
     async def upsert_bulk(self, model: ModelType, data: list[dict], unique_columns: list[str]):
         if not unique_columns:
             raise ValueError("unique_columns must be provided for upsert operation")
@@ -222,7 +239,8 @@ class SQLAlchemyRepository:
             DO UPDATE SET {update_stmt}
         """
 
-        await self.session.execute(text(sql), data)
+        rows = [{key: self._persistable(value) for key, value in row.items()} for row in data]
+        await self.session.execute(text(sql), rows)
 
     async def update(
         self,

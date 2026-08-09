@@ -4,7 +4,6 @@ from datetime import date, timedelta
 
 from app.config.logger import logger
 from app.core.exceptions import NotFoundError
-from app.modules.market_data.domain.constants import INDEX
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.domain.ingestion import DataIngestionType
@@ -50,9 +49,7 @@ class MarketDataSeriesIngestionService:
         try:
             async with self.uow_factory() as uow:
                 available = await uow.market_data.get_all(MarketDataSeries)
-                series_by_id = {
-                    series.id: series for series in available if series.id != INDEX.USDBRL
-                }
+                series_by_id = {series.id: series for series in available}
                 item_ids = requested_ids or list(series_by_id)
                 missing = [item_id for item_id in item_ids if item_id not in series_by_id]
                 if missing:
@@ -141,6 +138,7 @@ class MarketDataSeriesIngestionService:
                         rows,
                         unique_columns=['series_id', 'date'],
                     )
+                    await uow.commit()
             await self.ingestion_service.finish_attempt(
                 execution_id,
                 attempt_id,

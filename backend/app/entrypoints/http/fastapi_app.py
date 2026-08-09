@@ -81,13 +81,8 @@ def register_exception_handlers(app: FastAPI) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from app.entrypoints.worker.task_runner import run_task
-    from app.modules.market_data.tasks.consolidate_indexes_history import (
-        consolidate_indexes_history,
-    )
-
-    logger.info("🚀 Disparando consolidate_indexes_history no startup")
-    run_task(consolidate_indexes_history)
+    # Ingestion is scheduled work: the beat schedule owns when series and USD/BRL
+    # are refreshed. The HTTP process does not dispatch ingestion on startup.
     try:
         yield
     finally:

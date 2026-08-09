@@ -1,9 +1,14 @@
+from datetime import date
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.composition.market_data import get_market_data_read_service
 from app.modules.market_data.api.index.schemas import MarketDataSeriesResponse
+from app.modules.market_data.api.series.schemas import (
+    MarketDataSeriesHistoryPoint,
+    MarketDataSeriesOption,
+)
 from app.modules.market_data.service.market_data_service import MarketDataReadService
 
 router = APIRouter(prefix='/series', tags=['Market Data Series'])
@@ -14,3 +19,20 @@ async def list_market_data_series(
     service: MarketDataReadService = Depends(get_market_data_read_service),
 ):
     return await service.list_market_data_series()
+
+
+@router.get('/options', response_model=List[MarketDataSeriesOption])
+async def list_market_data_series_options(
+    service: MarketDataReadService = Depends(get_market_data_read_service),
+):
+    """Selectable series, for pickers that only need identity."""
+    return await service.list_market_data_series()
+
+
+@router.get('/{series_id}/history', response_model=List[MarketDataSeriesHistoryPoint])
+async def get_market_data_series_history(
+    series_id: int,
+    start_date: date | None = Query(default=None),
+    service: MarketDataReadService = Depends(get_market_data_read_service),
+):
+    return await service.get_series_history(series_id, start_date=start_date)

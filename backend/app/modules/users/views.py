@@ -1,8 +1,7 @@
 from typing import List
 
 from app.config.settings import settings
-from app.infra.db.dependencies import get_repository
-from app.infra.db.repositories.base_repository import SQLAlchemyRepository
+from app.infra.db.unit_of_work import UnitOfWork, get_uow
 from app.modules.users.db import get_user_db
 from app.modules.users.manager import UserManager
 from app.modules.users.domain import User
@@ -88,5 +87,6 @@ def setup_user_views(app: FastAPI):
     )
 
     @app.get('/users', response_model=List[UserRead], tags=['Usuários'])
-    async def list_users(repository: SQLAlchemyRepository = Depends(get_repository)):
-        return await repository.get(User, order_by='id')
+    async def list_users(uow: UnitOfWork = Depends(get_uow)):
+        async with uow:
+            return await uow.repository.get(User, order_by='id')

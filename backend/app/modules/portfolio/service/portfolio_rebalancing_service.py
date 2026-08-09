@@ -30,45 +30,38 @@ from app.modules.portfolio.repositories import PortfolioRepository
 
 
 class PortfolioRebalancingService:
-    def __init__(
-        self,
-        repository: PortfolioRepository | None = None,
-        uow: UnitOfWork | None = None,
-    ):
-        self.repository = repository
+    def __init__(self, uow: UnitOfWork):
         self.uow = uow
 
     async def get_rebalancing_data(self, portfolio_id: int) -> RebalancingResponse:
         """Return current positions enriched with target allocations and differences."""
-        if self.repository is None:
-            raise RuntimeError('A repository is required for this read operation')
-        rows = await self.repository.get_position_on_date(portfolio_id)
+        async with self.uow as uow:
+            rows = await uow.portfolios.get_position_on_date(portfolio_id)
+            if not rows:
+                return RebalancingResponse(
+                    portfolio_id=portfolio_id,
+                    total_value=0,
+                    categories=[],
+                )
 
-        if not rows:
-            return RebalancingResponse(
-                portfolio_id=portfolio_id,
-                total_value=0,
-                categories=[],
+            # Load categories with their assignments (which hold asset-level targets)
+            categories = await uow.portfolios.get(
+                CustomCategory,
+                by={'portfolio_id': portfolio_id},
+                relations=['assignments'],
             )
+
+            # Build a map (asset_id) → assignment for this portfolio
+            assignment_map = {}
+            for cat in categories:
+                for assignment in cat.assignments:
+                    assignment_map[assignment.asset_id] = assignment
 
         positions = [
             {**dict(row), 'value': (row['quantity'] or 0) * (row['price'] or 0)}
             for row in rows
         ]
         total_value = sum(p['value'] for p in positions)
-
-        # Load categories with their assignments (which hold asset-level targets)
-        categories = await self.repository.get(
-            CustomCategory,
-            by={'portfolio_id': portfolio_id},
-            relations=['assignments'],
-        )
-
-        # Build a map (asset_id) → assignment for this portfolio
-        assignment_map = {}
-        for cat in categories:
-            for assignment in cat.assignments:
-                assignment_map[assignment.asset_id] = assignment
 
         # Group positions by category
         category_groups = {}
@@ -161,12 +154,11 @@ class PortfolioRebalancingService:
         - Sum of category target percentages must equal 100.
         - Sum of asset target percentages within each category must equal 100.
         """
-        if self.uow is None:
-            raise RuntimeError('A UnitOfWork is required for this write operation')
         portfolio_id = payload.portfolio_id
 
         async with self.uow as uow:
             await self._save_targets(uow.portfolios, payload, portfolio_id)
+            await uow.commit()
 
     async def _save_targets(
         self,

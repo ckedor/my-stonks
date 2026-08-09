@@ -47,7 +47,8 @@ class MarketIndexesTimeSeries(RootModel[Dict[str, List[IndexPoint]]]):
 
 class UsdBrlPoint(BaseModel):
     date: date
-    usdbrl: float
+    usd_brl: float
+    brl_usd: float
 
 
 class USD_BRL_History(RootModel[List[UsdBrlPoint]]):

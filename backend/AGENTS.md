@@ -27,15 +27,32 @@ Provider calls use adapters/integrations behind the service layer.
 
 - Treat `AsyncSession` as an infrastructure detail. Do not pass it to routes,
   services, domain code, or Celery tasks.
-- Writes use `UnitOfWork`; it owns the session lifecycle, shared repositories,
-  commit on successful exit, rollback on exception, and close.
-- Simple reads inject a repository whose dependency/factory owns the session
-  lifecycle. Do not use a write UoW or add a commit for ordinary reads.
-- When one concrete read needs multiple repositories sharing a session, use a
-  small repository factory for that flow. Do not introduce read-UoW
-  hierarchies preemptively.
-- Keep SQLAlchemy calls inside `infra/db/`, repositories, UoW, and persistence
-  factories. Any exception must be explicitly justified.
+- `UnitOfWork` is the only persistence entry point for application services.
+  A service that touches the database takes `uow: UnitOfWork` and nothing else
+  for persistence. Never inject a repository into a service.
+- Every persistence access opens the scope explicitly:
+
+      async with self.uow as uow:
+          ...uow.portfolios / uow.assets / uow.quotes / ...
+
+- Reads open the scope and leave. They do not commit.
+- Writes call `await uow.commit()` before leaving the scope. Anything not
+  committed is rolled back on exit, so a missing commit silently discards the
+  write.
+- A read that is part of a write use case uses the same scope and the same
+  `uow.<repository>`.
+- One scope per use case, not one per repository call. Do not nest
+  `async with self.uow`: a `UnitOfWork` cannot be entered twice. Two services
+  used together need two `UnitOfWork` instances (see `composition/`).
+- Services needing several independent transactions (concurrent ingestion
+  fan-out) take `uow_factory: Callable[[], UnitOfWork]` instead. This is the
+  only exception, and it exists because one instance cannot be entered
+  concurrently.
+- Routers never import `UnitOfWork` or a repository. They depend on a provider
+  from `composition/`, which is what the `api-boundary` import contract
+  enforces.
+- Keep SQLAlchemy calls inside `infra/db/`, repositories, and the UoW.
+  Any exception must be explicitly justified.
 - Domain entities using imperative mapping remain in their module's `domain/`.
   Their SQLAlchemy `Table` definitions and mappings belong in `infra/db/tables/`
   and `infra/db/mappings/` respectively.

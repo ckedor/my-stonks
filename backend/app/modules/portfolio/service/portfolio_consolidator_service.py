@@ -21,10 +21,12 @@ from app.modules.market_data.domain.constants import (
 )
 from app.modules.portfolio.domain.constants import USER_CONFIGURATION
 from app.modules.market_data.domain.market_data_series import MarketDataSeriesHistory
+from app.modules.market_data.domain.quote import persisted_close_prices_df
+from app.modules.market_data.domain.usd_brl import usd_brl_history_to_df
 from app.modules.portfolio.domain.entities import Dividend, PortfolioUserConfiguration, Position
 from app.infra.db.unit_of_work import UnitOfWork
 from app.lib.utils.df import rows_to_df
-from app.modules.market_data.service.market_data_service import MarketDataService
+from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.portfolio.domain.fixed_income import calculate_fixed_income_prices
 from app.modules.portfolio.repositories import PortfolioRepository
 
@@ -44,18 +46,11 @@ class PortfolioConsolidatorService:
     def __init__(
         self,
         *,
-        market_data_service: MarketDataService,
-        uow: UnitOfWork | None = None,
-        repository: PortfolioRepository | None = None,
+        provider: MarketDataProvider,
+        uow: UnitOfWork,
     ):
-        self.market_data_service = market_data_service
+        self.provider = provider
         self.uow = uow
-        self.repository = repository
-
-    def _read_repository(self) -> PortfolioRepository:
-        if self.repository is None:
-            raise RuntimeError('A repository is required for this read operation')
-        return self.repository
 
     async def get_asset_ids_to_consolidate(self, portfolio_id: int) -> list[int]:
         """Retorna os asset_ids com posições recentes a consolidar.
@@ -63,15 +58,16 @@ class PortfolioConsolidatorService:
         Janela definida em ``portfolio_consolidation.DELTA_DAYS_FOR_PORTFOLIO_CONSOLIDATION``.
         Ativos vendidos e sem posição na janela não voltam ao fluxo incremental.
         """
-        recent_ids = await self._read_repository().get_most_recent_asset_ids_from_position(
-            portfolio_id=portfolio_id,
-            delta_days=portfolio_consolidation.DELTA_DAYS_FOR_PORTFOLIO_CONSOLIDATION,
-        )
-        return recent_ids
+        async with self.uow as uow:
+            return await uow.portfolios.get_most_recent_asset_ids_from_position(
+                portfolio_id=portfolio_id,
+                delta_days=portfolio_consolidation.DELTA_DAYS_FOR_PORTFOLIO_CONSOLIDATION,
+            )
 
     async def get_asset_ids_with_transactions(self, portfolio_id: int) -> list[int]:
         """Retorna todos os asset_ids com transações no portfolio."""
-        asset_ids = await self._read_repository().get_asset_ids_with_transactions(portfolio_id)
+        async with self.uow as uow:
+            asset_ids = await uow.portfolios.get_asset_ids_with_transactions(portfolio_id)
         if not asset_ids:
             raise NotFoundError(
                 f'Transactions not found for portfolio {portfolio_id}',
@@ -79,73 +75,67 @@ class PortfolioConsolidatorService:
         return asset_ids
 
     async def recalculate_position_asset(self, portfolio_id, asset_id):
-        if self.uow is None:
-            raise RuntimeError('A UnitOfWork is required for this write operation')
-        try:
-            async with self.uow as uow:
-                repository = uow.portfolios
-                market_data_repository = uow.market_data
-                quote_repository = uow.quotes
-                asset = await repository.get_asset_details(asset_id)
-                if asset is None:
-                    raise NotFoundError(f'Asset {asset_id} not found')
-                logger.info(f'Consolidando ativo: {asset.ticker}')
+        async with self.uow as uow:
+            repository = uow.portfolios
+            asset = await repository.get_asset_details(asset_id)
+            if asset is None:
+                raise NotFoundError(f'Asset {asset_id} not found')
+            logger.info(f'Consolidando ativo: {asset.ticker}')
 
-                transaction_rows = await repository.get_transactions(
-                    portfolio_id=portfolio_id, asset_id=asset_id
+            transaction_rows = await repository.get_transactions(
+                portfolio_id=portfolio_id, asset_id=asset_id
+            )
+            if not transaction_rows:
+                await repository.delete(
+                    Position,
+                    by={'asset_id': asset_id, 'portfolio_id': portfolio_id},
                 )
-                if not transaction_rows:
-                    await repository.delete(
-                        Position,
-                        by={'asset_id': asset_id, 'portfolio_id': portfolio_id},
-                    )
-                    return
+                await uow.commit()
+                return
 
-                events = await repository.get(
-                    Event,
-                    order_by='date asc',
-                    by={'asset_id': asset.id},
-                )
-                dividends_df = await repository.get(
-                    Dividend,
-                    by={'portfolio_id': portfolio_id, 'asset_id': asset_id},
-                    as_df=True,
-                )
-                init_date = pd.to_datetime(min(r['date'] for r in transaction_rows))
-                usd_brl_df = await self.market_data_service.get_usd_brl_history(
-                    init_date,
-                    repository=market_data_repository,
-                )
-                close_prices_df = await self._get_asset_prices(
-                    asset,
-                    transaction_rows,
-                    dividends_df,
-                    init_date,
-                    repository=repository,
-                    quote_repository=quote_repository,
-                )
-                position_df = portfolio_consolidation.consolidate_positions(
-                    transaction_rows=transaction_rows,
-                    events=events,
-                    close_prices_df=close_prices_df,
-                    usd_brl_df=usd_brl_df,
-                    dividends_df=dividends_df,
-                )
-                await self._persist_positions_db(
-                    position_df,
-                    init_date,
-                    asset,
-                    portfolio_id,
-                    repository=repository,
-                )
-                logger.info(f'Sucesso ao consolidar ativo: {asset.ticker}')
-        except Exception as e:
-            ticker = asset.ticker if 'asset' in dir() and asset else f'id={asset_id}'
-            logger.error(f'Falha ao calcular posições para {ticker}: {e}')
-            raise
+            events = await repository.get(
+                Event,
+                order_by='date asc',
+                by={'asset_id': asset.id},
+            )
+            dividends_df = await repository.get(
+                Dividend,
+                by={'portfolio_id': portfolio_id, 'asset_id': asset_id},
+                as_df=True,
+            )
+            init_date = pd.to_datetime(min(r['date'] for r in transaction_rows))
+            usd_brl_history = await uow.market_data.get_usd_brl_history(
+                pd.Timestamp(init_date).date()
+            )
+            usd_brl_df = usd_brl_history_to_df(usd_brl_history)
+            close_prices_df = await self._get_asset_prices(
+                asset,
+                transaction_rows,
+                dividends_df,
+                init_date,
+                repository=repository,
+                quote_repository=uow.quotes,
+            )
+            position_df = portfolio_consolidation.consolidate_positions(
+                transaction_rows=transaction_rows,
+                events=events,
+                close_prices_df=close_prices_df,
+                usd_brl_df=usd_brl_df,
+                dividends_df=dividends_df,
+            )
+            self._reject_unpriced_positions(position_df, asset)
+            await self._persist_positions_db(
+                position_df,
+                init_date,
+                asset,
+                portfolio_id,
+                repository=repository,
+            )
+            await uow.commit()
+            logger.info(f'Sucesso ao consolidar ativo: {asset.ticker}')
 
+    @staticmethod
     async def _get_asset_prices(  # noqa: PLR0913
-        self,
         asset,
         transaction_rows,
         dividends_df,
@@ -157,7 +147,7 @@ class PortfolioConsolidatorService:
         """Fetch native-currency close prices for ``asset``.
 
         Routes by asset type to the appropriate data source (fixed income,
-        treasury, market data provider) and returns a DataFrame with columns
+        treasury, persisted quotes) and returns a DataFrame with columns
         ``date``, ``close``, ``currency`` (currency as ``CURRENCY`` id).
         """
         if portfolio_consolidation.is_fixed_income(asset):
@@ -193,11 +183,52 @@ class PortfolioConsolidatorService:
             prices_df['currency'] = CURRENCY.BRL
             return prices_df
 
-        return await self.market_data_service.get_asset_close_prices(
-            asset_id=asset.id,
-            ticker=asset.ticker,
-            init_date=init_date,
-            quote_repository=quote_repository,
+        # Persisted quotes only: this read never falls back to a provider, so
+        # missing history is explicit and quote ingestion can run before
+        # consolidation.
+        quotes = await quote_repository.get_quotes(
+            [asset.id],
+            start_date=pd.Timestamp(init_date).date(),
+        )
+        if not quotes:
+            raise NotFoundError(
+                f'No persisted quotes found for asset {asset.ticker}',
+                context={'asset_id': asset.id, 'ticker': asset.ticker},
+            )
+        close_prices_df = persisted_close_prices_df(quotes)
+        if close_prices_df.empty:
+            raise NotFoundError(
+                f'No persisted close prices found for asset {asset.ticker}',
+                context={'asset_id': asset.id, 'ticker': asset.ticker},
+            )
+        return close_prices_df
+
+    @staticmethod
+    def _reject_unpriced_positions(position_df: pd.DataFrame, asset: Asset) -> None:
+        """Refuse to store a position that has no price.
+
+        It means the asset holds a position on a date its quote history does not
+        reach. ``position.price`` is NOT NULL, so without this the whole
+        portfolio consolidation dies on an opaque integrity error that names
+        neither the asset nor the gap.
+        """
+        if position_df.empty or 'price' not in position_df:
+            return
+        unpriced = position_df[position_df['price'].isna()]
+        if unpriced.empty:
+            return
+        first, last = unpriced['date'].min(), unpriced['date'].max()
+        raise NotFoundError(
+            f'No quotes for {asset.ticker} covering positions held between '
+            f'{first:%Y-%m-%d} and {last:%Y-%m-%d}. Ingest its quote history '
+            f'from {first:%Y-%m-%d} before consolidating.',
+            context={
+                'asset_id': asset.id,
+                'ticker': asset.ticker,
+                'missing_from': f'{first:%Y-%m-%d}',
+                'missing_to': f'{last:%Y-%m-%d}',
+                'unpriced_days': int(len(unpriced)),
+            },
         )
 
     @staticmethod
@@ -276,14 +307,13 @@ class PortfolioConsolidatorService:
         )
 
     async def consolidate_fii_dividends(self, portfolio_id: int):
-        if self.uow is None:
-            raise RuntimeError('A UnitOfWork is required for this write operation')
         async with self.uow as uow:
             repository = uow.portfolios
             await self._consolidate_fii_dividends(
                 portfolio_id,
                 repository=repository,
             )
+            await uow.commit()
 
     async def _consolidate_fii_dividends(
         self,
@@ -315,7 +345,7 @@ class PortfolioConsolidatorService:
         if positions_df.empty:
             return
 
-        fii_dividends_df = await self.market_data_service.get_fii_dividends_df(
+        fii_dividends_df = await self.provider.get_fii_dividends_df(
             positions_df['ticker'].unique().tolist()
         )
 
@@ -351,4 +381,4 @@ class PortfolioConsolidatorService:
         logger.info(f'Dividendos de {row["ticker"]} na data {row["date"]} consolidados com sucesso')
 
     async def aclose(self) -> None:
-        await self.market_data_service.aclose()
+        await self.provider.close()

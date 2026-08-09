@@ -2,9 +2,9 @@
 
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
-from app.composition.market_data import get_asset_read_service, get_asset_write_service
+from app.composition.market_data import get_asset_service
 from app.modules.market_data.api.asset.schemas import (
     AssetCreate,
     AssetDetailsOut,
@@ -12,12 +12,14 @@ from app.modules.market_data.api.asset.schemas import (
     AssetType,
     AssetUpdate,
     ExchangeOut,
+    FavoriteAsset,
     FixedIncomeAsset,
     FixedIncomeType,
     TreasuryBondTypeOut,
 )
 from app.modules.market_data.service.asset_service import AssetService
-from app.modules.users.views import current_superuser
+from app.modules.users.domain import User
+from app.modules.users.views import current_active_user, current_superuser
 
 router = APIRouter(prefix='/asset', tags=['Asset'])
 
@@ -27,7 +29,7 @@ router = APIRouter(prefix='/asset', tags=['Asset'])
 # ---------------------------------------------------------------------------
 @router.get('/type', response_model=List[AssetType])
 async def list_asset_types(
-    service: AssetService = Depends(get_asset_read_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """List all asset types."""
     return await service.list_asset_types()
@@ -36,7 +38,7 @@ async def list_asset_types(
 @router.post('/fixed_income')
 async def create_fixed_income(
     fixed_income: FixedIncomeAsset,
-    service: AssetService = Depends(get_asset_write_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """Create a new fixed income asset."""
     return await service.create_fixed_income(fixed_income.model_dump())
@@ -44,7 +46,7 @@ async def create_fixed_income(
 
 @router.get('/fixed_income/type', response_model=List[FixedIncomeType])
 async def list_fixed_income_types(
-    service: AssetService = Depends(get_asset_read_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """List all fixed income types."""
     return await service.list_fixed_income_types()
@@ -52,7 +54,7 @@ async def list_fixed_income_types(
 
 @router.get('/fii/segment')
 async def list_fii_segments(
-    service: AssetService = Depends(get_asset_read_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """List FII segments."""
     return await service.list_fii_segments()
@@ -60,7 +62,7 @@ async def list_fii_segments(
 
 @router.get('/etf/segment')
 async def list_etf_segments(
-    service: AssetService = Depends(get_asset_read_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """List all ETF segments."""
     return await service.list_etf_segments()
@@ -68,7 +70,7 @@ async def list_etf_segments(
 
 @router.get('/treasury_bond/type', response_model=List[TreasuryBondTypeOut])
 async def list_treasury_bond_types(
-    service: AssetService = Depends(get_asset_read_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """List all treasury bond types."""
     return await service.list_treasury_bond_types()
@@ -76,7 +78,7 @@ async def list_treasury_bond_types(
 
 @router.get('/exchange', response_model=List[ExchangeOut])
 async def list_exchanges(
-    service: AssetService = Depends(get_asset_read_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """List all exchanges."""
     return await service.list_exchanges()
@@ -84,10 +86,30 @@ async def list_exchanges(
 
 @router.get('/index')
 async def list_indexes(
-    service: AssetService = Depends(get_asset_read_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """List all indexes (for fixed income reference)."""
     return await service.list_indexes()
+
+
+@router.get('/favorites', response_model=List[FavoriteAsset])
+async def list_favorite_assets(
+    limit: int = Query(default=8, ge=1, le=24),
+    user: User = Depends(current_active_user),
+    service: AssetService = Depends(get_asset_service),
+):
+    """The assets this user opens most often."""
+    return await service.list_favorite_assets(user.id, limit)
+
+
+@router.post('/{asset_id}/visit', status_code=204)
+async def record_asset_visit(
+    asset_id: int,
+    user: User = Depends(current_active_user),
+    service: AssetService = Depends(get_asset_service),
+):
+    """Count a visit, which is what ranks the favourites."""
+    await service.record_visit(user.id, asset_id)
 
 
 # ---------------------------------------------------------------------------
@@ -99,7 +121,7 @@ async def list_indexes(
     dependencies=[Depends(current_superuser)],
 )
 async def list_events(
-    service: AssetService = Depends(get_asset_read_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """List all asset events."""
     return await service.list_events()
@@ -108,7 +130,7 @@ async def list_events(
 @router.post('/event', dependencies=[Depends(current_superuser)])
 async def create_event(
     event: AssetEvent,
-    service: AssetService = Depends(get_asset_write_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """Create a new asset event."""
     return await service.create_event(event)
@@ -118,7 +140,7 @@ async def create_event(
 async def update_event(
     event_id: int,
     event: AssetEvent,
-    service: AssetService = Depends(get_asset_write_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """Update an asset event."""
     payload = event.model_copy(update={'id': event_id})
@@ -128,7 +150,7 @@ async def update_event(
 @router.delete('/event/{event_id}', dependencies=[Depends(current_superuser)])
 async def delete_event(
     event_id: int,
-    service: AssetService = Depends(get_asset_write_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """Delete an asset event."""
     await service.delete_event(event_id)
@@ -140,7 +162,7 @@ async def delete_event(
 # ---------------------------------------------------------------------------
 @router.get('')
 async def list_assets(
-    service: AssetService = Depends(get_asset_read_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """List all assets (cached for 24h)."""
     return await service.list_assets()
@@ -149,7 +171,7 @@ async def list_assets(
 @router.post('')
 async def create_asset(
     data: AssetCreate,
-    service: AssetService = Depends(get_asset_write_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """Create a new asset with subclass data."""
     return await service.create_asset(data.model_dump())
@@ -158,7 +180,7 @@ async def create_asset(
 @router.get('/{asset_id}', response_model=AssetDetailsOut)
 async def get_asset(
     asset_id: int,
-    service: AssetService = Depends(get_asset_read_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """Get a single asset with all details."""
     return await service.get_asset(asset_id)
@@ -168,7 +190,7 @@ async def get_asset(
 async def update_asset(
     asset_id: int,
     data: AssetUpdate,
-    service: AssetService = Depends(get_asset_write_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """Update an asset with subclass data."""
     return await service.update_asset({**data.model_dump(), 'id': asset_id})
@@ -177,7 +199,7 @@ async def update_asset(
 @router.delete('/{asset_id}')
 async def delete_asset(
     asset_id: int,
-    service: AssetService = Depends(get_asset_write_service),
+    service: AssetService = Depends(get_asset_service),
 ):
     """Delete an asset by ID."""
     return await service.delete_asset(asset_id)

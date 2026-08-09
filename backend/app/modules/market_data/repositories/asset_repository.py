@@ -1,12 +1,7 @@
-from sqlalchemy import func, select, update
+from sqlalchemy import select, text, update
 
+from app.modules.market_data.domain.asset_visit import AssetVisit
 from app.modules.market_data.domain.assets import Asset
-from app.modules.portfolio.domain.entities import (
-    CustomCategoryAssignment,
-    Dividend,
-    Position,
-    Transaction,
-)
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.modules.market_data.domain.ingestion import (
     DataIngestionAttempt,
@@ -25,21 +20,30 @@ class AssetRepository(SQLAlchemyRepository):
         result = await self.session.execute(select(Asset).where(Asset.id.in_(asset_ids)))
         return list(result.scalars().all())
 
-    async def get_portfolio_reference_counts(self, asset_id: int) -> dict[str, int]:
-        reference_models = {
-            'transactions': Transaction,
-            'positions': Position,
-            'dividends': Dividend,
-            'category_assignments': CustomCategoryAssignment,
-        }
-        references: dict[str, int] = {}
-        for name, model in reference_models.items():
-            count = await self.session.scalar(
-                select(func.count()).select_from(model).where(model.asset_id == asset_id)
-            )
-            if count:
-                references[name] = int(count)
-        return references
+    async def record_asset_visit(self, user_id: int, asset_id: int) -> None:
+        """Count one more visit, creating the row on the first one."""
+        await self.session.execute(
+            text("""
+                INSERT INTO market_data.asset_visit (user_id, asset_id, visit_count, last_visited_at)
+                VALUES (:user_id, :asset_id, 1, now())
+                ON CONFLICT (user_id, asset_id)
+                DO UPDATE SET
+                    visit_count = market_data.asset_visit.visit_count + 1,
+                    last_visited_at = now()
+            """),
+            {'user_id': user_id, 'asset_id': asset_id},
+        )
+
+    async def get_most_visited_assets(self, user_id: int, limit: int) -> list[tuple]:
+        """The user's most opened assets, most visited first."""
+        result = await self.session.execute(
+            select(Asset, AssetVisit.visit_count, AssetVisit.last_visited_at)
+            .join(AssetVisit, AssetVisit.asset_id == Asset.id)
+            .where(AssetVisit.user_id == user_id)
+            .order_by(AssetVisit.visit_count.desc(), AssetVisit.last_visited_at.desc())
+            .limit(limit)
+        )
+        return list(result.all())
 
     async def detach_ingestion_attempts(self, asset_id: int) -> None:
         quote_execution_ids = select(DataIngestionExecution.id).where(
