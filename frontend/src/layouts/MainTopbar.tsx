@@ -13,10 +13,13 @@ import AccountCircle from '@mui/icons-material/AccountCircle'
 import AddIcon from '@mui/icons-material/Add'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import CategoryIcon from '@mui/icons-material/Category'
+import CloseIcon from '@mui/icons-material/Close'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import EditIcon from '@mui/icons-material/Edit'
+import ExpandLess from '@mui/icons-material/ExpandLess'
 import ExpandMore from '@mui/icons-material/ExpandMore'
 import LightModeIcon from '@mui/icons-material/LightMode'
+import MenuIcon from '@mui/icons-material/Menu'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import SettingsIcon from '@mui/icons-material/Settings'
@@ -27,8 +30,12 @@ import {
   Box,
   Button,
   CircularProgress,
+  Collapse,
   Divider,
+  Drawer,
   IconButton,
+  List,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   ListSubheader,
@@ -38,8 +45,10 @@ import {
   Select,
   Snackbar,
   Toolbar,
-  Typography
+  Typography,
+  useMediaQuery
 } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -89,6 +98,12 @@ const mercadoColumns = [
   },
 ]
 
+// Same nav data drives the desktop mega-menus and the mobile collapsible drawer
+const navSections: { key: Section; label: string; columns: typeof carteiraColumns }[] = [
+  { key: 'carteira', label: 'Carteira', columns: carteiraColumns },
+  { key: 'mercado', label: 'Mercado', columns: mercadoColumns },
+]
+
 export default function MainTopbar() {
   const user = useAuthStore(s => s.user)
   const { portfolios, loading, selectedPortfolio, setSelectedPortfolio } = usePortfolioStore()
@@ -106,9 +121,21 @@ export default function MainTopbar() {
   const [openForm, setOpenForm] = useState(false)
   const [editMode, setEditMode] = useState(false)
 
-  // Section mega-menu anchors
+  // Section mega-menu anchors (desktop)
   const [carteiraAnchor, setCarteiraAnchor] = useState<null | HTMLElement>(null)
   const [mercadoAnchor, setMercadoAnchor] = useState<null | HTMLElement>(null)
+
+  // Mobile drawer with collapsible sections
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [openSections, setOpenSections] = useState<Record<Section, boolean>>(() => ({
+    carteira: getCurrentSection(location.pathname) === 'carteira',
+    mercado: getCurrentSection(location.pathname) === 'mercado',
+  }))
+
+  const toggleSection = (key: Section) =>
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
 
   // Quick actions menu
   const [actionsAnchor, setActionsAnchor] = useState<null | HTMLElement>(null)
@@ -163,6 +190,42 @@ export default function MainTopbar() {
     setOpenForm(true)
   }
 
+  const handlePortfolioSelect = (value: number) => {
+    if (value === -1) {
+      handleOpenEdit()
+      return
+    }
+    if (value === -2) {
+      handleOpenCreate()
+      return
+    }
+    setSelected(value)
+    const portfolio = portfolios.find((p) => p.id === value)
+    if (portfolio) setSelectedPortfolio(portfolio)
+  }
+
+  // Returned as an array (not a component) so the Select isn't remounted on every render
+  const renderPortfolioOptions = () => [
+    ...portfolios.map((p) => (
+      <MenuItem key={p.id} value={p.id}>
+        {p.name}
+      </MenuItem>
+    )),
+    <ListSubheader key="__divider">──────────</ListSubheader>,
+    <MenuItem key="__edit" value={-1}>
+      <Box display="flex" alignItems="center" gap={1}>
+        <EditIcon sx={{ color: 'primary.main' }} fontSize="small" />
+        <Typography sx={{ fontStyle: 'italic', color: 'primary.main' }}>Editar Carteira</Typography>
+      </Box>
+    </MenuItem>,
+    <MenuItem key="__create" value={-2}>
+      <Box display="flex" alignItems="center" gap={1}>
+        <AddIcon sx={{ color: 'primary.main' }} fontSize="small" />
+        <Typography sx={{ fontStyle: 'italic', color: 'primary.main' }}>Nova Carteira</Typography>
+      </Box>
+    </MenuItem>,
+  ]
+
   const handleSectionClick = (section: Section) => {
     if (section === 'carteira') navigate('/portfolio/overview')
     else navigate('/market/assets')
@@ -211,15 +274,29 @@ export default function MainTopbar() {
         sx={{ bgcolor: 'topbar.background' }}
       >
         <Toolbar sx={{ justifyContent: 'space-between', maxWidth: 1600, width: '100%', mx: 'auto' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, md: 2 }, minWidth: 0 }}>
+            {isMobile && (
+              <IconButton
+                edge="start"
+                aria-label="Abrir menu de navegação"
+                onClick={() => setDrawerOpen(true)}
+                sx={{ color: 'topbar.text' }}
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
+
             <Typography
               variant="h6"
+              noWrap
               sx={{ fontWeight: 'bold', cursor: 'pointer', color: 'topbar.text' }}
               onClick={() => navigate('/portfolio/overview')}
             >
               My Stonks
             </Typography>
 
+            {!isMobile && (
+              <>
             <Divider orientation="vertical" flexItem sx={{ mx: 1, borderColor: 'topbar.text', opacity: 0.3 }} />
 
             {/* Carteira button with underline */}
@@ -275,30 +352,20 @@ export default function MainTopbar() {
             >
               <MegaMenuContent columns={mercadoColumns} onClose={() => setMercadoAnchor(null)} />
             </Popover>
+              </>
+            )}
           </Box>
 
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             {loading ? (
               <CircularProgress size={24} />
             ) : (
+              !isMobile && (
               <>
                 <Select
                   MenuProps={{ disableScrollLock: true }}
                   value={selected ?? ''}
-                  onChange={(e) => {
-                    const value = Number(e.target.value)
-                    if (value === -1) {
-                      handleOpenEdit()
-                      return
-                    }
-                    if (value === -2) {
-                      handleOpenCreate()
-                      return
-                    }
-                    setSelected(value)
-                    const portfolio = portfolios.find((p) => p.id === value)
-                    if (portfolio) setSelectedPortfolio(portfolio)
-                  }}
+                  onChange={(e) => handlePortfolioSelect(Number(e.target.value))}
                   size="small"
                   IconComponent={ExpandMore}
                   sx={{ 
@@ -308,30 +375,10 @@ export default function MainTopbar() {
                   }}
                   renderValue={(value) => portfolios.find((p) => p.id === value)?.name || ''}
                 >
-                  {portfolios.map((p) => (
-                    <MenuItem key={p.id} value={p.id}>
-                      {p.name}
-                    </MenuItem>
-                  ))}
-                  <ListSubheader>──────────</ListSubheader>
-                  <MenuItem value={-1}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <EditIcon sx={{ color: 'primary.main' }} fontSize="small" />
-                      <Typography sx={{ fontStyle: 'italic', color: 'primary.main' }}>
-                        Editar Carteira
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                  <MenuItem value={-2}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <AddIcon sx={{ color: 'primary.main' }} fontSize="small" />
-                      <Typography sx={{ fontStyle: 'italic', color: 'primary.main' }}>
-                        Nova Carteira
-                      </Typography>
-                    </Box>
-                  </MenuItem>
+                  {renderPortfolioOptions()}
                 </Select>
               </>
+              )
             )}
 
             {/* Currency toggle */}
@@ -479,6 +526,117 @@ export default function MainTopbar() {
           </Box>
         </Toolbar>
       </AppBar>
+
+      {/* Mobile navigation: collapsible sections in a drawer */}
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        slotProps={{ paper: { sx: { width: 280, maxWidth: '85vw' } } }}
+      >
+        <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            My Stonks
+          </Typography>
+          <IconButton size="small" aria-label="Fechar menu" onClick={() => setDrawerOpen(false)}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
+
+        <Divider />
+
+        <Box sx={{ p: 2 }}>
+          {loading ? (
+            <CircularProgress size={24} />
+          ) : (
+            <Select
+              fullWidth
+              size="small"
+              MenuProps={{ disableScrollLock: true }}
+              value={selected ?? ''}
+              onChange={(e) => handlePortfolioSelect(Number(e.target.value))}
+              IconComponent={ExpandMore}
+              sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
+              renderValue={(value) => portfolios.find((p) => p.id === value)?.name || ''}
+            >
+              {renderPortfolioOptions()}
+            </Select>
+          )}
+        </Box>
+
+        <Divider />
+
+        <List disablePadding>
+          {navSections.map((section) => (
+            <Box key={section.key}>
+              <ListItemButton onClick={() => toggleSection(section.key)}>
+                <ListItemText
+                  primary={section.label}
+                  slotProps={{
+                    primary: {
+                      sx: {
+                        fontWeight: currentSection === section.key ? 700 : 500,
+                        color: currentSection === section.key ? 'primary.main' : 'text.primary',
+                      },
+                    },
+                  }}
+                />
+                {openSections[section.key] ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+
+              <Collapse in={openSections[section.key]} timeout="auto" unmountOnExit>
+                {section.columns.map((col) => (
+                  <Box key={col.title}>
+                    {/* A lone column repeating the section name adds nothing here */}
+                    {!(section.columns.length === 1 && col.title === section.label) && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          display: 'block',
+                          px: 3,
+                          pt: 1.5,
+                          pb: 0.5,
+                          color: 'text.secondary',
+                          fontWeight: 700,
+                          letterSpacing: 0.4,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {col.title}
+                      </Typography>
+                    )}
+                    {col.items.map((item) => (
+                      <ListItemButton
+                        key={item.path}
+                        onClick={() => {
+                          navigate(item.path)
+                          setDrawerOpen(false)
+                        }}
+                        sx={{ pl: 3, py: 0.75 }}
+                      >
+                        <ListItemText
+                          primary={item.text}
+                          slotProps={{
+                            primary: {
+                              sx: {
+                                fontSize: '0.9rem',
+                                fontWeight: isActive(item.path) ? 600 : 400,
+                                color: isActive(item.path) ? 'primary.main' : 'text.primary',
+                              },
+                            },
+                          }}
+                        />
+                      </ListItemButton>
+                    ))}
+                  </Box>
+                ))}
+              </Collapse>
+
+              <Divider />
+            </Box>
+          ))}
+        </List>
+      </Drawer>
 
       <PortfolioForm
         open={openForm}
