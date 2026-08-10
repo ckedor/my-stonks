@@ -13,6 +13,12 @@ from sqlalchemy.orm import selectinload
 
 ModelType = TypeVar('ModelType')
 
+#: Rows sent per ``upsert_bulk`` statement. Normalizing rows and binding them
+#: for the driver each allocate a copy per row, so writing a full quote history
+#: as a single statement holds several copies of the whole series at once. The
+#: chunks share one transaction, so the write stays all-or-nothing.
+UPSERT_CHUNK_SIZE = 1000
+
 
 class SQLAlchemyRepository:
     def __init__(self, session: AsyncSession):
@@ -239,8 +245,13 @@ class SQLAlchemyRepository:
             DO UPDATE SET {update_stmt}
         """
 
-        rows = [{key: self._persistable(value) for key, value in row.items()} for row in data]
-        await self.session.execute(text(sql), rows)
+        statement = text(sql)
+        for start in range(0, len(data), UPSERT_CHUNK_SIZE):
+            rows = [
+                {key: self._persistable(value) for key, value in row.items()}
+                for row in data[start : start + UPSERT_CHUNK_SIZE]
+            ]
+            await self.session.execute(statement, rows)
 
     async def update(
         self,
