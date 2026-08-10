@@ -301,28 +301,49 @@ class QuoteService:
             await uow.commit()
 
         semaphore = asyncio.Semaphore(self.max_concurrent_requests)
-        tasks = [
-            asyncio.create_task(
-                self._fetch_quotes(
+        results.extend(
+            await asyncio.gather(*[
+                self._ingest_asset(
                     asset,
                     start_date=start_date,
                     attempt_id=attempt_id,
                     parameters=parameters,
                     semaphore=semaphore,
-                )
-            )
-            for asset, start_date, attempt_id, parameters in pending_fetches
-        ]
-        for completed in asyncio.as_completed(tasks):
-            outcome = await completed
-            results.append(
-                await self._persist_asset_fetch(
-                    outcome,
                     execution_id=execution_id,
                 )
-            )
+                for asset, start_date, attempt_id, parameters in pending_fetches
+            ])
+        )
 
         return QuoteIngestionResult(assets=results)
+
+    async def _ingest_asset(  # noqa: PLR0913
+        self,
+        asset: AssetSnapshot,
+        *,
+        start_date: date | None,
+        attempt_id: int | None,
+        parameters: dict,
+        semaphore: asyncio.Semaphore,
+        execution_id: int | None,
+    ) -> AssetQuoteIngestionResult:
+        """Fetch one asset's quotes and persist them before freeing the slot.
+
+        Holding the semaphore across both halves is the point: a fetched
+        history stays alive only while its asset owns a slot, so peak memory is
+        bounded by ``max_concurrent_requests`` assets rather than by the size of
+        the run. Fetching everything up front and persisting afterwards kept
+        every completed response in memory until the sequential writer reached
+        it, which is what exhausted the worker on full-history ingestions.
+        """
+        async with semaphore:
+            outcome = await self._fetch_quotes(
+                asset,
+                start_date=start_date,
+                attempt_id=attempt_id,
+                parameters=parameters,
+            )
+            return await self._persist_asset_fetch(outcome, execution_id=execution_id)
 
     async def aclose(self) -> None:
         if self.provider is not None:
@@ -335,16 +356,14 @@ class QuoteService:
         start_date: date | None,
         attempt_id: int | None,
         parameters: dict,
-        semaphore: asyncio.Semaphore,
     ) -> _AssetFetchOutcome:
         try:
-            async with semaphore:
-                fetched = await self.provider.fetch_quotes(
-                    ticker=asset.ticker,
-                    asset_type_id=asset.asset_type_id,
-                    start_date=start_date,
-                    exchange=asset.exchange,
-                )
+            fetched = await self.provider.fetch_quotes(
+                ticker=asset.ticker,
+                asset_type_id=asset.asset_type_id,
+                start_date=start_date,
+                exchange=asset.exchange,
+            )
             parameters = {
                 **parameters,
                 'provider_parameters': fetched.parameters,
