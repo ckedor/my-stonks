@@ -102,7 +102,8 @@ Do not use:
 | Ingestion attempt | Tentativa de importação | Per-item work record within an execution. It records opaque item ID and label, source, parameters, status, row counts, and error. |
 | Manual trigger | Acionamento manual | Ingestion execution requested by an authorized user. |
 | Scheduled trigger | Acionamento agendado | Ingestion execution started by the scheduler. |
-| Execution status | Status da execução | Lifecycle state: queued, running, success, partial success, or failure. |
+| Execution status | Status da execução | Lifecycle state: queued, running, success, partial success, failure, or aborted. |
+| Aborted execution | Execução abortada | Ingestion execution stopped on purpose before reaching an outcome. It closes the attempts left open and releases the one-execution-per-type slot at once; the runner stops between items, so the item already in flight still finishes. |
 
 ## Portfolio activity and holdings
 

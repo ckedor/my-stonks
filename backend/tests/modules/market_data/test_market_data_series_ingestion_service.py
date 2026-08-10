@@ -78,6 +78,7 @@ async def test_series_service_selects_all_available_ids_and_runs_in_parallel():
         finish_attempt=AsyncMock(),
         finish=AsyncMock(),
         fail=AsyncMock(),
+        is_aborted=AsyncMock(return_value=False),
     )
     service = MarketDataSeriesIngestionService(
         uow_factory=FakeUoWFactory(repository),
@@ -128,6 +129,7 @@ async def test_full_series_ingestion_requests_maximum_history():
         finish_attempt=AsyncMock(),
         finish=AsyncMock(),
         fail=AsyncMock(),
+        is_aborted=AsyncMock(return_value=False),
     )
     service = MarketDataSeriesIngestionService(
         uow_factory=FakeUoWFactory(repository),
@@ -167,6 +169,7 @@ async def test_series_with_no_new_observations_finishes_successfully_without_ups
         finish_attempt=AsyncMock(),
         finish=AsyncMock(),
         fail=AsyncMock(),
+        is_aborted=AsyncMock(return_value=False),
     )
     service = MarketDataSeriesIngestionService(
         uow_factory=FakeUoWFactory(repository),

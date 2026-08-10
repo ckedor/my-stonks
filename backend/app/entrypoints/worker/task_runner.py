@@ -22,6 +22,16 @@ def run_task_by_name(task_name: str, *args, **kwargs):
     return celery_app.send_task(task_name, args=args, kwargs=kwargs)
 
 
+def revoke_task(task_id: str) -> None:
+    """Drop a task that has not been picked up by a worker yet.
+
+    A task already running is not interrupted: the worker runs a solo pool, so
+    there is no child process to signal. Stopping one is cooperative, driven by
+    the aborted execution its runner reads between items.
+    """
+    celery_app.control.revoke(task_id)
+
+
 def celery_async_task(name: str | None = None, **task_kwargs):
     def decorator(async_fn):
         task_name = name or async_fn.__name__

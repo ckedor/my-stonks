@@ -8,6 +8,7 @@ export type IngestionStatus =
   | 'success'
   | 'partial_success'
   | 'failure'
+  | 'aborted'
 
 export interface DataIngestionExecution {
   id: number
@@ -72,4 +73,14 @@ export const runDataIngestion = (
     .post<DataIngestionExecution>(DATA_INGESTION_ROUTES.run(ingestionType), {
       force_full_history: forceFullHistory,
     })
+    .then((response) => response.data)
+
+export const abortDataIngestion = (
+  ingestionType: DataIngestionType,
+  executionId: number,
+) =>
+  api
+    .post<DataIngestionExecution>(
+      DATA_INGESTION_ROUTES.abort(ingestionType, executionId),
+    )
     .then((response) => response.data)

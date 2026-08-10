@@ -21,6 +21,7 @@ from app.modules.market_data.domain.quote import (
     QuoteIngestionResult,
 )
 from app.modules.market_data.domain.ingestion import (
+    ABORTED_STATUS,
     DataIngestionAttempt,
     DataIngestionExecution,
 )
@@ -337,6 +338,16 @@ class QuoteService:
         it, which is what exhausted the worker on full-history ingestions.
         """
         async with semaphore:
+            # Checked here rather than before the slot: an asset that waited its
+            # turn may have been queued behind an abort. Its attempt is already
+            # closed by the abort itself, so this only has to stop the work.
+            if await self._execution_aborted(execution_id):
+                return AssetQuoteIngestionResult(
+                    asset_id=asset.id,
+                    ticker=asset.ticker,
+                    status=ABORTED_STATUS,
+                    source=self.provider.quote_source,
+                )
             outcome = await self._fetch_quotes(
                 asset,
                 start_date=start_date,
@@ -344,6 +355,14 @@ class QuoteService:
                 parameters=parameters,
             )
             return await self._persist_asset_fetch(outcome, execution_id=execution_id)
+
+    async def _execution_aborted(self, execution_id: int | None) -> bool:
+        """Whether the execution this run reports to was stopped on purpose."""
+        if execution_id is None:
+            return False
+        async with self.uow_factory() as uow:
+            execution = await uow.ingestions.get_execution(execution_id)
+        return execution is None or execution.status == ABORTED_STATUS
 
     async def aclose(self) -> None:
         if self.provider is not None:

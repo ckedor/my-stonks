@@ -115,6 +115,11 @@ class MarketDataSeriesIngestionService:
         )
         try:
             async with semaphore:
+                # A series that waited its turn may have been queued behind an
+                # abort. Its attempt is already closed by the abort itself, so
+                # this only has to stop the work.
+                if await self.ingestion_service.is_aborted(execution_id):
+                    return
                 history_df = await self.provider.get_series_historical_data(
                     series,
                     init_date=start_date,

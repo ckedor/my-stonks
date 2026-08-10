@@ -10,6 +10,17 @@ class DataIngestionType(StrEnum):
     USD_BRL = 'usd_brl'
 
 
+#: An execution in one of these has not reached an outcome yet, so it still
+#: holds the one-execution-per-type slot. Every other status is terminal.
+ACTIVE_EXECUTION_STATUSES = ('queued', 'running')
+
+#: Terminal status of an execution stopped on purpose. It is the final word on
+#: an execution: work already in flight must not overwrite it with its own
+#: outcome, which is what tells a caller the run was cut short rather than
+#: having genuinely succeeded or failed.
+ABORTED_STATUS = 'aborted'
+
+
 @dataclass(eq=False, kw_only=True)
 class DataIngestionExecution:
     ingestion_type: DataIngestionType | str

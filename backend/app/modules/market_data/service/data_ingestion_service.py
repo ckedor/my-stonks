@@ -1,12 +1,17 @@
 from collections.abc import Callable
 from datetime import datetime, timezone
 
-from app.core.exceptions import AlreadyExistsError, NotFoundError
+from app.core.exceptions import AlreadyExistsError, NotFoundError, ValidationError
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.market_data.domain.ingestion import (
+    ABORTED_STATUS,
+    ACTIVE_EXECUTION_STATUSES,
     DataIngestionAttempt,
     DataIngestionType,
 )
+
+#: Recorded on an aborted execution and on every attempt it left open.
+ABORT_REASON = 'Execução abortada manualmente'
 
 
 class DataIngestionReadService:
@@ -114,6 +119,71 @@ class DataIngestionService:
             )
             await uow.commit()
             return execution
+
+    async def abort_execution(
+        self,
+        *,
+        ingestion_type: DataIngestionType,
+        execution_id: int,
+    ):
+        """Stop an execution that is queued or already running.
+
+        Aborting is cooperative. It closes the execution and the attempts it
+        left open, which frees the one-execution-per-type slot immediately, and
+        the runners check ``is_aborted`` between items so the worker stops on
+        its own. Work already in flight for the current item still finishes:
+        nothing here interrupts it.
+        """
+        async with self.uow_factory() as uow:
+            execution = await uow.ingestions.get_execution(execution_id)
+            if execution is None or execution.ingestion_type != ingestion_type.value:
+                raise NotFoundError('Data ingestion execution not found')
+            if execution.status not in ACTIVE_EXECUTION_STATUSES:
+                raise ValidationError(
+                    'Only a queued or running data ingestion can be aborted',
+                    context={'execution_id': execution_id, 'status': execution.status},
+                )
+            aborted_at = datetime.now(timezone.utc)
+            await uow.ingestions.abort_unfinished_attempts(
+                execution_id,
+                now=aborted_at,
+                error=ABORT_REASON,
+            )
+            execution.status = ABORTED_STATUS
+            execution.finished_at = aborted_at
+            execution.error = ABORT_REASON
+            await uow.commit()
+            return execution
+
+    async def is_aborted(self, execution_id: int | None) -> bool:
+        """Whether the runner should stop working on ``execution_id``.
+
+        An execution that no longer exists counts as aborted: history
+        maintenance deleted it, so there is nothing left to report progress to.
+        """
+        if execution_id is None:
+            return False
+        async with self.uow_factory() as uow:
+            execution = await uow.ingestions.get_execution(execution_id)
+        return execution is None or execution.status == ABORTED_STATUS
+
+    async def abort_quote_execution(self, execution_id: int):
+        return await self.abort_execution(
+            ingestion_type=DataIngestionType.QUOTE,
+            execution_id=execution_id,
+        )
+
+    async def abort_series_execution(self, execution_id: int):
+        return await self.abort_execution(
+            ingestion_type=DataIngestionType.MARKET_DATA_SERIES,
+            execution_id=execution_id,
+        )
+
+    async def abort_usd_brl_execution(self, execution_id: int):
+        return await self.abort_execution(
+            ingestion_type=DataIngestionType.USD_BRL,
+            execution_id=execution_id,
+        )
 
     async def set_task_id(self, execution_id: int, task_id: str):
         async with self.uow_factory() as uow:
@@ -266,6 +336,10 @@ class DataIngestionService:
     async def finish(self, execution_id: int) -> None:
         async with self.uow_factory() as uow:
             execution = await uow.ingestions.get_execution(execution_id)
+            if execution is None or execution.status == ABORTED_STATUS:
+                # The runner reached the end of what it had already started
+                # after the abort landed. The abort is the final word.
+                return
             execution.finished_at = datetime.now(timezone.utc)
             if execution.failed_items == 0:
                 execution.status = 'success'
@@ -278,7 +352,7 @@ class DataIngestionService:
     async def fail(self, execution_id: int, error: Exception) -> None:
         async with self.uow_factory() as uow:
             execution = await uow.ingestions.get_execution(execution_id)
-            if execution is not None:
+            if execution is not None and execution.status != ABORTED_STATUS:
                 execution.status = 'failure'
                 execution.error = str(error) or error.__class__.__name__
                 execution.finished_at = datetime.now(timezone.utc)

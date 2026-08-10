@@ -80,6 +80,8 @@ export const DATA_INGESTION_ROUTES = {
     `${MARKET_DATA}/ingestions/${ingestionType}/${executionId}`,
   run: (ingestionType: string) =>
     `${MARKET_DATA}/ingestions/${ingestionType}`,
+  abort: (ingestionType: string, executionId: number | string) =>
+    `${MARKET_DATA}/ingestions/${ingestionType}/${executionId}/abort`,
 } as const
 
 // ---------------------------------------------------------------------------

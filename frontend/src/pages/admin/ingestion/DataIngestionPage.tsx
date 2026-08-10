@@ -1,4 +1,5 @@
 import {
+  abortDataIngestion,
   getDataIngestion,
   listDataIngestions,
   runDataIngestion,
@@ -12,6 +13,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import HistoryIcon from '@mui/icons-material/History'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import RefreshIcon from '@mui/icons-material/Refresh'
+import StopCircleIcon from '@mui/icons-material/StopCircle'
 import StorageIcon from '@mui/icons-material/Storage'
 import TaskAltIcon from '@mui/icons-material/TaskAlt'
 import {
@@ -45,6 +47,7 @@ const TERMINAL_STATUSES = new Set<IngestionStatus>([
   'success',
   'partial_success',
   'failure',
+  'aborted',
 ])
 
 const INITIAL_POLL_DELAY_MS = 5_000
@@ -57,6 +60,7 @@ const STATUS_LABELS: Record<IngestionStatus, string> = {
   success: 'Sucesso',
   partial_success: 'Sucesso parcial',
   failure: 'Falha',
+  aborted: 'Abortada',
 }
 
 const STATUS_COLORS: Record<
@@ -68,6 +72,7 @@ const STATUS_COLORS: Record<
   success: 'success',
   partial_success: 'warning',
   failure: 'error',
+  aborted: 'default',
 }
 
 const formatDateTime = (value: string | null) =>
@@ -140,6 +145,7 @@ export function DataIngestionPage({
   const [loading, setLoading] = useState(true)
   const [runningRequest, setRunningRequest] = useState(false)
   const [forceDialogOpen, setForceDialogOpen] = useState(false)
+  const [abortDialogOpen, setAbortDialogOpen] = useState(false)
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -186,9 +192,12 @@ export function DataIngestionPage({
   }, [refreshExecutions])
 
   const active = detail !== null && !TERMINAL_STATUSES.has(detail.status)
-  const hasActiveExecution = executions.some(
+  // Abort targets whichever execution holds the slot, which is not necessarily
+  // the one being inspected below.
+  const activeExecution = executions.find(
     (execution) => !TERMINAL_STATUSES.has(execution.status),
-  )
+  ) ?? null
+  const hasActiveExecution = activeExecution !== null
 
   useEffect(() => {
     if (!active || selectedId === null) return
@@ -264,6 +273,28 @@ export function DataIngestionPage({
     }
   }
 
+  const abortExecution = async () => {
+    if (activeExecution === null) return
+    setRunningRequest(true)
+    try {
+      const execution = await abortDataIngestion(ingestionType, activeExecution.id)
+      selectedIdRef.current = execution.id
+      setSelectedId(execution.id)
+      await refreshExecutions(execution.id)
+      setSnackbar({
+        open: true,
+        message: `Execução #${execution.id} abortada`,
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error(error)
+      setSnackbar({ open: true, message: 'Erro ao abortar a execução', severity: 'error' })
+    } finally {
+      setRunningRequest(false)
+      setAbortDialogOpen(false)
+    }
+  }
+
   const progress = useMemo(() => {
     if (!detail?.total_items) return detail?.status === 'success' ? 100 : 0
     return Math.min(100, (detail.processed_items / detail.total_items) * 100)
@@ -295,6 +326,17 @@ export function DataIngestionPage({
           >
             Atualizar
           </Button>
+          {hasActiveExecution && (
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<StopCircleIcon />}
+              onClick={() => setAbortDialogOpen(true)}
+              disabled={runningRequest}
+            >
+              Abortar
+            </Button>
+          )}
           <Button
             variant="outlined"
             color="warning"
@@ -474,6 +516,28 @@ export function DataIngestionPage({
           <Button onClick={() => setForceDialogOpen(false)}>Cancelar</Button>
           <Button color="warning" variant="contained" onClick={() => void startExecution(true)}>
             Executar histórico completo
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={abortDialogOpen} onClose={() => setAbortDialogOpen(false)}>
+        <DialogTitle>Abortar a execução #{activeExecution?.id}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            A execução é encerrada e libera a fila na hora, e o worker para nos itens
+            seguintes. O item que já está sendo buscado agora termina normalmente. O que
+            foi persistido até aqui é mantido.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAbortDialogOpen(false)}>Cancelar</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => void abortExecution()}
+            disabled={runningRequest}
+          >
+            Abortar execução
           </Button>
         </DialogActions>
       </Dialog>

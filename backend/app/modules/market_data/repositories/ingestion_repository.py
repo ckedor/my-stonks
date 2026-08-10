@@ -5,6 +5,8 @@ from sqlalchemy.orm import selectinload
 
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.modules.market_data.domain.ingestion import (
+    ABORTED_STATUS,
+    ACTIVE_EXECUTION_STATUSES,
     DataIngestionAttempt,
     DataIngestionExecution,
     DataIngestionType,
@@ -70,7 +72,7 @@ class DataIngestionRepository(SQLAlchemyRepository):
             select(DataIngestionExecution)
             .where(
                 DataIngestionExecution.ingestion_type == ingestion_type.value,
-                DataIngestionExecution.status.in_(['queued', 'running']),
+                DataIngestionExecution.status.in_(ACTIVE_EXECUTION_STATUSES),
             )
             .order_by(desc(DataIngestionExecution.requested_at))
             .limit(1)
@@ -97,6 +99,30 @@ class DataIngestionRepository(SQLAlchemyRepository):
         self.session.add(attempt)
         await self.session.flush()
         return attempt
+
+    async def abort_unfinished_attempts(
+        self,
+        execution_id: int,
+        *,
+        now: datetime,
+        error: str,
+    ) -> None:
+        """Close the attempts an aborted execution left open.
+
+        Attempts are created up front, before their item is fetched, so an
+        abort leaves every item not yet reached sitting at ``running``. Without
+        this they would stay open forever: the task that would have closed them
+        is the one being stopped.
+        """
+        await self.session.execute(
+            update(DataIngestionAttempt)
+            .where(
+                DataIngestionAttempt.execution_id == execution_id,
+                DataIngestionAttempt.status == 'running',
+            )
+            .values(status=ABORTED_STATUS, finished_at=now, error=error)
+            .execution_options(synchronize_session=False)
+        )
 
     async def maintain_execution_history(
         self,

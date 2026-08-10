@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 
-from app.entrypoints.worker.task_runner import run_task, run_task_by_name
+from app.entrypoints.worker.task_runner import revoke_task, run_task, run_task_by_name
 from app.infra.exceptions import IntegrationUnavailable
 from app.composition.market_data import (
     get_data_ingestion_read_service,
@@ -33,6 +33,16 @@ router = APIRouter(
     tags=['Data Ingestion'],
     dependencies=[Depends(current_superuser)],
 )
+
+
+def _revoke_pending_task(execution) -> None:
+    """Keep an aborted execution's task from starting after the fact.
+
+    Only useful while the message is still queued; a task already running stops
+    on its own when its runner reads the aborted execution.
+    """
+    if execution.task_id:
+        revoke_task(execution.task_id)
 
 
 @router.get('/quote', response_model=list[DataIngestionExecutionResponse])
@@ -86,6 +96,16 @@ async def run_quote_ingestion(
         raise IntegrationUnavailable(provider='task_queue') from exc
 
 
+@router.post('/quote/{execution_id}/abort', response_model=DataIngestionExecutionResponse)
+async def abort_quote_ingestion(
+    execution_id: int,
+    service: DataIngestionService = Depends(get_data_ingestion_service),
+):
+    execution = await service.abort_quote_execution(execution_id)
+    _revoke_pending_task(execution)
+    return execution
+
+
 @router.get(
     '/market_data_series',
     response_model=list[DataIngestionExecutionResponse],
@@ -130,6 +150,19 @@ async def run_market_data_series_ingestion(
         raise IntegrationUnavailable(provider='task_queue') from exc
 
 
+@router.post(
+    '/market_data_series/{execution_id}/abort',
+    response_model=DataIngestionExecutionResponse,
+)
+async def abort_market_data_series_ingestion(
+    execution_id: int,
+    service: DataIngestionService = Depends(get_data_ingestion_service),
+):
+    execution = await service.abort_series_execution(execution_id)
+    _revoke_pending_task(execution)
+    return execution
+
+
 @router.get('/usd_brl', response_model=list[DataIngestionExecutionResponse])
 async def list_usd_brl_ingestions(
     limit: int = Query(default=50, ge=1, le=200),
@@ -169,3 +202,13 @@ async def run_usd_brl_ingestion(
     except Exception as exc:
         await service.fail(execution.id, exc)
         raise IntegrationUnavailable(provider='task_queue') from exc
+
+
+@router.post('/usd_brl/{execution_id}/abort', response_model=DataIngestionExecutionResponse)
+async def abort_usd_brl_ingestion(
+    execution_id: int,
+    service: DataIngestionService = Depends(get_data_ingestion_service),
+):
+    execution = await service.abort_usd_brl_execution(execution_id)
+    _revoke_pending_task(execution)
+    return execution

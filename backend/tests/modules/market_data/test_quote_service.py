@@ -8,6 +8,10 @@ import pytest
 from app.modules.market_data.domain.constants import ASSET_TYPE
 from app.infra.integrations.brapi_client import BrapiClient
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
+from app.modules.market_data.domain.ingestion import (
+    ABORTED_STATUS,
+    DataIngestionExecution,
+)
 from app.modules.market_data.domain.quote import (
     AssetSnapshot,
     FetchedQuotes,
@@ -30,6 +34,7 @@ def build_service(
     fetched: FetchedQuotes,
     assets: list[AssetSnapshot] | None = None,
     max_concurrent_requests: int = 5,
+    ingestion_repository=None,
 ):
     quote_repository = SimpleNamespace(
         get_latest_quote_dates=AsyncMock(return_value=latest_dates),
@@ -63,7 +68,10 @@ def build_service(
     created_uows = []
 
     def uow_factory():
-        uow = FakeUnitOfWork(assets=asset_repository, quotes=quote_repository)
+        repositories = {'assets': asset_repository, 'quotes': quote_repository}
+        if ingestion_repository is not None:
+            repositories['ingestions'] = ingestion_repository
+        uow = FakeUnitOfWork(**repositories)
         uow.exit_errors = exit_errors
         created_uows.append(uow)
         return uow
@@ -365,3 +373,88 @@ async def test_retained_integration_client_uses_stock_history_endpoint():
         {'symbols': 'PETR4', 'range': 'max', 'interval': '1d'},
     )
     await client.aclose()
+
+
+def build_ingestion_repository(statuses: list[str]):
+    """An ingestion repository whose execution reports ``statuses`` in order.
+
+    The last status repeats once the list runs out, so a test can say "running
+    for the first asset, aborted from then on".
+    """
+    reported = iter(statuses)
+    last = statuses[-1]
+
+    async def get_execution(execution_id: int, **kwargs):
+        nonlocal last
+        last = next(reported, last)
+        return SimpleNamespace(id=execution_id, status=last)
+
+    tracked = SimpleNamespace(
+        processed_items=0,
+        succeeded_items=0,
+        failed_items=0,
+        fetched_rows=0,
+        upserted_rows=0,
+    )
+
+    async def get(model, **kwargs):
+        # Attempts are written field by field; the execution accumulates counters.
+        return tracked if model is DataIngestionExecution else SimpleNamespace()
+
+    return SimpleNamespace(
+        get_execution=AsyncMock(side_effect=get_execution),
+        create_attempt=AsyncMock(side_effect=lambda **kwargs: SimpleNamespace(id=99)),
+        get=AsyncMock(side_effect=get),
+        tracked=tracked,
+    )
+
+
+@pytest.mark.asyncio
+async def test_aborted_execution_stops_the_ingestion_before_any_provider_call():
+    fetched = FetchedQuotes(
+        ticker='PETR4',
+        currency='BRL',
+        source='test-provider',
+        parameters={},
+        quotes=[Quote(date=date(2025, 2, 10), close=10.0)],
+    )
+    harness = build_service(
+        latest_dates={},
+        fetched=fetched,
+        ingestion_repository=build_ingestion_repository([ABORTED_STATUS]),
+    )
+
+    result = await harness.service.ingest_quotes(asset_ids=[10], execution_id=8)
+
+    harness.provider.fetch_quotes.assert_not_awaited()
+    harness.quote_repository.upsert_quotes.assert_not_awaited()
+    assert [item.status for item in result.assets] == [ABORTED_STATUS]
+
+
+@pytest.mark.asyncio
+async def test_abort_landing_mid_run_leaves_the_remaining_assets_untouched():
+    fetched = FetchedQuotes(
+        ticker='unused',
+        currency='BRL',
+        source='test-provider',
+        parameters={},
+        quotes=[Quote(date=date(2025, 2, 10), close=10.0)],
+    )
+    assets = [
+        AssetSnapshot(id=index, ticker=f'ASSET{index}', asset_type_id=ASSET_TYPE.STOCK)
+        for index in range(1, 5)
+    ]
+    harness = build_service(
+        latest_dates={},
+        fetched=fetched,
+        assets=assets,
+        # One slot at a time, so the abort lands between two known assets.
+        max_concurrent_requests=1,
+        ingestion_repository=build_ingestion_repository(['running', ABORTED_STATUS]),
+    )
+
+    result = await harness.service.ingest_quotes(asset_ids=[1, 2, 3, 4], execution_id=8)
+
+    assert harness.provider.fetch_quotes.await_count == 1
+    assert result.succeeded_assets == 1
+    assert [item.status for item in result.assets].count(ABORTED_STATUS) == len(assets) - 1
