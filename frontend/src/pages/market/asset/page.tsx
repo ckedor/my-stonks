@@ -7,6 +7,7 @@ import {
 import CandleChart from '@/components/charts/CandleChart'
 import AppCard from '@/components/ui/AppCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { useCurrency } from '@/hooks/useCurrency'
 import { useMarketStore } from '@/stores/market'
 import NavigateNextIcon from '@mui/icons-material/NavigateNext'
 import { Box, Breadcrumbs, Link as MuiLink, Typography } from '@mui/material'
@@ -16,6 +17,7 @@ import { Link, useParams } from 'react-router-dom'
 export default function MarketAssetPage() {
   const { id } = useParams<{ id: string }>()
   const { assets } = useMarketStore()
+  const { currency, format } = useCurrency()
 
   const asset = useMemo(
     () => assets.find((a) => a.id === Number(id)),
@@ -36,11 +38,13 @@ export default function MarketAssetPage() {
     setLogoFailed(false)
     // Opening an asset is what ranks it among the user's favourites.
     recordAssetVisit(asset.id)
-    fetchAssetQuoteHistory(asset.id)
+    // The quotes are converted server-side, so switching the global currency
+    // refetches rather than rescaling what is already on screen.
+    fetchAssetQuoteHistory(asset.id, undefined, currency)
       .then(setQuotes)
       .catch(() => setError('Erro ao carregar cotações'))
       .finally(() => setLoading(false))
-  }, [asset])
+  }, [asset, currency])
 
   const candleData = useMemo(
     () => (quotes ? quotesToCandleData(quotes.quotes) : []),
@@ -111,10 +115,12 @@ export default function MarketAssetPage() {
             showRangePicker
             showTimeframeSelector
             showTypeToggle
-            showLogToggle
+            showPriceScaleModeToggle
+            showMeasureToggle
             showMovingAverageToggle
             showPerformance
             defaultRange="1y"
+            priceFormatter={format}
             persistKey={`market-asset:${ticker}`}
           />
         </AppCard>

@@ -19,7 +19,9 @@ from app.modules.market_data.domain.quote import (
     FetchedQuotes,
     Quote,
     QuoteIngestionResult,
+    convert_quotes_to_currency,
 )
+from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
 from app.modules.market_data.domain.ingestion import (
     ABORTED_STATUS,
     DataIngestionAttempt,
@@ -190,24 +192,33 @@ class AssetQuoteHistoryService:
         *,
         persisted: PersistedQuoteReadService,
         on_demand: OnDemandQuoteReadService,
+        usd_brl: UsdBrlReadService,
     ) -> None:
         self.persisted = persisted
         self.on_demand = on_demand
+        self.usd_brl = usd_brl
 
-    async def get_history(self, *, asset_id: int, start_date: date | None = None) -> dict:
+    async def get_history(
+        self,
+        *,
+        asset_id: int,
+        start_date: date | None = None,
+        currency: str = 'BRL',
+    ) -> dict:
         entries = await self.persisted.get_quotes(asset_ids=[asset_id], start_date=start_date)
         entry = entries[0]
         ticker, asset_type_id = entry['ticker'], entry['asset_type_id']
         logo = await self.on_demand.get_logo(ticker=ticker, asset_type_id=asset_type_id)
 
         if entry['quotes']:
+            quotes, resolved = await self._in_currency(entry['quotes'], currency, ticker=ticker)
             return {
                 'ticker': ticker,
                 'asset_type_id': asset_type_id,
-                'currency': None,
+                'currency': resolved,
                 'logo_url': logo['logo_url'],
                 'source': 'database',
-                'quotes': entry['quotes'],
+                'quotes': quotes,
             }
 
         fetched = await self.on_demand.get_quotes(
@@ -215,7 +226,66 @@ class AssetQuoteHistoryService:
             asset_type_id=asset_type_id,
             start_date=start_date,
         )
-        return {**fetched, 'logo_url': logo['logo_url'], 'source': 'provider'}
+        quotes, resolved = await self._in_currency(
+            fetched['quotes'],
+            currency,
+            ticker=ticker,
+            # The provider reports the currency once for the series rather than
+            # per observation, so it is what the quotes fall back to.
+            default_currency_id=CURRENCY_MAP.get(fetched['currency']),
+        )
+        return {
+            **fetched,
+            'currency': resolved,
+            'quotes': quotes,
+            'logo_url': logo['logo_url'],
+            'source': 'provider',
+        }
+
+    async def _in_currency(
+        self,
+        quotes: list[dict],
+        currency: str,
+        *,
+        ticker: str,
+        default_currency_id: int | None = None,
+    ) -> tuple[list[dict], str | None]:
+        """Quotes restated in ``currency``, and the currency they ended up in.
+
+        Quotes already in the requested currency are returned untouched. When
+        none of them says what currency it is in, there is nothing to convert
+        from, so they are served as they are and the response reports no
+        currency rather than claiming one.
+        """
+        target_currency_id = CURRENCY_MAP.get(currency.upper())
+        if target_currency_id is None:
+            raise ValidationError(f'Unsupported currency: {currency}')
+
+        known = {
+            quote['currency_id'] or default_currency_id
+            for quote in quotes
+            if quote.get('currency_id') or default_currency_id
+        }
+        if not known:
+            logger.warning('Quotes for %s carry no currency; serving them unconverted', ticker)
+            return quotes, None
+        if known == {int(target_currency_id)}:
+            return quotes, currency.upper()
+
+        converted = convert_quotes_to_currency(
+            quotes,
+            await self.usd_brl.get_full_history(),
+            target_currency_id=target_currency_id,
+            default_currency_id=default_currency_id,
+        )
+        if len(converted) < len(quotes):
+            logger.warning(
+                'Dropped %d of %d quotes for %s with no exchange rate on their date',
+                len(quotes) - len(converted),
+                len(quotes),
+                ticker,
+            )
+        return converted, currency.upper()
 
     async def aclose(self) -> None:
         await self.on_demand.aclose()

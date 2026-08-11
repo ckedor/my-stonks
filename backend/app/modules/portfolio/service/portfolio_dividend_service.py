@@ -5,7 +5,7 @@ Portfolio dividend service - handles dividend management.
 
 import pandas as pd
 from app.modules.market_data.domain.constants import CURRENCY
-from app.modules.market_data.domain.usd_brl import usd_brl_history_to_df
+from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
 from app.modules.portfolio.domain.entities import Dividend
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.portfolio.repositories import PortfolioRepository
@@ -13,22 +13,14 @@ from app.modules.portfolio.api.dividend.schema import DividendFilters
 
 
 class PortfolioDividendService:
-    def __init__(self, uow: UnitOfWork):
+    def __init__(self, uow: UnitOfWork, usd_brl_service: UsdBrlReadService):
         self.uow = uow
+        self.usd_brl_service = usd_brl_service
 
-    @staticmethod
-    async def _get_usd_brl_rate(date, market_data_repository) -> tuple[float, float]:
+    async def _get_usd_brl_rate(self, date) -> tuple[float, float]:
         """Both rate directions in effect on or before ``date``."""
-        history = await market_data_repository.get_usd_brl_history(
-            (pd.Timestamp(date) - pd.DateOffset(days=10)).date()
-        )
-        df = usd_brl_history_to_df(history)
-        df = df.sort_values('date')
-        df = df[df['date'] <= pd.Timestamp(date)]
-        if df.empty:
-            raise ValueError(f'USD/BRL rate not found for date {date}')
-        latest = df.iloc[-1]
-        return float(latest['usd_brl']), float(latest['brl_usd'])
+        rate = await self.usd_brl_service.get_rate_on_or_before(pd.Timestamp(date).date())
+        return float(rate.usd_brl), float(rate.brl_usd)
 
     @staticmethod
     async def _get_broker_currency(
@@ -48,9 +40,8 @@ class PortfolioDividendService:
         portfolio_id: int,
         asset_id: int,
         repository: PortfolioRepository,
-        market_data_repository,
     ) -> dict:
-        usd_brl, brl_usd = await self._get_usd_brl_rate(data['date'], market_data_repository)
+        usd_brl, brl_usd = await self._get_usd_brl_rate(data['date'])
         currency_id = await self._get_broker_currency(repository, portfolio_id, asset_id)
 
         if currency_id == CURRENCY.USD:
@@ -80,7 +71,6 @@ class PortfolioDividendService:
                 data['portfolio_id'],
                 data['asset_id'],
                 uow.portfolios,
-                uow.market_data,
             )
             created = await uow.portfolios.create(Dividend, data)
             await uow.commit()
@@ -100,7 +90,6 @@ class PortfolioDividendService:
                     existing_dividend.portfolio_id,
                     existing_dividend.asset_id,
                     uow.portfolios,
-                    uow.market_data,
                 )
             updated = await uow.portfolios.update(Dividend, update_data)
             await uow.commit()

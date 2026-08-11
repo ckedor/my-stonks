@@ -22,7 +22,17 @@ export default function ChartsTab() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           lightweight-charts wrapper with volume histogram
         </Typography>
-        <CandleChart data={candleData} height={400} showVolumeToggle showRangePicker showTimeframeSelector />
+        <CandleChart
+          data={candleData}
+          height={400}
+          showVolumeToggle
+          showRangePicker
+          showTimeframeSelector
+          showTypeToggle
+          showPriceScaleModeToggle
+          showMeasureToggle
+          showPerformance
+        />
       </AppCard>
 
       {/* ── Bar Chart ── */}

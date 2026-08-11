@@ -13,20 +13,22 @@ from app.infra.redis.redis_service import RedisService
 from app.lib.finance.returns import calculate_acc_returns_from_prices
 from app.lib.utils.df import df_to_named_dict, rows_to_df
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
-from app.modules.market_data.domain.usd_brl import (
-    usd_brl_history_to_df,
-    usd_brl_history_to_payload,
-)
+from app.modules.market_data.domain.usd_brl import usd_brl_payload_to_df
+from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
 from app.infra.db.unit_of_work import UnitOfWork
+
+INDEXES_HISTORY_CACHE_PREFIX = 'indexes_history'
 
 
 class MarketDataReadService:
     def __init__(
         self,
         uow: UnitOfWork,
+        usd_brl: UsdBrlReadService,
         cache: RedisService | None = None,
     ):
         self.uow = uow
+        self.usd_brl = usd_brl
         self.cache = cache or RedisService()
 
     async def list_indexes(self):
@@ -80,7 +82,7 @@ class MarketDataReadService:
         values.index.name = 'date'
         return values
 
-    @cached(key_prefix='indexes_history', cache=lambda self: self.cache, ttl=3600)
+    @cached(key_prefix=INDEXES_HISTORY_CACHE_PREFIX, cache=lambda self: self.cache, ttl=3600)
     async def get_indexes_history(self, start_date: pd.Timestamp = None) -> pd.DataFrame:
         return await self.compute_indexes_history(start_date)
 
@@ -143,11 +145,16 @@ class MarketDataReadService:
         return base_value * (1 + pct_series).cumprod()
 
     async def get_usd_brl_history(self, start_date=None, as_df=True) -> pd.DataFrame:
+        """The exchange rate, from the cached reader rather than its own query.
+
+        The default ten-year window is kept: it bounds what the index frames
+        merge against and what the compatibility route returns, even though the
+        reader now holds the whole table either way.
+        """
         min_required_date = start_date or (pd.Timestamp.today() - pd.DateOffset(years=10))
-        async with self.uow as uow:
-            history = await uow.market_data.get_usd_brl_history(
-                pd.Timestamp(min_required_date).date()
-            )
+        payload = await self.usd_brl.get_history(
+            start_date=pd.Timestamp(min_required_date).date()
+        )
         if as_df:
-            return usd_brl_history_to_df(history)
-        return usd_brl_history_to_payload(history)
+            return usd_brl_payload_to_df(payload)
+        return payload

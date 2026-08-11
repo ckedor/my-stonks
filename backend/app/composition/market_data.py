@@ -33,14 +33,28 @@ def get_data_ingestion_read_service(
     return DataIngestionReadService(uow)
 
 
+def build_usd_brl_read_service(uow: UnitOfWork | None = None) -> UsdBrlReadService:
+    """The cached exchange-rate reader.
+
+    Callers that already hold a `UnitOfWork` pass their own only when they will
+    not be inside it; everyone embedding this reader in another service gives it
+    a fresh one, since a single instance cannot be entered twice.
+    """
+    return UsdBrlReadService(uow=uow or UnitOfWork(), cache=RedisService())
+
+
 def get_market_data_read_service(
     uow: UnitOfWork = Depends(get_uow),
 ) -> MarketDataReadService:
-    return MarketDataReadService(uow=uow, cache=RedisService())
+    return MarketDataReadService(
+        uow=uow,
+        usd_brl=build_usd_brl_read_service(),
+        cache=RedisService(),
+    )
 
 
 def get_usd_brl_read_service(uow: UnitOfWork = Depends(get_uow)) -> UsdBrlReadService:
-    return UsdBrlReadService(uow)
+    return build_usd_brl_read_service(uow)
 
 
 def get_asset_service(uow: UnitOfWork = Depends(get_uow)) -> AssetService:
@@ -72,6 +86,7 @@ async def get_asset_quote_history_service(
     service = AssetQuoteHistoryService(
         persisted=PersistedQuoteReadService(uow),
         on_demand=OnDemandQuoteReadService(MarketDataProvider(), cache=RedisService()),
+        usd_brl=build_usd_brl_read_service(),
     )
     try:
         yield service
@@ -123,6 +138,7 @@ async def usd_brl_ingestion_runner_context() -> AsyncIterator[UsdBrlIngestionSer
         uow_factory=UnitOfWork,
         ingestion_service=build_data_ingestion_service(),
         provider=MarketDataProvider(),
+        cache=RedisService(),
     )
     try:
         yield service

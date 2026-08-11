@@ -45,6 +45,7 @@ async def test_portfolio_consolidation_uses_only_recent_non_zero_positions():
     service = PortfolioConsolidatorService(
         uow=FakeUnitOfWork(portfolios=repository),
         provider=SimpleNamespace(),
+        usd_brl_service=SimpleNamespace(),
     )
 
     result = await service.get_asset_ids_to_consolidate(portfolio_id=3)

@@ -32,3 +32,32 @@ class FakeUnitOfWork:
 def fake_uow_factory(uow: FakeUnitOfWork):
     """Return a ``uow_factory`` callable that always yields ``uow``."""
     return lambda: uow
+
+
+class FakeCache:
+    """In-memory stand-in for ``RedisService``, with the same surface.
+
+    Values are stored as-is rather than serialized, so a test asserting on a
+    cached payload sees exactly what the service handed over. ``writes`` counts
+    fills, which is how a test tells a hit from a miss.
+    """
+
+    def __init__(self):
+        self.store: dict = {}
+        self.writes = 0
+
+    async def get_json(self, key: str):
+        return self.store.get(key)
+
+    async def set_json(self, key: str, value, expire_seconds: int | None = None) -> None:
+        self.store[key] = value
+        self.writes += 1
+
+    async def delete(self, key: str) -> None:
+        self.store.pop(key, None)
+
+    async def delete_prefix(self, key_prefix: str) -> int:
+        doomed = [key for key in self.store if key.startswith(key_prefix)]
+        for key in doomed:
+            del self.store[key]
+        return len(doomed)

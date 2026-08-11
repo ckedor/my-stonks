@@ -10,14 +10,28 @@ export interface PersistedView {
   to: string | number
 }
 
+/** How the price axis reads. These are the three exclusive settings of the
+ *  library's single price-scale mode, so only one can be active. */
+export type PriceScaleMode = 'linear' | 'log' | 'percent'
+
 export interface PersistedChartState {
   range?: DateRangeKey
   timeframe?: CandleTimeframe
   chartType?: CandleChartType
+  priceScaleMode?: PriceScaleMode
+  /** @deprecated Superseded by `priceScaleMode`; still read so a chart the user
+   *  had on a log axis stays on one. */
   logScale?: boolean
+  measure?: boolean
   movingAverage?: boolean
   volume?: boolean
   view?: PersistedView | null
+}
+
+/** The stored axis mode, upgrading the boolean that came before it. */
+export function readPriceScaleMode(state: PersistedChartState): PriceScaleMode | undefined {
+  if (state.priceScaleMode) return state.priceScaleMode
+  return state.logScale ? 'log' : undefined
 }
 
 /** Reading never throws: a corrupt or unavailable store just means no

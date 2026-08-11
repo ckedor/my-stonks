@@ -16,6 +16,7 @@ export type ArchitectureRelation =
   | 'writes'
   | 'reads/writes'
   | 'caches'
+  | 'invalidates'
   | 'publishes'
   | 'consumes'
 

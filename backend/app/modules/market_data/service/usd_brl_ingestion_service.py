@@ -5,10 +5,13 @@ from decimal import Decimal
 from app.config.logger import logger
 from app.core.exceptions import ValidationError
 from app.infra.db.unit_of_work import UnitOfWork
+from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.domain.ingestion import DataIngestionType
 from app.modules.market_data.domain.usd_brl import UsdBrlHistory, invert_rate
 from app.modules.market_data.service.data_ingestion_service import DataIngestionService
+from app.modules.market_data.service.market_data_service import INDEXES_HISTORY_CACHE_PREFIX
+from app.modules.market_data.service.usd_brl_service import USD_BRL_HISTORY_CACHE_PREFIX
 
 USD_BRL_DATASET_ID = 1
 USD_BRL_OVERLAP_DAYS = 7
@@ -21,10 +24,23 @@ class UsdBrlIngestionService:
         uow_factory: Callable[[], UnitOfWork],
         ingestion_service: DataIngestionService,
         provider: MarketDataProvider,
+        cache: RedisService,
     ):
         self.uow_factory = uow_factory
         self.ingestion_service = ingestion_service
         self.provider = provider
+        self.cache = cache
+
+    async def _invalidate_rate_caches(self) -> None:
+        """Drop the reads a fresh rate makes stale, after the write has landed.
+
+        Nothing repopulates them here: the next read misses and fills. The index
+        history is included because it embeds the rate twice over -- as a series
+        charted alongside the indexes, and as the factor converting the
+        USD-denominated ones into BRL.
+        """
+        await self.cache.delete_prefix(f'{USD_BRL_HISTORY_CACHE_PREFIX}:')
+        await self.cache.delete_prefix(f'{INDEXES_HISTORY_CACHE_PREFIX}:')
 
     async def run(
         self,
@@ -101,6 +117,7 @@ class UsdBrlIngestionService:
                     unique_columns=['date'],
                 )
                 await uow.commit()
+            await self._invalidate_rate_caches()
             await self.ingestion_service.finish_attempt(
                 current_execution_id,
                 attempt_id,

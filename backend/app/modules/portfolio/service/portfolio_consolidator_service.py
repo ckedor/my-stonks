@@ -22,7 +22,7 @@ from app.modules.market_data.domain.constants import (
 from app.modules.portfolio.domain.constants import USER_CONFIGURATION
 from app.modules.market_data.domain.market_data_series import MarketDataSeriesHistory
 from app.modules.market_data.domain.quote import persisted_close_prices_df
-from app.modules.market_data.domain.usd_brl import usd_brl_history_to_df
+from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
 from app.modules.portfolio.domain.entities import Dividend, PortfolioUserConfiguration, Position
 from app.infra.db.unit_of_work import UnitOfWork
 from app.lib.utils.df import rows_to_df
@@ -48,9 +48,11 @@ class PortfolioConsolidatorService:
         *,
         provider: MarketDataProvider,
         uow: UnitOfWork,
+        usd_brl_service: UsdBrlReadService,
     ):
         self.provider = provider
         self.uow = uow
+        self.usd_brl_service = usd_brl_service
 
     async def get_asset_ids_to_consolidate(self, portfolio_id: int) -> list[int]:
         """Retorna os asset_ids com posições recentes a consolidar.
@@ -104,10 +106,9 @@ class PortfolioConsolidatorService:
                 as_df=True,
             )
             init_date = pd.to_datetime(min(r['date'] for r in transaction_rows))
-            usd_brl_history = await uow.market_data.get_usd_brl_history(
-                pd.Timestamp(init_date).date()
+            usd_brl_df = await self.usd_brl_service.get_history_df(
+                start_date=pd.Timestamp(init_date).date()
             )
-            usd_brl_df = usd_brl_history_to_df(usd_brl_history)
             close_prices_df = await self._get_asset_prices(
                 asset,
                 transaction_rows,

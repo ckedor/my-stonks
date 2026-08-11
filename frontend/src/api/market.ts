@@ -123,13 +123,20 @@ export interface AssetQuoteHistory extends QuotesResponse {
   source: 'database' | 'provider'
 }
 
-/** History for one asset, served from storage when we have it. */
+/** History for one asset, served from storage when we have it.
+ *
+ * Prices come back in `currency`; the backend converts through the USD/BRL
+ * history when the asset is not quoted in it, and reports which currency the
+ * quotes ended up in. */
 export const fetchAssetQuoteHistory = (
   assetId: number,
   startDate?: string,
+  currency: string = 'BRL',
 ): Promise<AssetQuoteHistory> =>
   api
-    .get<AssetQuoteHistory>(QUOTE_ROUTES.byAsset(assetId), { params: { start_date: startDate } })
+    .get<AssetQuoteHistory>(QUOTE_ROUTES.byAsset(assetId), {
+      params: { start_date: startDate, currency },
+    })
     .then((r) => r.data)
 
 export const fetchOnDemandAssetQuotes = (

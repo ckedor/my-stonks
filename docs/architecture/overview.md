@@ -55,8 +55,16 @@ Quote queries expose two explicit origins:
 
 Both currently inherit the authenticated `market_data` router. “Public market
 page” means a product page outside a portfolio, not anonymous HTTP access. The
-on-demand path intentionally has no application cache until usage measurements
-justify a TTL and rate-limit policy.
+on-demand path holds provider responses briefly so that reopening the same
+ticker does not spend provider quota again.
+
+`/market_data/quotes/asset/{asset_id}` reads storage first and falls back to the
+provider. It takes a `currency` and answers in it, converting through the
+USD/BRL history when the asset is not quoted in that currency, and reports which
+currency the returned quotes are actually in. Conversion is a read concern: it
+multiplies by the stored rate direction and never writes converted prices back.
+Quotes that cannot be restated faithfully — older than the rate history, or of
+unknown currency — are left out rather than guessed at.
 
 ## Layer boundaries
 
@@ -123,6 +131,21 @@ Portfolio position consolidation reads persisted quotes only. Scheduled quote
 ingestion runs before portfolio consolidation; missing quote history is an
 explicit failure and never triggers a provider call inside the portfolio write
 transaction.
+
+### USD/BRL reads and their cache
+
+The rate table is one row per calendar date and never rewrites history, so every
+consumer goes through one cached reader that holds the whole table under a
+single key and slices it in memory. Keying by start date instead would give each
+caller its own entry and almost never hit, since consolidation asks from a
+portfolio's first trade, charts from a chosen window, and conversions from a few
+days back.
+
+Every read of the rate goes through that reader, including the portfolio flows
+that convert transactions, dividends and positions. USD/BRL ingestion drops the
+cache after its write commits, along with the index history, which embeds the
+rate both as a charted series and as the factor converting USD-denominated
+indexes into BRL. Nothing repopulates either: the next read misses and fills.
 
 ## Visual architecture map
 

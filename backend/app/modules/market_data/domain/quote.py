@@ -6,7 +6,73 @@ from typing import Any
 
 import pandas as pd
 
+from app.modules.market_data.domain.constants import CURRENCY
+
 CLOSE_PRICES_DF_COLUMNS = ['date', 'close', 'currency']
+
+#: Fields of a serialized quote that carry money and so follow the exchange
+#: rate. ``volume`` is a share count and stays as it is.
+QUOTE_PRICE_FIELDS = ('open', 'high', 'low', 'close', 'adjusted_close')
+
+
+def convert_quotes_to_currency(
+    quotes: Sequence[dict],
+    rate_payload: Sequence[dict],
+    *,
+    target_currency_id: int,
+    default_currency_id: int | None = None,
+) -> list[dict]:
+    """Serialized quotes with their prices restated in ``target_currency_id``.
+
+    Prices are multiplied by the rate in effect on the quote's own date -- never
+    divided, since the rate history persists both directions precisely so that
+    no consumer has to invert it.
+
+    The rate is published on business days only while a quote may fall on any
+    day (cryptoassets trade at weekends), so the last rate on or before each
+    date carries forward. Both sequences must be ascending by date, which is how
+    the repository returns them.
+
+    A quote is dropped rather than guessed at when it cannot be restated
+    faithfully: when its date precedes the whole rate history, or when neither
+    it nor ``default_currency_id`` says what currency it is already in. Callers
+    compare lengths to report the loss.
+    """
+    if not quotes:
+        return []
+
+    converted: list[dict] = []
+    rate_index = 0
+    current: dict | None = None
+
+    for quote in quotes:
+        quote_date = quote['date']
+        while rate_index < len(rate_payload) and rate_payload[rate_index]['date'] <= quote_date:
+            current = rate_payload[rate_index]
+            rate_index += 1
+
+        source_currency_id = quote.get('currency_id') or default_currency_id
+        if source_currency_id is None:
+            continue
+        if int(source_currency_id) == int(target_currency_id):
+            converted.append({**quote, 'currency_id': int(target_currency_id)})
+            continue
+        if current is None:
+            continue
+
+        # Multiplying by the stored direction: USD priced in BRL uses usd_brl,
+        # BRL priced in USD uses its precomputed inverse.
+        factor = float(
+            current['usd_brl'] if target_currency_id == CURRENCY.BRL else current['brl_usd']
+        )
+        restated = {**quote, 'currency_id': int(target_currency_id)}
+        for field_name in QUOTE_PRICE_FIELDS:
+            value = quote.get(field_name)
+            if value is not None:
+                restated[field_name] = value * factor
+        converted.append(restated)
+
+    return converted
 
 
 @dataclass(frozen=True)

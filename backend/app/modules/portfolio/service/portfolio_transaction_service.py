@@ -8,7 +8,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 from app.modules.market_data.domain.constants import CURRENCY
-from app.modules.market_data.domain.usd_brl import usd_brl_history_to_df
+from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
 from app.modules.portfolio.domain.entities import Transaction
 from app.lib.finance import trade
 from app.lib.utils.fastapi import df_response
@@ -16,13 +16,14 @@ from app.infra.db.unit_of_work import UnitOfWork
 
 
 class PortfolioTransactionService:
-    def __init__(self, uow: UnitOfWork):
+    def __init__(self, uow: UnitOfWork, usd_brl_service: UsdBrlReadService):
         self.uow = uow
+        self.usd_brl_service = usd_brl_service
 
     async def create_transaction(self, transaction: dict) -> None:
         transaction['date'] = pd.to_datetime(transaction['date']).date()
         async with self.uow as uow:
-            await self._with_dual_currency_prices(transaction, uow.market_data)
+            await self._with_dual_currency_prices(transaction)
             await uow.portfolios.create(Transaction, transaction)
             await uow.commit()
 
@@ -36,7 +37,7 @@ class PortfolioTransactionService:
                 first=True,
             )
             old_portfolio_id = old_transaction.portfolio_id
-            await self._with_dual_currency_prices(transaction, uow.market_data)
+            await self._with_dual_currency_prices(transaction)
             await uow.portfolios.update(Transaction, transaction)
             await uow.commit()
         return old_portfolio_id
@@ -94,11 +95,7 @@ class PortfolioTransactionService:
         transactions_df.sort_values(by=['date'], inplace=True)
         return df_response(transactions_df)
 
-    async def _with_dual_currency_prices(
-        self,
-        transaction: dict,
-        market_data_repository,
-    ) -> None:
+    async def _with_dual_currency_prices(self, transaction: dict) -> None:
         """Populate `price` (BRL) and `price_usd` from the user-supplied price + currency.
 
         The transaction dict is mutated in place. Removes the `currency` key since it
@@ -106,10 +103,7 @@ class PortfolioTransactionService:
         """
         currency = transaction.pop('currency', 'BRL')
         original_price = float(transaction['price'])
-        usd_brl, brl_usd = await self._get_usd_brl_on(
-            transaction['date'],
-            market_data_repository,
-        )
+        usd_brl, brl_usd = await self._get_usd_brl_on(transaction['date'])
 
         if currency == 'USD':
             transaction['price'] = original_price * usd_brl
@@ -118,17 +112,7 @@ class PortfolioTransactionService:
             transaction['price'] = original_price
             transaction['price_usd'] = original_price * brl_usd
 
-    @staticmethod
-    async def _get_usd_brl_on(date, market_data_repository) -> tuple[float, float]:
+    async def _get_usd_brl_on(self, date) -> tuple[float, float]:
         """Both rate directions in effect on or before ``date``."""
-        history = await market_data_repository.get_usd_brl_history(
-            (pd.Timestamp(date) - pd.Timedelta(days=10)).date()
-        )
-        usd_brl_df = usd_brl_history_to_df(history)
-        usd_brl_df['date'] = pd.to_datetime(usd_brl_df['date'])
-        target = pd.Timestamp(date)
-        on_or_before = usd_brl_df[usd_brl_df['date'] <= target]
-        if on_or_before.empty:
-            raise ValueError(f'No USD/BRL quote found on or before {date}')
-        latest = on_or_before.iloc[-1]
-        return float(latest['usd_brl']), float(latest['brl_usd'])
+        rate = await self.usd_brl_service.get_rate_on_or_before(pd.Timestamp(date).date())
+        return float(rate.usd_brl), float(rate.brl_usd)

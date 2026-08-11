@@ -96,6 +96,35 @@ export interface PeriodPerformance {
   days: number
 }
 
+export interface MeasureAnchor {
+  /** Chart time value, `YYYY-MM-DD` for the daily series. */
+  time: string
+  price: number
+}
+
+export interface Measurement {
+  /** Change from the first anchor to the second, as a ratio (0.12 = +12%). */
+  variation: number
+  /** The same change in price units. */
+  absolute: number
+  /** Calendar days spanned, always positive. */
+  days: number
+}
+
+/** The change between two points a user picked, in whichever order they picked
+ *  them: the earlier anchor is always the baseline. Returns `null` when the
+ *  baseline is zero or negative, where a percentage says nothing. */
+export function measureBetween(a: MeasureAnchor, b: MeasureAnchor): Measurement | null {
+  const [from, to] = a.time <= b.time ? [a, b] : [b, a]
+  if (from.price <= 0) return null
+
+  return {
+    variation: to.price / from.price - 1,
+    absolute: to.price - from.price,
+    days: Math.abs(dayjs(to.time).diff(dayjs(from.time), 'day')),
+  }
+}
+
 export function periodPerformance(data: CandleDataPoint[]): PeriodPerformance | null {
   if (data.length < 2) return null
 

@@ -25,10 +25,11 @@ import {
     IChartApi,
     LineData,
     LineSeries,
+    MouseEventParams,
     PriceScaleMode,
     Time,
 } from 'lightweight-charts'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { defaultRangeOptionsFromOldest } from '../charts/app-bar-chart/helpers'
 import DateRangeMenu, { RangeOption } from '../charts/shared/DateRangeMenu'
 import {
@@ -41,12 +42,16 @@ import {
     type CandleChartType,
     type CandleDataPoint,
     type CandleTimeframe,
+    type MeasureAnchor,
 } from './candle/helpers'
+import { MeasurePrimitive } from './candle/MeasurePrimitive'
 import {
     isValidView,
     readChartState,
+    readPriceScaleMode,
     writeChartState,
     type PersistedView,
+    type PriceScaleMode as PriceScaleModeKey,
 } from './candle/persistence'
 
 dayjs.extend(isSameOrAfter)
@@ -59,6 +64,24 @@ const percent = (value: number) => `${value >= 0 ? '+' : ''}${(value * 100).toFi
  *  caps a chart at roughly 2600 candles on a 1300px container; 0.02 clears
  *  60000, well past a lifetime of daily data. */
 const MIN_BAR_SPACING = 0.02
+
+/** The library exposes one price-scale mode, so linear, log and percentage are
+ *  three settings of the same field and only one can be active. */
+const PRICE_SCALE_MODES: Record<PriceScaleModeKey, PriceScaleMode> = {
+  linear: PriceScaleMode.Normal,
+  log: PriceScaleMode.Logarithmic,
+  percent: PriceScaleMode.Percentage,
+}
+
+const PRICE_SCALE_MODE_OPTIONS: {
+  value: PriceScaleModeKey
+  label: string
+  hint: string
+}[] = [
+  { value: 'linear', label: 'Lin', hint: 'Escala linear de preço' },
+  { value: 'log', label: 'Log', hint: 'Escala logarítmica de preço' },
+  { value: 'percent', label: '%', hint: 'Variação percentual desde o início da janela visível' },
+]
 
 interface CandleChartProps {
   data: CandleDataPoint[]
@@ -73,8 +96,14 @@ interface CandleChartProps {
   /** Switch between candlesticks and a close-price line. */
   showTypeToggle?: boolean
   defaultType?: CandleChartType
-  /** Switch the price axis between linear and logarithmic. */
-  showLogToggle?: boolean
+  /** Offer the linear / logarithmic / percentage price axis selector. */
+  showPriceScaleModeToggle?: boolean
+  defaultPriceScaleMode?: PriceScaleModeKey
+  /** Offer the two-click measurement tool. */
+  showMeasureToggle?: boolean
+  /** Formats prices on the axis and in the crosshair. Skipped on the percentage
+   *  axis, which formats itself. */
+  priceFormatter?: (value: number) => string
   /** Overlay a moving average of the close. */
   showMovingAverageToggle?: boolean
   /** Report return and CAGR for the visible window. */
@@ -97,7 +126,10 @@ export default function CandleChart({
   defaultTimeframe = 'day',
   showTypeToggle = false,
   defaultType = 'candlestick',
-  showLogToggle = false,
+  showPriceScaleModeToggle = false,
+  defaultPriceScaleMode = 'linear',
+  showMeasureToggle = false,
+  priceFormatter,
   showMovingAverageToggle = false,
   showPerformance = false,
   persistKey,
@@ -114,7 +146,10 @@ export default function CandleChart({
   )
   const [volumeEnabled, setVolumeEnabled] = useState(restored.volume ?? showVolume)
   const [chartType, setChartType] = useState<CandleChartType>(restored.chartType ?? defaultType)
-  const [logScale, setLogScale] = useState(restored.logScale ?? false)
+  const [priceScaleMode, setPriceScaleMode] = useState<PriceScaleModeKey>(
+    readPriceScaleMode(restored) ?? defaultPriceScaleMode,
+  )
+  const [measureEnabled, setMeasureEnabled] = useState(restored.measure ?? false)
   const [movingAverageEnabled, setMovingAverageEnabled] = useState(restored.movingAverage ?? false)
 
   // Seeded from storage, then kept in step with whatever the user pans or zooms
@@ -123,16 +158,56 @@ export default function CandleChart({
     isValidView(restored.view) ? restored.view : null,
   )
 
+  // Measurement anchors live outside React state for the same reason as the
+  // view: the effect below rebuilds the chart on every option change, and a
+  // measurement in progress must survive that.
+  const anchorsRef = useRef<MeasureAnchor[]>([])
+
+  // Callers pass a formatter built from the current currency, which is a new
+  // function on every render. Handing that straight to the effect would rebuild
+  // the whole chart each time, so the effect depends on a stable wrapper and
+  // only on *whether* a formatter exists. The library calls the wrapper as it
+  // paints, so it always reaches the latest one.
+  const priceFormatterRef = useRef(priceFormatter)
+  priceFormatterRef.current = priceFormatter
+  const hasPriceFormatter = priceFormatter != null
+  const formatPrice = useCallback((value: number) => priceFormatterRef.current!(value), [])
+
+  // Turning the tool off clears what it drew, so it never lingers as a stale
+  // overlay over a different window.
+  useEffect(() => {
+    if (!measureEnabled) anchorsRef.current = []
+  }, [measureEnabled])
+
+  useEffect(() => {
+    if (!measureEnabled) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMeasureEnabled(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [measureEnabled])
+
   useEffect(() => {
     writeChartState(persistKey, {
       range,
       timeframe,
       chartType,
-      logScale,
+      priceScaleMode,
+      measure: measureEnabled,
       movingAverage: movingAverageEnabled,
       volume: volumeEnabled,
     })
-  }, [persistKey, range, timeframe, chartType, logScale, movingAverageEnabled, volumeEnabled])
+  }, [
+    persistKey,
+    range,
+    timeframe,
+    chartType,
+    priceScaleMode,
+    measureEnabled,
+    movingAverageEnabled,
+    volumeEnabled,
+  ])
 
   // Changing range or timeframe is a deliberate request for a different window,
   // so the remembered one is dropped and the chart refits.
@@ -221,8 +296,13 @@ export default function CandleChart({
       },
       rightPriceScale: {
         borderColor: theme.palette.divider,
-        mode: logScale ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
+        mode: PRICE_SCALE_MODES[priceScaleMode],
       },
+      // The percentage axis formats itself relative to the first visible bar,
+      // and a currency formatter would overwrite that with a price.
+      ...(hasPriceFormatter && priceScaleMode !== 'percent'
+        ? { localization: { priceFormatter: formatPrice } }
+        : {}),
       timeScale: {
         borderColor: theme.palette.divider,
         timeVisible: false,
@@ -234,6 +314,7 @@ export default function CandleChart({
       },
     })
 
+    let mainSeries
     if (chartType === 'line') {
       const lineSeries = chart.addSeries(LineSeries, {
         color: theme.palette.primary.main,
@@ -242,6 +323,7 @@ export default function CandleChart({
       lineSeries.setData(
         filtered.map((d) => ({ time: d.time as Time, value: d.close })) as LineData<Time>[],
       )
+      mainSeries = lineSeries
     } else {
       const candleSeries = chart.addSeries(CandlestickSeries, {
         upColor: theme.palette.success.main,
@@ -252,6 +334,7 @@ export default function CandleChart({
         wickDownColor: theme.palette.error.main,
       })
       candleSeries.setData(filtered as CandlestickData<Time>[])
+      mainSeries = candleSeries
     }
 
     // Plotted on the same price scale, so it follows the linear/log setting
@@ -317,6 +400,36 @@ export default function CandleChart({
     }
     timeScale.subscribeVisibleTimeRangeChange(onVisibleRangeChange)
 
+    // The chart is torn down and rebuilt whenever an option changes, so the
+    // measurement is re-attached from the anchors kept outside React state --
+    // the same trick that keeps the zoom from being thrown away.
+    let measure: MeasurePrimitive | undefined
+    let onClick: ((param: MouseEventParams<Time>) => void) | undefined
+    if (measureEnabled) {
+      measure = new MeasurePrimitive(
+        {
+          up: theme.palette.success.main,
+          down: theme.palette.error.main,
+          surface: theme.palette.background.paper,
+          text: theme.palette.text.primary,
+        },
+        hasPriceFormatter ? formatPrice : undefined,
+      )
+      mainSeries.attachPrimitive(measure)
+      measure.setAnchors(anchorsRef.current)
+
+      onClick = (param) => {
+        if (!param.point || param.time == null) return
+        const price = mainSeries.coordinateToPrice(param.point.y)
+        if (price === null) return
+        measure!.addAnchor({ time: String(param.time), price })
+        anchorsRef.current = measure!.getAnchors()
+      }
+      chart.subscribeClick(onClick)
+      // Dragging places the second point; without this it would pan instead.
+      chart.applyOptions({ handleScroll: false, handleScale: false })
+    }
+
     const resizeObserver = new ResizeObserver(() => {
       if (containerRef.current) {
         chart.applyOptions({ width: containerRef.current.clientWidth })
@@ -326,12 +439,26 @@ export default function CandleChart({
 
     return () => {
       clearTimeout(writeTimer)
+      if (onClick) chart.unsubscribeClick(onClick)
+      if (measure) mainSeries.detachPrimitive(measure)
       timeScale.unsubscribeVisibleTimeRangeChange(onVisibleRangeChange)
       resizeObserver.disconnect()
       chart.remove()
       chartRef.current = null
     }
-  }, [filtered, movingAverageData, height, volumeEnabled, chartType, logScale, theme, persistKey])
+  }, [
+    filtered,
+    movingAverageData,
+    height,
+    volumeEnabled,
+    chartType,
+    priceScaleMode,
+    measureEnabled,
+    hasPriceFormatter,
+    formatPrice,
+    theme,
+    persistKey,
+  ])
 
   const toggle = (label: string, checked: boolean, onChange: (v: boolean) => void, hint?: string) => {
     const control = (
@@ -402,8 +529,32 @@ export default function CandleChart({
               setMovingAverageEnabled,
               `Média móvel de ${MOVING_AVERAGE_DAYS} dias (${movingAveragePeriod} períodos)`,
             )}
-          {showLogToggle &&
-            toggle('Log', logScale, setLogScale, 'Escala logarítmica no eixo de preço')}
+          {showMeasureToggle &&
+            toggle(
+              'Medir',
+              measureEnabled,
+              setMeasureEnabled,
+              'Clique em dois pontos do gráfico para medir a variação entre eles. Esc para sair.',
+            )}
+
+          {showPriceScaleModeToggle && (
+            <ToggleButtonGroup
+              size="small"
+              exclusive
+              value={priceScaleMode}
+              onChange={(_, value) => value && setPriceScaleMode(value as PriceScaleModeKey)}
+            >
+              {PRICE_SCALE_MODE_OPTIONS.map((option) => (
+                <ToggleButton key={option.value} value={option.value} sx={{ px: 1, py: 0.25 }}>
+                  <Tooltip title={option.hint}>
+                    <Typography variant="body2" sx={{ lineHeight: 1.4, fontSize: 12 }}>
+                      {option.label}
+                    </Typography>
+                  </Tooltip>
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          )}
 
           {showTypeToggle && (
             <ToggleButtonGroup

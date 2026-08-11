@@ -6,6 +6,7 @@ from fastapi import Depends
 from app.infra.db.unit_of_work import UnitOfWork, get_uow
 from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
+from app.composition.market_data import build_usd_brl_read_service
 from app.modules.market_data.service.market_data_service import MarketDataReadService
 from app.modules.portfolio.service.portfolio_base_service import PortfolioBaseService
 from app.modules.portfolio.service.portfolio_category_service import PortfolioCategoryService
@@ -44,7 +45,11 @@ def build_portfolio_position_service(uow: UnitOfWork) -> PortfolioPositionServic
     # entered by both services at the same time.
     return PortfolioPositionService(
         uow=uow,
-        market_data_service=MarketDataReadService(uow=UnitOfWork(), cache=RedisService()),
+        market_data_service=MarketDataReadService(
+            uow=UnitOfWork(),
+            usd_brl=build_usd_brl_read_service(),
+            cache=RedisService(),
+        ),
         cache=RedisService(),
     )
 
@@ -80,13 +85,13 @@ def get_portfolio_rebalancing_service(
 def get_portfolio_dividend_service(
     uow: UnitOfWork = Depends(get_uow),
 ) -> PortfolioDividendService:
-    return PortfolioDividendService(uow)
+    return PortfolioDividendService(uow, usd_brl_service=build_usd_brl_read_service())
 
 
 def get_portfolio_transaction_service(
     uow: UnitOfWork = Depends(get_uow),
 ) -> PortfolioTransactionService:
-    return PortfolioTransactionService(uow)
+    return PortfolioTransactionService(uow, usd_brl_service=build_usd_brl_read_service())
 
 
 def get_portfolio_income_tax_service(
@@ -121,13 +126,21 @@ def get_portfolio_returns_consolidator_service(
 def get_portfolio_consolidator_service(
     uow: UnitOfWork = Depends(get_uow),
 ) -> PortfolioConsolidatorService:
-    return PortfolioConsolidatorService(uow=uow, provider=MarketDataProvider())
+    return PortfolioConsolidatorService(
+        uow=uow,
+        provider=MarketDataProvider(),
+        usd_brl_service=build_usd_brl_read_service(),
+    )
 
 
 @asynccontextmanager
 async def portfolio_consolidator_service_context() -> AsyncIterator[PortfolioConsolidatorService]:
     """Consolidator for tasks and fan-out: one UnitOfWork and provider per run."""
-    service = PortfolioConsolidatorService(uow=UnitOfWork(), provider=MarketDataProvider())
+    service = PortfolioConsolidatorService(
+        uow=UnitOfWork(),
+        provider=MarketDataProvider(),
+        usd_brl_service=build_usd_brl_read_service(),
+    )
     try:
         yield service
     finally:

@@ -71,6 +71,11 @@ export const architectureNodes: ArchitectureNode[] = [
   node('history-service', 'service', 'AssetQuoteHistoryService', 'SERVIÇO', [
     'Banco primeiro',
     'Provider como fallback',
+    'Converte para a moeda pedida',
+  ]),
+  node('usd-brl-read-service', 'service', 'UsdBrlReadService', 'SERVIÇO', [
+    'Tabela inteira em uma chave',
+    'Fatia em memória por data',
   ]),
   node('persisted-read-service', 'service', 'PersistedQuoteReadService', 'SERVIÇO', [
     'Somente banco',
@@ -143,6 +148,11 @@ export const architectureEdges: ArchitectureEdge[] = [
   edge('ai-service-uow', 'ai-service', 'uow', 'reads/writes'),
   edge('uow-postgres', 'uow', 'postgres', 'reads/writes'),
 
+  edge('history-usd-brl', 'history-service', 'usd-brl-read-service', 'calls'),
+  edge('portfolio-service-usd-brl', 'portfolio-service', 'usd-brl-read-service', 'calls'),
+  edge('usd-brl-uow', 'usd-brl-read-service', 'uow', 'reads'),
+  edge('usd-brl-cache', 'usd-brl-read-service', 'queue', 'caches'),
+  edge('usd-task-invalidates', 'usd-task', 'queue', 'invalidates'),
   edge('on-demand-cache', 'on-demand-read-service', 'queue', 'caches'),
   edge('portfolio-service-cache', 'portfolio-service', 'queue', 'caches'),
   edge('ai-service-openai', 'ai-service', 'openai', 'calls'),

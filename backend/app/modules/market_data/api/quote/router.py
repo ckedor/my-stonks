@@ -51,10 +51,19 @@ async def get_persisted_quotes(
 async def get_asset_quote_history(
     asset_id: int,
     start_date: date | None = Query(default=None),
+    currency: str = Query(default='BRL'),
     service: AssetQuoteHistoryService = Depends(get_asset_quote_history_service),
 ):
-    """Quote history for one asset, from storage when it exists."""
-    return await service.get_history(asset_id=asset_id, start_date=start_date)
+    """Quote history for one asset, from storage when it exists.
+
+    Prices come back in ``currency``, converted through the USD/BRL history when
+    the asset is not quoted in it.
+    """
+    return await service.get_history(
+        asset_id=asset_id,
+        start_date=start_date,
+        currency=currency,
+    )
 
 
 @router.get('/on-demand', response_model=OnDemandQuotesResponse)
