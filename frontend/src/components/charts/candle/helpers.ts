@@ -96,6 +96,20 @@ export interface PeriodPerformance {
   days: number
 }
 
+/** The candle at a chart logical index, clamped to the series.
+ *
+ *  The index is fractional and can sit outside the data when the click lands in
+ *  the whitespace beside the series, so it is rounded to the nearest candle and
+ *  held within bounds. Returns `null` only when there is nothing to snap to. */
+export function candleAt(
+  data: CandleDataPoint[],
+  logical: number | null | undefined,
+): CandleDataPoint | null {
+  if (!data.length || logical == null || !Number.isFinite(logical)) return null
+  const index = Math.min(data.length - 1, Math.max(0, Math.round(logical)))
+  return data[index]
+}
+
 export interface MeasureAnchor {
   /** Chart time value, `YYYY-MM-DD` for the daily series. */
   time: string
@@ -124,6 +138,27 @@ export function measureBetween(a: MeasureAnchor, b: MeasureAnchor): Measurement 
     days: Math.abs(dayjs(to.time).diff(dayjs(from.time), 'day')),
   }
 }
+
+/** How long a span is, in the coarsest unit that still reads precisely.
+ *
+ *  A return means nothing without the window it covers: `+93418%` is absurd
+ *  over a year and unremarkable over thirty. */
+export function formatSpan(days: number): string {
+  if (days < 1) return 'hoje'
+  if (days < DAYS_IN_MONTH) return `${days} ${days === 1 ? 'dia' : 'dias'}`
+  if (days < DAYS_IN_YEAR) {
+    const months = Math.round(days / DAYS_IN_MONTH)
+    return `${months} ${months === 1 ? 'mês' : 'meses'}`
+  }
+  const years = days / DAYS_IN_YEAR
+  // One decimal below ten years, whole years above: "1,5 anos" is useful,
+  // "23,4 anos" is just noise.
+  const value = years < 10 ? years.toFixed(1).replace('.', ',') : String(Math.round(years))
+  return `${value} ${value === '1,0' ? 'ano' : 'anos'}`
+}
+
+const DAYS_IN_MONTH = 30
+const DAYS_IN_YEAR = 365
 
 export function periodPerformance(data: CandleDataPoint[]): PeriodPerformance | null {
   if (data.length < 2) return null

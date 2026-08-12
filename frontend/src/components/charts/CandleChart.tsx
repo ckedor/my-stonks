@@ -1,9 +1,11 @@
 import { DateRangeKey, getDateFromRange } from '@/lib/utils/date'
 import CandlestickChartIcon from '@mui/icons-material/CandlestickChart'
 import ShowChartIcon from '@mui/icons-material/ShowChart'
+import StraightenIcon from '@mui/icons-material/Straighten'
 import {
     alpha,
     Box,
+    Divider,
     MenuItem,
     Select,
     Stack,
@@ -34,7 +36,9 @@ import { defaultRangeOptionsFromOldest } from '../charts/app-bar-chart/helpers'
 import DateRangeMenu, { RangeOption } from '../charts/shared/DateRangeMenu'
 import {
     aggregateCandles,
+    candleAt,
     filterFrom,
+    formatSpan,
     movingAverage,
     MOVING_AVERAGE_DAYS,
     MOVING_AVERAGE_PERIODS,
@@ -419,10 +423,15 @@ export default function CandleChart({
       measure.setAnchors(anchorsRef.current)
 
       onClick = (param) => {
-        if (!param.point || param.time == null) return
-        const price = mainSeries.coordinateToPrice(param.point.y)
-        if (price === null) return
-        measure!.addAnchor({ time: String(param.time), price })
+        // Anchors snap to a candle rather than to the raw pointer. The library
+        // reports the bar under the cursor, and a bar is drawn at its centre,
+        // so a free-floating anchor lands beside the click -- and at the
+        // minimum bar spacing a single pixel covers several candles anyway.
+        // Snapping to the close also makes the reading match the period return
+        // in the header, which is close-to-close.
+        const candle = candleAt(filtered, param.logical)
+        if (!candle) return
+        measure!.addAnchor({ time: candle.time, price: candle.close })
         anchorsRef.current = measure!.getAnchors()
       }
       chart.subscribeClick(onClick)
@@ -487,7 +496,7 @@ export default function CandleChart({
             <>
               <Stack direction="row" spacing={0.75} alignItems="baseline">
                 <Typography variant="body2" color="text.secondary">
-                  Período
+                  Período ({formatSpan(performance.days)})
                 </Typography>
                 <Typography
                   variant="body2"
@@ -529,13 +538,29 @@ export default function CandleChart({
               setMovingAverageEnabled,
               `Média móvel de ${MOVING_AVERAGE_DAYS} dias (${movingAveragePeriod} períodos)`,
             )}
-          {showMeasureToggle &&
-            toggle(
-              'Medir',
-              measureEnabled,
-              setMeasureEnabled,
-              'Clique em dois pontos do gráfico para medir a variação entre eles. Esc para sair.',
-            )}
+          {/* Tools act *on* the chart rather than changing what it plots, so
+              they read as a pressable instrument and sit apart from the
+              switches and selectors that change the view itself. */}
+          {showMeasureToggle && (
+            <>
+              <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+              <Tooltip title="Régua: clique em duas velas para medir a variação entre elas. Esc para sair.">
+                <ToggleButton
+                  size="small"
+                  value="measure"
+                  selected={measureEnabled}
+                  onChange={() => setMeasureEnabled((on) => !on)}
+                  sx={{ px: 1, py: 0.25, gap: 0.5 }}
+                >
+                  <StraightenIcon fontSize="small" />
+                  <Typography variant="body2" sx={{ lineHeight: 1.4, fontSize: 12 }}>
+                    Régua
+                  </Typography>
+                </ToggleButton>
+              </Tooltip>
+              <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+            </>
+          )}
 
           {showPriceScaleModeToggle && (
             <ToggleButtonGroup

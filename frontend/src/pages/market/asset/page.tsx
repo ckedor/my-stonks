@@ -6,13 +6,15 @@ import {
 } from '@/api/market'
 import CandleChart from '@/components/charts/CandleChart'
 import AppCard from '@/components/ui/AppCard'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { useCurrency } from '@/hooks/useCurrency'
+import MarketAssetSkeleton from './MarketAssetSkeleton'
 import { useMarketStore } from '@/stores/market'
 import NavigateNextIcon from '@mui/icons-material/NavigateNext'
 import { Box, Breadcrumbs, Link as MuiLink, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+
+const CHART_HEIGHT = 500
 
 export default function MarketAssetPage() {
   const { id } = useParams<{ id: string }>()
@@ -51,7 +53,7 @@ export default function MarketAssetPage() {
     [quotes],
   )
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <MarketAssetSkeleton height={CHART_HEIGHT} />
 
   return (
     <Box pt={2}>
@@ -109,7 +111,7 @@ export default function MarketAssetPage() {
         <AppCard title="Cotação">
           <CandleChart
             data={candleData}
-            height={500}
+            height={CHART_HEIGHT}
             showVolume
             showVolumeToggle
             showRangePicker
