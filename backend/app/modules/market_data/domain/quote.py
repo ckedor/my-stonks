@@ -109,17 +109,33 @@ def _quote_date(value: Any) -> date:
     return value if isinstance(value, date) else date.fromisoformat(str(value))
 
 
+def adjusted_price(quote: dict) -> float | None:
+    """The close to measure returns on: adjusted when there is one.
+
+    The traded close ignores everything the holder was paid and every split the
+    share went through, which is why a fund that distributes most of its result
+    looks flat for a decade on its own price. The adjusted close is the series
+    to compare against itself; ingestion fills it with the traded close for
+    assets the provider publishes no adjustment for, so this only has to fall
+    back for quotes served straight from a provider.
+    """
+    value = quote.get('adjusted_close')
+    if value is None:
+        value = quote.get('close')
+    return None if value is None else float(value)
+
+
 def historical_cagr(quotes: Sequence[dict]) -> HistoricalCagr | None:
-    """Annualized growth between the first and last close of ``quotes``.
+    """Annualized growth between the first and last adjusted close of ``quotes``.
 
     Serialized quotes in, so the rate is computed on exactly the prices the
     caller serves -- already restated into the requested currency, which is the
     currency the reader is looking at.
 
     Returns None whenever the rate would not mean anything: fewer than two
-    closes, a non-positive first close, or a span shorter than a year.
+    prices, a non-positive first price, or a span shorter than a year.
     """
-    priced = [quote for quote in quotes if quote.get('close') is not None]
+    priced = [quote for quote in quotes if adjusted_price(quote) is not None]
     if len(priced) < MIN_CAGR_QUOTES:
         return None
 
@@ -129,7 +145,7 @@ def historical_cagr(quotes: Sequence[dict]) -> HistoricalCagr | None:
     if days < MIN_CAGR_DAYS:
         return None
 
-    first_close, last_close = float(first['close']), float(last['close'])
+    first_close, last_close = adjusted_price(first), adjusted_price(last)
     if first_close <= 0 or last_close <= 0:
         return None
 

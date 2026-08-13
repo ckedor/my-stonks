@@ -9,8 +9,8 @@ from app.modules.market_data.domain.quote import historical_cagr
 DOUBLED_IN_TWO_YEARS = 0.4139
 
 
-def quote(on: date, close: float | None) -> dict:
-    return {'date': on.isoformat(), 'close': close}
+def quote(on: date, close: float | None, adjusted: float | None = None) -> dict:
+    return {'date': on.isoformat(), 'close': close, 'adjusted_close': adjusted}
 
 
 def test_doubling_over_two_years_is_about_forty_one_percent_a_year():
@@ -22,6 +22,29 @@ def test_doubling_over_two_years_is_about_forty_one_percent_a_year():
     assert result is not None
     assert result.start_date == date(2024, 1, 1)
     assert result.end_date == date(2026, 1, 1)
+    assert round(result.value, 4) == DOUBLED_IN_TWO_YEARS
+
+
+def test_the_adjusted_close_is_what_the_rate_measures():
+    """A fund that pays out its result looks flat on its own traded price.
+
+    Its holders were paid all along, which is exactly what the adjusted series
+    records -- so the rate has to be read from that one.
+    """
+    flat_price_paid_out = [
+        quote(date(2024, 1, 1), 100.0, adjusted=100.0),
+        quote(date(2026, 1, 1), 100.0, adjusted=200.0),
+    ]
+
+    assert round(historical_cagr(flat_price_paid_out).value, 4) == DOUBLED_IN_TWO_YEARS
+
+
+def test_quotes_with_no_adjusted_series_fall_back_to_the_traded_close():
+    result = historical_cagr([
+        quote(date(2024, 1, 1), 100.0),
+        quote(date(2026, 1, 1), 200.0),
+    ])
+
     assert round(result.value, 4) == DOUBLED_IN_TWO_YEARS
 
 

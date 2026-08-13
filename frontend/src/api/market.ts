@@ -167,6 +167,7 @@ export function quotesToCandleData(quotes: QuotesResponse['quotes']): CandleData
     high: q.high ?? q.close,
     low: q.low ?? q.close,
     close: q.close,
+    adjustedClose: q.adjusted_close ?? undefined,
     volume: q.volume ?? undefined,
   }))
 }

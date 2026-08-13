@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { candleAt, formatSpan, measureBetween, type CandleDataPoint } from './helpers'
+import {
+  aggregateCandles,
+  candleAt,
+  formatSpan,
+  measureBetween,
+  type CandleDataPoint,
+} from './helpers'
 import { readPriceScaleMode } from './persistence'
 
 const bar = (time: string, close: number): CandleDataPoint => ({
@@ -98,5 +104,22 @@ describe('formatSpan', () => {
     expect(formatSpan(365 * 2)).toBe('2 anos')
     expect(formatSpan(548)).toBe('1,5 anos')
     expect(formatSpan(365 * 23)).toBe('23 anos')
+  })
+})
+
+describe('aggregateCandles', () => {
+  it('carries the adjusted close of the last day in the bucket', () => {
+    const days: CandleDataPoint[] = [
+      { ...bar('2026-01-05', 100), adjustedClose: 110 },
+      { ...bar('2026-01-06', 102), adjustedClose: 113 },
+      { ...bar('2026-02-02', 105), adjustedClose: 118 },
+    ]
+
+    const months = aggregateCandles(days, 'month')
+
+    expect(months.map((m) => [m.time, m.close, m.adjustedClose])).toEqual([
+      ['2026-01-01', 102, 113],
+      ['2026-02-01', 105, 118],
+    ])
   })
 })

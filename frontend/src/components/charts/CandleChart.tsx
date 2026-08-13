@@ -45,6 +45,7 @@ import {
     periodPerformance,
     type CandleChartType,
     type CandleDataPoint,
+    type CandlePriceSeries,
     type CandleTimeframe,
     type MeasureAnchor,
 } from './candle/helpers'
@@ -60,7 +61,7 @@ import {
 
 dayjs.extend(isSameOrAfter)
 
-export type { CandleChartType, CandleDataPoint, CandleTimeframe }
+export type { CandleChartType, CandleDataPoint, CandlePriceSeries, CandleTimeframe }
 
 const percent = (value: number) => `${value >= 0 ? '+' : ''}${(value * 100).toFixed(2)}%`
 
@@ -87,6 +88,21 @@ const PRICE_SCALE_MODE_OPTIONS: {
   { value: 'percent', label: '%', hint: 'Variação percentual desde o início da janela visível' },
 ]
 
+const PRICE_SERIES_OPTIONS: { value: CandlePriceSeries; label: string; hint: string }[] = [
+  {
+    value: 'traded',
+    label: 'Preço',
+    hint: 'Preço negociado no pregão',
+  },
+  {
+    value: 'adjusted',
+    label: 'Ajust.',
+    hint:
+      'Fechamento ajustado por proventos e desdobramentos: a série comparável ' +
+      'ao longo do tempo, e a que mede o retorno de quem carregou o ativo',
+  },
+]
+
 interface CandleChartProps {
   data: CandleDataPoint[]
   height?: number
@@ -100,6 +116,9 @@ interface CandleChartProps {
   /** Switch between candlesticks and a close-price line. */
   showTypeToggle?: boolean
   defaultType?: CandleChartType
+  /** Offer the adjusted series, when the data carries one. */
+  showPriceSeriesToggle?: boolean
+  defaultPriceSeries?: CandlePriceSeries
   /** Offer the linear / logarithmic / percentage price axis selector. */
   showPriceScaleModeToggle?: boolean
   defaultPriceScaleMode?: PriceScaleModeKey
@@ -130,6 +149,8 @@ export default function CandleChart({
   defaultTimeframe = 'day',
   showTypeToggle = false,
   defaultType = 'candlestick',
+  showPriceSeriesToggle = false,
+  defaultPriceSeries = 'traded',
   showPriceScaleModeToggle = false,
   defaultPriceScaleMode = 'linear',
   showMeasureToggle = false,
@@ -150,6 +171,9 @@ export default function CandleChart({
   )
   const [volumeEnabled, setVolumeEnabled] = useState(restored.volume ?? showVolume)
   const [chartType, setChartType] = useState<CandleChartType>(restored.chartType ?? defaultType)
+  const [priceSeries, setPriceSeries] = useState<CandlePriceSeries>(
+    restored.priceSeries ?? defaultPriceSeries,
+  )
   const [priceScaleMode, setPriceScaleMode] = useState<PriceScaleModeKey>(
     readPriceScaleMode(restored) ?? defaultPriceScaleMode,
   )
@@ -197,6 +221,7 @@ export default function CandleChart({
       range,
       timeframe,
       chartType,
+      priceSeries,
       priceScaleMode,
       measure: measureEnabled,
       movingAverage: movingAverageEnabled,
@@ -207,6 +232,7 @@ export default function CandleChart({
     range,
     timeframe,
     chartType,
+    priceSeries,
     priceScaleMode,
     measureEnabled,
     movingAverageEnabled,
@@ -254,7 +280,25 @@ export default function CandleChart({
     didInitRange.current = true
   }, [showRangePicker, effectiveRangeOptions, defaultRange, restored.range])
 
-  const aggregated = useMemo(() => aggregateCandles(data, timeframe), [data, timeframe])
+  // Only worth offering where it says something the traded price does not: a
+  // series the provider never adjusted is identical to it.
+  const hasAdjustedSeries = useMemo(
+    () => data.some((d) => d.adjustedClose != null && d.adjustedClose !== d.close),
+    [data],
+  )
+  const adjusted = showPriceSeriesToggle && hasAdjustedSeries && priceSeries === 'adjusted'
+
+  // The adjusted series is a single reconstructed price per day -- there is no
+  // open, high or low that was ever traded at those levels -- so it is drawn as
+  // a line, and everything read off the chart (return, average, ruler) reads
+  // the same price as the line.
+  const series = useMemo(
+    () => (adjusted ? data.map((d) => ({ ...d, close: d.adjustedClose ?? d.close })) : data),
+    [data, adjusted],
+  )
+  const effectiveType: CandleChartType = adjusted ? 'line' : chartType
+
+  const aggregated = useMemo(() => aggregateCandles(series, timeframe), [series, timeframe])
 
   const fromISO = useMemo(
     () =>
@@ -319,7 +363,7 @@ export default function CandleChart({
     })
 
     let mainSeries
-    if (chartType === 'line') {
+    if (effectiveType === 'line') {
       const lineSeries = chart.addSeries(LineSeries, {
         color: theme.palette.primary.main,
         lineWidth: 2,
@@ -366,14 +410,19 @@ export default function CandleChart({
       volumeSeries.setData(
         filtered
           .filter((d) => d.volume != null)
-          .map((d) => ({
-            time: d.time as Time,
-            value: d.volume!,
-            color:
-              d.close >= d.open
+          .map((d, index, points) => {
+            // The adjusted series has no open of its own, so the day is read
+            // against the day before it instead of against itself.
+            const previous = points[index - 1]
+            const up = adjusted ? d.close >= (previous?.close ?? d.close) : d.close >= d.open
+            return {
+              time: d.time as Time,
+              value: d.volume!,
+              color: up
                 ? alpha(theme.palette.success.main, 0.3)
                 : alpha(theme.palette.error.main, 0.3),
-          })),
+            }
+          }),
       )
     }
 
@@ -460,7 +509,8 @@ export default function CandleChart({
     movingAverageData,
     height,
     volumeEnabled,
-    chartType,
+    adjusted,
+    effectiveType,
     priceScaleMode,
     measureEnabled,
     hasPriceFormatter,
@@ -581,15 +631,40 @@ export default function CandleChart({
             </ToggleButtonGroup>
           )}
 
+          {showPriceSeriesToggle && hasAdjustedSeries && (
+            <ToggleButtonGroup
+              size="small"
+              exclusive
+              value={priceSeries}
+              onChange={(_, value) => value && setPriceSeries(value as CandlePriceSeries)}
+            >
+              {PRICE_SERIES_OPTIONS.map((option) => (
+                <ToggleButton key={option.value} value={option.value} sx={{ px: 1, py: 0.25 }}>
+                  <Tooltip title={option.hint}>
+                    <Typography variant="body2" sx={{ lineHeight: 1.4, fontSize: 12 }}>
+                      {option.label}
+                    </Typography>
+                  </Tooltip>
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          )}
+
           {showTypeToggle && (
             <ToggleButtonGroup
               size="small"
               exclusive
-              value={chartType}
+              value={effectiveType}
               onChange={(_, value) => value && setChartType(value as CandleChartType)}
             >
-              <ToggleButton value="candlestick" sx={{ px: 1, py: 0.25 }}>
-                <Tooltip title="Velas">
+              <ToggleButton value="candlestick" disabled={adjusted} sx={{ px: 1, py: 0.25 }}>
+                <Tooltip
+                  title={
+                    adjusted
+                      ? 'A série ajustada é um preço reconstruído por dia, sem máxima e mínima negociadas'
+                      : 'Velas'
+                  }
+                >
                   <CandlestickChartIcon fontSize="small" />
                 </Tooltip>
               </ToggleButton>

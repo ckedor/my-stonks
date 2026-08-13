@@ -520,7 +520,14 @@ class QuoteService:
                     'date': point.date,
                     'open': point.open,
                     'close': point.close,
-                    'adjusted_close': point.adjusted_close,
+                    # An asset the provider publishes no adjusted series for
+                    # still needs one, and its traded close is the best we can
+                    # say: no distribution or split is known to have happened.
+                    # Filling it here means every reader gets a complete
+                    # adjusted series and none of them has to guess.
+                    'adjusted_close': (
+                        point.adjusted_close if point.adjusted_close is not None else point.close
+                    ),
                     'high': point.high,
                     'low': point.low,
                     'volume': point.volume,
