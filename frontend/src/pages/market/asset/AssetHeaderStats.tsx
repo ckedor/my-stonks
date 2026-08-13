@@ -1,5 +1,5 @@
 import type { HistoricalCagr } from '@/api/market'
-import { Typography } from '@mui/material'
+import { Box, Tooltip, Typography } from '@mui/material'
 import dayjs from 'dayjs'
 
 /** What the asset compounded over its whole history, under its name.
@@ -17,7 +17,14 @@ export default function AssetHeaderStats({ cagr }: { cagr: HistoricalCagr | null
 
   return (
     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-      {'CAGR '}
+      <Tooltip title="Calculado sobre o fechamento ajustado por proventos e desdobramentos">
+        <Box
+          component="span"
+          sx={{ borderBottom: '1px dotted', borderColor: 'text.disabled', cursor: 'help' }}
+        >
+          CAGR
+        </Box>
+      </Tooltip>{' '}
       <Typography
         component="span"
         variant="body2"

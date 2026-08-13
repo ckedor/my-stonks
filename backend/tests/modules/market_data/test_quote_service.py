@@ -125,6 +125,45 @@ async def test_incremental_ingestion_requests_only_recent_window_when_history_is
 
 
 @pytest.mark.asyncio
+async def test_a_quote_with_no_adjusted_close_is_stored_with_its_traded_close():
+    """Every stored quote carries an adjusted close, so returns can use it.
+
+    Providers publish no adjustment for plenty of assets, and a hole there
+    would leave every reader to decide what to do about it.
+    """
+    fetched = FetchedQuotes(
+        ticker='PETR4',
+        currency='BRL',
+        source='test-provider',
+        parameters={},
+        quotes=[Quote(date=date(2025, 1, 2), close=35.0, adjusted_close=None)],
+    )
+    harness = build_service(latest_dates={}, fetched=fetched)
+
+    await harness.service.ingest_quotes(asset_ids=[10])
+
+    rows = harness.quote_repository.upsert_quotes.await_args.args[0]
+    assert rows[0]['adjusted_close'] == rows[0]['close']
+
+
+@pytest.mark.asyncio
+async def test_an_adjusted_close_from_the_provider_is_stored_as_it_came():
+    fetched = FetchedQuotes(
+        ticker='PETR4',
+        currency='BRL',
+        source='test-provider',
+        parameters={},
+        quotes=[Quote(date=date(2025, 1, 2), close=35.0, adjusted_close=EXPECTED_ADJUSTED_CLOSE)],
+    )
+    harness = build_service(latest_dates={}, fetched=fetched)
+
+    await harness.service.ingest_quotes(asset_ids=[10])
+
+    rows = harness.quote_repository.upsert_quotes.await_args.args[0]
+    assert rows[0]['adjusted_close'] == EXPECTED_ADJUSTED_CLOSE
+
+
+@pytest.mark.asyncio
 async def test_incremental_ingestion_overlaps_latest_date_by_seven_days():
     fetched = FetchedQuotes(
         ticker='PETR4',

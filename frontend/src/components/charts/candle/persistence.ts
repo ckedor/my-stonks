@@ -1,5 +1,5 @@
 import type { DateRangeKey } from '@/lib/utils/date'
-import type { CandleChartType, CandleTimeframe } from './helpers'
+import type { CandleChartType, CandlePriceSeries, CandleTimeframe } from './helpers'
 
 const STORAGE_PREFIX = 'my-stonks:chart:'
 
@@ -18,6 +18,7 @@ export interface PersistedChartState {
   range?: DateRangeKey
   timeframe?: CandleTimeframe
   chartType?: CandleChartType
+  priceSeries?: CandlePriceSeries
   priceScaleMode?: PriceScaleMode
   /** @deprecated Superseded by `priceScaleMode`; still read so a chart the user
    *  had on a log axis stays on one. */

@@ -4,12 +4,20 @@ export type CandleTimeframe = 'day' | 'week' | 'month'
 
 export type CandleChartType = 'candlestick' | 'line'
 
+/** Which price the chart plots: the one traded on the day, or the one adjusted
+ *  for distributions and splits. */
+export type CandlePriceSeries = 'traded' | 'adjusted'
+
 export interface CandleDataPoint {
   time: string
   open: number
   high: number
   low: number
   close: number
+  /** Close adjusted for distributions and splits, when the provider has one.
+   *  It is the series to compare against itself over time; the traded close is
+   *  the price actually paid on the day. */
+  adjustedClose?: number
   volume?: number
 }
 
@@ -54,6 +62,7 @@ export function aggregateCandles(
       high: Math.max(...candles.map((c) => c.high)),
       low: Math.min(...candles.map((c) => c.low)),
       close: candles[candles.length - 1].close,
+      adjustedClose: candles[candles.length - 1].adjustedClose,
       volume: candles.some((c) => c.volume != null)
         ? candles.reduce((sum, c) => sum + (c.volume ?? 0), 0)
         : undefined,

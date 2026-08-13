@@ -122,6 +122,7 @@ export default function MarketAssetPage() {
             showRangePicker
             showTimeframeSelector
             showTypeToggle
+            showPriceSeriesToggle
             showPriceScaleModeToggle
             showMeasureToggle
             showMovingAverageToggle
