@@ -152,9 +152,14 @@ export function formatSpan(days: number): string {
   }
   const years = days / DAYS_IN_YEAR
   // One decimal below ten years, whole years above: "1,5 anos" is useful,
-  // "23,4 anos" is just noise.
-  const value = years < 10 ? years.toFixed(1).replace('.', ',') : String(Math.round(years))
-  return `${value} ${value === '1,0' ? 'ano' : 'anos'}`
+  // "23,4 anos" is just noise. A whole number of years drops the decimal
+  // altogether -- the ranges on offer are whole months and whole years, so
+  // "2,0 anos" only ever means "2 anos".
+  const rounded = years < 10 ? Math.round(years * 10) / 10 : Math.round(years)
+  const value = Number.isInteger(rounded)
+    ? String(rounded)
+    : rounded.toFixed(1).replace('.', ',')
+  return `${value} ${rounded === 1 ? 'ano' : 'anos'}`
 }
 
 const DAYS_IN_MONTH = 30

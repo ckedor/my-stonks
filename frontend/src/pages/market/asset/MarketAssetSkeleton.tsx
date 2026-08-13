@@ -18,7 +18,19 @@ export default function MarketAssetSkeleton({ height = 500 }: { height?: number 
         <Skeleton variant="text" width={110} height={36} />
         <Skeleton variant="rounded" width={46} height={20} />
       </Box>
-      <Skeleton variant="text" width={240} height={24} sx={{ mb: 2 }} />
+      <Skeleton variant="text" width={240} height={24} />
+
+      {/* Header stats: CAGR and the start of the series */}
+      <Stack direction="row" spacing={3} sx={{ mt: 1.5, mb: 2 }}>
+        <Box>
+          <Skeleton variant="text" width={110} height={18} />
+          <Skeleton variant="text" width={90} height={26} />
+        </Box>
+        <Box>
+          <Skeleton variant="text" width={110} height={18} />
+          <Skeleton variant="text" width={100} height={26} />
+        </Box>
+      </Stack>
 
       {/* Quote card */}
       <Box
