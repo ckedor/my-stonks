@@ -101,13 +101,14 @@ export default function MarketAssetPage() {
           </Typography>
         )}
       </Box>
-      {asset && (
-        <Typography variant="body1" color="text.secondary">
-          {asset.name}
-        </Typography>
-      )}
-
-      <AssetHeaderStats cagr={quotes?.cagr ?? null} />
+      <Box mb={2}>
+        {asset && (
+          <Typography variant="body1" color="text.secondary">
+            {asset.name}
+          </Typography>
+        )}
+        <AssetHeaderStats cagr={quotes?.cagr ?? null} />
+      </Box>
 
       {error ? (
         <Typography color="error">{error}</Typography>
