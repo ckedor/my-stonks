@@ -213,6 +213,9 @@ class AssetQuoteHistoryService:
 
         if entry['quotes']:
             quotes, resolved = await self._in_currency(entry['quotes'], currency, ticker=ticker)
+            # Measured on the quotes as served -- same currency, same window --
+            # so the rate always describes the series the caller received.
+            cagr = historical_cagr(quotes)
             return {
                 'ticker': ticker,
                 'asset_type_id': asset_type_id,
@@ -220,7 +223,7 @@ class AssetQuoteHistoryService:
                 'logo_url': logo['logo_url'],
                 'source': 'database',
                 'quotes': quotes,
-                'cagr': self._cagr(quotes),
+                'cagr': cagr.to_dict() if cagr else None,
             }
 
         fetched = await self.on_demand.get_quotes(
@@ -236,24 +239,15 @@ class AssetQuoteHistoryService:
             # per observation, so it is what the quotes fall back to.
             default_currency_id=CURRENCY_MAP.get(fetched['currency']),
         )
+        cagr = historical_cagr(quotes)
         return {
             **fetched,
             'currency': resolved,
             'quotes': quotes,
             'logo_url': logo['logo_url'],
             'source': 'provider',
-            'cagr': self._cagr(quotes),
+            'cagr': cagr.to_dict() if cagr else None,
         }
-
-    @staticmethod
-    def _cagr(quotes: list[dict]) -> dict | None:
-        """Growth over the served history, computed by the module's own domain.
-
-        It is measured on the quotes as served -- same currency, same window --
-        so the rate always describes the series the caller received.
-        """
-        result = historical_cagr(quotes)
-        return result.to_dict() if result else None
 
     async def _in_currency(
         self,
