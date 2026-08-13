@@ -1,6 +1,7 @@
 import type { CandleDataPoint } from '@/components/charts/CandleChart'
 import {
   ASSET_ROUTES,
+  FII_ROUTES,
   INDEX_ROUTES,
   MARKET_DATA_SERIES_ROUTES,
   QUOTE_ROUTES,
@@ -171,6 +172,51 @@ export function quotesToCandleData(quotes: QuotesResponse['quotes']): CandleData
     volume: q.volume ?? undefined,
   }))
 }
+
+
+// ---------------------------------------------------------------------------
+// Real-estate fund profile
+// ---------------------------------------------------------------------------
+
+/** One distribution per share, on the date it reached the holder. Always BRL:
+ *  these funds pay in reais and the backend does not restate them. */
+export interface FIIDividend {
+  date: string
+  value_per_share: number
+}
+
+/** What the fund reports about itself, as of its last published report.
+ *
+ *  Every field is optional: a provider that has never covered a fund, or that
+ *  drops one indicator, must cost the card that one value and nothing else.
+ *  The yields and the monthly return are percentages already — 8.5 is 8.5% —
+ *  so they are printed, never multiplied. Monetary fields are in BRL. */
+export interface FIIIndicators {
+  as_of_date: string | null
+  segment: string | null
+  segment_type: string | null
+  manager: string | null
+  administrator: string | null
+  price: number | null
+  book_value_per_share: number | null
+  price_to_book: number | null
+  dividend_yield_12m: number | null
+  dividend_yield_1m: number | null
+  monthly_return: number | null
+  equity: number | null
+  total_assets: number | null
+  shares_outstanding: number | null
+  shareholders: number | null
+}
+
+export interface FIIProfile {
+  ticker: string
+  indicators: FIIIndicators | null
+  dividends: FIIDividend[]
+}
+
+export const fetchFIIProfile = (assetId: number): Promise<FIIProfile> =>
+  api.get<FIIProfile>(FII_ROUTES.profile(assetId)).then((r) => r.data)
 
 
 // ---------------------------------------------------------------------------

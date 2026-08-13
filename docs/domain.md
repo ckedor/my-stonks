@@ -52,6 +52,11 @@ The canonical code identifier for an asset type is its uppercase key.
 | Treasury-bond details | Dados do título público | Maturity, rate, and Treasury bond type associated with a Treasury asset. |
 | FII type | Tipo de FII | High-level FII strategy, such as brick, paper, hybrid, or fund of funds. |
 | FII segment | Segmento de FII | More specific economic or property segment within an FII type. |
+| FII profile | Perfil do FII | An FII's published self-description: its indicators together with the dividends it has paid. Read on demand from a market-data provider and never persisted, since a fund republishes it monthly and the application keeps no history of it. |
+| FII indicators | Indicadores do FII | The numbers an FII reports as of its last published report: price, book value per share, price to book, dividend yields, monthly return, equity, total assets, shares outstanding, shareholders, segment, and who manages and administers it. Every one of them is optional; an indicator a provider does not publish is absent, not zero. |
+| Book value per share | Valor patrimonial por cota | A fund's equity divided by its outstanding shares. |
+| Price to book | P/VP | Share price divided by book value per share. |
+| Dividend yield | Dividend yield | Dividends over a period as a percentage of the current share price. |
 | ETF segment | Segmento de ETF | Classification of an ETF by exposure, such as Brazilian equities, international equities, fixed income, or commodities. |
 
 ## Market data, quotes, and prices

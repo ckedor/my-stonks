@@ -73,6 +73,10 @@ export const QUOTE_ROUTES = {
   onDemand: `${MARKET_DATA}/quotes/on-demand`,
 } as const
 
+export const FII_ROUTES = {
+  profile: (assetId: number | string) => `${MARKET_DATA}/fii/${assetId}/profile`,
+} as const
+
 export const DATA_INGESTION_ROUTES = {
   list: (ingestionType: string) =>
     `${MARKET_DATA}/ingestions/${ingestionType}`,

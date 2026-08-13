@@ -12,6 +12,7 @@ from app.modules.market_data.service.data_ingestion_service import (
 )
 from app.modules.market_data.service.asset_service import AssetService
 from app.modules.market_data.service.brokers_service import BrokersService
+from app.modules.market_data.service.fii_service import FIIProfileReadService
 from app.modules.market_data.service.market_data_series_ingestion_service import (
     MarketDataSeriesIngestionService,
 )
@@ -87,6 +88,21 @@ async def get_asset_quote_history_service(
         persisted=PersistedQuoteReadService(uow),
         on_demand=OnDemandQuoteReadService(MarketDataProvider(), cache=RedisService()),
         usd_brl=build_usd_brl_read_service(),
+    )
+    try:
+        yield service
+    finally:
+        await service.aclose()
+
+
+async def get_fii_profile_read_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> AsyncIterator[FIIProfileReadService]:
+    """The provider-backed profile of a registered real-estate fund."""
+    service = FIIProfileReadService(
+        uow=uow,
+        provider=MarketDataProvider(),
+        cache=RedisService(),
     )
     try:
         yield service

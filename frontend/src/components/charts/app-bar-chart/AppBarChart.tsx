@@ -52,6 +52,13 @@ interface Props {
   locale?: string
   fontSize?: number
   yTickStep?: number
+  /** Formats a bar's value in the tooltip. Defaults to `valueType`'s format,
+   *  which rounds money to whole units -- too coarse for a series priced per
+   *  share, where the whole value lives in the cents. */
+  valueFormatter?: (value: number) => string
+  /** Names a bucket in the tooltip. Defaults to its exact date, which reads as
+   *  a claim about a day when the bars are months or years. */
+  tooltipLabelFormatter?: (dateISO: string) => string
 }
 
 function toSteppedDomain(
@@ -108,6 +115,8 @@ export function AppBarChart({
   locale = 'pt-BR',
   fontSize = 13,
   yTickStep,
+  valueFormatter,
+  tooltipLabelFormatter,
 }: Props) {
   const theme = useTheme()
 
@@ -198,6 +207,8 @@ export function AppBarChart({
   }, [valueType, locale, currency])
 
   const formatTooltipValue = useMemo(() => {
+    if (valueFormatter) return (value: unknown) => valueFormatter(Number(value))
+
     if (valueType === 'currency') {
       const sym = currency === 'BRL' ? 'R$' : 'US$'
       return (value: unknown) =>
@@ -213,12 +224,14 @@ export function AppBarChart({
     })
 
     return (value: unknown) => base(Number(value))
-  }, [valueType, locale, currency])
+  }, [valueType, locale, currency, valueFormatter])
 
   const tooltipLabel = useMemo(
     () => (label: unknown) =>
-      `Data: ${dayjs(String(label)).format('DD/MM/YYYY')}`,
-    []
+      tooltipLabelFormatter
+        ? tooltipLabelFormatter(String(label))
+        : `Data: ${dayjs(String(label)).format('DD/MM/YYYY')}`,
+    [tooltipLabelFormatter]
   )
 
   if (loading) return <LoadingSpinner />

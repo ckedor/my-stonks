@@ -83,6 +83,10 @@ export const architectureNodes: ArchitectureNode[] = [
   node('on-demand-read-service', 'service', 'OnDemandQuoteReadService', 'SERVIÇO', [
     'Somente provider · cache 2 min',
   ]),
+  node('fii-profile-service', 'service', 'FIIProfileReadService', 'SERVIÇO', [
+    'Indicadores e rendimentos do FII',
+    'Somente provider · cache 6 h',
+  ]),
   node('portfolio-service', 'service', 'PortfolioConsolidatorService', 'SERVIÇO', [
     'Lê cotações persistidas',
     'Recalcula posições e retornos',
@@ -130,6 +134,7 @@ export const architectureEdges: ArchitectureEdge[] = [
 
   edge('market-module-quote-service', 'market-module', 'quote-service', 'calls'),
   edge('market-module-history', 'market-module', 'history-service', 'calls'),
+  edge('market-module-fii-profile', 'market-module', 'fii-profile-service', 'calls'),
   edge('history-persisted', 'history-service', 'persisted-read-service', 'calls'),
   edge('history-on-demand', 'history-service', 'on-demand-read-service', 'calls'),
   edge('portfolio-module-service', 'portfolio-module', 'portfolio-service', 'calls'),
@@ -138,6 +143,9 @@ export const architectureEdges: ArchitectureEdge[] = [
   edge('quote-service-brapi', 'quote-service', 'brapi', 'reads'),
   edge('quote-service-crypto', 'quote-service', 'cryptocompare', 'reads'),
   edge('on-demand-brapi', 'on-demand-read-service', 'brapi', 'reads'),
+  edge('fii-profile-brapi', 'fii-profile-service', 'brapi', 'reads'),
+  edge('fii-profile-uow', 'fii-profile-service', 'uow', 'reads'),
+  edge('fii-profile-cache', 'fii-profile-service', 'queue', 'caches'),
   edge('usd-task-bcb', 'usd-task', 'bcb', 'reads'),
   edge('series-task-bcb', 'series-task', 'bcb', 'reads'),
   edge('series-task-brapi', 'series-task', 'brapi', 'reads'),

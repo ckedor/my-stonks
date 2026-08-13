@@ -1,5 +1,6 @@
 # app/modules/market_data/service/market_data_provider.py
 import asyncio
+import math
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
@@ -16,6 +17,7 @@ from app.infra.integrations.mais_retorno_client import MaisRetornoClient
 from app.infra.integrations.status_invest_client import StatusInvestClient
 from app.infra.integrations.tesouro_client import TesouroClient
 from app.modules.market_data.domain.enums import EXCHANGE
+from app.modules.market_data.domain.fii import FIIDividend, FIIIndicators, FIIProfile
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.domain.quote import (
     FetchedQuotes,
@@ -51,6 +53,37 @@ MARKET_TIMEZONE = ZoneInfo('America/Sao_Paulo')
 #: Served by brapi for assets it has no artwork for; it is the vendor's own
 #: mark, not the asset's.
 PROVIDER_PLACEHOLDER_LOGO = 'icons/BRAPI.svg'
+
+#: Where the provider's FII routes carry their per-fund results. Its FII routes
+#: answer under `fiis` and its quote routes under `results`; both are read so
+#: that a renamed envelope costs the profile its values rather than raising.
+FII_RESULT_KEYS = ('fiis', 'results', 'data')
+
+#: Provider field behind each indicator, first match wins. An indicator the
+#: provider does not publish for a fund stays empty, and the reader renders the
+#: gap -- one missing number must not cost the whole profile.
+FII_INDICATOR_KEYS: dict[str, tuple[str, ...]] = {
+    'price': ('price',),
+    'book_value_per_share': ('navPerShare', 'bookValuePerShare'),
+    'price_to_book': ('priceToNav', 'priceToBook'),
+    'dividend_yield_12m': ('dividendYield12m',),
+    'dividend_yield_1m': ('dividendYield1m',),
+    'monthly_return': ('monthlyReturn',),
+    'equity': ('equity', 'netWorth'),
+    'total_assets': ('totalAssets',),
+    'shares_outstanding': ('sharesOutstanding',),
+}
+
+FII_TEXT_INDICATOR_KEYS: dict[str, tuple[str, ...]] = {
+    'segment': ('segmentoAtuacao', 'segment'),
+    'segment_type': ('segmentType', 'fundType'),
+    'manager': ('managerName', 'manager'),
+    'administrator': ('adminName', 'administrator'),
+}
+
+FII_DIVIDEND_LIST_KEYS = ('dividends', 'cashDividends', 'dividendsData')
+FII_DIVIDEND_DATE_KEYS = ('paymentDate', 'payDate', 'date')
+FII_DIVIDEND_VALUE_KEYS = ('rate', 'value', 'amount', 'valuePerShare')
 
 
 class MarketDataProvider:
@@ -346,6 +379,144 @@ class MarketDataProvider:
             parameters=parameters,
             quotes=self._normalize_quotes(history),
         )
+
+    async def fetch_fii_profile(self, *, ticker: str) -> FIIProfile:
+        """A real-estate fund's published indicators and its distributions.
+
+        The two come from separate upstream routes and are asked for together,
+        tolerating one of them failing: a fund whose indicators are missing
+        still has a distribution history worth charting, and the reverse holds
+        for a fund the provider has never paid out for.
+        """
+        symbol = ticker.upper()
+        indicators_response, dividends_response = await asyncio.gather(
+            self.brapi_client.get_fii_indicators(symbols=symbol),
+            self.brapi_client.get_fii_dividends(symbols=symbol),
+            return_exceptions=True,
+        )
+        return FIIProfile(
+            ticker=symbol,
+            indicators=self._fii_indicators(indicators_response, symbol),
+            dividends=self._fii_dividends(dividends_response, symbol),
+        )
+
+    def _fii_indicators(self, response: object, symbol: str) -> FIIIndicators | None:
+        result = self._fii_result(response, symbol, subject='indicators')
+        if not result:
+            return None
+        numbers = {
+            name: self._number(self._first(result, keys))
+            for name, keys in FII_INDICATOR_KEYS.items()
+        }
+        texts = {
+            name: self._text(self._first(result, keys))
+            for name, keys in FII_TEXT_INDICATOR_KEYS.items()
+        }
+        shareholders = self._number(self._first(result, ('totalInvestors', 'shareholders')))
+        return FIIIndicators(
+            as_of_date=self._provider_date(self._first(result, ('asOfDate', 'date'))),
+            shareholders=int(shareholders) if shareholders is not None else None,
+            **numbers,
+            **texts,
+        )
+
+    def _fii_dividends(self, response: object, symbol: str) -> list[FIIDividend]:
+        result = self._fii_result(response, symbol, subject='dividends')
+        payments = self._first(result, FII_DIVIDEND_LIST_KEYS)
+        if isinstance(payments, dict):
+            # `dividendsData` wraps the list one level deeper on the quote route.
+            payments = self._first(payments, FII_DIVIDEND_LIST_KEYS)
+        if not isinstance(payments, list):
+            return []
+
+        dividends: dict[date, FIIDividend] = {}
+        for payment in payments:
+            if not isinstance(payment, dict):
+                continue
+            paid_on = self._provider_date(self._first(payment, FII_DIVIDEND_DATE_KEYS))
+            value = self._number(self._first(payment, FII_DIVIDEND_VALUE_KEYS))
+            if paid_on is None or value is None:
+                continue
+            dividends[paid_on] = FIIDividend(date=paid_on, value_per_share=value)
+        return [dividends[paid_on] for paid_on in sorted(dividends)]
+
+    @staticmethod
+    def _fii_result(response: object, symbol: str, *, subject: str) -> dict:
+        """The one fund's entry in a provider response, or nothing.
+
+        A failed request arrives here as the exception `asyncio.gather`
+        collected, and is logged and treated as an empty half of the profile.
+        """
+        if isinstance(response, BaseException):
+            logger.warning('Could not read the %s of %s: %s', subject, symbol, response)
+            return {}
+        if not isinstance(response, dict):
+            return {}
+        for key in FII_RESULT_KEYS:
+            items = response.get(key)
+            if isinstance(items, dict):
+                return items
+            if not isinstance(items, list) or not items:
+                continue
+            entries = [item for item in items if isinstance(item, dict)]
+            match = next(
+                (
+                    entry
+                    for entry in entries
+                    if str(entry.get('symbol', '')).upper() == symbol
+                ),
+                None,
+            )
+            if match is not None:
+                return match
+            # Routes queried for a single fund need not echo the symbol back.
+            if len(entries) == 1:
+                return entries[0]
+        return {}
+
+    @staticmethod
+    def _first(source: object, keys: tuple[str, ...]):
+        if not isinstance(source, dict):
+            return None
+        for key in keys:
+            value = source.get(key)
+            if value is not None:
+                return value
+        return None
+
+    @staticmethod
+    def _number(value: object) -> float | None:
+        """A finite float, or nothing. Providers write absences several ways."""
+        if value is None or isinstance(value, bool):
+            return None
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return None
+        return number if math.isfinite(number) else None
+
+    @staticmethod
+    def _text(value: object) -> str | None:
+        if not isinstance(value, str):
+            return None
+        stripped = value.strip()
+        return stripped or None
+
+    @staticmethod
+    def _provider_date(value: object) -> date | None:
+        """A calendar date out of whatever the provider wrote it as.
+
+        The FII routes date their fields with ISO strings while the quote
+        routes use epoch seconds, and both go through here.
+        """
+        if value is None or isinstance(value, bool):
+            return None
+        try:
+            if isinstance(value, (int, float)):
+                return pd.to_datetime(value, unit='s', utc=True).date()
+            return pd.to_datetime(value, utc=True).date()
+        except (ValueError, TypeError, pd.errors.ParserError):
+            return None
 
     async def _fetch_crypto_quotes(
         self,

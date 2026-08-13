@@ -58,6 +58,14 @@ page” means a product page outside a portfolio, not anonymous HTTP access. The
 on-demand path holds provider responses briefly so that reopening the same
 ticker does not spend provider quota again.
 
+`/market_data/fii/{asset_id}/profile` answers the market page of a real-estate
+fund with what only a fund has: the indicators it publishes and the dividends it
+has paid. It resolves the asset from storage to reject anything that is not a
+registered FII, then reads the provider and holds the answer for a few hours —
+a fund republishes those numbers once a month, so nothing is persisted and no
+calculation depends on them. The two halves come from separate provider routes
+and one failing leaves the other on the page.
+
 `/market_data/quotes/asset/{asset_id}` reads storage first and falls back to the
 provider. It takes a `currency` and answers in it, converting through the
 USD/BRL history when the asset is not quoted in that currency, and reports which

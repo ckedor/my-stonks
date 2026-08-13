@@ -3,19 +3,17 @@ import {
   quotesToCandleData,
   type AssetQuoteHistory,
 } from '@/api/market'
-import CandleChart from '@/components/charts/CandleChart'
-import AppCard from '@/components/ui/AppCard'
 import { useCurrency } from '@/hooks/useCurrency'
 import AssetHeaderStats from './AssetHeaderStats'
+import { QUOTE_CHART_HEIGHT } from './AssetQuoteCard'
 import MarketAssetSkeleton from './MarketAssetSkeleton'
+import { assetMarketView } from './views'
 import { useFavoritesStore } from '@/stores/favorites'
 import { useMarketStore } from '@/stores/market'
 import NavigateNextIcon from '@mui/icons-material/NavigateNext'
 import { Box, Breadcrumbs, Link as MuiLink, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-
-const CHART_HEIGHT = 500
 
 export default function MarketAssetPage() {
   const { id } = useParams<{ id: string }>()
@@ -55,7 +53,11 @@ export default function MarketAssetPage() {
     [quotes],
   )
 
-  if (loading) return <MarketAssetSkeleton height={CHART_HEIGHT} />
+  // What this asset's type has to show. Everything below the header varies
+  // with it; the header itself does not.
+  const AssetMarketView = assetMarketView(asset?.asset_type_id)
+
+  if (loading) return <MarketAssetSkeleton height={QUOTE_CHART_HEIGHT} />
 
   return (
     <Box pt={2}>
@@ -110,28 +112,15 @@ export default function MarketAssetPage() {
         <AssetHeaderStats cagr={quotes?.cagr ?? null} />
       </Box>
 
-      {error ? (
-        <Typography color="error">{error}</Typography>
+      {error || !asset ? (
+        <Typography color="error">{error ?? 'Ativo não encontrado'}</Typography>
       ) : (
-        <AppCard title="Cotação">
-          <CandleChart
-            data={candleData}
-            height={CHART_HEIGHT}
-            showVolume
-            showVolumeToggle
-            showRangePicker
-            showTimeframeSelector
-            showTypeToggle
-            showPriceSeriesToggle
-            showPriceScaleModeToggle
-            showMeasureToggle
-            showMovingAverageToggle
-            showPerformance
-            defaultRange="1y"
-            priceFormatter={format}
-            persistKey={`market-asset:${ticker}`}
-          />
-        </AppCard>
+        <AssetMarketView
+          assetId={asset.id}
+          ticker={asset.ticker}
+          candleData={candleData}
+          priceFormatter={format}
+        />
       )}
     </Box>
   )
