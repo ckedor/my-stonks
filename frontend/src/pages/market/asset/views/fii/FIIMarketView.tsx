@@ -56,9 +56,12 @@ export default function FIIMarketView({
       )}
 
       {profile?.indicators && <FIIIndicatorsCard indicators={profile.indicators} />}
-      {profile && profile.dividends.length > 0 && (
-        <FIIDividendsCard dividends={profile.dividends} />
-      )}
+
+      {/* Rendered whenever the profile loaded, empty list included. Hiding the
+          card on an empty list made a provider that answered nothing look
+          exactly like a page that was never built -- and the chart's own empty
+          message, which says which of the two it is, could never be reached. */}
+      {profile && <FIIDividendsCard dividends={profile.dividends} />}
     </Stack>
   )
 }

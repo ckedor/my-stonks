@@ -1,7 +1,14 @@
 import { DateRangeKey, getDateFromRange } from "@/lib/utils/date"
 import dayjs from "dayjs"
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter"
 import { RangeOption } from "../shared/DateRangeMenu"
 import { TimeSeriesPoint } from "./AppBarChart"
+
+// Registered here because `filterByRange` below is what calls it. dayjs plugins
+// are global, so this module used to work only when some other chart on the
+// same page had already extended it -- correctness by import order, which held
+// right up until a bar chart was rendered on its own.
+dayjs.extend(isSameOrAfter)
 
 export type GroupBy = 'day' | 'week' | 'month' | 'year'
 export type LabelSide = 'left' | 'right'

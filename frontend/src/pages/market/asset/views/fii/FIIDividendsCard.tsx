@@ -81,7 +81,7 @@ export default function FIIDividendsCard({ dividends }: Props) {
           valueType="number"
           showRangePicker
           defaultRange="5y"
-          emptyMessage="O provedor não informa rendimentos para este fundo."
+          emptyMessage="O provedor não retornou rendimentos para este fundo."
           valueFormatter={(value) => formatBRL(value)}
           tooltipLabelFormatter={formatMonth}
         />
