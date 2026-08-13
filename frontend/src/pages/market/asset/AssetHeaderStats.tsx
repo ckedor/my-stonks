@@ -1,63 +1,32 @@
 import type { HistoricalCagr } from '@/api/market'
-import { formatSpan } from '@/components/charts/candle/helpers'
-import { Box, Stack, Typography } from '@mui/material'
+import { Typography } from '@mui/material'
 import dayjs from 'dayjs'
 
-/** What the asset did over its whole history, above the chart.
+/** What the asset compounded over its whole history, under its name.
  *
- *  The rate is useless without its window -- 12% a year since 1998 is a
- *  different claim from 12% since 2023 -- so the start of the series sits
- *  beside it rather than being left for the reader to infer from the chart. */
+ *  One line, in the register of the subtitle above it: the header is there to
+ *  name the asset, and a rate set in tiles and uppercase labels competes with
+ *  the chart for attention it does not deserve. The start of the series is
+ *  part of the same sentence because the rate does not mean anything without
+ *  it -- 51% a year since 2010 is a different claim from 51% since 2023. */
 export default function AssetHeaderStats({ cagr }: { cagr: HistoricalCagr | null }) {
   if (!cagr) return null
 
-  const start = dayjs(cagr.start_date)
-  const days = dayjs(cagr.end_date).diff(start, 'day')
   const percent = cagr.value * 100
+  const formatted = `${percent >= 0 ? '+' : ''}${percent.toFixed(2).replace('.', ',')}%`
 
   return (
-    <Stack
-      direction="row"
-      spacing={3}
-      sx={{ mt: 1.5, mb: 2, flexWrap: 'wrap', rowGap: 1.5 }}
-    >
-      <Stat label="CAGR histórico">
-        <Typography
-          sx={{
-            fontSize: 18,
-            fontWeight: 700,
-            lineHeight: 1.2,
-            color: percent >= 0 ? 'success.main' : 'error.main',
-          }}
-        >
-          {percent >= 0 ? '+' : ''}
-          {percent.toFixed(2).replace('.', ',')}% a.a.
-        </Typography>
-      </Stat>
-
-      <Stat label="Início da série">
-        <Typography sx={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2 }}>
-          {start.format('DD/MM/YYYY')}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {formatSpan(days)} de histórico
-        </Typography>
-      </Stat>
-    </Stack>
-  )
-}
-
-function Stat({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <Box>
+    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+      {'CAGR '}
       <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}
+        component="span"
+        variant="body2"
+        sx={{ fontWeight: 600, color: percent >= 0 ? 'success.main' : 'error.main' }}
       >
-        {label}
+        {formatted} a.a.
       </Typography>
-      <Box>{children}</Box>
-    </Box>
+      {' desde '}
+      {dayjs(cagr.start_date).format('DD/MM/YYYY')}
+    </Typography>
   )
 }
