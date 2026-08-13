@@ -20,6 +20,7 @@ from app.modules.market_data.domain.quote import (
     Quote,
     QuoteIngestionResult,
     convert_quotes_to_currency,
+    historical_cagr,
 )
 from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
 from app.modules.market_data.domain.ingestion import (
@@ -219,6 +220,7 @@ class AssetQuoteHistoryService:
                 'logo_url': logo['logo_url'],
                 'source': 'database',
                 'quotes': quotes,
+                'cagr': self._cagr(quotes),
             }
 
         fetched = await self.on_demand.get_quotes(
@@ -240,7 +242,18 @@ class AssetQuoteHistoryService:
             'quotes': quotes,
             'logo_url': logo['logo_url'],
             'source': 'provider',
+            'cagr': self._cagr(quotes),
         }
+
+    @staticmethod
+    def _cagr(quotes: list[dict]) -> dict | None:
+        """Growth over the served history, computed by the module's own domain.
+
+        It is measured on the quotes as served -- same currency, same window --
+        so the rate always describes the series the caller received.
+        """
+        result = historical_cagr(quotes)
+        return result.to_dict() if result else None
 
     async def _in_currency(
         self,

@@ -7,6 +7,7 @@ import {
 import CandleChart from '@/components/charts/CandleChart'
 import AppCard from '@/components/ui/AppCard'
 import { useCurrency } from '@/hooks/useCurrency'
+import AssetHeaderStats from './AssetHeaderStats'
 import MarketAssetSkeleton from './MarketAssetSkeleton'
 import { useMarketStore } from '@/stores/market'
 import NavigateNextIcon from '@mui/icons-material/NavigateNext'
@@ -100,10 +101,13 @@ export default function MarketAssetPage() {
         )}
       </Box>
       {asset && (
-        <Typography variant="body1" color="text.secondary" mb={2}>
+        <Typography variant="body1" color="text.secondary">
           {asset.name}
         </Typography>
       )}
+
+      <AssetHeaderStats cagr={quotes?.cagr ?? null} />
+
 
       {error ? (
         <Typography color="error">{error}</Typography>

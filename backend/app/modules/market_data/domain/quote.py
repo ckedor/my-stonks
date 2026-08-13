@@ -75,6 +75,72 @@ def convert_quotes_to_currency(
     return converted
 
 
+#: The shortest history worth annualizing. Below a full year the exponent
+#: amplifies whatever the last months did, and a number that swings with noise
+#: reads as a fact -- so no number is served at all.
+MIN_CAGR_DAYS = 365
+DAYS_IN_YEAR = 365.25
+#: A rate needs a price to start from and a price to end at.
+MIN_CAGR_QUOTES = 2
+
+
+@dataclass(frozen=True)
+class HistoricalCagr:
+    """Compound annual growth over the whole persisted history of an asset.
+
+    ``start_date`` travels with the rate because the two are meaningless apart:
+    the same percentage means very different things over three years and over
+    thirty, and the reader can only tell from where the series begins.
+    """
+
+    value: float
+    start_date: date
+    end_date: date
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            'value': self.value,
+            'start_date': self.start_date.isoformat(),
+            'end_date': self.end_date.isoformat(),
+        }
+
+
+def _quote_date(value: Any) -> date:
+    return value if isinstance(value, date) else date.fromisoformat(str(value))
+
+
+def historical_cagr(quotes: Sequence[dict]) -> HistoricalCagr | None:
+    """Annualized growth between the first and last close of ``quotes``.
+
+    Serialized quotes in, so the rate is computed on exactly the prices the
+    caller serves -- already restated into the requested currency, which is the
+    currency the reader is looking at.
+
+    Returns None whenever the rate would not mean anything: fewer than two
+    closes, a non-positive first close, or a span shorter than a year.
+    """
+    priced = [quote for quote in quotes if quote.get('close') is not None]
+    if len(priced) < MIN_CAGR_QUOTES:
+        return None
+
+    first, last = priced[0], priced[-1]
+    start, end = _quote_date(first['date']), _quote_date(last['date'])
+    days = (end - start).days
+    if days < MIN_CAGR_DAYS:
+        return None
+
+    first_close, last_close = float(first['close']), float(last['close'])
+    if first_close <= 0 or last_close <= 0:
+        return None
+
+    years = days / DAYS_IN_YEAR
+    return HistoricalCagr(
+        value=(last_close / first_close) ** (1 / years) - 1,
+        start_date=start,
+        end_date=end,
+    )
+
+
 @dataclass(frozen=True)
 class AssetSnapshot:
     id: int

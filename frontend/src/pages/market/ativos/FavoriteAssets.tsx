@@ -59,8 +59,19 @@ export default function FavoriteAssets({ limit = 8 }: { limit?: number }) {
                 <TypeBadge label={asset.asset_type.short_name} />
               )}
             </Stack>
-            <Typography variant="caption" color="text.secondary">
-              {asset.visit_count} {asset.visit_count === 1 ? 'acesso' : 'acessos'}
+            {/* The visit count only ranks the shelf -- showing it tells the
+                user about our bookkeeping, not about the asset. */}
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                display: 'block',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {asset.name}
             </Typography>
           </Box>
         ))}

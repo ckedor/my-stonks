@@ -118,9 +118,21 @@ export interface QuotesResponse {
   }[]
 }
 
+/** Annualized growth over the whole served history.
+ *
+ * The window travels with the rate: the same percentage means very different
+ * things over three years and over thirty. */
+export interface HistoricalCagr {
+  value: number
+  start_date: string
+  end_date: string
+}
+
 export interface AssetQuoteHistory extends QuotesResponse {
   /** Where the quotes came from: 'database' or 'provider'. */
   source: 'database' | 'provider'
+  /** Absent when the history is too short to annualize honestly. */
+  cagr: HistoricalCagr | null
 }
 
 /** History for one asset, served from storage when we have it.

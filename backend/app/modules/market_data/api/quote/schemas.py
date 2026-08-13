@@ -32,6 +32,14 @@ class OnDemandQuotesResponse(BaseModel):
     quotes: list[QuoteResponse]
 
 
+class HistoricalCagrResponse(BaseModel):
+    """Annualized growth over the served history, and the window it covers."""
+
+    value: float
+    start_date: date
+    end_date: date
+
+
 class AssetQuoteHistoryResponse(BaseModel):
     ticker: str
     asset_type_id: int
@@ -40,3 +48,5 @@ class AssetQuoteHistoryResponse(BaseModel):
     #: Where the quotes came from: 'database' or 'provider'.
     source: str
     quotes: list[QuoteResponse]
+    #: Absent when the history is too short to annualize honestly.
+    cagr: HistoricalCagrResponse | None = None
