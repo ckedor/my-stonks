@@ -1,7 +1,6 @@
 import {
   fetchAssetQuoteHistory,
   quotesToCandleData,
-  recordAssetVisit,
   type AssetQuoteHistory,
 } from '@/api/market'
 import CandleChart from '@/components/charts/CandleChart'
@@ -9,6 +8,7 @@ import AppCard from '@/components/ui/AppCard'
 import { useCurrency } from '@/hooks/useCurrency'
 import AssetHeaderStats from './AssetHeaderStats'
 import MarketAssetSkeleton from './MarketAssetSkeleton'
+import { useFavoritesStore } from '@/stores/favorites'
 import { useMarketStore } from '@/stores/market'
 import NavigateNextIcon from '@mui/icons-material/NavigateNext'
 import { Box, Breadcrumbs, Link as MuiLink, Typography } from '@mui/material'
@@ -21,6 +21,7 @@ export default function MarketAssetPage() {
   const { id } = useParams<{ id: string }>()
   const { assets } = useMarketStore()
   const { currency, format } = useCurrency()
+  const recordVisit = useFavoritesStore((state) => state.recordVisit)
 
   const asset = useMemo(
     () => assets.find((a) => a.id === Number(id)),
@@ -40,14 +41,14 @@ export default function MarketAssetPage() {
     setError(null)
     setLogoFailed(false)
     // Opening an asset is what ranks it among the user's favourites.
-    recordAssetVisit(asset.id)
+    recordVisit(asset.id)
     // The quotes are converted server-side, so switching the global currency
     // refetches rather than rescaling what is already on screen.
     fetchAssetQuoteHistory(asset.id, undefined, currency)
       .then(setQuotes)
       .catch(() => setError('Erro ao carregar cotações'))
       .finally(() => setLoading(false))
-  }, [asset, currency])
+  }, [asset, currency, recordVisit])
 
   const candleData = useMemo(
     () => (quotes ? quotesToCandleData(quotes.quotes) : []),
@@ -107,7 +108,6 @@ export default function MarketAssetPage() {
       )}
 
       <AssetHeaderStats cagr={quotes?.cagr ?? null} />
-
 
       {error ? (
         <Typography color="error">{error}</Typography>

@@ -3,8 +3,8 @@ import { forceRefreshAll } from '@/actions/portfolio'
 import CategoryForm from '@/components/CategoryForm'
 import DividendForm from '@/components/DividendForm'
 import PortfolioForm from '@/components/PortfolioForm'
-import { fetchFavoriteAssets, type FavoriteAsset } from '@/api/market'
 import { useAuthStore } from '@/stores/auth'
+import { useFavoritesStore } from '@/stores/favorites'
 import { useCurrencyStore } from '@/stores/currency'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { useTradeFormStore } from '@/stores/trade-form'
@@ -105,6 +105,9 @@ const navSections: { key: Section; label: string; columns: typeof carteiraColumn
   { key: 'mercado', label: 'Mercado', columns: mercadoColumns },
 ]
 
+// The menu is a shortcut, not the shelf: five entries keep the column short.
+const MENU_FAVORITES = 5
+
 export default function MainTopbar() {
   const user = useAuthStore(s => s.user)
   const { portfolios, loading, selectedPortfolio, setSelectedPortfolio } = usePortfolioStore()
@@ -128,15 +131,14 @@ export default function MainTopbar() {
   const [carteiraAnchor, setCarteiraAnchor] = useState<null | HTMLElement>(null)
   const [mercadoAnchor, setMercadoAnchor] = useState<null | HTMLElement>(null)
 
-  // Loaded when the menu opens, so the shortcut reflects the latest ranking
-  // without costing a request on every page.
-  const [favorites, setFavorites] = useState<FavoriteAsset[]>([])
+  // Read from the store so the shortcut is drawn with the menu itself. Opening
+  // refreshes the ranking behind it -- fetching first made the column appear a
+  // beat late, which read as a flash every time the menu opened.
+  const favorites = useFavoritesStore((state) => state.favorites).slice(0, MENU_FAVORITES)
+  const refreshFavorites = useFavoritesStore((state) => state.refresh)
   useEffect(() => {
-    if (!mercadoAnchor) return
-    fetchFavoriteAssets(5)
-      .then(setFavorites)
-      .catch(() => undefined)
-  }, [mercadoAnchor])
+    if (mercadoAnchor) void refreshFavorites()
+  }, [mercadoAnchor, refreshFavorites])
   // Mobile drawer with collapsible sections
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
@@ -384,16 +386,12 @@ export default function MainTopbar() {
                             borderRadius: 1,
                             color: 'text.secondary',
                             fontSize: '0.9rem',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            gap: 2,
                             '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
                           }}
                         >
+                          {/* No visit count: it ranks the list, it is not
+                              something the user came here to read. */}
                           <span>{asset.ticker ?? asset.name}</span>
-                          <Box component="span" sx={{ opacity: 0.6, fontSize: '0.78rem' }}>
-                            {asset.visit_count}
-                          </Box>
                         </Typography>
                       ))}
                     </Box>

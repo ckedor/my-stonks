@@ -189,7 +189,10 @@ export interface FavoriteAsset {
 export const fetchFavoriteAssets = (limit = 8): Promise<FavoriteAsset[]> =>
   api.get<FavoriteAsset[]>(ASSET_ROUTES.favorites, { params: { limit } }).then((r) => r.data)
 
-/** Fire-and-forget: a lost visit count must never break the page. */
-export const recordAssetVisit = (assetId: number): void => {
-  void api.post(ASSET_ROUTES.visit(assetId)).catch(() => undefined)
-}
+/** Counts one visit. Always resolves: a lost visit count must never break the
+ *  page. Awaited only to reorder the ranking after the backend has taken it. */
+export const recordAssetVisit = (assetId: number): Promise<void> =>
+  api
+    .post(ASSET_ROUTES.visit(assetId))
+    .then(() => undefined)
+    .catch(() => undefined)

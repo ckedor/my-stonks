@@ -1,25 +1,21 @@
-import { fetchFavoriteAssets, type FavoriteAsset } from '@/api/market'
+import { useFavoritesStore } from '@/stores/favorites'
 import StarIcon from '@mui/icons-material/Star'
 import { Box, Stack, Typography } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TypeBadge } from './AssetCard'
 
-/** Assets the user keeps coming back to. Hidden entirely until there is a
- *  history to rank, so a new account sees no empty shelf. */
+/** Assets the user keeps coming back to. Rendered from the store, so it is
+ *  there the moment the page is, and refreshed behind what is on screen.
+ *  Hidden entirely until there is a history to rank, so a new account sees no
+ *  empty shelf. */
 export default function FavoriteAssets({ limit = 8 }: { limit?: number }) {
   const navigate = useNavigate()
-  const [favorites, setFavorites] = useState<FavoriteAsset[]>([])
+  const { favorites, refresh } = useFavoritesStore()
 
   useEffect(() => {
-    let active = true
-    fetchFavoriteAssets(limit)
-      .then((data) => active && setFavorites(data))
-      .catch(() => undefined)
-    return () => {
-      active = false
-    }
-  }, [limit])
+    void refresh()
+  }, [refresh])
 
   if (!favorites.length) return null
 
@@ -33,13 +29,14 @@ export default function FavoriteAssets({ limit = 8 }: { limit?: number }) {
       </Stack>
 
       <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
-        {favorites.map((asset) => (
+        {favorites.slice(0, limit).map((asset) => (
           <Box
             key={asset.id}
             onClick={() => navigate(`/market/asset/${asset.id}`)}
             sx={{
               flexShrink: 0,
               minWidth: 150,
+              maxWidth: 200,
               px: 1.75,
               py: 1.25,
               cursor: 'pointer',
