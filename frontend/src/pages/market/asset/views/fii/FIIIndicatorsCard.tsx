@@ -7,8 +7,8 @@ import {
   formatCompactBRL,
   formatCompactCount,
   formatDate,
+  formatMultiple,
   formatPercent,
-  formatRatio,
 } from './format'
 
 interface Stat {
@@ -53,8 +53,8 @@ export default function FIIIndicatorsCard({ indicators }: { indicators: FIIIndic
   const stats: Stat[] = [
     {
       label: 'P/VP',
-      value: formatRatio(indicators.price_to_book),
-      hint: 'Preço da cota dividido pelo seu valor patrimonial. Abaixo de 1, a cota negocia por menos do que o fundo declara valer',
+      value: formatMultiple(indicators.price_to_nav),
+      hint: 'Preço da cota dividido pelo seu valor patrimonial. Abaixo de 1x, a cota negocia por menos do que o fundo declara valer',
     },
     {
       label: 'DY 12 meses',
@@ -66,7 +66,7 @@ export default function FIIIndicatorsCard({ indicators }: { indicators: FIIIndic
     { label: 'Cota', value: formatBRL(indicators.price) },
     {
       label: 'Valor patrimonial',
-      value: formatBRL(indicators.book_value_per_share),
+      value: formatBRL(indicators.nav_per_share),
       hint: 'Patrimônio do fundo dividido pelo número de cotas',
     },
     { label: 'Patrimônio líquido', value: formatCompactBRL(indicators.equity) },
@@ -74,8 +74,6 @@ export default function FIIIndicatorsCard({ indicators }: { indicators: FIIIndic
     { label: 'Cotas emitidas', value: formatCompactCount(indicators.shares_outstanding) },
     { label: 'Cotistas', value: formatCompactCount(indicators.shareholders) },
   ]
-
-  const management = [indicators.manager, indicators.administrator].filter(Boolean).join(' · ')
 
   return (
     <AppCard>
@@ -93,15 +91,18 @@ export default function FIIIndicatorsCard({ indicators }: { indicators: FIIIndic
         sx={{ mb: 2 }}
       >
         <Stack direction="row" alignItems="center" flexWrap="wrap" gap={1}>
+          {/* The fund's strategy and where it invests, in the provider's own
+              words -- kept as written rather than mapped onto the segment
+              catalogue the application keeps for registered funds. */}
           {indicators.segment_type && (
-            <Chip size="small" label={indicators.segment_type} variant="outlined" />
+            <Chip
+              size="small"
+              variant="outlined"
+              label={indicators.segment_type}
+              sx={{ textTransform: 'capitalize' }}
+            />
           )}
           {indicators.segment && <Chip size="small" label={indicators.segment} />}
-          {management && (
-            <Typography variant="body2" color="text.secondary">
-              {management}
-            </Typography>
-          )}
         </Stack>
         {indicators.as_of_date && (
           <Typography variant="caption" color="text.secondary">

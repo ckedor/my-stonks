@@ -1,3 +1,11 @@
+"""The FII profile, checked against the payloads brapi's FII routes document.
+
+The field names and the envelopes below are the provider's, copied from its
+documentation for `/v2/fii/indicators` and `/v2/fii/dividends`. They are the
+contract this adapter exists to translate, so a rename upstream should fail
+here rather than quietly empty a card.
+"""
+
 from datetime import date
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
@@ -5,6 +13,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from app.core.exceptions import NotFoundError, ValidationError
+from app.infra.exceptions import IntegrationRateLimited
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.domain.constants import ASSET_TYPE
 from app.modules.market_data.domain.fii import FIIDividend, FIIIndicators, FIIProfile
@@ -12,31 +21,30 @@ from app.modules.market_data.service.fii_service import FIIProfileReadService
 from tests.fakes import FakeCache, FakeUnitOfWork
 
 ASSET_ID = 11
-TICKER = 'XPML11'
-PRICE_TO_BOOK = 0.94
-DIVIDEND_YIELD_12M = 9.42
-SHAREHOLDERS = 312_000
-LAST_DIVIDEND = 0.95
+TICKER = 'MXRF11'
+PRICE_TO_NAV = 1.0180738
+DIVIDEND_YIELD_12M = 0.12381
+SHAREHOLDERS = 1_357_621
+LAST_RATE = 0.08941643
 
 
 def _indicators_response(**overrides) -> dict:
     fund = {
         'symbol': TICKER,
-        'asOfDate': '2026-07-31',
-        'price': 104.2,
-        'navPerShare': 110.5,
-        'priceToNav': PRICE_TO_BOOK,
+        'asOfDate': '2025-12-01 00:00:00+00',
+        'price': 9.58,
+        'navPerShare': 9.409927,
+        'priceToNav': PRICE_TO_NAV,
         'dividendYield12m': DIVIDEND_YIELD_12M,
-        'dividendYield1m': 0.91,
-        'monthlyReturn': 1.4,
-        'equity': 4_200_000_000,
-        'totalAssets': 4_500_000_000,
-        'sharesOutstanding': 38_000_000,
+        'dividendYield1m': 0.009328,
+        'monthlyReturn': 0.007876,
         'totalInvestors': SHAREHOLDERS,
-        'segmentoAtuacao': 'Shoppings',
-        'segmentType': 'Tijolo',
-        'managerName': 'XP Vista',
-        'adminName': 'BRL Trust',
+        'sharesOutstanding': 460269540,
+        'equity': 4331102700,
+        'totalAssets': 4375755000,
+        'segmentType': 'papel',
+        # Not in the provider's documented example, but in what it answers.
+        'segmentoAtuacao': 'Papéis',
     }
     fund.update(overrides)
     return {'fiis': [fund]}
@@ -44,14 +52,29 @@ def _indicators_response(**overrides) -> dict:
 
 def _dividends_response() -> dict:
     return {
-        'fiis': [
+        'dividends': [
             {
                 'symbol': TICKER,
-                'dividends': [
-                    {'paymentDate': '2026-06-15', 'rate': 0.9},
-                    {'paymentDate': '2026-07-15', 'rate': LAST_DIVIDEND},
-                ],
-            }
+                'approvedOn': None,
+                'label': 'RENDIMENTO',
+                'lastDatePrior': '2025-11-14 00:00:00+00',
+                'paymentDate': '2025-11-14 00:00:00+00',
+                'rate': 0.09,
+                'relatedTo': None,
+                'isinCode': None,
+                'remarks': '',
+            },
+            {
+                'symbol': TICKER,
+                'approvedOn': None,
+                'label': 'RENDIMENTO',
+                'lastDatePrior': '2025-11-28 00:00:00+00',
+                'paymentDate': '2025-12-01 00:00:00+00',
+                'rate': LAST_RATE,
+                'relatedTo': None,
+                'isinCode': None,
+                'remarks': '',
+            },
         ]
     }
 
@@ -70,37 +93,106 @@ def _provider(indicators, dividends) -> MarketDataProvider:
 
 
 @pytest.mark.asyncio
-async def test_provider_maps_the_documented_fii_fields_onto_the_domain():
+async def test_provider_maps_the_documented_fii_payloads_onto_the_domain():
     provider = _provider(_indicators_response(), _dividends_response())
 
-    profile = await provider.fetch_fii_profile(ticker='xpml11')
+    profile = await provider.fetch_fii_profile(ticker='mxrf11')
 
     provider.brapi_client.get_fii_indicators.assert_awaited_once_with(symbols=TICKER)
-    provider.brapi_client.get_fii_dividends.assert_awaited_once_with(symbols=TICKER)
+    provider.brapi_client.get_fii_dividends.assert_awaited_once_with(
+        symbols=TICKER,
+        sortOrder='asc',
+    )
     assert profile == FIIProfile(
         ticker=TICKER,
         indicators=FIIIndicators(
-            as_of_date=date(2026, 7, 31),
-            segment='Shoppings',
-            segment_type='Tijolo',
-            manager='XP Vista',
-            administrator='BRL Trust',
-            price=104.2,
-            book_value_per_share=110.5,
-            price_to_book=PRICE_TO_BOOK,
+            as_of_date=date(2025, 12, 1),
+            segment_type='papel',
+            segment='Papéis',
+            price=9.58,
+            nav_per_share=9.409927,
+            price_to_nav=PRICE_TO_NAV,
             dividend_yield_12m=DIVIDEND_YIELD_12M,
-            dividend_yield_1m=0.91,
-            monthly_return=1.4,
-            equity=4_200_000_000,
-            total_assets=4_500_000_000,
-            shares_outstanding=38_000_000,
+            dividend_yield_1m=0.009328,
+            monthly_return=0.007876,
+            equity=4331102700,
+            total_assets=4375755000,
+            shares_outstanding=460269540,
             shareholders=SHAREHOLDERS,
         ),
         dividends=[
-            FIIDividend(date=date(2026, 6, 15), value_per_share=0.9),
-            FIIDividend(date=date(2026, 7, 15), value_per_share=LAST_DIVIDEND),
+            FIIDividend(
+                payment_date=date(2025, 11, 14),
+                value_per_share=0.09,
+                ex_date=date(2025, 11, 14),
+                event_type='RENDIMENTO',
+            ),
+            FIIDividend(
+                payment_date=date(2025, 12, 1),
+                value_per_share=LAST_RATE,
+                ex_date=date(2025, 11, 28),
+                event_type='RENDIMENTO',
+            ),
         ],
     )
+
+
+@pytest.mark.asyncio
+async def test_ratios_reach_the_domain_unscaled():
+    """0.12381 is a yield of 12.381%, and the domain keeps it as the ratio."""
+    provider = _provider(_indicators_response(), _dividends_response())
+
+    profile = await provider.fetch_fii_profile(ticker=TICKER)
+
+    assert profile.indicators.dividend_yield_12m == DIVIDEND_YIELD_12M
+    assert profile.indicators.price_to_nav == PRICE_TO_NAV
+
+
+@pytest.mark.asyncio
+async def test_the_amount_paid_is_read_from_rate_and_never_from_a_yield():
+    provider = _provider(_indicators_response(), _dividends_response())
+
+    profile = await provider.fetch_fii_profile(ticker=TICKER)
+
+    assert [dividend.value_per_share for dividend in profile.dividends] == [0.09, LAST_RATE]
+
+
+@pytest.mark.asyncio
+async def test_amortizations_stay_distinguishable_from_income():
+    response = _dividends_response()
+    response['dividends'].append({
+        'symbol': TICKER,
+        'label': 'AMORTIZACAO',
+        'lastDatePrior': '2025-12-20 00:00:00+00',
+        'paymentDate': '2025-12-22 00:00:00+00',
+        'rate': 1.5,
+    })
+    provider = _provider(_indicators_response(), response)
+
+    profile = await provider.fetch_fii_profile(ticker=TICKER)
+
+    assert [dividend.event_type for dividend in profile.dividends] == [
+        'RENDIMENTO',
+        'RENDIMENTO',
+        'AMORTIZACAO',
+    ]
+    assert [dividend.is_income for dividend in profile.dividends] == [True, True, False]
+
+
+@pytest.mark.asyncio
+async def test_payments_of_other_funds_in_the_same_response_are_left_out():
+    response = _dividends_response()
+    response['dividends'].append({
+        'symbol': 'HGLG11',
+        'label': 'RENDIMENTO',
+        'paymentDate': '2025-12-05 00:00:00+00',
+        'rate': 1.1,
+    })
+    provider = _provider(_indicators_response(), response)
+
+    profile = await provider.fetch_fii_profile(ticker=TICKER)
+
+    assert [dividend.value_per_share for dividend in profile.dividends] == [0.09, LAST_RATE]
 
 
 @pytest.mark.asyncio
@@ -110,51 +202,35 @@ async def test_one_failing_provider_route_does_not_cost_the_other_half():
     profile = await provider.fetch_fii_profile(ticker=TICKER)
 
     assert profile.indicators is None
-    assert [dividend.value_per_share for dividend in profile.dividends] == [0.9, LAST_DIVIDEND]
+    assert [dividend.value_per_share for dividend in profile.dividends] == [0.09, LAST_RATE]
 
 
 @pytest.mark.asyncio
-async def test_an_indicator_the_provider_omits_is_empty_rather_than_fatal():
+async def test_both_routes_failing_raises_rather_than_serving_an_empty_profile():
+    provider = _provider(
+        IntegrationRateLimited(provider='brapi', status_code=429),
+        RuntimeError('dividends are down'),
+    )
+
+    with pytest.raises(IntegrationRateLimited):
+        await provider.fetch_fii_profile(ticker=TICKER)
+
+
+@pytest.mark.asyncio
+async def test_an_indicator_the_provider_omits_is_unknown_rather_than_zero():
     response = _indicators_response()
     del response['fiis'][0]['priceToNav']
     del response['fiis'][0]['totalInvestors']
     response['fiis'][0]['equity'] = None
-    provider = _provider(response, {'fiis': []})
+    provider = _provider(response, {'dividends': []})
 
     profile = await provider.fetch_fii_profile(ticker=TICKER)
 
-    assert profile.indicators.price_to_book is None
+    assert profile.indicators.price_to_nav is None
     assert profile.indicators.shareholders is None
     assert profile.indicators.equity is None
     assert profile.indicators.dividend_yield_12m == DIVIDEND_YIELD_12M
     assert profile.dividends == []
-
-
-@pytest.mark.asyncio
-async def test_dividends_are_deduplicated_by_date_and_served_oldest_first():
-    provider = _provider(
-        {'fiis': []},
-        {
-            'fiis': [
-                {
-                    'symbol': TICKER,
-                    'dividends': [
-                        {'paymentDate': '2026-07-15', 'rate': 0.5},
-                        {'paymentDate': '2026-05-15', 'rate': 0.8},
-                        {'paymentDate': '2026-07-15', 'rate': LAST_DIVIDEND},
-                        {'paymentDate': None, 'rate': 1.0},
-                    ],
-                }
-            ]
-        },
-    )
-
-    profile = await provider.fetch_fii_profile(ticker=TICKER)
-
-    assert [(item.date, item.value_per_share) for item in profile.dividends] == [
-        (date(2026, 5, 15), 0.8),
-        (date(2026, 7, 15), LAST_DIVIDEND),
-    ]
 
 
 def _service(asset, provider) -> FIIProfileReadService:
@@ -179,8 +255,13 @@ async def test_profile_read_resolves_the_registered_asset_before_asking_the_prov
 
     provider.brapi_client.get_fii_indicators.assert_awaited_once_with(symbols=TICKER)
     assert profile['ticker'] == TICKER
-    assert profile['indicators']['price_to_book'] == PRICE_TO_BOOK
-    assert profile['dividends'][-1] == {'date': '2026-07-15', 'value_per_share': LAST_DIVIDEND}
+    assert profile['indicators']['price_to_nav'] == PRICE_TO_NAV
+    assert profile['dividends'][-1] == {
+        'payment_date': '2025-12-01',
+        'ex_date': '2025-11-28',
+        'value_per_share': LAST_RATE,
+        'event_type': 'RENDIMENTO',
+    }
 
 
 @pytest.mark.asyncio

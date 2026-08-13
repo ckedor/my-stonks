@@ -42,10 +42,15 @@ export const formatCompactCount = (value: number | null | undefined) =>
 export const formatRatio = (value: number | null | undefined) =>
   nullish(value) ? EMPTY : RATIO.format(value!)
 
-/** The provider publishes yields and returns already in percent: 8.5 is 8.5%.
- *  Multiplying here would state 850%. */
+/** Yields and returns arrive as ratios: 0.12381 is 12.381%. Scaling them is
+ *  presentation's job precisely so that the number stays comparable upstream. */
 export const formatPercent = (value: number | null | undefined) =>
-  nullish(value) ? EMPTY : `${RATIO.format(value!)}%`
+  nullish(value) ? EMPTY : `${RATIO.format(value! * 100)}%`
+
+/** P/VP, which is a multiple and not a percentage: 1.018 reads as 1,02x, or a
+ *  share trading slightly above what the fund says it is worth. */
+export const formatMultiple = (value: number | null | undefined) =>
+  nullish(value) ? EMPTY : `${RATIO.format(value!)}x`
 
 export const formatDate = (value: string | null | undefined) =>
   value ? dayjs(value).format('DD/MM/YYYY') : EMPTY

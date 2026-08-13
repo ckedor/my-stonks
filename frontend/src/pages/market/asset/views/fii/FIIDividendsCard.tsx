@@ -9,6 +9,16 @@ import { formatBRL, formatDate, formatMonth } from './format'
 const CHART_HEIGHT = 280
 const MONTHS_IN_A_YEAR = 12
 
+/** What the provider labels an ordinary distribution. Funds also amortize
+ *  capital, which arrives through the same route under its own label and is a
+ *  return of principal, not income — adding the two would overstate what the
+ *  fund pays. Payments the provider leaves unlabelled are read as income,
+ *  since that is what these routes overwhelmingly carry. */
+const INCOME_LABEL = 'RENDIMENTO'
+
+const isIncome = (dividend: FIIDividend) =>
+  !dividend.event_type || dividend.event_type.toUpperCase() === INCOME_LABEL
+
 interface Props {
   dividends: FIIDividend[]
 }
@@ -19,26 +29,29 @@ interface Props {
  *  of something continuous, and the gap left by a month without a distribution
  *  is itself the point.
  *
- *  Grouped by month because that is the fund's own rhythm -- one payment a
+ *  Grouped by month because that is the fund's own rhythm — one payment a
  *  month, dated by when it reached the holder. */
 export default function FIIDividendsCard({ dividends }: Props) {
+  const income = useMemo(() => dividends.filter(isIncome), [dividends])
+  const amortizations = useMemo(() => dividends.filter((item) => !isIncome(item)), [dividends])
+
   const series = useMemo(
-    () => dividends.map((dividend) => ({ date: dividend.date, value: dividend.value_per_share })),
-    [dividends],
+    () => income.map((item) => ({ date: item.payment_date, value: item.value_per_share })),
+    [income],
   )
 
-  const last = dividends.at(-1)
+  const last = income.at(-1)
 
   /** The trailing year of payments, counted from the last one rather than from
    *  today: a fund that stopped paying six months ago should not have its
    *  history silently halved by the calendar. */
   const lastTwelveMonths = useMemo(() => {
     if (!last) return null
-    const from = dayjs(last.date).subtract(MONTHS_IN_A_YEAR, 'month')
-    return dividends
-      .filter((dividend) => dayjs(dividend.date).isAfter(from))
-      .reduce((total, dividend) => total + dividend.value_per_share, 0)
-  }, [dividends, last])
+    const from = dayjs(last.payment_date).subtract(MONTHS_IN_A_YEAR, 'month')
+    return income
+      .filter((item) => dayjs(item.payment_date).isAfter(from))
+      .reduce((total, item) => total + item.value_per_share, 0)
+  }, [income, last])
 
   return (
     <AppCard>
@@ -54,7 +67,7 @@ export default function FIIDividendsCard({ dividends }: Props) {
         <Typography variant="h6">Rendimentos por cota</Typography>
         {last && (
           <Typography variant="body2" color="text.secondary">
-            Último {formatBRL(last.value_per_share)} em {formatDate(last.date)}
+            Último {formatBRL(last.value_per_share)} em {formatDate(last.payment_date)}
             {lastTwelveMonths !== null && ` · 12 meses ${formatBRL(lastTwelveMonths)}`}
           </Typography>
         )}
@@ -73,6 +86,17 @@ export default function FIIDividendsCard({ dividends }: Props) {
           tooltipLabelFormatter={formatMonth}
         />
       </Box>
+
+      {amortizations.length > 0 && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+          Fora do gráfico: {amortizations.length}{' '}
+          {amortizations.length === 1 ? 'amortização' : 'amortizações'} de capital, somando{' '}
+          {formatBRL(
+            amortizations.reduce((total, item) => total + item.value_per_share, 0),
+          )}{' '}
+          por cota. Amortização devolve principal e não é rendimento.
+        </Typography>
+      )}
     </AppCard>
   )
 }

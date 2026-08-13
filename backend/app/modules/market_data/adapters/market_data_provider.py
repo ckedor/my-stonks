@@ -54,36 +54,20 @@ MARKET_TIMEZONE = ZoneInfo('America/Sao_Paulo')
 #: mark, not the asset's.
 PROVIDER_PLACEHOLDER_LOGO = 'icons/BRAPI.svg'
 
-#: Where the provider's FII routes carry their per-fund results. Its FII routes
-#: answer under `fiis` and its quote routes under `results`; both are read so
-#: that a renamed envelope costs the profile its values rather than raising.
-FII_RESULT_KEYS = ('fiis', 'results', 'data')
-
-#: Provider field behind each indicator, first match wins. An indicator the
-#: provider does not publish for a fund stays empty, and the reader renders the
-#: gap -- one missing number must not cost the whole profile.
-FII_INDICATOR_KEYS: dict[str, tuple[str, ...]] = {
-    'price': ('price',),
-    'book_value_per_share': ('navPerShare', 'bookValuePerShare'),
-    'price_to_book': ('priceToNav', 'priceToBook'),
-    'dividend_yield_12m': ('dividendYield12m',),
-    'dividend_yield_1m': ('dividendYield1m',),
-    'monthly_return': ('monthlyReturn',),
-    'equity': ('equity', 'netWorth'),
-    'total_assets': ('totalAssets',),
-    'shares_outstanding': ('sharesOutstanding',),
+#: Provider field behind each numeric indicator. An indicator the provider does
+#: not publish for a fund stays None and the reader renders the gap -- never a
+#: zero, which would read as a fund whose equity or yield is actually nil.
+FII_INDICATOR_KEYS: dict[str, str] = {
+    'price': 'price',
+    'nav_per_share': 'navPerShare',
+    'price_to_nav': 'priceToNav',
+    'dividend_yield_12m': 'dividendYield12m',
+    'dividend_yield_1m': 'dividendYield1m',
+    'monthly_return': 'monthlyReturn',
+    'equity': 'equity',
+    'total_assets': 'totalAssets',
+    'shares_outstanding': 'sharesOutstanding',
 }
-
-FII_TEXT_INDICATOR_KEYS: dict[str, tuple[str, ...]] = {
-    'segment': ('segmentoAtuacao', 'segment'),
-    'segment_type': ('segmentType', 'fundType'),
-    'manager': ('managerName', 'manager'),
-    'administrator': ('adminName', 'administrator'),
-}
-
-FII_DIVIDEND_LIST_KEYS = ('dividends', 'cashDividends', 'dividendsData')
-FII_DIVIDEND_DATE_KEYS = ('paymentDate', 'payDate', 'date')
-FII_DIVIDEND_VALUE_KEYS = ('rate', 'value', 'amount', 'valuePerShare')
 
 
 class MarketDataProvider:
@@ -381,19 +365,27 @@ class MarketDataProvider:
         )
 
     async def fetch_fii_profile(self, *, ticker: str) -> FIIProfile:
-        """A real-estate fund's published indicators and its distributions.
+        """A real-estate fund's published indicators and the payments it made.
 
         The two come from separate upstream routes and are asked for together,
         tolerating one of them failing: a fund whose indicators are missing
-        still has a distribution history worth charting, and the reverse holds
-        for a fund the provider has never paid out for.
+        still has a payment history worth charting, and the reverse holds for a
+        fund the provider has never recorded a payment for. Both failing is not
+        a profile at all, so that raises rather than serving an empty one --
+        an expired token or a rate limit must reach the reader as itself.
         """
         symbol = ticker.upper()
         indicators_response, dividends_response = await asyncio.gather(
             self.brapi_client.get_fii_indicators(symbols=symbol),
-            self.brapi_client.get_fii_dividends(symbols=symbol),
+            # Ascending, so the series arrives in the order it is charted in.
+            self.brapi_client.get_fii_dividends(symbols=symbol, sortOrder='asc'),
             return_exceptions=True,
         )
+        if isinstance(indicators_response, BaseException) and isinstance(
+            dividends_response, BaseException
+        ):
+            raise indicators_response
+
         return FIIProfile(
             ticker=symbol,
             indicators=self._fii_indicators(indicators_response, symbol),
@@ -401,88 +393,70 @@ class MarketDataProvider:
         )
 
     def _fii_indicators(self, response: object, symbol: str) -> FIIIndicators | None:
-        result = self._fii_result(response, symbol, subject='indicators')
-        if not result:
+        """The one fund's entry from `GET /v2/fii/indicators`, under `fiis`."""
+        payload = self._fii_payload(response, symbol, key='fiis', subject='indicators')
+        result = next((item for item in payload if self._is_symbol(item, symbol)), None)
+        if result is None:
             return None
-        numbers = {
-            name: self._number(self._first(result, keys))
-            for name, keys in FII_INDICATOR_KEYS.items()
-        }
-        texts = {
-            name: self._text(self._first(result, keys))
-            for name, keys in FII_TEXT_INDICATOR_KEYS.items()
-        }
-        shareholders = self._number(self._first(result, ('totalInvestors', 'shareholders')))
+
+        shareholders = self._number(result.get('totalInvestors'))
         return FIIIndicators(
-            as_of_date=self._provider_date(self._first(result, ('asOfDate', 'date'))),
+            as_of_date=self._provider_date(result.get('asOfDate')),
+            segment_type=self._text(result.get('segmentType')),
+            # Absent from the provider's documented example but present in what
+            # it actually answers, under either spelling.
+            segment=self._text(result.get('segmentoAtuacao') or result.get('segment')),
             shareholders=int(shareholders) if shareholders is not None else None,
-            **numbers,
-            **texts,
+            **{
+                name: self._number(result.get(key))
+                for name, key in FII_INDICATOR_KEYS.items()
+            },
         )
 
     def _fii_dividends(self, response: object, symbol: str) -> list[FIIDividend]:
-        result = self._fii_result(response, symbol, subject='dividends')
-        payments = self._first(result, FII_DIVIDEND_LIST_KEYS)
-        if isinstance(payments, dict):
-            # `dividendsData` wraps the list one level deeper on the quote route.
-            payments = self._first(payments, FII_DIVIDEND_LIST_KEYS)
-        if not isinstance(payments, list):
-            return []
+        """Payments from `GET /v2/fii/dividends`, a flat list under `dividends`.
+
+        Each entry names its own fund, so the list is filtered rather than
+        assumed to hold one. `rate` is the amount paid per share and is taken
+        as published -- never derived from a yield.
+        """
+        payload = self._fii_payload(response, symbol, key='dividends', subject='dividends')
 
         dividends: dict[date, FIIDividend] = {}
-        for payment in payments:
-            if not isinstance(payment, dict):
+        for payment in payload:
+            if not self._is_symbol(payment, symbol):
                 continue
-            paid_on = self._provider_date(self._first(payment, FII_DIVIDEND_DATE_KEYS))
-            value = self._number(self._first(payment, FII_DIVIDEND_VALUE_KEYS))
+            paid_on = self._provider_date(payment.get('paymentDate'))
+            value = self._number(payment.get('rate'))
             if paid_on is None or value is None:
                 continue
-            dividends[paid_on] = FIIDividend(date=paid_on, value_per_share=value)
+            dividends[paid_on] = FIIDividend(
+                payment_date=paid_on,
+                value_per_share=value,
+                ex_date=self._provider_date(payment.get('lastDatePrior')),
+                event_type=self._text(payment.get('label')),
+            )
         return [dividends[paid_on] for paid_on in sorted(dividends)]
 
     @staticmethod
-    def _fii_result(response: object, symbol: str, *, subject: str) -> dict:
-        """The one fund's entry in a provider response, or nothing.
+    def _fii_payload(response: object, symbol: str, *, key: str, subject: str) -> list[dict]:
+        """The list a FII route answers with, or an empty one.
 
         A failed request arrives here as the exception `asyncio.gather`
-        collected, and is logged and treated as an empty half of the profile.
+        collected. It is logged and read as an empty half of the profile; the
+        caller has already decided that one half surviving is enough.
         """
         if isinstance(response, BaseException):
             logger.warning('Could not read the %s of %s: %s', subject, symbol, response)
-            return {}
+            return []
         if not isinstance(response, dict):
-            return {}
-        for key in FII_RESULT_KEYS:
-            items = response.get(key)
-            if isinstance(items, dict):
-                return items
-            if not isinstance(items, list) or not items:
-                continue
-            entries = [item for item in items if isinstance(item, dict)]
-            match = next(
-                (
-                    entry
-                    for entry in entries
-                    if str(entry.get('symbol', '')).upper() == symbol
-                ),
-                None,
-            )
-            if match is not None:
-                return match
-            # Routes queried for a single fund need not echo the symbol back.
-            if len(entries) == 1:
-                return entries[0]
-        return {}
+            return []
+        items = response.get(key)
+        return [item for item in items if isinstance(item, dict)] if isinstance(items, list) else []
 
     @staticmethod
-    def _first(source: object, keys: tuple[str, ...]):
-        if not isinstance(source, dict):
-            return None
-        for key in keys:
-            value = source.get(key)
-            if value is not None:
-                return value
-        return None
+    def _is_symbol(item: dict, symbol: str) -> bool:
+        return str(item.get('symbol', '')).upper() == symbol
 
     @staticmethod
     def _number(value: object) -> float | None:

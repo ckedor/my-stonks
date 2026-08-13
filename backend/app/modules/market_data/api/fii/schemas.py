@@ -6,25 +6,33 @@ from pydantic import BaseModel
 
 
 class FIIDividendResponse(BaseModel):
-    date: date
+    """One payment per share, as published.
+
+    ``event_type`` is what the fund called it — an ordinary distribution or an
+    amortization of capital. It is carried so that a reader meaning income can
+    tell the two apart instead of adding them up.
+    """
+
+    payment_date: date
+    ex_date: date | None = None
     value_per_share: float
+    event_type: str | None = None
 
 
 class FIIIndicatorsResponse(BaseModel):
     """The fund's own numbers, as of the report they came from.
 
-    Yields and the monthly return are percentages the way the provider
-    publishes them: 8.5 means 8.5% a year, not 850%.
+    The yields and the monthly return are ratios: 0.12381 is 12.381%.
+    ``price_to_nav`` is the published P/VP, a multiple around 1. None of them
+    is scaled here; the client decides how each is written.
     """
 
     as_of_date: date | None = None
-    segment: str | None = None
     segment_type: str | None = None
-    manager: str | None = None
-    administrator: str | None = None
+    segment: str | None = None
     price: float | None = None
-    book_value_per_share: float | None = None
-    price_to_book: float | None = None
+    nav_per_share: float | None = None
+    price_to_nav: float | None = None
     dividend_yield_12m: float | None = None
     dividend_yield_1m: float | None = None
     monthly_return: float | None = None

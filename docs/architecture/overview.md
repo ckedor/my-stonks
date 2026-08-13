@@ -59,12 +59,19 @@ on-demand path holds provider responses briefly so that reopening the same
 ticker does not spend provider quota again.
 
 `/market_data/fii/{asset_id}/profile` answers the market page of a real-estate
-fund with what only a fund has: the indicators it publishes and the dividends it
-has paid. It resolves the asset from storage to reject anything that is not a
+fund with what only a fund has: the indicators it publishes and the payments it
+has made. It resolves the asset from storage to reject anything that is not a
 registered FII, then reads the provider and holds the answer for a few hours —
 a fund republishes those numbers once a month, so nothing is persisted and no
-calculation depends on them. The two halves come from separate provider routes
-and one failing leaves the other on the page.
+calculation depends on them. The two halves come from separate provider routes:
+one failing leaves the other on the page, both failing raises, so an expired
+token or a rate limit reaches the reader as itself rather than as an empty card.
+
+Provider units survive the boundary unscaled. Yields are ratios and P/VP is a
+multiple, as published; the client decides how each is written. Amounts paid per
+share are read from what the provider states was paid, never derived from a
+yield, and a payment's own label is carried through so that an amortization of
+capital is not read as income.
 
 `/market_data/quotes/asset/{asset_id}` reads storage first and falls back to the
 provider. It takes a `currency` and answers in it, converting through the

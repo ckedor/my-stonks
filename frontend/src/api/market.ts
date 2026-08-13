@@ -178,28 +178,36 @@ export function quotesToCandleData(quotes: QuotesResponse['quotes']): CandleData
 // Real-estate fund profile
 // ---------------------------------------------------------------------------
 
-/** One distribution per share, on the date it reached the holder. Always BRL:
- *  these funds pay in reais and the backend does not restate them. */
+/** One payment per share made by a fund. Always BRL: these funds pay in reais
+ *  and the backend does not restate them.
+ *
+ *  `event_type` is the fund's own label — an ordinary distribution
+ *  (`RENDIMENTO`) or an amortization of capital. A reader that means income
+ *  filters on it rather than summing the two. */
 export interface FIIDividend {
-  date: string
+  payment_date: string
+  ex_date: string | null
   value_per_share: number
+  event_type: string | null
 }
 
 /** What the fund reports about itself, as of its last published report.
  *
  *  Every field is optional: a provider that has never covered a fund, or that
- *  drops one indicator, must cost the card that one value and nothing else.
- *  The yields and the monthly return are percentages already — 8.5 is 8.5% —
- *  so they are printed, never multiplied. Monetary fields are in BRL. */
+ *  drops one indicator, must cost the card that one value and nothing else. An
+ *  absent indicator is null, never zero — an unknown P/VP and a P/VP of zero
+ *  are different statements.
+ *
+ *  The yields and the monthly return are ratios — 0.12381 is 12.381% — so it
+ *  is the presentation that scales them. `price_to_nav` is the published P/VP,
+ *  a multiple around 1. Monetary fields are in BRL. */
 export interface FIIIndicators {
   as_of_date: string | null
-  segment: string | null
   segment_type: string | null
-  manager: string | null
-  administrator: string | null
+  segment: string | null
   price: number | null
-  book_value_per_share: number | null
-  price_to_book: number | null
+  nav_per_share: number | null
+  price_to_nav: number | null
   dividend_yield_12m: number | null
   dividend_yield_1m: number | null
   monthly_return: number | null
