@@ -3,10 +3,11 @@ from datetime import date
 from fastapi import APIRouter, Depends, Query
 
 from app.composition.market_data import get_market_data_read_service
-from app.modules.market_data.api.index.schemas import MarketDataSeriesResponse
 from app.modules.market_data.api.series.schemas import (
     MarketDataSeriesHistoryPoint,
     MarketDataSeriesOption,
+    MarketDataSeriesResponse,
+    MarketDataSeriesTimeSeries,
 )
 from app.modules.market_data.service.market_data_service import MarketDataReadService
 
@@ -26,6 +27,14 @@ async def list_market_data_series_options(
 ):
     """Selectable series, for pickers that only need identity."""
     return await service.list_market_data_series()
+
+
+@router.get('/time_series', response_model=MarketDataSeriesTimeSeries)
+async def get_series_time_series(
+    service: MarketDataReadService = Depends(get_market_data_read_service),
+):
+    """Every series' history at once, keyed by short name, for charting."""
+    return await service.get_all_series_history()
 
 
 @router.get('/{series_id}/history', response_model=list[MarketDataSeriesHistoryPoint])

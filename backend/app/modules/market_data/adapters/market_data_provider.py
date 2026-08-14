@@ -15,7 +15,7 @@ from app.infra.integrations.mais_retorno_client import MaisRetornoClient
 from app.infra.integrations.status_invest_client import StatusInvestClient
 from app.infra.integrations.tesouro_client import TesouroClient
 from app.lib.utils.df import extend_values_to_today
-from app.modules.market_data.domain.constants import ASSET_TYPE, FII_SEGMENT, INDEX
+from app.modules.market_data.domain.constants import ASSET_TYPE, FII_SEGMENT, SERIES
 from app.modules.market_data.domain.enums import EXCHANGE
 from app.modules.market_data.domain.fii import FIIDividend, FIIIndicators, FIIProfile
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
@@ -89,13 +89,13 @@ class MarketDataProvider:
         """
         history_df = None
 
-        if series.id in {INDEX.CDI, INDEX.IPCA}:
+        if series.id in {SERIES.CDI, SERIES.IPCA}:
             history_df = await self.bcb_api_client.get_market_index_history_df(
                 series.symbol, init_date=init_date
             )
             history_df.rename(columns={'value': 'close'}, inplace=True)
 
-        elif series.id == INDEX.IFIX:
+        elif series.id == SERIES.IFIX:
             history_df = await self._fetch_market_index_history(
                 series.symbol,
                 init_date=init_date,
@@ -115,7 +115,7 @@ class MarketDataProvider:
 
     @staticmethod
     def get_series_source(series: MarketDataSeries) -> str:
-        if series.id in {INDEX.CDI, INDEX.IPCA}:
+        if series.id in {SERIES.CDI, SERIES.IPCA}:
             return 'bcb'
         return 'brapi'
 

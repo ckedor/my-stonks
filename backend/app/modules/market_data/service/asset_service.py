@@ -366,6 +366,6 @@ class AssetService:
         async with self.uow as uow:
             return await uow.assets.get(TreasuryBondType)
 
-    async def list_indexes(self):
+    async def list_market_data_series(self):
         async with self.uow as uow:
             return await uow.assets.get(MarketDataSeries)

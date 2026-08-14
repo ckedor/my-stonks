@@ -1,7 +1,7 @@
 
 // components/CategoryForm.tsx
 import { syncPortfolios, syncReturns } from '@/actions/portfolio'
-import { CATEGORY_ROUTES, INDEX_ROUTES } from '@/constants/routes'
+import { CATEGORY_ROUTES, MARKET_DATA_SERIES_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
 import AddIcon from '@mui/icons-material/Add'
@@ -70,7 +70,7 @@ export default function CategoryForm({ open, onClose, onSave }: CategoryFormProp
 
   const fetchBenchmarks = async () => {
     try {
-      const { data } = await api.get<BenchmarkOption[]>(INDEX_ROUTES.list)
+      const { data } = await api.get<BenchmarkOption[]>(MARKET_DATA_SERIES_ROUTES.list)
       setBenchmarks(data)
     } catch (err) {
       console.error('Erro ao carregar benchmarks', err)

@@ -20,7 +20,7 @@ EXPECTED_INGESTION_TASK_COUNT = 2
 # CURRENCIES (seeded by migration)
 # ---------------------------------------------------------------------------
 async def test_list_currencies(client):
-    response = await client.get('/market_data/index/currency')
+    response = await client.get('/market_data/currency')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -33,7 +33,7 @@ async def test_list_currencies(client):
 # INDEXES (seeded by migration)
 # ---------------------------------------------------------------------------
 async def test_list_indexes(client):
-    response = await client.get('/market_data/index')
+    response = await client.get('/market_data/series')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -43,11 +43,11 @@ async def test_list_indexes(client):
 
 
 # ---------------------------------------------------------------------------
-# INDEX TIME SERIES (needs index_history rows)
+# SERIES TIME SERIES (needs index_history rows)
 # ---------------------------------------------------------------------------
 async def test_indexes_time_series_empty(client):
     """With no index_history rows, the endpoint should still return 200."""
-    response = await client.get('/market_data/index/time_series')
+    response = await client.get('/market_data/series/time_series')
 
     assert response.status_code == HTTPStatus.OK
 
@@ -63,7 +63,7 @@ async def test_indexes_time_series_with_data(client, db):
     )
     await db.commit()
 
-    response = await client.get('/market_data/index/time_series')
+    response = await client.get('/market_data/series/time_series')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -75,7 +75,7 @@ async def test_indexes_time_series_with_data(client, db):
 # USD/BRL HISTORY
 # ---------------------------------------------------------------------------
 async def test_usd_brl_history_empty(client):
-    response = await client.get('/market_data/index/usd_brl')
+    response = await client.get('/market_data/usd-brl/history')
 
     assert response.status_code == HTTPStatus.OK
 
@@ -101,7 +101,7 @@ async def test_usd_brl_history_with_data(client, db):
     )
     await db.commit()
 
-    response = await client.get('/market_data/index/usd_brl')
+    response = await client.get('/market_data/usd-brl/history')
 
     assert response.status_code == HTTPStatus.OK
     data = response.json()

@@ -2829,25 +2829,6 @@
     "title": "IndexOut",
     "type": "object"
    },
-   "IndexPoint": {
-    "properties": {
-     "date": {
-      "format": "date",
-      "title": "Date",
-      "type": "string"
-     },
-     "value": {
-      "title": "Value",
-      "type": "number"
-     }
-    },
-    "required": [
-     "date",
-     "value"
-    ],
-    "title": "IndexPoint",
-    "type": "object"
-   },
    "InvestmentFundOut": {
     "properties": {
      "anbima_category": {
@@ -3007,7 +2988,27 @@
     "title": "MarketDataSeriesOption",
     "type": "object"
    },
+   "MarketDataSeriesPoint": {
+    "properties": {
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "value": {
+      "title": "Value",
+      "type": "number"
+     }
+    },
+    "required": [
+     "date",
+     "value"
+    ],
+    "title": "MarketDataSeriesPoint",
+    "type": "object"
+   },
    "MarketDataSeriesResponse": {
+    "description": "A registered series with everything that identifies and types it.",
     "properties": {
      "currency": {
       "anyOf": [
@@ -3071,80 +3072,15 @@
     "title": "MarketDataSeriesResponse",
     "type": "object"
    },
-   "MarketIndex": {
-    "description": "Compatibility response name for the former index routes.",
-    "properties": {
-     "currency": {
-      "anyOf": [
-       {
-        "$ref": "#/components/schemas/Currency"
-       },
-       {
-        "type": "null"
-       }
-      ]
-     },
-     "currency_id": {
-      "anyOf": [
-       {
-        "type": "integer"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Currency Id"
-     },
-     "frequency": {
-      "title": "Frequency",
-      "type": "string"
-     },
-     "id": {
-      "title": "Id",
-      "type": "integer"
-     },
-     "name": {
-      "title": "Name",
-      "type": "string"
-     },
-     "series_type": {
-      "title": "Series Type",
-      "type": "string"
-     },
-     "short_name": {
-      "title": "Short Name",
-      "type": "string"
-     },
-     "symbol": {
-      "title": "Symbol",
-      "type": "string"
-     },
-     "value_type": {
-      "title": "Value Type",
-      "type": "string"
-     }
-    },
-    "required": [
-     "id",
-     "short_name",
-     "name",
-     "symbol",
-     "series_type",
-     "value_type",
-     "frequency"
-    ],
-    "title": "MarketIndex",
-    "type": "object"
-   },
-   "MarketIndexesTimeSeries": {
+   "MarketDataSeriesTimeSeries": {
     "additionalProperties": {
      "items": {
-      "$ref": "#/components/schemas/IndexPoint"
+      "$ref": "#/components/schemas/MarketDataSeriesPoint"
      },
      "type": "array"
     },
-    "description": "Maps each index (ex: 'S&P500', 'USD/BRL') to its time series",
-    "title": "MarketIndexesTimeSeries",
+    "description": "Each series by its short name, mapped to its observations.",
+    "title": "MarketDataSeriesTimeSeries",
     "type": "object"
    },
    "OnDemandQuotesResponse": {
@@ -3689,13 +3625,6 @@
     "title": "TreasuryBondTypeOut",
     "type": "object"
    },
-   "USD_BRL_History": {
-    "items": {
-     "$ref": "#/components/schemas/UsdBrlPoint"
-    },
-    "title": "USD_BRL_History",
-    "type": "array"
-   },
    "UpdatePortfolioRequest": {
     "properties": {
      "id": {
@@ -3824,30 +3753,6 @@
      "source"
     ],
     "title": "UsdBrlHistoryPoint",
-    "type": "object"
-   },
-   "UsdBrlPoint": {
-    "properties": {
-     "brl_usd": {
-      "title": "Brl Usd",
-      "type": "number"
-     },
-     "date": {
-      "format": "date",
-      "title": "Date",
-      "type": "string"
-     },
-     "usd_brl": {
-      "title": "Usd Brl",
-      "type": "number"
-     }
-    },
-    "required": [
-     "date",
-     "usd_brl",
-     "brl_usd"
-    ],
-    "title": "UsdBrlPoint",
     "type": "object"
    },
    "UserConfigurationUpdateRequest": {
@@ -5018,31 +4923,6 @@
     ]
    }
   },
-  "/market_data/asset/index": {
-   "get": {
-    "description": "List all indexes (for fixed income reference).",
-    "operationId": "list_indexes_market_data_asset_index_get",
-    "responses": {
-     "200": {
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      },
-      "description": "Successful Response"
-     }
-    },
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "summary": "List Indexes",
-    "tags": [
-     "Asset"
-    ]
-   }
-  },
   "/market_data/asset/treasury_bond/type": {
    "get": {
     "description": "List all treasury bond types.",
@@ -5511,6 +5391,37 @@
     ]
    }
   },
+  "/market_data/currency": {
+   "get": {
+    "description": "The monetary units the application works in.\n\nIts own route because a currency is not a market-data series: it used to\nhang off `/index`, which said the opposite.",
+    "operationId": "list_currencies_market_data_currency_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Currency"
+         },
+         "title": "Response List Currencies Market Data Currency Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Currencies",
+    "tags": [
+     "Market Data Currency"
+    ]
+   }
+  },
   "/market_data/fii/{asset_id}/profile": {
    "get": {
     "description": "Indicators and distribution history published for one real-estate fund.",
@@ -5556,118 +5467,6 @@
     "summary": "Get Fii Profile",
     "tags": [
      "FII"
-    ]
-   }
-  },
-  "/market_data/index": {
-   "get": {
-    "operationId": "list_indexes_market_data_index_get",
-    "responses": {
-     "200": {
-      "content": {
-       "application/json": {
-        "schema": {
-         "items": {
-          "$ref": "#/components/schemas/MarketIndex"
-         },
-         "title": "Response List Indexes Market Data Index Get",
-         "type": "array"
-        }
-       }
-      },
-      "description": "Successful Response"
-     }
-    },
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "summary": "List Indexes",
-    "tags": [
-     "Market Data Series"
-    ]
-   }
-  },
-  "/market_data/index/currency": {
-   "get": {
-    "operationId": "list_currencies_market_data_index_currency_get",
-    "responses": {
-     "200": {
-      "content": {
-       "application/json": {
-        "schema": {
-         "items": {
-          "$ref": "#/components/schemas/Currency"
-         },
-         "title": "Response List Currencies Market Data Index Currency Get",
-         "type": "array"
-        }
-       }
-      },
-      "description": "Successful Response"
-     }
-    },
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "summary": "List Currencies",
-    "tags": [
-     "Market Data Series"
-    ]
-   }
-  },
-  "/market_data/index/time_series": {
-   "get": {
-    "operationId": "get_indexes_time_series_market_data_index_time_series_get",
-    "responses": {
-     "200": {
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/MarketIndexesTimeSeries"
-        }
-       }
-      },
-      "description": "Successful Response"
-     }
-    },
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "summary": "Get Indexes Time Series",
-    "tags": [
-     "Market Data Series"
-    ]
-   }
-  },
-  "/market_data/index/usd_brl": {
-   "get": {
-    "operationId": "get_usd_brl_history_market_data_index_usd_brl_get",
-    "responses": {
-     "200": {
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/USD_BRL_History"
-        }
-       }
-      },
-      "description": "Successful Response"
-     }
-    },
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "summary": "Get Usd Brl History",
-    "tags": [
-     "Market Data Series"
     ]
    }
   },
@@ -6586,6 +6385,33 @@
      }
     ],
     "summary": "List Market Data Series Options",
+    "tags": [
+     "Market Data Series"
+    ]
+   }
+  },
+  "/market_data/series/time_series": {
+   "get": {
+    "description": "Every series' history at once, keyed by short name, for charting.",
+    "operationId": "get_series_time_series_market_data_series_time_series_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MarketDataSeriesTimeSeries"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Series Time Series",
     "tags": [
      "Market Data Series"
     ]

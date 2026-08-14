@@ -66,9 +66,17 @@ class FII_SEGMENT(IntEnum):
     RETAIL = 15
 
 
-class INDEX(IntEnum):
-    # No USDBRL member: the exchange rate is not a market-data series, it has
-    # its own table. See app.modules.market_data.domain.usd_brl.
+class SERIES(IntEnum):
+    """The registered market-data series, by id.
+
+    Not `INDEX`: only IFIX, S&P500, IBOVESPA and NASDAQ are of the
+    `market_index` type. CDI is an interest rate and IPCA an inflation rate,
+    and calling either an index says something the data does not.
+
+    No USDBRL member: the exchange rate is not a market-data series, it has
+    its own table. See app.modules.market_data.domain.usd_brl.
+    """
+
     IPCA = 2
     CDI = 3
     IFIX = 4

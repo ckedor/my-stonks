@@ -49,16 +49,17 @@ export const BROKER_ROUTES = {
   byId: (brokerId: number | string) => `${MARKET_DATA}/broker/${brokerId}`,
 } as const
 
-export const INDEX_ROUTES = {
-  list: `${MARKET_DATA}/index`,
-  timeSeries: `${MARKET_DATA}/index/time_series`,
-  usdBrl: `${MARKET_DATA}/index/usd_brl`,
-  currency: `${MARKET_DATA}/index/currency`,
+export const CURRENCY_ROUTES = {
+  list: `${MARKET_DATA}/currency`,
 } as const
 
+// There is no "index": IFIX, S&P500, IBOVESPA and NASDAQ are of the
+// market_index *type*, while CDI is an interest rate and IPCA an inflation
+// rate. All of them are market-data series, and this is the only way to them.
 export const MARKET_DATA_SERIES_ROUTES = {
   list: `${MARKET_DATA}/series`,
   options: `${MARKET_DATA}/series/options`,
+  timeSeries: `${MARKET_DATA}/series/time_series`,
   history: (seriesId: number | string) => `${MARKET_DATA}/series/${seriesId}/history`,
 } as const
 

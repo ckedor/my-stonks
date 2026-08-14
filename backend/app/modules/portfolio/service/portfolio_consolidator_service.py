@@ -21,7 +21,7 @@ from app.modules.market_data.domain.constants import (
     ASSET_FIXED_INCOME_TYPE,
     ASSET_TYPE,
     CURRENCY,
-    INDEX,
+    SERIES,
 )
 from app.modules.market_data.domain.market_data_series import MarketDataSeriesHistory
 from app.modules.market_data.domain.quote import persisted_close_prices_df
@@ -33,13 +33,13 @@ from app.modules.portfolio.repositories import PortfolioRepository
 
 from ..domain import portfolio_consolidation
 
-# treasury_bond_type_id → INDEX id (None = prefixado, sem indexador)
+# treasury_bond_type_id → SERIES id (None = prefixado, sem indexador)
 TREASURY_INDEX_MAP = {
-    1: INDEX.CDI,  # LFT  – Tesouro Selic
+    1: SERIES.CDI,  # LFT  – Tesouro Selic
     2: None,  # LTN  – Tesouro Prefixado
     3: None,  # NTN-F – Tesouro Prefixado c/ Juros Semestrais
-    4: INDEX.IPCA,  # NTN-B – Tesouro IPCA+ c/ Juros Semestrais
-    5: INDEX.IPCA,  # NTN-B Principal – Tesouro IPCA+
+    4: SERIES.IPCA,  # NTN-B – Tesouro IPCA+ c/ Juros Semestrais
+    5: SERIES.IPCA,  # NTN-B Principal – Tesouro IPCA+
 }
 
 
@@ -285,15 +285,15 @@ class PortfolioConsolidatorService:
         """Calcula preço do tesouro via índice + taxa, igual a renda fixa."""
         treasury = asset.treasury_bond
         fee = float(treasury.fee) if treasury.fee else 0.0
-        index_id = TREASURY_INDEX_MAP.get(treasury.type_id)
+        series_id = TREASURY_INDEX_MAP.get(treasury.type_id)
 
-        if index_id is not None:
+        if series_id is not None:
             index_history_df = await repository.get(
-                MarketDataSeriesHistory, by={'series_id': index_id}, as_df=True
+                MarketDataSeriesHistory, by={'series_id': series_id}, as_df=True
             )
             if index_history_df.empty:
                 raise ValueError(
-                    f'Não existe dados de histórico do índice {index_id} para {asset.ticker}'
+                    f'Não existe dados de histórico do índice {series_id} para {asset.ticker}'
                 )
         else:
             # Prefixado: sem indexador, só taxa fixa

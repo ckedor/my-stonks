@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
-from app.modules.market_data.api.index.schemas import Currency
+from app.modules.market_data.api.currency.schemas import Currency
 from app.modules.portfolio.domain.category import NewCategory
 from app.modules.portfolio.domain.entities import CustomCategory as CustomCategoryEntity
 

@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from app.modules.market_data.service.market_data_service import (
-    INDEXES_HISTORY_CACHE_PREFIX,
+    SERIES_HISTORY_CACHE_PREFIX,
 )
 from app.modules.market_data.service.usd_brl_ingestion_service import (
     USD_BRL_DATASET_ID,
@@ -48,7 +48,7 @@ async def test_ingestion_drops_the_rate_and_index_caches_after_the_write():
     cache = FakeCache()
     # Both families are seeded, including a neighbour key that must survive.
     await cache.set_json(f'{USD_BRL_HISTORY_CACHE_PREFIX}::', [{'date': '2026-08-06'}])
-    await cache.set_json(f'{INDEXES_HISTORY_CACHE_PREFIX}:2021-01-01:', {'CDI': []})
+    await cache.set_json(f'{SERIES_HISTORY_CACHE_PREFIX}:2021-01-01:', {'CDI': []})
     await cache.set_json('assets_list::', ['PETR4'])
 
     uow = FakeUnitOfWork(
@@ -62,7 +62,7 @@ async def test_ingestion_drops_the_rate_and_index_caches_after_the_write():
     await service.run(execution_id=11)
 
     assert f'{USD_BRL_HISTORY_CACHE_PREFIX}::' not in cache.store
-    assert f'{INDEXES_HISTORY_CACHE_PREFIX}:2021-01-01:' not in cache.store
+    assert f'{SERIES_HISTORY_CACHE_PREFIX}:2021-01-01:' not in cache.store
     # Unrelated caches are left alone.
     assert 'assets_list::' in cache.store
 

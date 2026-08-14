@@ -66,7 +66,7 @@ The canonical code identifier for an asset type is its uppercase key.
 | --- | --- | --- |
 | Market data series | Série de dados de mercado | Registered and explicitly typed time series used as a market indicator, fixed-income indexer, or performance reference. Its metadata is stored separately from its history. Examples include CDI, IPCA, IFIX, S&P 500, IBOVESPA, and NASDAQ. The USD/BRL exchange rate is not one of them. |
 | Market data series history | Histórico da série de dados de mercado | Persisted chronological observations belonging to one market-data series. OHLC fields may be used by market indexes; scalar indicators primarily use the close value. |
-| Market index | Índice de mercado | A `market_index` type of market-data series, such as IFIX, S&P 500, IBOVESPA, or NASDAQ. |
+| Market index | Índice de mercado | A market-data series of the `market_index` type, such as IFIX, S&P 500, IBOVESPA, or NASDAQ. It is a type, never a synonym for series: CDI is an `interest_rate` and IPCA an `inflation_rate`, so neither is an index. Do not name code, routes, or schemas `index` when they mean a series — there is one route family, `/market_data/series`. |
 | Benchmark | Referência de desempenho | A market-data series selected to compare the performance of a portfolio, category, or asset. Benchmark is a role played by a series. |
 | Quote | Cotação | Complete structured market-data observation for one asset and date. In this application it may contain open, high, low, close, adjusted close, volume, currency, and source. A quote does not imply bid or ask data. |
 | Quote history | Histórico de cotações | Chronological collection of quotes for an asset. It may be returned on demand by a provider or persisted in the `market_data.quote` table. |

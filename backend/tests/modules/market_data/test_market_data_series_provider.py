@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
-from app.modules.market_data.domain.constants import INDEX
+from app.modules.market_data.domain.constants import SERIES
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 
 
@@ -33,7 +33,7 @@ async def test_ipca_keeps_bcb_as_primary_source():
             ])
         )
     )
-    series = build_series(series_id=INDEX.IPCA, symbol='IPCA')
+    series = build_series(series_id=SERIES.IPCA, symbol='IPCA')
 
     result = await provider.get_series_historical_data(
         series,
@@ -86,7 +86,7 @@ async def test_ifix_uses_market_history_and_normalizes_ohlc_without_filling_date
             }
         )
     )
-    series = build_series(series_id=INDEX.IFIX, symbol='IFIX.SA')
+    series = build_series(series_id=SERIES.IFIX, symbol='IFIX.SA')
 
     result = await provider.get_series_historical_data(
         series,

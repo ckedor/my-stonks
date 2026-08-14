@@ -1,7 +1,7 @@
 import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
 import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
-import { BROKER_ROUTES, INDEX_ROUTES } from '@/constants/routes'
+import { BROKER_ROUTES, CURRENCY_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
 import {
@@ -76,7 +76,7 @@ export default function AdminBrokersPage() {
     try {
       const [brokersRes, currenciesRes] = await Promise.all([
         api.get(BROKER_ROUTES.list),
-        api.get(INDEX_ROUTES.currency),
+        api.get(CURRENCY_ROUTES.list),
       ])
       setBrokers(brokersRes.data)
       setFilteredBrokers(brokersRes.data)

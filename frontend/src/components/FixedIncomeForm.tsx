@@ -1,7 +1,7 @@
 
 import { ASSET_CLASS } from '@/constants/assetClass'
 import { FIXED_INCOME_TYPES } from '@/constants/fixedIncomeTypes'
-import { ASSET_ROUTES, INDEX_ROUTES } from '@/constants/routes'
+import { ASSET_ROUTES, MARKET_DATA_SERIES_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { Asset } from '@/types'
 import {
@@ -74,7 +74,7 @@ export default function FixedIncomeForm({ open, assetTypeId, onClose }: Props) {
     setFetching(true)
     Promise.all([
       api.get(ASSET_ROUTES.fixedIncomeType),
-      api.get(INDEX_ROUTES.list),
+      api.get(MARKET_DATA_SERIES_ROUTES.list),
       api.get(ASSET_ROUTES.type),
     ])
       .then(([fiRes, idxRes, atRes]) => {

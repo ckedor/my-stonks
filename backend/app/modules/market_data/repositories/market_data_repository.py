@@ -29,7 +29,7 @@ class MarketDataRepository(SQLAlchemyRepository):
     async def get_series_history(
         self,
         start_date: str | None = None,
-        index_id: int | None = None,
+        series_id: int | None = None,
     ) -> list[dict]:
         """Return raw index history rows joined with index metadata.
 
@@ -48,15 +48,17 @@ class MarketDataRepository(SQLAlchemyRepository):
 
         if start_date:
             stmt = stmt.where(MarketDataSeriesHistory.date >= start_date)
-        if index_id:
-            stmt = stmt.where(MarketDataSeries.id == index_id)
+        if series_id:
+            stmt = stmt.where(MarketDataSeries.id == series_id)
 
         result = await self.session.execute(stmt)
         return result.mappings().all()
 
-    async def get_index_history(self, start_date: str | None = None, index_id: int | None = None):
+    async def get_series_history_values(
+        self, start_date: str | None = None, series_id: int | None = None
+    ):
         """Compatibility alias for existing portfolio read flows."""
-        return await self.get_series_history(start_date, index_id=index_id)
+        return await self.get_series_history(start_date, series_id=series_id)
 
     async def get_series_history_entries(
         self,

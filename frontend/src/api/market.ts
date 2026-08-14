@@ -1,19 +1,12 @@
 import type { CandleDataPoint } from '@/components/charts/CandleChart'
-import {
-  ASSET_ROUTES,
-  FII_ROUTES,
-  INDEX_ROUTES,
-  MARKET_DATA_SERIES_ROUTES,
-  QUOTE_ROUTES,
-  USD_BRL_ROUTES,
-} from '@/constants/routes'
+import { ASSET_ROUTES, CURRENCY_ROUTES, FII_ROUTES, MARKET_DATA_SERIES_ROUTES, QUOTE_ROUTES, USD_BRL_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import type { ReturnsEntry } from '@/types'
 
 export type BenchmarksPayload = Record<string, ReturnsEntry[]>
 
 export const fetchBenchmarks = (): Promise<BenchmarksPayload> =>
-  api.get<BenchmarksPayload>(INDEX_ROUTES.timeSeries).then((r) => r.data)
+  api.get<BenchmarksPayload>(MARKET_DATA_SERIES_ROUTES.timeSeries).then((r) => r.data)
 
 // ---------------------------------------------------------------------------
 // Market data inspection (admin)
@@ -71,7 +64,7 @@ export interface Currency {
 }
 
 export const fetchCurrencies = (): Promise<Currency[]> =>
-  api.get<Currency[]>(INDEX_ROUTES.currency).then((r) => r.data)
+  api.get<Currency[]>(CURRENCY_ROUTES.list).then((r) => r.data)
 
 export interface PersistedQuote {
   date: string

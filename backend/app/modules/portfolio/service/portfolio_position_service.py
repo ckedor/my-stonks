@@ -11,7 +11,7 @@ from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
 from app.lib.utils.df import df_to_dict_list, rows_to_df
 from app.lib.utils.fastapi import df_response
-from app.modules.market_data.domain.constants import INDEX
+from app.modules.market_data.domain.constants import SERIES
 from app.modules.market_data.service.market_data_service import MarketDataReadService
 from app.modules.portfolio.domain.asset_analysis import calculate_returns_analysis
 from app.modules.portfolio.domain.asset_position import AssetPosition
@@ -99,7 +99,9 @@ class PortfolioPositionService:
         start_date = grouped['date'].min()
 
         benchmarks = {}
-        cdi_history = await self.market_data_service.get_index_history(start_date, INDEX.CDI)
+        cdi_history = await self.market_data_service.get_series_history_values(
+            start_date, SERIES.CDI
+        )
         benchmarks['CDI'] = cdi_history
 
         result = calculate_returns_analysis(portfolio_returns, benchmarks)
@@ -130,16 +132,18 @@ class PortfolioPositionService:
 
         benchmarks = {}
 
-        cdi_history = await self.market_data_service.get_index_history(start_date, INDEX.CDI)
+        cdi_history = await self.market_data_service.get_series_history_values(
+            start_date, SERIES.CDI
+        )
         benchmarks['CDI'] = cdi_history
 
         async with self.uow as uow:
             category = await uow.portfolios.get_asset_category(portfolio_id, asset_id)
             benchmark_id = category.benchmark_id
-            benchmark_name = category.benchmark.short_name if benchmark_id != INDEX.CDI else None
+            benchmark_name = category.benchmark.short_name if benchmark_id != SERIES.CDI else None
 
-        if benchmark_id != INDEX.CDI:
-            benchmarks[benchmark_name] = await self.market_data_service.get_index_history(
+        if benchmark_id != SERIES.CDI:
+            benchmarks[benchmark_name] = await self.market_data_service.get_series_history_values(
                 start_date, benchmark_id
             )
 
@@ -352,7 +356,9 @@ class PortfolioPositionService:
         start_date = df['date'].min()
 
         benchmarks = {}
-        cdi_history = await self.market_data_service.get_index_history(start_date, INDEX.CDI)
+        cdi_history = await self.market_data_service.get_series_history_values(
+            start_date, SERIES.CDI
+        )
         benchmarks['CDI'] = cdi_history
 
         result = calculate_returns_analysis(returns_series, benchmarks)
@@ -374,7 +380,9 @@ class PortfolioPositionService:
         start_date = df['date'].min()
 
         benchmarks = {}
-        cdi_history = await self.market_data_service.get_index_history(start_date, INDEX.CDI)
+        cdi_history = await self.market_data_service.get_series_history_values(
+            start_date, SERIES.CDI
+        )
         benchmarks['CDI'] = cdi_history
 
         async with self.uow as uow:
@@ -382,12 +390,12 @@ class PortfolioPositionService:
             benchmark_id = category.benchmark_id if category else None
             benchmark_name = (
                 category.benchmark.short_name
-                if benchmark_id and benchmark_id != INDEX.CDI
+                if benchmark_id and benchmark_id != SERIES.CDI
                 else None
             )
 
         if benchmark_name is not None:
-            benchmarks[benchmark_name] = await self.market_data_service.get_index_history(
+            benchmarks[benchmark_name] = await self.market_data_service.get_series_history_values(
                 start_date, benchmark_id
             )
 

@@ -14,12 +14,12 @@ from app.infra.redis.redis_service import RedisService
 from app.lib.finance.returns import calculate_acc_returns_from_prices
 from app.lib.utils.df import df_to_named_dict, rows_to_df
 from app.modules.market_data.domain.assets import Currency
-from app.modules.market_data.domain.constants import INDEX
+from app.modules.market_data.domain.constants import SERIES
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.domain.usd_brl import usd_brl_payload_to_df
 from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
 
-INDEXES_HISTORY_CACHE_PREFIX = 'indexes_history'
+SERIES_HISTORY_CACHE_PREFIX = 'series_history'
 
 
 class MarketDataReadService:
@@ -32,10 +32,6 @@ class MarketDataReadService:
         self.uow = uow
         self.usd_brl = usd_brl
         self.cache = cache or RedisService()
-
-    async def list_indexes(self):
-        async with self.uow as uow:
-            return await uow.market_data.get(MarketDataSeries)
 
     async def list_market_data_series(self):
         async with self.uow as uow:
@@ -52,10 +48,10 @@ class MarketDataReadService:
                 start_date=start_date,
             )
 
-    USD_INDEXES: ClassVar[set[int]] = {INDEX.SP500, INDEX.NASDAQ}
+    USD_SERIES: ClassVar[set[int]] = {SERIES.SP500, SERIES.NASDAQ}
 
-    async def get_index_history(
-        self, start_date: pd.Timestamp = None, index_id: int | None = None
+    async def get_series_history_values(
+        self, start_date: pd.Timestamp = None, series_id: int | None = None
     ) -> pd.Series:
         """
         Returns a price-like Series with DatetimeIndex for a given index.
@@ -64,17 +60,17 @@ class MarketDataReadService:
         For price-based indexes (IBOV, etc.), returns the value directly.
         """
         async with self.uow as uow:
-            rows = await uow.market_data.get_index_history(start_date, index_id=index_id)
+            rows = await uow.market_data.get_series_history_values(start_date, series_id=series_id)
         df = rows_to_df(rows, datetime_cols=['date'])
         df = df.sort_values('date')
         df['value'] = df['value'].astype(float)
 
-        if index_id in {INDEX.IPCA, INDEX.CDI}:
-            values = self._build_index_from_percent(df['value'])
+        if series_id in {SERIES.IPCA, SERIES.CDI}:
+            values = self._build_level_from_percent(df['value'])
         else:
             values = df['value']
 
-        if index_id in self.USD_INDEXES:
+        if series_id in self.USD_SERIES:
             usd_brl_df = await self.get_usd_brl_history(start_date)
             df = df.merge(usd_brl_df[['date', 'usd_brl']], on='date', how='left')
             df['usd_brl'] = df['usd_brl'].ffill()
@@ -84,14 +80,14 @@ class MarketDataReadService:
         values.index.name = 'date'
         return values
 
-    @cached(key_prefix=INDEXES_HISTORY_CACHE_PREFIX, cache=lambda self: self.cache, ttl=3600)
-    async def get_indexes_history(self, start_date: pd.Timestamp = None) -> pd.DataFrame:
+    @cached(key_prefix=SERIES_HISTORY_CACHE_PREFIX, cache=lambda self: self.cache, ttl=3600)
+    async def get_all_series_history(self, start_date: pd.Timestamp = None) -> pd.DataFrame:
         return await self.compute_indexes_history(start_date)
 
     async def compute_indexes_history(self, start_date: pd.Timestamp = None):
         start_date = start_date or pd.Timestamp(datetime.today()) - pd.DateOffset(years=5)
         async with self.uow as uow:
-            index_history_rows = await uow.market_data.get_index_history(start_date)
+            index_history_rows = await uow.market_data.get_series_history_values(start_date)
         index_history_df = rows_to_df(index_history_rows, datetime_cols=['date'])
 
         index_history_returns_df = pd.DataFrame()
@@ -123,7 +119,7 @@ class MarketDataReadService:
 
             # Build cumulative index from percentage rates
             if index_name in {'IPCA', 'CDI'}:
-                index_series = self._build_index_from_percent(index_series)
+                index_series = self._build_level_from_percent(index_series)
 
             returns_df = calculate_acc_returns_from_prices(index_series)
             if index_history_returns_df.empty:
@@ -139,7 +135,7 @@ class MarketDataReadService:
         return result
 
     @staticmethod
-    def _build_index_from_percent(
+    def _build_level_from_percent(
         series: pd.Series,
         base_value: float = 100.0,
     ) -> pd.Series:

@@ -82,14 +82,6 @@ async def list_exchanges(
     return await service.list_exchanges()
 
 
-@router.get('/index')
-async def list_indexes(
-    service: AssetService = Depends(get_asset_service),
-):
-    """List all indexes (for fixed income reference)."""
-    return await service.list_indexes()
-
-
 @router.get('/favorites', response_model=list[FavoriteAsset])
 async def list_favorite_assets(
     limit: int = Query(default=8, ge=1, le=24),

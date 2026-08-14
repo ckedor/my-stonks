@@ -10,7 +10,7 @@ from app.modules.market_data.adapters.market_data_provider import MarketDataProv
 from app.modules.market_data.domain.ingestion import DataIngestionType
 from app.modules.market_data.domain.usd_brl import UsdBrlHistory, invert_rate
 from app.modules.market_data.service.data_ingestion_service import DataIngestionService
-from app.modules.market_data.service.market_data_service import INDEXES_HISTORY_CACHE_PREFIX
+from app.modules.market_data.service.market_data_service import SERIES_HISTORY_CACHE_PREFIX
 from app.modules.market_data.service.usd_brl_service import USD_BRL_HISTORY_CACHE_PREFIX
 
 USD_BRL_DATASET_ID = 1
@@ -40,7 +40,7 @@ class UsdBrlIngestionService:
         USD-denominated ones into BRL.
         """
         await self.cache.delete_prefix(f'{USD_BRL_HISTORY_CACHE_PREFIX}:')
-        await self.cache.delete_prefix(f'{INDEXES_HISTORY_CACHE_PREFIX}:')
+        await self.cache.delete_prefix(f'{SERIES_HISTORY_CACHE_PREFIX}:')
 
     async def run(
         self,
