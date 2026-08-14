@@ -189,6 +189,27 @@ class SQLAlchemyRepository:
             if key not in provided and instance.__dict__.get(key) is None:
                 del instance.__dict__[key]
 
+    def _expire_relationships_over(self, merged: Any, item: Any) -> None:
+        """Force a reload of the related rows whose foreign key just changed.
+
+        Changing `currency_id` leaves an already-loaded `currency` pointing at
+        the row the old key named, so a caller that serializes the entity it
+        just updated answers with a value the database no longer holds: the
+        write is right and the response is stale. Expiring the relationship
+        makes the next read fetch the row the new key points at.
+        """
+        if not isinstance(item, dict):
+            return
+        changed = set(item)
+        state = inspect(merged)
+        stale = [
+            relationship.key
+            for relationship in state.mapper.relationships
+            if {column.key for column in relationship.local_columns} & changed
+        ]
+        if stale:
+            self.session.expire(merged, stale)
+
     @classmethod
     def _build(cls, model: ModelType, data: dict) -> ModelType:
         """Construct an entity from a dict without losing the foreign keys in it.
@@ -211,6 +232,26 @@ class SQLAlchemyRepository:
         """
         instance = model(**data)
         cls._detach_unset_relationships(instance, set(data))
+        return instance
+
+    @staticmethod
+    def _build_partial(model: ModelType, data: dict) -> ModelType:
+        """An instance carrying only the fields the caller named, for `merge()`.
+
+        An update states the primary key and what changes: `{'id': 4, 'name':
+        'x'}`. Running that through `__init__` demands every field without a
+        default — `Portfolio.user_id`, `Dividend.asset_id` — and raises
+        TypeError before the statement is ever built, so updating a portfolio or
+        a dividend could not work.
+
+        Building the instance without `__init__` leaves everything unnamed
+        genuinely unset. `merge()` loads the stored row and copies over only
+        what is set, so the untouched columns keep their values, and the
+        relationships never get a None to overwrite a foreign key with.
+        """
+        instance = inspect(model).class_manager.new_instance()
+        for key, value in data.items():
+            setattr(instance, key, value)
         return instance
 
     async def create(self, model: ModelType, data: dict | list[dict | ModelType]) -> list[int]:
@@ -307,9 +348,7 @@ class SQLAlchemyRepository:
 
         for item in data:
             if isinstance(item, dict):
-                # Same reason as in create: an unmentioned relationship must stay
-                # unset, or merge() would null out the column it sits over.
-                instance = self._build(model, item)
+                instance = self._build_partial(model, item)
             elif isinstance(item, model):
                 self._detach_unset_relationships(item, set())
                 instance = item
@@ -317,6 +356,7 @@ class SQLAlchemyRepository:
                 raise ValueError('Each update item must be a dict or a model instance')
 
             merged = await self.session.merge(instance)
+            self._expire_relationships_over(merged, item)
             merged_instances.append(merged)
 
         if flush:

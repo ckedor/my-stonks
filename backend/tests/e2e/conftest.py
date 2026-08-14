@@ -248,3 +248,14 @@ async def factory(db, seed_user_id):
     from tests.factories import Factory
 
     return Factory(db, seed_user_id)
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def seed_rate(factory):
+    """A USD/BRL rate old enough to cover every date a test invents.
+
+    Positions, transactions and dividends are all stored in both currencies, so
+    without one of these the write fails on a lookup that has nothing to do with
+    what the test is checking. Cheaper to always have one than to remember.
+    """
+    await factory.usd_brl_rate()

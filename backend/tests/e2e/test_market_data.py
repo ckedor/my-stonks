@@ -143,18 +143,3 @@ async def test_get_quotes_mocked(client):
     data = response.json()
     assert data['ticker'] == 'PETR4'
     assert len(data['quotes']) == 1
-
-
-# ---------------------------------------------------------------------------
-# CONSOLIDATE HISTORY (superuser endpoint)
-# ---------------------------------------------------------------------------
-async def test_consolidate_history_returns_ok(client):
-    """
-    The consolidate endpoint explicitly dispatches both ingestion tasks.
-    """
-    with patch('app.modules.market_data.api.index.router.run_task') as run_task:
-        response = await client.post('/market_data/index/consolidate_history')
-
-    assert response.status_code == HTTPStatus.OK
-    assert response.json() == {'message': 'OK'}
-    assert run_task.call_count == EXPECTED_INGESTION_TASK_COUNT

@@ -1,6 +1,6 @@
 # Backend guidelines
 
-These instructions extend the repository-level `AGENTS.md` for files under
+These instructions extend the repository-level `CLAUDE.md` for files under
 `backend/`.
 
 ## Layer boundaries

@@ -1,7 +1,7 @@
 # My Stonks
 
 These instructions apply to the entire repository. More specific instructions
-exist in `backend/AGENTS.md` and `frontend/AGENTS.md`.
+exist in `backend/CLAUDE.md` and `frontend/CLAUDE.md`.
 
 ## Before changing code
 

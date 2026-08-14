@@ -34,8 +34,8 @@ async def test_list_assets_empty(client):
     assert response.json() == []
 
 
-async def test_list_assets_returns_seeded(client, db):
-    _seed_asset(db)
+async def test_list_assets_returns_seeded(client, db, factory):
+    await _seed_asset(factory)
 
     response = await client.get('/market_data/asset')
 
@@ -198,6 +198,8 @@ async def test_update_event(client, db, factory):
     response = await client.put(f'/market_data/asset/event/{event.id}', json=update_payload)
     assert response.status_code == HTTPStatus.OK
 
-    db.expire_all()
-    updated = await db.scalar(select(Event).filter_by(id=event.id))
-    assert float(updated.factor) == 3.0
+    # The route wrote through its own session; refreshing pulls the new row
+    # into this one. Expiring and then touching the attribute would try to
+    # reload synchronously, which async SQLAlchemy refuses.
+    await db.refresh(event)
+    assert float(event.factor) == 3.0

@@ -45,10 +45,11 @@ async def test_create_broker_without_cnpj(client):
 
 
 async def test_create_broker_duplicate_cnpj(client):
+    """A CNPJ already in use is a conflict, not a malformed request."""
     await _create_broker(client, name='Broker A', cnpj='11.111.111/0001-11')
     response = await _create_broker(client, name='Broker B', cnpj='11.111.111/0001-11')
 
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.CONFLICT
 
 
 # ---------------------------------------------------------------------------

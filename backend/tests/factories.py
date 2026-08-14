@@ -134,6 +134,29 @@ class Factory:
             on=on or date(2024, 1, 2),
         )
 
+    async def usd_brl_rate(
+        self,
+        *,
+        on: date | None = None,
+        usd_brl: float = 5.0,
+    ) -> date:
+        """One day of the USD/BRL table.
+
+        Anything that records money reads this: a transaction and a dividend are
+        both stored in the two currencies, so without a rate on or before their
+        date the write fails with "USD/BRL history not found". Tests that only
+        care about the row they are creating get one from `seed_rate`.
+        """
+        on = on or date(2020, 1, 1)
+        await self.session.execute(
+            text(
+                'INSERT INTO market_data.usd_brl_history (date, usd_brl, brl_usd, source) '
+                'VALUES (:on, :usd_brl, :brl_usd, :source) ON CONFLICT (date) DO NOTHING'
+            ),
+            {'on': on, 'usd_brl': usd_brl, 'brl_usd': 1 / usd_brl, 'source': 'test'},
+        )
+        return on
+
     async def dividend(
         self,
         *,

@@ -5,26 +5,40 @@ Estado inicial medido em 2026-08-14: **206 testes, 149 passando, 57 com erro, 57
 
 ## Andamento
 
+**Hoje: 209 passando, 2 xfail, 0 falhando. Cobertura 60%** (era 149 passando,
+57 com erro, 57%). Sem os containers no ar, o e2e pula: 150 passando, 61
+pulados.
+
 - [x] **Fase 0 — instrumentação**
 - [x] **Fase 1 — contrato**: snapshot de OpenAPI versionado, verificado nos dois sentidos
-- [x] **Fase 2 — e2e vivo**: harness novo em `tests/e2e/`, 6 testes provando as
-      próprias garantias do harness. Faltam migrar os 57 testes antigos.
+- [x] **Fase 2 — e2e vivo**: harness em `tests/e2e/`, factories, e os 57 testes
+      órfãos migrados para ele
 - [ ] Fase 3 — o dinheiro
 - [ ] Fase 4 — as garantias documentadas
 - [ ] Fase 5 — repositório, serviço e trava
 
-Hoje: **156 passando, 1 xfail, 57 erros** (os 57 são os arquivos antigos na raiz
-de `tests/`, ainda não migrados para o harness novo).
+### Bugs encontrados pelo harness
 
-### Bug encontrado pelo harness
+Nenhum foi procurado; todos apareceram porque um teste que não rodava voltou a
+rodar.
 
-`POST /portfolio` não pode funcionar. `Portfolio` mapeia `user` como relationship
-sobre a mesma coluna da FK `user_id`, e a dataclass inicializa `user=None`; no
-flush o relationship vence e grava NULL numa coluna NOT NULL. **39 relationships
-do domínio têm essa forma** — onde a coluna é nullable, grava NULL em silêncio em
-vez de levantar. Registrado como `xfail(strict=True)` em
-`tests/e2e/test_harness.py::test_creating_a_portfolio_over_http`, que passa a
-falhar sozinho quando alguém corrigir e esquecer de remover a marca.
+1. **Corrigido.** `Portfolio` mapeia `user` como relationship sobre a mesma
+   coluna da FK `user_id`, e a dataclass inicializa `user=None`; no flush o
+   relationship vencia e gravava NULL. 39 relationships do domínio têm essa
+   forma. `POST /portfolio` e `POST /market_data/broker` nunca funcionaram.
+2. **Corrigido.** Update parcial (`{'id': 4, 'name': 'x'}`) construía a entidade
+   pelo `__init__`, que exige campos sem default, e estourava `TypeError` antes
+   de chegar ao banco. `PUT /portfolio/{id}` e `PUT /portfolio/dividend/{id}`.
+3. **Corrigido.** `PUT /market_data/broker/{id}` gravava o novo `currency_id` e
+   respondia com a currency antiga: o relationship já carregado não era
+   invalidado.
+4. **Aberto** — `GET /portfolio/income_tax/{id}/assets_and_rights` levanta
+   `KeyError: 'asset_id'` em carteira sem posição. Carteira nova pedindo IR = 500.
+5. **Aberto** — `PUT /portfolio/dividend/{id}` responde com entidade destacada e
+   levanta `DetachedInstanceError` ao serializar. A escrita está certa.
+
+Os dois abertos estão como `xfail(strict=True)`, então falham sozinhos quando
+alguém corrigir e esquecer de tirar a marca.
 
 ## O que este projeto arrisca
 
@@ -69,8 +83,8 @@ de a partir do código, é o que impede o teste de só repetir o que o código f
 ```
 tests/
   conftest.py              ambiente e asyncio, nada mais
-  factories/               construtores de dado de domínio
-  fakes/                   dublês: uow, cache, provider, relógio
+  factories.py             construtores de linha, em SQL
+  fakes.py                 dublês: uow, cache
   unit/
     domain/                cálculo puro por módulo
     lib/                   finance, income_tax
@@ -128,17 +142,24 @@ tabelas preservadas precisa ser mantida, e o seed de referência carrega uma vez
 por sessão. É a receita da própria doc do SQLAlchemy, e a 2.0.39 que usamos
 suporta.
 
-### Costura: `get_uow`, e só
+### Costura: `AsyncSessionLocal.configure`, e só
 
-`UnitOfWork` aceita `session_factory` e `get_uow` é dependência do FastAPI:
+A ideia original era sobrescrever a dependência `get_uow`. **Não funciona**:
+`app/composition/` constrói `UnitOfWork()` cru em nove lugares, e esses nunca
+passam pela dependência — apontariam para o banco de desenvolvimento no meio do
+teste.
+
+A costura que funciona é uma abaixo, no `sessionmaker` que toda `UnitOfWork()`
+usa por default:
 
 ```python
-app.dependency_overrides[get_uow] = lambda: UnitOfWork(session_factory=TestSession)
+AsyncSessionLocal.configure(bind=conn, join_transaction_mode='create_savepoint')
 ```
 
-Redis e Celery entram pelo mesmo lugar, sobrescrevendo os builders de
-`app/composition/`. Nenhum `patch` por caminho de módulo — foi exatamente o que
-quebrou a suíte anterior quando o refactor moveu os arquivos.
+Uma linha, e todo caminho de persistência do app entra na transação do teste.
+Celery é neutralizado no nível do framework (`Task.delay` e `send_task`), não
+por rota. Nenhum `patch` por caminho de módulo — foi exatamente o que quebrou a
+suíte anterior quando o refactor moveu os arquivos.
 
 ### Relógio injetável
 
