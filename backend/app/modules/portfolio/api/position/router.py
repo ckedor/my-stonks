@@ -1,18 +1,20 @@
-from typing import List, Optional
+from fastapi import APIRouter, Depends, Query
 
 from app.composition.portfolio import get_portfolio_position_service
 from app.lib.utils.fastapi import df_response
-from app.modules.market_data.api.asset.schemas import AssetDetailsWithPosition
+from app.modules.market_data.api.asset.schemas import (
+    AssetDetailsOut,
+    AssetDetailsWithPosition,
+)
 from app.modules.portfolio.service.portfolio_position_service import (
     PortfolioPositionService,
 )
-from fastapi import APIRouter, Depends, Query
 
 router = APIRouter(prefix='/position', tags=['Portfolio Position'])
 
 
 @router.get('/{portfolio_id}')
-async def get_portfolio_position(  # noqa: PLR0913, PLR0917
+async def get_portfolio_position(  # noqa: PLR0913
     portfolio_id: int,
     most_recent: bool = Query(True),
     group_by_broker: bool = Query(False),
@@ -37,11 +39,11 @@ async def get_portfolio_returns(
 
 
 @router.get('/{portfolio_id}/patrimony_evolution')
-async def get_patrimony_evolution(  # noqa: PLR0913, PLR0917
+async def get_patrimony_evolution(  # noqa: PLR0913
     portfolio_id: int,
     asset_id: int = Query(None),
     asset_type_id: int = Query(None),
-    asset_type_ids: Optional[List[int]] = Query(None),
+    asset_type_ids: list[int] | None = Query(None),
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
@@ -81,11 +83,11 @@ async def get_category_analysis(
 
 
 @router.get('/{portfolio_id}/asset/{asset_id}/returns')
-async def get_asset_returns(  # noqa: PLR0913, PLR0917
+async def get_asset_returns(  # noqa: PLR0913
     portfolio_id: int,
     asset_id: int,
-    start_date: str = None,
-    end_date: str = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
@@ -104,7 +106,17 @@ async def get_asset_details(
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
-    return await service.get_asset_details(portfolio_id, asset_id, currency=currency)
+    held = await service.get_asset_details(portfolio_id, asset_id, currency=currency)
+    return AssetDetailsWithPosition(
+        **AssetDetailsOut.model_validate(held.asset).model_dump(),
+        quantity=held.quantity,
+        price=held.price,
+        average_price=held.average_price,
+        value=held.value,
+        acc_return=held.acc_return,
+        twelve_months_return=held.twelve_months_return,
+        cagr=held.cagr,
+    )
 
 
 @router.get('/{portfolio_id}/asset/{asset_id}/analysis')

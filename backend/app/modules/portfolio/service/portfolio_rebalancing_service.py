@@ -15,16 +15,14 @@ rebalancing, the same difference values can be used to decide where to
 direct new money without selling existing positions.
 """
 
-from typing import List
-
 from app.core.exceptions import BusinessRuleError
-from app.modules.portfolio.domain.entities import CustomCategory, CustomCategoryAssignment
 from app.infra.db.unit_of_work import UnitOfWork
-from app.modules.portfolio.api.rebalancing.schema import (
-    AssetRebalancingEntry,
-    CategoryRebalancingEntry,
-    RebalancingResponse,
-    SaveTargetsRequest,
+from app.modules.portfolio.domain.entities import CustomCategory, CustomCategoryAssignment
+from app.modules.portfolio.domain.rebalancing import (
+    AssetRebalancing,
+    CategoryRebalancing,
+    CategoryTarget,
+    PortfolioRebalancing,
 )
 from app.modules.portfolio.repositories import PortfolioRepository
 
@@ -33,12 +31,12 @@ class PortfolioRebalancingService:
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
 
-    async def get_rebalancing_data(self, portfolio_id: int) -> RebalancingResponse:
+    async def get_rebalancing_data(self, portfolio_id: int) -> PortfolioRebalancing:
         """Return current positions enriched with target allocations and differences."""
         async with self.uow as uow:
             rows = await uow.portfolios.get_position_on_date(portfolio_id)
             if not rows:
-                return RebalancingResponse(
+                return PortfolioRebalancing(
                     portfolio_id=portfolio_id,
                     total_value=0,
                     categories=[],
@@ -58,8 +56,7 @@ class PortfolioRebalancingService:
                     assignment_map[assignment.asset_id] = assignment
 
         positions = [
-            {**dict(row), 'value': (row['quantity'] or 0) * (row['price'] or 0)}
-            for row in rows
+            {**dict(row), 'value': (row['quantity'] or 0) * (row['price'] or 0)} for row in rows
         ]
         total_value = sum(p['value'] for p in positions)
 
@@ -74,7 +71,7 @@ class PortfolioRebalancingService:
         # Find category model by name
         cat_by_name = {cat.name: cat for cat in categories}
 
-        result_categories: List[CategoryRebalancingEntry] = []
+        result_categories: list[CategoryRebalancing] = []
 
         for cat_name, assets_rows in category_groups.items():
             cat_model = cat_by_name.get(cat_name)
@@ -85,18 +82,30 @@ class PortfolioRebalancingService:
             cat_current_value = sum(r['value'] for r in assets_rows)
             cat_current_pct = (cat_current_value / total_value * 100) if total_value else 0
 
-            cat_target_value = (total_value * cat_target_pct / 100) if cat_target_pct is not None else None
-            cat_diff_value = (cat_target_value - cat_current_value) if cat_target_value is not None else None
-            cat_diff_pct = (cat_target_pct - cat_current_pct) if cat_target_pct is not None else None
+            cat_target_value = (
+                (total_value * cat_target_pct / 100) if cat_target_pct is not None else None
+            )
+            cat_diff_value = (
+                (cat_target_value - cat_current_value) if cat_target_value is not None else None
+            )
+            cat_diff_pct = (
+                (cat_target_pct - cat_current_pct) if cat_target_pct is not None else None
+            )
 
-            asset_entries: List[AssetRebalancingEntry] = []
+            asset_entries: list[AssetRebalancing] = []
             for row in assets_rows:
                 asset_id = int(row['asset_id'])
                 asset_value = row['value']
-                asset_pct_in_cat = (asset_value / cat_current_value * 100) if cat_current_value else 0
+                asset_pct_in_cat = (
+                    (asset_value / cat_current_value * 100) if cat_current_value else 0
+                )
 
                 assignment = assignment_map.get(asset_id)
-                asset_target_pct = assignment.target_percentage if assignment and assignment.target_percentage is not None else None
+                asset_target_pct = (
+                    assignment.target_percentage
+                    if assignment and assignment.target_percentage is not None
+                    else None
+                )
 
                 if asset_target_pct is not None and cat_target_value is not None:
                     asset_target_value = cat_target_value * asset_target_pct / 100
@@ -107,46 +116,56 @@ class PortfolioRebalancingService:
                     asset_diff_value = None
                     asset_diff_pct = None
 
-                asset_entries.append(AssetRebalancingEntry(
-                    asset_id=asset_id,
-                    ticker=row['ticker'],
-                    name=row.get('name', row['ticker']),
-                    category=cat_name,
-                    category_id=cat_id,
-                    current_value=asset_value,
-                    current_pct_in_category=round(asset_pct_in_cat, 2),
-                    target_pct_in_category=asset_target_pct,
-                    target_value=round(asset_target_value, 2) if asset_target_value is not None else None,
-                    diff_pct=round(asset_diff_pct, 2) if asset_diff_pct is not None else None,
-                    diff_value=round(asset_diff_value, 2) if asset_diff_value is not None else None,
-                ))
+                asset_entries.append(
+                    AssetRebalancing(
+                        asset_id=asset_id,
+                        ticker=row['ticker'],
+                        name=row.get('name', row['ticker']),
+                        category=cat_name,
+                        category_id=cat_id,
+                        current_value=asset_value,
+                        current_pct_in_category=round(asset_pct_in_cat, 2),
+                        target_pct_in_category=asset_target_pct,
+                        target_value=round(asset_target_value, 2)
+                        if asset_target_value is not None
+                        else None,
+                        diff_pct=round(asset_diff_pct, 2) if asset_diff_pct is not None else None,
+                        diff_value=round(asset_diff_value, 2)
+                        if asset_diff_value is not None
+                        else None,
+                    )
+                )
 
             # Sort assets by current value descending
             asset_entries.sort(key=lambda a: a.current_value, reverse=True)
 
-            result_categories.append(CategoryRebalancingEntry(
-                category_id=cat_id,
-                category_name=cat_name,
-                color=cat_color,
-                current_value=round(cat_current_value, 2),
-                current_pct=round(cat_current_pct, 2),
-                target_pct=cat_target_pct,
-                target_value=round(cat_target_value, 2) if cat_target_value is not None else None,
-                diff_pct=round(cat_diff_pct, 2) if cat_diff_pct is not None else None,
-                diff_value=round(cat_diff_value, 2) if cat_diff_value is not None else None,
-                assets=asset_entries,
-            ))
+            result_categories.append(
+                CategoryRebalancing(
+                    category_id=cat_id,
+                    category_name=cat_name,
+                    color=cat_color,
+                    current_value=round(cat_current_value, 2),
+                    current_pct=round(cat_current_pct, 2),
+                    target_pct=cat_target_pct,
+                    target_value=round(cat_target_value, 2)
+                    if cat_target_value is not None
+                    else None,
+                    diff_pct=round(cat_diff_pct, 2) if cat_diff_pct is not None else None,
+                    diff_value=round(cat_diff_value, 2) if cat_diff_value is not None else None,
+                    assets=asset_entries,
+                )
+            )
 
         # Sort categories by current value descending
         result_categories.sort(key=lambda c: c.current_value, reverse=True)
 
-        return RebalancingResponse(
+        return PortfolioRebalancing(
             portfolio_id=portfolio_id,
             total_value=round(total_value, 2),
             categories=result_categories,
         )
 
-    async def save_targets(self, payload: SaveTargetsRequest) -> None:
+    async def save_targets(self, portfolio_id: int, *, categories: list[CategoryTarget]) -> None:
         """
         Persist category and asset-level target percentages.
 
@@ -154,28 +173,25 @@ class PortfolioRebalancingService:
         - Sum of category target percentages must equal 100.
         - Sum of asset target percentages within each category must equal 100.
         """
-        portfolio_id = payload.portfolio_id
-
         async with self.uow as uow:
-            await self._save_targets(uow.portfolios, payload, portfolio_id)
+            await self._save_targets(uow.portfolios, categories, portfolio_id)
             await uow.commit()
 
     async def _save_targets(
         self,
         repository: PortfolioRepository,
-        payload: SaveTargetsRequest,
+        categories: list[CategoryTarget],
         portfolio_id: int,
     ) -> None:
-
         # Validate category sum
-        cat_sum = sum(c.target_percentage for c in payload.categories)
+        cat_sum = sum(c.target_percentage for c in categories)
         if abs(cat_sum - 100) > 0.01:
             raise BusinessRuleError(
                 f'A soma dos percentuais das categorias deve ser 100%. Atual: {cat_sum:.2f}%',
             )
 
         # Validate asset sum per category
-        for cat in payload.categories:
+        for cat in categories:
             asset_sum = sum(a.target_percentage for a in cat.assets)
             if abs(asset_sum - 100) > 0.01:
                 category_obj = await repository.get(CustomCategory, id=cat.category_id)
@@ -190,18 +206,21 @@ class PortfolioRebalancingService:
         )
         portfolio_category_ids = {cat.id for cat in portfolio_categories}
 
-        for cat in payload.categories:
+        for cat in categories:
             if cat.category_id not in portfolio_category_ids:
                 raise BusinessRuleError(
                     f'Categoria {cat.category_id} não pertence à carteira {portfolio_id}.',
                 )
 
         # Save category targets
-        for cat in payload.categories:
-            await repository.update(CustomCategory, {
-                'id': cat.category_id,
-                'target_percentage': cat.target_percentage,
-            })
+        for cat in categories:
+            await repository.update(
+                CustomCategory,
+                {
+                    'id': cat.category_id,
+                    'target_percentage': cat.target_percentage,
+                },
+            )
 
             # Save asset targets
             for asset in cat.assets:
@@ -214,7 +233,10 @@ class PortfolioRebalancingService:
                     first=True,
                 )
                 if assignment:
-                    await repository.update(CustomCategoryAssignment, {
-                        'id': assignment.id,
-                        'target_percentage': asset.target_percentage,
-                    })
+                    await repository.update(
+                        CustomCategoryAssignment,
+                        {
+                            'id': assignment.id,
+                            'target_percentage': asset.target_percentage,
+                        },
+                    )

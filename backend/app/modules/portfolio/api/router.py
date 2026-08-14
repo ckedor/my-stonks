@@ -1,3 +1,5 @@
+from fastapi import APIRouter, Depends
+
 from app.composition.portfolio import get_portfolio_service
 from app.modules.portfolio.api.portfolio.schemas import (
     CreatePortfolioRequest,
@@ -8,7 +10,6 @@ from app.modules.portfolio.api.portfolio.schemas import (
 from app.modules.portfolio.service.portfolio_base_service import PortfolioBaseService
 from app.modules.users.domain import User
 from app.modules.users.views import current_active_user, current_superuser
-from fastapi import APIRouter, Depends
 
 from .category.router import router as category_router
 from .dividend.router import router as dividend_router
@@ -25,51 +26,58 @@ router = APIRouter(prefix='/portfolio', dependencies=[Depends(current_active_use
 
 @router.get('', response_model=list[Portfolio])
 async def list_user_portfolios(
-	user: User = Depends(current_active_user),
-	service: PortfolioBaseService = Depends(get_portfolio_service),
+    user: User = Depends(current_active_user),
+    service: PortfolioBaseService = Depends(get_portfolio_service),
 ):
-	return await service.list_user_portfolios(user.id)
+    return await service.list_user_portfolios(user.id)
 
 
 @router.get(
-	'/all',
-	response_model=list[PortfolioSummary],
-	dependencies=[Depends(current_superuser)],
+    '/all',
+    response_model=list[PortfolioSummary],
+    dependencies=[Depends(current_superuser)],
 )
 async def list_all_portfolios(
-	service: PortfolioBaseService = Depends(get_portfolio_service),
+    service: PortfolioBaseService = Depends(get_portfolio_service),
 ):
-	"""Every portfolio in the application, for administrative screens."""
-	return await service.list_all_portfolios()
+    """Every portfolio in the application, for administrative screens."""
+    return await service.list_all_portfolios()
 
 
 @router.post('')
 async def create_portfolio(
-	portfolio: CreatePortfolioRequest,
-	user: User = Depends(current_active_user),
-	service: PortfolioBaseService = Depends(get_portfolio_service),
+    portfolio: CreatePortfolioRequest,
+    user: User = Depends(current_active_user),
+    service: PortfolioBaseService = Depends(get_portfolio_service),
 ):
-	return await service.create_portfolio(portfolio, user.id)
+    return await service.create_portfolio(
+        user.id,
+        name=portfolio.name,
+        categories=portfolio.categories_to_domain(),
+    )
 
 
 @router.put('/{portfolio_id}')
 async def update_portfolio(
-	portfolio_id: int,
-	payload: UpdatePortfolioRequest,
-	service: PortfolioBaseService = Depends(get_portfolio_service),
+    portfolio_id: int,
+    payload: UpdatePortfolioRequest,
+    service: PortfolioBaseService = Depends(get_portfolio_service),
 ):
-	payload = payload.model_copy(update={'id': portfolio_id})
-	await service.update_portfolio(payload)
-	return {'message': 'Portfolio updated successfully.'}
+    await service.update_portfolio(
+        portfolio_id,
+        name=payload.name,
+        categories=payload.categories_to_domain(),
+    )
+    return {'message': 'Portfolio updated successfully.'}
 
 
 @router.delete('/{portfolio_id}')
 async def delete_portfolio(
-	portfolio_id: int,
-	service: PortfolioBaseService = Depends(get_portfolio_service),
+    portfolio_id: int,
+    service: PortfolioBaseService = Depends(get_portfolio_service),
 ):
-	await service.delete_portfolio(portfolio_id)
-	return {'message': 'Portfolio deleted successfully.'}
+    await service.delete_portfolio(portfolio_id)
+    return {'message': 'Portfolio deleted successfully.'}
 
 
 router.include_router(dividend_router)

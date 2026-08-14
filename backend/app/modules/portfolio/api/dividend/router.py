@@ -1,3 +1,7 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+
 from app.composition.portfolio import get_portfolio_dividend_service
 from app.modules.portfolio.api.dividend.schema import (
     Dividend,
@@ -8,8 +12,6 @@ from app.modules.portfolio.api.dividend.schema import (
 from app.modules.portfolio.service.portfolio_dividend_service import (
     PortfolioDividendService,
 )
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from typing_extensions import Annotated
 
 router = APIRouter(prefix='/dividend', tags=['Portfolio Dividend'])
 
@@ -21,7 +23,7 @@ async def list_dividends(
     currency: str = Query('BRL'),
     service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
 ):
-    return await service.get_dividends(portfolio_id, filters, currency=currency)
+    return await service.get_dividends(portfolio_id, filters.to_domain(), currency=currency)
 
 
 @router.post('')

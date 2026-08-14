@@ -132,16 +132,36 @@ import-linter = "2.6"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-lint.select = ["E", "F", "B", "W", "PL", "PT"]
-lint.ignore = ["E501", "B008", "PLR0911"]
-lint.preview = true
+lint.select = ["E", "F", "B", "I", "UP", "SIM", "C4", "RUF", "PL", "PT"]
+lint.ignore = [
+    # A linha longa é decidida pelo formatter, que só tenta respeitar o limite.
+    "E501",
+    # Depends() como valor default é o idioma do FastAPI.
+    "B008",
+    "PLR0911",
+    # Comparação com literal: ruído demais num domínio cheio de percentuais.
+    "PLR2004",
+    # A doc do ruff lista estas como conflitantes com o formatter.
+    "W191",
+    "E111",
+    "E114",
+    "E117",
+    # Unicode ambíguo em comentário/docstring: aqui são × e − de notação
+    # matemática, escritos de propósito. RUF001 (literais) continua ligado,
+    # que é onde um caractere sósia viraria bug de verdade.
+    "RUF002",
+    "RUF003",
+]
+# Regras em preview são instáveis: o baseline mudaria a cada upgrade do ruff,
+# e o pre-commit bloqueia commit. Ficam de fora até estabilizarem.
+lint.preview = false
 format.preview = true
 format.quote-style = 'single'
-extend-exclude = ['alembic/', 'manage.py', 'app/worker/tasks/', 'app/worker/', 'app/users/', 'app/db/repository.py', 'app/main.py']
+extend-exclude = ['app/infra/db/alembic/', 'manage.py', 'app/main.py']
 
 [tool.pytest.ini_options]
 pythonpath = "."
-addopts = '-p no:warnigs'
+addopts = '-p no:warnings'
 
 [tool.taskipy.tasks]
 run = 'fastapi dev app/main.py --port 7000'
@@ -149,6 +169,7 @@ pre_test = 'task lint'
 test = 'pytest --cov=app -vv'
 post_test = 'coverage html'
 lint = 'ruff check . && ruff check . --diff'
+check = 'ruff check . ; lint-imports --config .importlinter ; pytest -q'
 architecture = 'lint-imports --config .importlinter'
 architecture_market_data = 'lint-imports --config .importlinter --contract market-data-domain-boundary --contract market-data-service-boundary --contract market-data-api-boundary --contract market-data-task-boundary --contract market-data-module-boundary'
 format = 'ruff check . --fix && ruff format .'

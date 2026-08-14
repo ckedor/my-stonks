@@ -4,6 +4,9 @@ Portfolio base service - handles portfolio CRUD operations.
 """
 
 from app.core.exceptions import BusinessRuleError, NotFoundError
+from app.infra.db.unit_of_work import UnitOfWork
+from app.infra.redis.redis_service import RedisService
+from app.modules.portfolio.domain.category import NewCategory
 from app.modules.portfolio.domain.entities import (
     CustomCategory,
     CustomCategoryAssignment,
@@ -11,12 +14,6 @@ from app.modules.portfolio.domain.entities import (
     Portfolio,
     Position,
     Transaction,
-)
-from app.infra.redis.redis_service import RedisService
-from app.infra.db.unit_of_work import UnitOfWork
-from app.modules.portfolio.api.portfolio.schemas import (
-    CreatePortfolioRequest,
-    UpdatePortfolioRequest,
 )
 
 
@@ -29,22 +26,26 @@ class PortfolioBaseService:
         self.uow = uow
         self.cache = cache or RedisService()
 
-    async def create_portfolio(self, portfolio: CreatePortfolioRequest, user_id: int):
+    async def create_portfolio(self, user_id: int, *, name: str, categories: list[NewCategory]):
         async with self.uow as uow:
             id_list = await uow.portfolios.create(
                 Portfolio,
-                {'name': portfolio.name, 'user_id': user_id},
+                {'name': name, 'user_id': user_id},
             )
             if not id_list:
                 raise BusinessRuleError('Erro ao criar portfolio')
-            categories = [
-                CustomCategory(
-                    **cat.model_dump(exclude={'portfolio_id'}),
-                    portfolio_id=id_list[0],
-                )
-                for cat in portfolio.user_categories
-            ]
-            await uow.portfolios.create(CustomCategory, categories)
+            await uow.portfolios.create(
+                CustomCategory,
+                [
+                    CustomCategory(
+                        name=category.name,
+                        color=category.color,
+                        benchmark_id=category.benchmark_id,
+                        portfolio_id=id_list[0],
+                    )
+                    for category in categories
+                ],
+            )
             await uow.commit()
             return id_list[0]
 
@@ -56,22 +57,21 @@ class PortfolioBaseService:
         async with self.uow as uow:
             return await uow.portfolios.get_all_portfolios()
 
-    async def update_portfolio(self, portfolio: UpdatePortfolioRequest) -> None:
+    async def update_portfolio(
+        self, portfolio_id: int, *, name: str, categories: list[CustomCategory]
+    ) -> None:
         async with self.uow as uow:
-            portfolio_obj = await uow.portfolios.get(Portfolio, portfolio.id)
+            portfolio_obj = await uow.portfolios.get(Portfolio, portfolio_id)
             if not portfolio_obj:
                 raise NotFoundError('Portfolio não encontrado')
 
-            await uow.portfolios.update(
-                Portfolio,
-                portfolio.model_dump(exclude={'user_categories'}),
-            )
+            await uow.portfolios.update(Portfolio, {'id': portfolio_id, 'name': name})
 
-            for cat in portfolio.user_categories:
-                if cat.id is None:
-                    await uow.portfolios.create(CustomCategory, cat.model_dump())
+            for category in categories:
+                if category.id is None:
+                    await uow.portfolios.create(CustomCategory, [category])
                 else:
-                    await uow.portfolios.update(CustomCategory, cat.model_dump())
+                    await uow.portfolios.update(CustomCategory, category)
             await uow.commit()
 
     async def delete_portfolio(self, portfolio_id: int) -> None:

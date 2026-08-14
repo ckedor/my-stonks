@@ -1,8 +1,9 @@
+from fastapi import APIRouter, Depends
+
 from app.composition.portfolio import get_portfolio_rebalancing_service
 from app.modules.portfolio.service.portfolio_rebalancing_service import (
     PortfolioRebalancingService,
 )
-from fastapi import APIRouter, Depends
 
 from .schema import RebalancingResponse, SaveTargetsRequest
 
@@ -23,5 +24,5 @@ async def save_rebalancing_targets(
     payload: SaveTargetsRequest,
     service: PortfolioRebalancingService = Depends(get_portfolio_rebalancing_service),
 ):
-    await service.save_targets(payload)
+    await service.save_targets(portfolio_id, categories=payload.categories_to_domain())
     return {'message': 'Targets de rebalanceamento salvos com sucesso.'}

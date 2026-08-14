@@ -1,7 +1,7 @@
-from app.modules.ai.domain.entities import AIFeature
-from app.infra.db.unit_of_work import UnitOfWork
-from app.modules.ai.api.schemas import AIFeatureUpdate
 from fastapi import HTTPException
+
+from app.infra.db.unit_of_work import UnitOfWork
+from app.modules.ai.domain.entities import AIFeature
 
 
 class AIFeatureService:
@@ -19,13 +19,12 @@ class AIFeatureService:
                 raise HTTPException(status_code=404, detail='AI feature not found')
             return feature
 
-    async def update(self, feature_id: int, payload: AIFeatureUpdate) -> AIFeature:
+    async def update(self, feature_id: int, *, default_ttl_hours: int | None = None) -> AIFeature:
         async with self.uow as uow:
             feature = await uow.repository.get(AIFeature, id=feature_id)
             if not feature:
                 raise HTTPException(status_code=404, detail='AI feature not found')
-            data = payload.model_dump(exclude_none=True)
-            for key, value in data.items():
-                setattr(feature, key, value)
+            if default_ttl_hours is not None:
+                feature.default_ttl_hours = default_ttl_hours
             await uow.commit()
             return feature

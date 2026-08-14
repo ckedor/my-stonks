@@ -1,3 +1,6 @@
+from fastapi import APIRouter, Depends
+from fastapi.params import Query
+
 from app.composition.ai import get_ai_artifact_service, get_ai_feature_service
 from app.modules.ai.api.schemas import (
     AIFeatureResponse,
@@ -9,8 +12,6 @@ from app.modules.ai.domain.inputs import AssetOverviewAndNewsInput
 from app.modules.ai.service.ai_artifact_service import AIArtifactService
 from app.modules.ai.service.ai_feature_service import AIFeatureService
 from app.modules.users.views import current_active_user, current_superuser
-from fastapi import APIRouter, Depends
-from fastapi.params import Query
 
 router = APIRouter(tags=['AI'], prefix='/ai')
 
@@ -36,7 +37,7 @@ async def update_feature(
     payload: AIFeatureUpdate,
     service: AIFeatureService = Depends(get_ai_feature_service),
 ):
-    return await service.update(feature_id, payload)
+    return await service.update(feature_id, default_ttl_hours=payload.default_ttl_hours)
 
 
 @router.get('/asset_overview_and_news', response_model=AssetOverviewAndNewsResponse)

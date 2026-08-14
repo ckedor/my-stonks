@@ -4,11 +4,8 @@ Portfolio user configuration service - handles portfolio settings.
 """
 
 from app.core.exceptions import NotFoundError, ValidationError
-from app.modules.portfolio.domain.entities import ConfigurationName, PortfolioUserConfiguration
-from app.modules.portfolio.api.user_configuration.schemas import (
-    UserConfigurationUpdateRequest,
-)
 from app.infra.db.unit_of_work import UnitOfWork
+from app.modules.portfolio.domain.entities import ConfigurationName, PortfolioUserConfiguration
 
 
 class PortfolioUserConfigurationService:
@@ -25,31 +22,31 @@ class PortfolioUserConfigurationService:
         name_options = [c.name for c in config_names]
 
         return {
-            "configurations": [
+            'configurations': [
                 {
-                    "id": c.id,
-                    "portfolio_id": c.portfolio_id,
-                    "name": self._get_name_by_id(config_names, c.configuration_name_id),
-                    "enabled": c.enabled,
-                    "config_data": c.config_data
+                    'id': c.id,
+                    'portfolio_id': c.portfolio_id,
+                    'name': self._get_name_by_id(config_names, c.configuration_name_id),
+                    'enabled': c.enabled,
+                    'config_data': c.config_data,
                 }
                 for c in user_configurations
             ],
-            "nameOptions": name_options
+            'nameOptions': name_options,
         }
 
-    def _get_name_by_id(self, config_names, config_name_id):
+    @staticmethod
+    def _get_name_by_id(config_names, config_name_id):
         for c in config_names:
             if c.id == config_name_id:
                 return c.name
         return None
 
-    async def update_user_configuration(self, portfolio_id: int, user_configuration_request: UserConfigurationUpdateRequest):
-        name = user_configuration_request.configuration
-        enabled = user_configuration_request.enabled
-
+    async def update_user_configuration(
+        self, portfolio_id: int, *, configuration: str, enabled: bool
+    ):
         async with self.uow as uow:
-            config_names = await uow.portfolios.get(ConfigurationName, by={'name': name})
+            config_names = await uow.portfolios.get(ConfigurationName, by={'name': configuration})
             if not config_names:
                 raise ValidationError('Invalid configuration name.')
 
@@ -57,8 +54,8 @@ class PortfolioUserConfigurationService:
             existing_configs = await uow.portfolios.get(
                 PortfolioUserConfiguration,
                 by={
-                    "portfolio_id": portfolio_id,
-                    "configuration_name_id": config_name.id,
+                    'portfolio_id': portfolio_id,
+                    'configuration_name_id': config_name.id,
                 },
             )
             if not existing_configs:
@@ -66,4 +63,4 @@ class PortfolioUserConfigurationService:
             existing_configs[0].enabled = enabled
             await uow.commit()
 
-        return {"detail": "Configuration updated successfully"}
+        return {'detail': 'Configuration updated successfully'}

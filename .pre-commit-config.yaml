@@ -1,0 +1,42 @@
+# Todos os hooks rodam os binários do venv do backend (language: system), e não
+# em ambientes que o pre-commit monta por fora. Assim a versão que roda no commit
+# é a mesma que você roda na mão via `task`.
+#
+# Bloqueio: ruff bloqueia, pytest e lint-imports não.
+# O ruff recebe só os arquivos staged, então ele é naturalmente incremental —
+# você limpa cada arquivo conforme encosta nele. pytest e lint-imports são
+# globais e hoje falham, então rodam com `|| true`: reportam e deixam passar.
+# Para torná-los bloqueantes, remova o `|| true` do `entry` correspondente.
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check (staged files)
+        entry: backend/.venv/bin/ruff check --force-exclude --fix
+        language: system
+        types: [python]
+        files: ^backend/
+
+      - id: ruff-format
+        name: ruff format (staged files)
+        entry: backend/.venv/bin/ruff format --force-exclude
+        language: system
+        types: [python]
+        files: ^backend/
+
+      - id: pytest
+        name: pytest (não bloqueia)
+        entry: bash -c 'cd backend && .venv/bin/python -m pytest -q || true'
+        language: system
+        pass_filenames: false
+        always_run: true
+        verbose: true
+
+      - id: lint-imports
+        name: lint-imports / task architecture (não bloqueia)
+        entry: bash -c 'cd backend && PATH="$PWD/.venv/bin:$PATH" task architecture || true'
+        language: system
+        pass_filenames: false
+        always_run: true
+        verbose: true

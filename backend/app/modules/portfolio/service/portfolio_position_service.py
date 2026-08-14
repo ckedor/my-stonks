@@ -4,25 +4,22 @@ Portfolio position service - handles position queries and analysis.
 """
 
 import pandas as pd
+
 from app.core.exceptions import NotFoundError
-from app.modules.market_data.domain.constants import INDEX
-from app.modules.portfolio.domain.entities import Position
-from app.infra.redis.decorators import cached
 from app.infra.db.unit_of_work import UnitOfWork
+from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
 from app.lib.utils.df import df_to_dict_list, rows_to_df
 from app.lib.utils.fastapi import df_response
-from app.modules.market_data.api.asset.schemas import (
-    AssetDetailsOut,
-    AssetDetailsWithPosition,
-)
+from app.modules.market_data.domain.constants import INDEX
 from app.modules.market_data.service.market_data_service import MarketDataReadService
 from app.modules.portfolio.domain.asset_analysis import calculate_returns_analysis
+from app.modules.portfolio.domain.asset_position import AssetPosition
+from app.modules.portfolio.domain.entities import Position
 from app.modules.portfolio.domain.returns import (
     calculate_asset_acc_returns,
     calculate_portfolio_daily_returns,
 )
-
 
 PATRIMONY_EVOLUTION_CACHE_PREFIX = 'patrimony_evolution'
 
@@ -48,8 +45,8 @@ class PortfolioPositionService:
         await self.cache.delete_prefix(f'{PATRIMONY_EVOLUTION_CACHE_PREFIX}:{portfolio_id}:')
 
     async def get_asset_details(
-        self, portfolio_id: int, asset_id: int = None, currency: str = 'BRL'
-    ) -> dict:
+        self, portfolio_id: int, asset_id: int | None = None, currency: str = 'BRL'
+    ) -> AssetPosition:
         async with self.uow as uow:
             asset = await uow.portfolios.get_asset_details(asset_id)
             if not asset:
@@ -69,19 +66,16 @@ class PortfolioPositionService:
             twelve_months_val = getattr(position, f'twelve_months_return{suffix}')
             cagr_val = getattr(position, f'cagr{suffix}')
 
-            asset_serialized = AssetDetailsOut.model_validate(asset).model_dump()
-
-        asset_serialized_with_position = {
-            **asset_serialized,
-            'quantity': position.quantity,
-            'price': price,
-            'average_price': average_price,
-            'value': (position.quantity * price),
-            'acc_return': (None if pd.isna(acc_return_val) else acc_return_val),
-            'twelve_months_return': (None if pd.isna(twelve_months_val) else twelve_months_val),
-            'cagr': (None if pd.isna(cagr_val) else cagr_val),
-        }
-        return AssetDetailsWithPosition(**asset_serialized_with_position)
+        return AssetPosition(
+            asset=asset,
+            quantity=position.quantity,
+            price=price,
+            average_price=average_price,
+            value=(position.quantity * price),
+            acc_return=(None if pd.isna(acc_return_val) else acc_return_val),
+            twelve_months_return=(None if pd.isna(twelve_months_val) else twelve_months_val),
+            cagr=(None if pd.isna(cagr_val) else cagr_val),
+        )
 
     async def get_portfolio_analysis(self, portfolio_id: int) -> dict:
         async with self.uow as uow:
@@ -172,9 +166,9 @@ class PortfolioPositionService:
     async def get_patrimony_evolution(
         self,
         portfolio_id: int,
-        asset_id: int = None,
-        asset_type_id: int = None,
-        asset_type_ids: list = None,
+        asset_id: int | None = None,
+        asset_type_id: int | None = None,
+        asset_type_ids: list | None = None,
         currency: str = 'BRL',
     ) -> pd.DataFrame:
         return await self.compute_patrimony_evolution(
@@ -188,9 +182,9 @@ class PortfolioPositionService:
     async def compute_patrimony_evolution(
         self,
         portfolio_id: int,
-        asset_id: int = None,
-        asset_type_id: int = None,
-        asset_type_ids: list = None,
+        asset_id: int | None = None,
+        asset_type_id: int | None = None,
+        asset_type_ids: list | None = None,
         currency: str = 'BRL',
     ) -> pd.DataFrame:
         async with self.uow as uow:
@@ -237,7 +231,7 @@ class PortfolioPositionService:
     async def get_category_returns(
         self,
         portfolio_id: int,
-        custom_category_id: int = None,
+        custom_category_id: int | None = None,
         most_recent: bool = False,
         currency: str = 'BRL',
     ):
@@ -251,8 +245,8 @@ class PortfolioPositionService:
         self,
         portfolio_id: int,
         asset_ids: list[int],
-        start_date: str = None,
-        end_date: str = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
         currency: str = 'BRL',
     ):
         daily_returns_df = await self.get_asset_returns(
@@ -267,8 +261,8 @@ class PortfolioPositionService:
         self,
         portfolio_id: int,
         asset_ids: list[int],
-        start_date: str = None,
-        end_date: str = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
         currency: str = 'BRL',
     ):
         async with self.uow as uow:
@@ -323,7 +317,7 @@ class PortfolioPositionService:
         return df_response(pos_df)
 
     async def get_portfolio_position_history(
-        self, portfolio_id: int, asset_id: int = None, currency: str = 'BRL'
+        self, portfolio_id: int, asset_id: int | None = None, currency: str = 'BRL'
     ) -> pd.DataFrame:
         async with self.uow as uow:
             position_rows = await uow.portfolios.get_portfolio_position(

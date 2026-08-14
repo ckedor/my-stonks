@@ -4,12 +4,13 @@ Portfolio dividend service - handles dividend management.
 """
 
 import pandas as pd
+
+from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.market_data.domain.constants import CURRENCY
 from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
+from app.modules.portfolio.domain.dividend import DividendQuery
 from app.modules.portfolio.domain.entities import Dividend
-from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.portfolio.repositories import PortfolioRepository
-from app.modules.portfolio.api.dividend.schema import DividendFilters
 
 
 class PortfolioDividendService:
@@ -55,7 +56,7 @@ class PortfolioDividendService:
     async def get_dividends(
         self,
         portfolio_id: int,
-        filters: DividendFilters,
+        filters: DividendQuery,
         currency: str = 'BRL',
     ) -> pd.DataFrame:
         async with self.uow as uow:
