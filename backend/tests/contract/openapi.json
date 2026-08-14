@@ -1,0 +1,8826 @@
+{
+ "components": {
+  "schemas": {
+   "AIFeatureResponse": {
+    "properties": {
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "default_ttl_hours": {
+      "title": "Default Ttl Hours",
+      "type": "integer"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "key": {
+      "title": "Key",
+      "type": "string"
+     },
+     "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "key",
+     "default_ttl_hours",
+     "created_at",
+     "updated_at"
+    ],
+    "title": "AIFeatureResponse",
+    "type": "object"
+   },
+   "AIFeatureUpdate": {
+    "properties": {
+     "default_ttl_hours": {
+      "anyOf": [
+       {
+        "minimum": 1.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Default Ttl Hours"
+     }
+    },
+    "title": "AIFeatureUpdate",
+    "type": "object"
+   },
+   "AssetClass": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name"
+    ],
+    "title": "AssetClass",
+    "type": "object"
+   },
+   "AssetClassOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name"
+    ],
+    "title": "AssetClassOut",
+    "type": "object"
+   },
+   "AssetCreate": {
+    "properties": {
+     "anbima_category": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Anbima Category"
+     },
+     "anbima_code": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Anbima Code"
+     },
+     "anbima_code_class": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Anbima Code Class"
+     },
+     "asset_type_id": {
+      "title": "Asset Type Id",
+      "type": "integer"
+     },
+     "country": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Country"
+     },
+     "etf_segment_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Etf Segment Id"
+     },
+     "exchange_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Exchange Id"
+     },
+     "fee": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fee"
+     },
+     "fii_segment_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fii Segment Id"
+     },
+     "fixed_income_type_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fixed Income Type Id"
+     },
+     "index_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Index Id"
+     },
+     "industry": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Industry"
+     },
+     "legal_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Legal Id"
+     },
+     "maturity_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Maturity Date"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "sector": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sector"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     },
+     "treasury_bond_type_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Treasury Bond Type Id"
+     }
+    },
+    "required": [
+     "name",
+     "asset_type_id"
+    ],
+    "title": "AssetCreate",
+    "type": "object"
+   },
+   "AssetDetailsOut": {
+    "properties": {
+     "asset_type": {
+      "$ref": "#/components/schemas/AssetTypeOut"
+     },
+     "asset_type_id": {
+      "title": "Asset Type Id",
+      "type": "integer"
+     },
+     "etf": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ETFOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "exchange_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Exchange Id"
+     },
+     "fii": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FIIOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "fixed_income": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FixedIncomeOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "fund": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InvestmentFundOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "stock": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/StockOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     },
+     "treasury_bond": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TreasuryBondOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "id",
+     "ticker",
+     "name",
+     "asset_type_id",
+     "asset_type"
+    ],
+    "title": "AssetDetailsOut",
+    "type": "object"
+   },
+   "AssetDetailsWithPosition": {
+    "properties": {
+     "acc_return": {
+      "default": 0.0,
+      "title": "Acc Return",
+      "type": "number"
+     },
+     "asset_type": {
+      "$ref": "#/components/schemas/AssetTypeOut"
+     },
+     "asset_type_id": {
+      "title": "Asset Type Id",
+      "type": "integer"
+     },
+     "average_price": {
+      "default": 0.0,
+      "title": "Average Price",
+      "type": "number"
+     },
+     "cagr": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cagr"
+     },
+     "etf": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ETFOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "exchange_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Exchange Id"
+     },
+     "fii": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FIIOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "fixed_income": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FixedIncomeOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "fund": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InvestmentFundOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "price": {
+      "default": 0.0,
+      "title": "Price",
+      "type": "number"
+     },
+     "quantity": {
+      "default": 0.0,
+      "title": "Quantity",
+      "type": "number"
+     },
+     "stock": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/StockOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     },
+     "treasury_bond": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TreasuryBondOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "twelve_months_return": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Twelve Months Return"
+     },
+     "value": {
+      "default": 0.0,
+      "title": "Value",
+      "type": "number"
+     }
+    },
+    "required": [
+     "id",
+     "ticker",
+     "name",
+     "asset_type_id",
+     "asset_type"
+    ],
+    "title": "AssetDetailsWithPosition",
+    "type": "object"
+   },
+   "AssetEvent": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "factor": {
+      "title": "Factor",
+      "type": "number"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "type": {
+      "title": "Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "asset_id",
+     "date",
+     "factor",
+     "type"
+    ],
+    "title": "AssetEvent",
+    "type": "object"
+   },
+   "AssetOverviewAndNewsResponse": {
+    "properties": {
+     "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+     },
+     "feature_key": {
+      "title": "Feature Key",
+      "type": "string"
+     },
+     "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+     },
+     "model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Model"
+     },
+     "payload": {
+      "title": "Payload",
+      "type": "object"
+     },
+     "summary": {
+      "title": "Summary",
+      "type": "string"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "feature_key",
+     "ticker",
+     "summary",
+     "payload",
+     "model",
+     "generated_at",
+     "expires_at"
+    ],
+    "title": "AssetOverviewAndNewsResponse",
+    "type": "object"
+   },
+   "AssetQuoteHistoryResponse": {
+    "properties": {
+     "asset_type_id": {
+      "title": "Asset Type Id",
+      "type": "integer"
+     },
+     "cagr": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/HistoricalCagrResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "currency": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Currency"
+     },
+     "logo_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Logo Url"
+     },
+     "quotes": {
+      "items": {
+       "$ref": "#/components/schemas/QuoteResponse"
+      },
+      "title": "Quotes",
+      "type": "array"
+     },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "ticker",
+     "asset_type_id",
+     "source",
+     "quotes"
+    ],
+    "title": "AssetQuoteHistoryResponse",
+    "type": "object"
+   },
+   "AssetRebalancingEntry": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "category": {
+      "title": "Category",
+      "type": "string"
+     },
+     "category_id": {
+      "title": "Category Id",
+      "type": "integer"
+     },
+     "current_pct_in_category": {
+      "title": "Current Pct In Category",
+      "type": "number"
+     },
+     "current_value": {
+      "title": "Current Value",
+      "type": "number"
+     },
+     "diff_pct": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Diff Pct"
+     },
+     "diff_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Diff Value"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "target_pct_in_category": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Target Pct In Category"
+     },
+     "target_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Target Value"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "asset_id",
+     "ticker",
+     "name",
+     "category",
+     "category_id",
+     "current_value",
+     "current_pct_in_category",
+     "target_pct_in_category",
+     "target_value",
+     "diff_pct",
+     "diff_value"
+    ],
+    "title": "AssetRebalancingEntry",
+    "type": "object"
+   },
+   "AssetTargetRequest": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "target_percentage": {
+      "title": "Target Percentage",
+      "type": "number"
+     }
+    },
+    "required": [
+     "asset_id",
+     "target_percentage"
+    ],
+    "title": "AssetTargetRequest",
+    "type": "object"
+   },
+   "AssetType": {
+    "properties": {
+     "asset_class": {
+      "$ref": "#/components/schemas/AssetClass"
+     },
+     "asset_class_id": {
+      "title": "Asset Class Id",
+      "type": "integer"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "short_name": {
+      "title": "Short Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "short_name",
+     "name",
+     "asset_class_id",
+     "asset_class"
+    ],
+    "title": "AssetType",
+    "type": "object"
+   },
+   "AssetTypeOut": {
+    "properties": {
+     "asset_class": {
+      "$ref": "#/components/schemas/AssetClassOut"
+     },
+     "asset_class_id": {
+      "title": "Asset Class Id",
+      "type": "integer"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "short_name": {
+      "title": "Short Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "asset_class_id",
+     "short_name",
+     "name",
+     "asset_class"
+    ],
+    "title": "AssetTypeOut",
+    "type": "object"
+   },
+   "AssetUpdate": {
+    "properties": {
+     "anbima_category": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Anbima Category"
+     },
+     "anbima_code": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Anbima Code"
+     },
+     "anbima_code_class": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Anbima Code Class"
+     },
+     "asset_type_id": {
+      "title": "Asset Type Id",
+      "type": "integer"
+     },
+     "country": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Country"
+     },
+     "etf_segment_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Etf Segment Id"
+     },
+     "exchange_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Exchange Id"
+     },
+     "fee": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fee"
+     },
+     "fii_segment_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fii Segment Id"
+     },
+     "fixed_income_type_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fixed Income Type Id"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "index_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Index Id"
+     },
+     "industry": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Industry"
+     },
+     "legal_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Legal Id"
+     },
+     "maturity_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Maturity Date"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "sector": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sector"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     },
+     "treasury_bond_type_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Treasury Bond Type Id"
+     }
+    },
+    "required": [
+     "name",
+     "asset_type_id",
+     "id"
+    ],
+    "title": "AssetUpdate",
+    "type": "object"
+   },
+   "BearerResponse": {
+    "properties": {
+     "access_token": {
+      "title": "Access Token",
+      "type": "string"
+     },
+     "token_type": {
+      "title": "Token Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "access_token",
+     "token_type"
+    ],
+    "title": "BearerResponse",
+    "type": "object"
+   },
+   "Benchmark": {
+    "properties": {
+     "currency": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Currency"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "currency_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Currency Id"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "short_name": {
+      "title": "Short Name",
+      "type": "string"
+     },
+     "symbol": {
+      "title": "Symbol",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "short_name",
+     "symbol"
+    ],
+    "title": "Benchmark",
+    "type": "object"
+   },
+   "Body_auth_jwt_login_auth_jwt_login_post": {
+    "properties": {
+     "client_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Client Id"
+     },
+     "client_secret": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Client Secret"
+     },
+     "grant_type": {
+      "anyOf": [
+       {
+        "pattern": "^password$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Grant Type"
+     },
+     "password": {
+      "title": "Password",
+      "type": "string"
+     },
+     "scope": {
+      "default": "",
+      "title": "Scope",
+      "type": "string"
+     },
+     "username": {
+      "title": "Username",
+      "type": "string"
+     }
+    },
+    "required": [
+     "username",
+     "password"
+    ],
+    "title": "Body_auth_jwt_login_auth_jwt_login_post",
+    "type": "object"
+   },
+   "Body_delete_transaction_portfolio_transaction__transaction_id__delete": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "portfolio_id",
+     "asset_id"
+    ],
+    "title": "Body_delete_transaction_portfolio_transaction__transaction_id__delete",
+    "type": "object"
+   },
+   "Broker": {
+    "properties": {
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "currency": {
+      "$ref": "#/components/schemas/Currency"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "currency",
+     "name",
+     "cnpj"
+    ],
+    "title": "Broker",
+    "type": "object"
+   },
+   "BrokerCreate": {
+    "properties": {
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "currency_id": {
+      "title": "Currency Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "currency_id"
+    ],
+    "title": "BrokerCreate",
+    "type": "object"
+   },
+   "BrokerUpdate": {
+    "properties": {
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "currency_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Currency Id"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     }
+    },
+    "title": "BrokerUpdate",
+    "type": "object"
+   },
+   "CategoryAssignmentRequest": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "category_id": {
+      "title": "Category Id",
+      "type": "integer"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "asset_id",
+     "category_id",
+     "portfolio_id"
+    ],
+    "title": "CategoryAssignmentRequest",
+    "type": "object"
+   },
+   "CategoryRebalancingEntry": {
+    "properties": {
+     "assets": {
+      "items": {
+       "$ref": "#/components/schemas/AssetRebalancingEntry"
+      },
+      "title": "Assets",
+      "type": "array"
+     },
+     "category_id": {
+      "title": "Category Id",
+      "type": "integer"
+     },
+     "category_name": {
+      "title": "Category Name",
+      "type": "string"
+     },
+     "color": {
+      "title": "Color",
+      "type": "string"
+     },
+     "current_pct": {
+      "title": "Current Pct",
+      "type": "number"
+     },
+     "current_value": {
+      "title": "Current Value",
+      "type": "number"
+     },
+     "diff_pct": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Diff Pct"
+     },
+     "diff_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Diff Value"
+     },
+     "target_pct": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Target Pct"
+     },
+     "target_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Target Value"
+     }
+    },
+    "required": [
+     "category_id",
+     "category_name",
+     "color",
+     "current_value",
+     "current_pct",
+     "target_pct",
+     "target_value",
+     "diff_pct",
+     "diff_value",
+     "assets"
+    ],
+    "title": "CategoryRebalancingEntry",
+    "type": "object"
+   },
+   "CategoryTargetRequest": {
+    "properties": {
+     "assets": {
+      "items": {
+       "$ref": "#/components/schemas/AssetTargetRequest"
+      },
+      "title": "Assets",
+      "type": "array"
+     },
+     "category_id": {
+      "title": "Category Id",
+      "type": "integer"
+     },
+     "target_percentage": {
+      "title": "Target Percentage",
+      "type": "number"
+     }
+    },
+    "required": [
+     "category_id",
+     "target_percentage",
+     "assets"
+    ],
+    "title": "CategoryTargetRequest",
+    "type": "object"
+   },
+   "CreatePortfolioRequest": {
+    "properties": {
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "user_categories": {
+      "items": {
+       "$ref": "#/components/schemas/app__modules__portfolio__api__portfolio__schemas__CustomCategory-Input"
+      },
+      "title": "User Categories",
+      "type": "array"
+     }
+    },
+    "required": [
+     "name",
+     "user_categories"
+    ],
+    "title": "CreatePortfolioRequest",
+    "type": "object"
+   },
+   "Currency": {
+    "properties": {
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "code",
+     "name"
+    ],
+    "title": "Currency",
+    "type": "object"
+   },
+   "CustomCategory-Output": {
+    "properties": {
+     "benchmark": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Benchmark"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "benchmark_id": {
+      "title": "Benchmark Id",
+      "type": "integer"
+     },
+     "color": {
+      "title": "Color",
+      "type": "string"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "portfolio_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Portfolio Id"
+     }
+    },
+    "required": [
+     "name",
+     "color",
+     "benchmark_id"
+    ],
+    "title": "CustomCategory",
+    "type": "object"
+   },
+   "DataIngestionAttemptResponse": {
+    "properties": {
+     "attempted_at": {
+      "format": "date-time",
+      "title": "Attempted At",
+      "type": "string"
+     },
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "execution_id": {
+      "title": "Execution Id",
+      "type": "integer"
+     },
+     "fetched_rows": {
+      "title": "Fetched Rows",
+      "type": "integer"
+     },
+     "finished_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Finished At"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "item_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Item Id"
+     },
+     "item_label": {
+      "title": "Item Label",
+      "type": "string"
+     },
+     "parameters": {
+      "title": "Parameters",
+      "type": "object"
+     },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     },
+     "upserted_rows": {
+      "title": "Upserted Rows",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "execution_id",
+     "item_id",
+     "item_label",
+     "source",
+     "status",
+     "parameters",
+     "attempted_at",
+     "finished_at",
+     "fetched_rows",
+     "upserted_rows",
+     "error"
+    ],
+    "title": "DataIngestionAttemptResponse",
+    "type": "object"
+   },
+   "DataIngestionExecutionDetailResponse": {
+    "properties": {
+     "attempts": {
+      "items": {
+       "$ref": "#/components/schemas/DataIngestionAttemptResponse"
+      },
+      "title": "Attempts",
+      "type": "array"
+     },
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "failed_items": {
+      "title": "Failed Items",
+      "type": "integer"
+     },
+     "fetched_rows": {
+      "title": "Fetched Rows",
+      "type": "integer"
+     },
+     "finished_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Finished At"
+     },
+     "force_full_history": {
+      "title": "Force Full History",
+      "type": "boolean"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "ingestion_type": {
+      "title": "Ingestion Type",
+      "type": "string"
+     },
+     "parameters": {
+      "title": "Parameters",
+      "type": "object"
+     },
+     "processed_items": {
+      "title": "Processed Items",
+      "type": "integer"
+     },
+     "requested_at": {
+      "format": "date-time",
+      "title": "Requested At",
+      "type": "string"
+     },
+     "requested_by_user_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Requested By User Id"
+     },
+     "started_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Started At"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     },
+     "succeeded_items": {
+      "title": "Succeeded Items",
+      "type": "integer"
+     },
+     "task_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Task Id"
+     },
+     "total_items": {
+      "title": "Total Items",
+      "type": "integer"
+     },
+     "trigger": {
+      "title": "Trigger",
+      "type": "string"
+     },
+     "upserted_rows": {
+      "title": "Upserted Rows",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "ingestion_type",
+     "task_id",
+     "trigger",
+     "status",
+     "force_full_history",
+     "parameters",
+     "requested_by_user_id",
+     "requested_at",
+     "started_at",
+     "finished_at",
+     "total_items",
+     "processed_items",
+     "succeeded_items",
+     "failed_items",
+     "fetched_rows",
+     "upserted_rows",
+     "error"
+    ],
+    "title": "DataIngestionExecutionDetailResponse",
+    "type": "object"
+   },
+   "DataIngestionExecutionResponse": {
+    "properties": {
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "failed_items": {
+      "title": "Failed Items",
+      "type": "integer"
+     },
+     "fetched_rows": {
+      "title": "Fetched Rows",
+      "type": "integer"
+     },
+     "finished_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Finished At"
+     },
+     "force_full_history": {
+      "title": "Force Full History",
+      "type": "boolean"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "ingestion_type": {
+      "title": "Ingestion Type",
+      "type": "string"
+     },
+     "parameters": {
+      "title": "Parameters",
+      "type": "object"
+     },
+     "processed_items": {
+      "title": "Processed Items",
+      "type": "integer"
+     },
+     "requested_at": {
+      "format": "date-time",
+      "title": "Requested At",
+      "type": "string"
+     },
+     "requested_by_user_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Requested By User Id"
+     },
+     "started_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Started At"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     },
+     "succeeded_items": {
+      "title": "Succeeded Items",
+      "type": "integer"
+     },
+     "task_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Task Id"
+     },
+     "total_items": {
+      "title": "Total Items",
+      "type": "integer"
+     },
+     "trigger": {
+      "title": "Trigger",
+      "type": "string"
+     },
+     "upserted_rows": {
+      "title": "Upserted Rows",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "ingestion_type",
+     "task_id",
+     "trigger",
+     "status",
+     "force_full_history",
+     "parameters",
+     "requested_by_user_id",
+     "requested_at",
+     "started_at",
+     "finished_at",
+     "total_items",
+     "processed_items",
+     "succeeded_items",
+     "failed_items",
+     "fetched_rows",
+     "upserted_rows",
+     "error"
+    ],
+    "title": "DataIngestionExecutionResponse",
+    "type": "object"
+   },
+   "Dividend": {
+    "properties": {
+     "amount": {
+      "title": "Amount",
+      "type": "number"
+     },
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "category": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Category"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "date",
+     "asset_id",
+     "ticker",
+     "amount"
+    ],
+    "title": "Dividend",
+    "type": "object"
+   },
+   "DividendCreateRequest": {
+    "properties": {
+     "amount": {
+      "title": "Amount",
+      "type": "number"
+     },
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "portfolio_id",
+     "asset_id",
+     "amount"
+    ],
+    "title": "DividendCreateRequest",
+    "type": "object"
+   },
+   "DividendUpdateRequest": {
+    "properties": {
+     "amount": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount"
+     },
+     "date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "title": "DividendUpdateRequest",
+    "type": "object"
+   },
+   "ETFOut": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "segment": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ETFSegmentOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "segment_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Segment Id"
+     }
+    },
+    "required": [
+     "asset_id",
+     "segment_id",
+     "segment"
+    ],
+    "title": "ETFOut",
+    "type": "object"
+   },
+   "ETFSegmentOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name"
+    ],
+    "title": "ETFSegmentOut",
+    "type": "object"
+   },
+   "ErrorModel": {
+    "properties": {
+     "detail": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "additionalProperties": {
+         "type": "string"
+        },
+        "type": "object"
+       }
+      ],
+      "title": "Detail"
+     }
+    },
+    "required": [
+     "detail"
+    ],
+    "title": "ErrorModel",
+    "type": "object"
+   },
+   "ExchangeOut": {
+    "properties": {
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "code",
+     "name"
+    ],
+    "title": "ExchangeOut",
+    "type": "object"
+   },
+   "FIIDividendResponse": {
+    "description": "One payment per share, as published.\n\n``event_type`` is what the fund called it — an ordinary distribution or an\namortization of capital. It is carried so that a reader meaning income can\ntell the two apart instead of adding them up.",
+    "properties": {
+     "event_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Event Type"
+     },
+     "ex_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ex Date"
+     },
+     "payment_date": {
+      "format": "date",
+      "title": "Payment Date",
+      "type": "string"
+     },
+     "value_per_share": {
+      "title": "Value Per Share",
+      "type": "number"
+     }
+    },
+    "required": [
+     "payment_date",
+     "value_per_share"
+    ],
+    "title": "FIIDividendResponse",
+    "type": "object"
+   },
+   "FIIIndicatorsResponse": {
+    "description": "The fund's own numbers, as of the report they came from.\n\nThe yields and the monthly return are ratios: 0.12381 is 12.381%.\n``price_to_nav`` is the published P/VP, a multiple around 1. None of them\nis scaled here; the client decides how each is written.",
+    "properties": {
+     "as_of_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "As Of Date"
+     },
+     "dividend_yield_12m": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Dividend Yield 12M"
+     },
+     "dividend_yield_1m": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Dividend Yield 1M"
+     },
+     "equity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Equity"
+     },
+     "monthly_return": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Monthly Return"
+     },
+     "nav_per_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Nav Per Share"
+     },
+     "price": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price"
+     },
+     "price_to_nav": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price To Nav"
+     },
+     "segment": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Segment"
+     },
+     "segment_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Segment Type"
+     },
+     "shareholders": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Shareholders"
+     },
+     "shares_outstanding": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Shares Outstanding"
+     },
+     "total_assets": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Assets"
+     }
+    },
+    "title": "FIIIndicatorsResponse",
+    "type": "object"
+   },
+   "FIIOut": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "segment": {
+      "$ref": "#/components/schemas/FIISegmentOut"
+     },
+     "segment_id": {
+      "title": "Segment Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "asset_id",
+     "segment_id",
+     "segment"
+    ],
+    "title": "FIIOut",
+    "type": "object"
+   },
+   "FIIProfileResponse": {
+    "properties": {
+     "dividends": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/FIIDividendResponse"
+      },
+      "title": "Dividends",
+      "type": "array"
+     },
+     "indicators": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FIIIndicatorsResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "ticker"
+    ],
+    "title": "FIIProfileResponse",
+    "type": "object"
+   },
+   "FIISegmentOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "type": {
+      "$ref": "#/components/schemas/FIITypeOut"
+     },
+     "type_id": {
+      "title": "Type Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "type_id",
+     "type"
+    ],
+    "title": "FIISegmentOut",
+    "type": "object"
+   },
+   "FIITypeOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name"
+    ],
+    "title": "FIITypeOut",
+    "type": "object"
+   },
+   "FavoriteAsset": {
+    "description": "An asset the user returns to, ranked by how often they open it.",
+    "properties": {
+     "asset_type": {
+      "$ref": "#/components/schemas/FavoriteAssetType"
+     },
+     "asset_type_id": {
+      "title": "Asset Type Id",
+      "type": "integer"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "last_visited_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Visited At"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     },
+     "visit_count": {
+      "title": "Visit Count",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "ticker",
+     "name",
+     "asset_type_id",
+     "asset_type",
+     "visit_count",
+     "last_visited_at"
+    ],
+    "title": "FavoriteAsset",
+    "type": "object"
+   },
+   "FavoriteAssetType": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "short_name": {
+      "title": "Short Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "short_name",
+     "name"
+    ],
+    "title": "FavoriteAssetType",
+    "type": "object"
+   },
+   "FixedIncomeAsset": {
+    "properties": {
+     "asset_type_id": {
+      "title": "Asset Type Id",
+      "type": "integer"
+     },
+     "fee": {
+      "title": "Fee",
+      "type": "number"
+     },
+     "fixed_income_type_id": {
+      "title": "Fixed Income Type Id",
+      "type": "integer"
+     },
+     "index_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Index Id"
+     },
+     "maturity_date": {
+      "format": "date",
+      "title": "Maturity Date",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "ticker",
+     "maturity_date",
+     "fee",
+     "index_id",
+     "fixed_income_type_id",
+     "asset_type_id"
+    ],
+    "title": "FixedIncomeAsset",
+    "type": "object"
+   },
+   "FixedIncomeOut": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "fee": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fee"
+     },
+     "fixed_income_type": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FixedIncomeTypeOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "fixed_income_type_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fixed Income Type Id"
+     },
+     "index": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/IndexOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "index_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Index Id"
+     },
+     "maturity_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Maturity Date"
+     }
+    },
+    "required": [
+     "asset_id",
+     "index_id",
+     "fixed_income_type_id",
+     "maturity_date",
+     "fee",
+     "fixed_income_type",
+     "index"
+    ],
+    "title": "FixedIncomeOut",
+    "type": "object"
+   },
+   "FixedIncomeType": {
+    "properties": {
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "description"
+    ],
+    "title": "FixedIncomeType",
+    "type": "object"
+   },
+   "FixedIncomeTypeOut": {
+    "properties": {
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "description"
+    ],
+    "title": "FixedIncomeTypeOut",
+    "type": "object"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "title": "Detail",
+      "type": "array"
+     }
+    },
+    "title": "HTTPValidationError",
+    "type": "object"
+   },
+   "HistoricalCagrResponse": {
+    "description": "Annualized growth over the served history, and the window it covers.",
+    "properties": {
+     "end_date": {
+      "format": "date",
+      "title": "End Date",
+      "type": "string"
+     },
+     "start_date": {
+      "format": "date",
+      "title": "Start Date",
+      "type": "string"
+     },
+     "value": {
+      "title": "Value",
+      "type": "number"
+     }
+    },
+    "required": [
+     "value",
+     "start_date",
+     "end_date"
+    ],
+    "title": "HistoricalCagrResponse",
+    "type": "object"
+   },
+   "IndexCurrencyOut": {
+    "properties": {
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "code",
+     "name"
+    ],
+    "title": "IndexCurrencyOut",
+    "type": "object"
+   },
+   "IndexOut": {
+    "properties": {
+     "currency": {
+      "$ref": "#/components/schemas/IndexCurrencyOut"
+     },
+     "currency_id": {
+      "title": "Currency Id",
+      "type": "integer"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "short_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Short Name"
+     },
+     "symbol": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Symbol"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "short_name",
+     "symbol",
+     "currency_id",
+     "currency"
+    ],
+    "title": "IndexOut",
+    "type": "object"
+   },
+   "IndexPoint": {
+    "properties": {
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "value": {
+      "title": "Value",
+      "type": "number"
+     }
+    },
+    "required": [
+     "date",
+     "value"
+    ],
+    "title": "IndexPoint",
+    "type": "object"
+   },
+   "InvestmentFundOut": {
+    "properties": {
+     "anbima_category": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Anbima Category"
+     },
+     "anbima_code": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Anbima Code"
+     },
+     "anbima_code_class": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Anbima Code Class"
+     },
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "legal_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Legal Id"
+     }
+    },
+    "required": [
+     "asset_id",
+     "legal_id",
+     "anbima_code",
+     "anbima_code_class",
+     "anbima_category"
+    ],
+    "title": "InvestmentFundOut",
+    "type": "object"
+   },
+   "MarketDataSeriesHistoryPoint": {
+    "properties": {
+     "close": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Close"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "high": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "High"
+     },
+     "low": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Low"
+     },
+     "open": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Open"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source"
+     }
+    },
+    "required": [
+     "date"
+    ],
+    "title": "MarketDataSeriesHistoryPoint",
+    "type": "object"
+   },
+   "MarketDataSeriesOption": {
+    "description": "Minimal identity used to pick a series in a selector.",
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "short_name": {
+      "title": "Short Name",
+      "type": "string"
+     },
+     "symbol": {
+      "title": "Symbol",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "short_name",
+     "name",
+     "symbol"
+    ],
+    "title": "MarketDataSeriesOption",
+    "type": "object"
+   },
+   "MarketDataSeriesResponse": {
+    "properties": {
+     "currency": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Currency"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "currency_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Currency Id"
+     },
+     "frequency": {
+      "title": "Frequency",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "series_type": {
+      "title": "Series Type",
+      "type": "string"
+     },
+     "short_name": {
+      "title": "Short Name",
+      "type": "string"
+     },
+     "symbol": {
+      "title": "Symbol",
+      "type": "string"
+     },
+     "value_type": {
+      "title": "Value Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "short_name",
+     "name",
+     "symbol",
+     "series_type",
+     "value_type",
+     "frequency"
+    ],
+    "title": "MarketDataSeriesResponse",
+    "type": "object"
+   },
+   "MarketIndex": {
+    "description": "Compatibility response name for the former index routes.",
+    "properties": {
+     "currency": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Currency"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "currency_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Currency Id"
+     },
+     "frequency": {
+      "title": "Frequency",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "series_type": {
+      "title": "Series Type",
+      "type": "string"
+     },
+     "short_name": {
+      "title": "Short Name",
+      "type": "string"
+     },
+     "symbol": {
+      "title": "Symbol",
+      "type": "string"
+     },
+     "value_type": {
+      "title": "Value Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "short_name",
+     "name",
+     "symbol",
+     "series_type",
+     "value_type",
+     "frequency"
+    ],
+    "title": "MarketIndex",
+    "type": "object"
+   },
+   "MarketIndexesTimeSeries": {
+    "additionalProperties": {
+     "items": {
+      "$ref": "#/components/schemas/IndexPoint"
+     },
+     "type": "array"
+    },
+    "description": "Maps each index (ex: 'S&P500', 'USD/BRL') to its time series",
+    "title": "MarketIndexesTimeSeries",
+    "type": "object"
+   },
+   "OnDemandQuotesResponse": {
+    "properties": {
+     "asset_type_id": {
+      "title": "Asset Type Id",
+      "type": "integer"
+     },
+     "currency": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Currency"
+     },
+     "logo_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Logo Url"
+     },
+     "quotes": {
+      "items": {
+       "$ref": "#/components/schemas/QuoteResponse"
+      },
+      "title": "Quotes",
+      "type": "array"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "ticker",
+     "asset_type_id",
+     "quotes"
+    ],
+    "title": "OnDemandQuotesResponse",
+    "type": "object"
+   },
+   "PersistedQuotesResponse": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "asset_type_id": {
+      "title": "Asset Type Id",
+      "type": "integer"
+     },
+     "quotes": {
+      "items": {
+       "$ref": "#/components/schemas/QuoteResponse"
+      },
+      "title": "Quotes",
+      "type": "array"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "asset_id",
+     "ticker",
+     "asset_type_id",
+     "quotes"
+    ],
+    "title": "PersistedQuotesResponse",
+    "type": "object"
+   },
+   "Portfolio": {
+    "properties": {
+     "custom_categories": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/CustomCategory-Output"
+      },
+      "title": "Custom Categories",
+      "type": "array"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "user_id": {
+      "title": "User Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "user_id"
+    ],
+    "title": "Portfolio",
+    "type": "object"
+   },
+   "PortfolioSummary": {
+    "description": "Portfolio identity without its categories, for administrative listings.",
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "user_id": {
+      "title": "User Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "user_id"
+    ],
+    "title": "PortfolioSummary",
+    "type": "object"
+   },
+   "QuoteResponse": {
+    "properties": {
+     "adjusted_close": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Adjusted Close"
+     },
+     "close": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Close"
+     },
+     "currency_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Currency Id"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "high": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "High"
+     },
+     "low": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Low"
+     },
+     "open": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Open"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source"
+     },
+     "volume": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Volume"
+     }
+    },
+    "required": [
+     "date",
+     "close"
+    ],
+    "title": "QuoteResponse",
+    "type": "object"
+   },
+   "RebalancingResponse": {
+    "properties": {
+     "categories": {
+      "items": {
+       "$ref": "#/components/schemas/CategoryRebalancingEntry"
+      },
+      "title": "Categories",
+      "type": "array"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     },
+     "total_value": {
+      "title": "Total Value",
+      "type": "number"
+     }
+    },
+    "required": [
+     "portfolio_id",
+     "total_value",
+     "categories"
+    ],
+    "title": "RebalancingResponse",
+    "type": "object"
+   },
+   "RunDataIngestionRequest": {
+    "properties": {
+     "force_full_history": {
+      "default": false,
+      "title": "Force Full History",
+      "type": "boolean"
+     },
+     "item_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Item Ids"
+     }
+    },
+    "title": "RunDataIngestionRequest",
+    "type": "object"
+   },
+   "RunMarketDataSeriesIngestionRequest": {
+    "additionalProperties": false,
+    "properties": {
+     "force_full_history": {
+      "default": false,
+      "title": "Force Full History",
+      "type": "boolean"
+     }
+    },
+    "title": "RunMarketDataSeriesIngestionRequest",
+    "type": "object"
+   },
+   "RunUsdBrlIngestionRequest": {
+    "additionalProperties": false,
+    "properties": {
+     "force_full_history": {
+      "default": false,
+      "title": "Force Full History",
+      "type": "boolean"
+     }
+    },
+    "title": "RunUsdBrlIngestionRequest",
+    "type": "object"
+   },
+   "SaveCategoriesRequest": {
+    "properties": {
+     "categories": {
+      "items": {
+       "$ref": "#/components/schemas/app__modules__portfolio__api__category__schema__CustomCategory"
+      },
+      "title": "Categories",
+      "type": "array"
+     }
+    },
+    "required": [
+     "categories"
+    ],
+    "title": "SaveCategoriesRequest",
+    "type": "object"
+   },
+   "SaveTargetsRequest": {
+    "properties": {
+     "categories": {
+      "items": {
+       "$ref": "#/components/schemas/CategoryTargetRequest"
+      },
+      "title": "Categories",
+      "type": "array"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "portfolio_id",
+     "categories"
+    ],
+    "title": "SaveTargetsRequest",
+    "type": "object"
+   },
+   "StatementScope": {
+    "enum": [
+     "portfolio",
+     "asset",
+     "category",
+     "custom"
+    ],
+    "title": "StatementScope",
+    "type": "string"
+   },
+   "StockOut": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "country": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Country"
+     },
+     "industry": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Industry"
+     },
+     "sector": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sector"
+     }
+    },
+    "required": [
+     "asset_id",
+     "sector",
+     "country",
+     "industry"
+    ],
+    "title": "StockOut",
+    "type": "object"
+   },
+   "Transaction": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "broker_id": {
+      "title": "Broker Id",
+      "type": "integer"
+     },
+     "currency": {
+      "default": "BRL",
+      "enum": [
+       "BRL",
+       "USD"
+      ],
+      "title": "Currency",
+      "type": "string"
+     },
+     "date": {
+      "format": "date-time",
+      "title": "Date",
+      "type": "string"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     },
+     "price": {
+      "title": "Price",
+      "type": "number"
+     },
+     "quantity": {
+      "title": "Quantity",
+      "type": "number"
+     }
+    },
+    "required": [
+     "portfolio_id",
+     "asset_id",
+     "broker_id",
+     "date",
+     "quantity",
+     "price"
+    ],
+    "title": "Transaction",
+    "type": "object"
+   },
+   "TreasuryBondOut": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "maturity_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Maturity Date"
+     },
+     "type": {
+      "$ref": "#/components/schemas/TreasuryBondTypeOut"
+     },
+     "type_id": {
+      "title": "Type Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "asset_id",
+     "type_id",
+     "maturity_date",
+     "type"
+    ],
+    "title": "TreasuryBondOut",
+    "type": "object"
+   },
+   "TreasuryBondTypeOut": {
+    "properties": {
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "code",
+     "name",
+     "description"
+    ],
+    "title": "TreasuryBondTypeOut",
+    "type": "object"
+   },
+   "USD_BRL_History": {
+    "items": {
+     "$ref": "#/components/schemas/UsdBrlPoint"
+    },
+    "title": "USD_BRL_History",
+    "type": "array"
+   },
+   "UpdatePortfolioRequest": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "user_categories": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/app__modules__portfolio__api__portfolio__schemas__CustomCategory-Input"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "User Categories"
+     }
+    },
+    "required": [
+     "id",
+     "name"
+    ],
+    "title": "UpdatePortfolioRequest",
+    "type": "object"
+   },
+   "UsdBrlConversionRequest": {
+    "properties": {
+     "amount": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Amount"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "direction": {
+      "enum": [
+       "usd_to_brl",
+       "brl_to_usd"
+      ],
+      "title": "Direction",
+      "type": "string"
+     }
+    },
+    "required": [
+     "amount",
+     "direction",
+     "date"
+    ],
+    "title": "UsdBrlConversionRequest",
+    "type": "object"
+   },
+   "UsdBrlConversionResponse": {
+    "properties": {
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "converted_amount": {
+      "title": "Converted Amount",
+      "type": "string"
+     },
+     "direction": {
+      "title": "Direction",
+      "type": "string"
+     },
+     "rate": {
+      "title": "Rate",
+      "type": "string"
+     },
+     "rate_date": {
+      "format": "date",
+      "title": "Rate Date",
+      "type": "string"
+     }
+    },
+    "required": [
+     "amount",
+     "converted_amount",
+     "direction",
+     "rate",
+     "rate_date"
+    ],
+    "title": "UsdBrlConversionResponse",
+    "type": "object"
+   },
+   "UsdBrlHistoryPoint": {
+    "properties": {
+     "brl_usd": {
+      "title": "Brl Usd",
+      "type": "string"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
+     "usd_brl": {
+      "title": "Usd Brl",
+      "type": "string"
+     }
+    },
+    "required": [
+     "date",
+     "usd_brl",
+     "brl_usd",
+     "source"
+    ],
+    "title": "UsdBrlHistoryPoint",
+    "type": "object"
+   },
+   "UsdBrlPoint": {
+    "properties": {
+     "brl_usd": {
+      "title": "Brl Usd",
+      "type": "number"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "usd_brl": {
+      "title": "Usd Brl",
+      "type": "number"
+     }
+    },
+    "required": [
+     "date",
+     "usd_brl",
+     "brl_usd"
+    ],
+    "title": "UsdBrlPoint",
+    "type": "object"
+   },
+   "UserConfigurationUpdateRequest": {
+    "properties": {
+     "configuration": {
+      "title": "Configuration",
+      "type": "string"
+     },
+     "enabled": {
+      "title": "Enabled",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "configuration",
+     "enabled"
+    ],
+    "title": "UserConfigurationUpdateRequest",
+    "type": "object"
+   },
+   "UserCreate": {
+    "properties": {
+     "email": {
+      "format": "email",
+      "title": "Email",
+      "type": "string"
+     },
+     "is_active": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": true,
+      "title": "Is Active"
+     },
+     "is_superuser": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": false,
+      "title": "Is Superuser"
+     },
+     "is_verified": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": false,
+      "title": "Is Verified"
+     },
+     "password": {
+      "title": "Password",
+      "type": "string"
+     },
+     "username": {
+      "title": "Username",
+      "type": "string"
+     }
+    },
+    "required": [
+     "email",
+     "password",
+     "username"
+    ],
+    "title": "UserCreate",
+    "type": "object"
+   },
+   "UserRead": {
+    "properties": {
+     "email": {
+      "format": "email",
+      "title": "Email",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "is_active": {
+      "default": true,
+      "title": "Is Active",
+      "type": "boolean"
+     },
+     "is_admin": {
+      "readOnly": true,
+      "title": "Is Admin",
+      "type": "boolean"
+     },
+     "is_superuser": {
+      "default": false,
+      "title": "Is Superuser",
+      "type": "boolean"
+     },
+     "is_verified": {
+      "default": false,
+      "title": "Is Verified",
+      "type": "boolean"
+     },
+     "username": {
+      "title": "Username",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "email",
+     "username",
+     "is_admin"
+    ],
+    "title": "UserRead",
+    "type": "object"
+   },
+   "UserUpdate": {
+    "properties": {
+     "email": {
+      "anyOf": [
+       {
+        "format": "email",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Email"
+     },
+     "is_active": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Is Active"
+     },
+     "is_superuser": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Is Superuser"
+     },
+     "is_verified": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Is Verified"
+     },
+     "password": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Password"
+     },
+     "username": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Username"
+     }
+    },
+    "title": "UserUpdate",
+    "type": "object"
+   },
+   "ValidationError": {
+    "properties": {
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "title": "Location",
+      "type": "array"
+     },
+     "msg": {
+      "title": "Message",
+      "type": "string"
+     },
+     "type": {
+      "title": "Error Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError",
+    "type": "object"
+   },
+   "app__modules__portfolio__api__category__schema__CustomCategory": {
+    "properties": {
+     "benchmark_id": {
+      "title": "Benchmark Id",
+      "type": "integer"
+     },
+     "color": {
+      "title": "Color",
+      "type": "string"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "name",
+     "color",
+     "portfolio_id",
+     "benchmark_id"
+    ],
+    "title": "CustomCategory",
+    "type": "object"
+   },
+   "app__modules__portfolio__api__portfolio__schemas__CustomCategory-Input": {
+    "properties": {
+     "benchmark_id": {
+      "title": "Benchmark Id",
+      "type": "integer"
+     },
+     "color": {
+      "title": "Color",
+      "type": "string"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "portfolio_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Portfolio Id"
+     }
+    },
+    "required": [
+     "name",
+     "color",
+     "benchmark_id"
+    ],
+    "title": "CustomCategory",
+    "type": "object"
+   }
+  },
+  "securitySchemes": {
+   "OAuth2PasswordBearer": {
+    "flows": {
+     "password": {
+      "scopes": {},
+      "tokenUrl": "auth/jwt/login"
+     }
+    },
+    "type": "oauth2"
+   }
+  }
+ },
+ "info": {
+  "description": "API for portfolio consolidation",
+  "title": "My Stonks API",
+  "version": "1.0.0"
+ },
+ "openapi": "3.1.0",
+ "paths": {
+  "/ai/asset_overview_and_news": {
+   "get": {
+    "operationId": "get_asset_overview_and_news_ai_asset_overview_and_news_get",
+    "parameters": [
+     {
+      "description": "Asset ticker",
+      "in": "query",
+      "name": "ticker",
+      "required": true,
+      "schema": {
+       "description": "Asset ticker",
+       "title": "Ticker",
+       "type": "string"
+      }
+     },
+     {
+      "description": "If true, forces a fresh generation even when existing artifact is still valid",
+      "in": "query",
+      "name": "force_generate",
+      "required": false,
+      "schema": {
+       "default": false,
+       "description": "If true, forces a fresh generation even when existing artifact is still valid",
+       "title": "Force Generate",
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AssetOverviewAndNewsResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Asset Overview And News",
+    "tags": [
+     "AI"
+    ]
+   }
+  },
+  "/ai/feature": {
+   "get": {
+    "operationId": "list_features_ai_feature_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AIFeatureResponse"
+         },
+         "title": "Response List Features Ai Feature Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Features",
+    "tags": [
+     "AI"
+    ]
+   }
+  },
+  "/ai/feature/{feature_id}": {
+   "get": {
+    "operationId": "get_feature_ai_feature__feature_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "feature_id",
+      "required": true,
+      "schema": {
+       "title": "Feature Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AIFeatureResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Feature",
+    "tags": [
+     "AI"
+    ]
+   },
+   "patch": {
+    "operationId": "update_feature_ai_feature__feature_id__patch",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "feature_id",
+      "required": true,
+      "schema": {
+       "title": "Feature Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AIFeatureUpdate"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AIFeatureResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Update Feature",
+    "tags": [
+     "AI"
+    ]
+   }
+  },
+  "/auth/jwt/login": {
+   "post": {
+    "operationId": "auth_jwt_login_auth_jwt_login_post",
+    "requestBody": {
+     "content": {
+      "application/x-www-form-urlencoded": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_auth_jwt_login_auth_jwt_login_post"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "example": {
+         "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiOTIyMWZmYzktNjQwZi00MzcyLTg2ZDMtY2U2NDJjYmE1NjAzIiwiYXVkIjoiZmFzdGFwaS11c2VyczphdXRoIiwiZXhwIjoxNTcxNTA0MTkzfQ.M10bjOe45I5Ncu_uXvOmVV8QxnL-nZfcH96U90JaocI",
+         "token_type": "bearer"
+        },
+        "schema": {
+         "$ref": "#/components/schemas/BearerResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "400": {
+      "content": {
+       "application/json": {
+        "examples": {
+         "LOGIN_BAD_CREDENTIALS": {
+          "summary": "Bad credentials or the user is inactive.",
+          "value": {
+           "detail": "LOGIN_BAD_CREDENTIALS"
+          }
+         },
+         "LOGIN_USER_NOT_VERIFIED": {
+          "summary": "The user is not verified.",
+          "value": {
+           "detail": "LOGIN_USER_NOT_VERIFIED"
+          }
+         }
+        },
+        "schema": {
+         "$ref": "#/components/schemas/ErrorModel"
+        }
+       }
+      },
+      "description": "Bad Request"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Auth:Jwt.Login",
+    "tags": [
+     "Usuários"
+    ]
+   }
+  },
+  "/auth/jwt/logout": {
+   "post": {
+    "operationId": "auth_jwt_logout_auth_jwt_logout_post",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "401": {
+      "description": "Missing token or inactive user."
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Auth:Jwt.Logout",
+    "tags": [
+     "Usuários"
+    ]
+   }
+  },
+  "/auth/register": {
+   "post": {
+    "operationId": "register_register_auth_register_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/UserCreate"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserRead"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "400": {
+      "content": {
+       "application/json": {
+        "examples": {
+         "REGISTER_INVALID_PASSWORD": {
+          "summary": "Password validation failed.",
+          "value": {
+           "detail": {
+            "code": "REGISTER_INVALID_PASSWORD",
+            "reason": "Password should beat least 3 characters"
+           }
+          }
+         },
+         "REGISTER_USER_ALREADY_EXISTS": {
+          "summary": "A user with this email already exists.",
+          "value": {
+           "detail": "REGISTER_USER_ALREADY_EXISTS"
+          }
+         }
+        },
+        "schema": {
+         "$ref": "#/components/schemas/ErrorModel"
+        }
+       }
+      },
+      "description": "Bad Request"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Register:Register",
+    "tags": [
+     "Usuários"
+    ]
+   }
+  },
+  "/hc": {
+   "get": {
+    "operationId": "healthcheck_hc_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Healthcheck",
+    "tags": [
+     "Health Check"
+    ]
+   }
+  },
+  "/market_data/asset": {
+   "get": {
+    "description": "List all assets (cached for 24h).",
+    "operationId": "list_assets_market_data_asset_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Assets",
+    "tags": [
+     "Asset"
+    ]
+   },
+   "post": {
+    "description": "Create a new asset with subclass data.",
+    "operationId": "create_asset_market_data_asset_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AssetCreate"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Create Asset",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/etf/segment": {
+   "get": {
+    "description": "List all ETF segments.",
+    "operationId": "list_etf_segments_market_data_asset_etf_segment_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Etf Segments",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/event": {
+   "get": {
+    "description": "List all asset events.",
+    "operationId": "list_events_market_data_asset_event_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AssetEvent"
+         },
+         "title": "Response List Events Market Data Asset Event Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Events",
+    "tags": [
+     "Asset"
+    ]
+   },
+   "post": {
+    "description": "Create a new asset event.",
+    "operationId": "create_event_market_data_asset_event_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AssetEvent"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Create Event",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/event/{event_id}": {
+   "delete": {
+    "description": "Delete an asset event.",
+    "operationId": "delete_event_market_data_asset_event__event_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "event_id",
+      "required": true,
+      "schema": {
+       "title": "Event Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Event",
+    "tags": [
+     "Asset"
+    ]
+   },
+   "put": {
+    "description": "Update an asset event.",
+    "operationId": "update_event_market_data_asset_event__event_id__put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "event_id",
+      "required": true,
+      "schema": {
+       "title": "Event Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AssetEvent"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Update Event",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/exchange": {
+   "get": {
+    "description": "List all exchanges.",
+    "operationId": "list_exchanges_market_data_asset_exchange_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ExchangeOut"
+         },
+         "title": "Response List Exchanges Market Data Asset Exchange Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Exchanges",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/favorites": {
+   "get": {
+    "description": "The assets this user opens most often.",
+    "operationId": "list_favorite_assets_market_data_asset_favorites_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 8,
+       "maximum": 24,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/FavoriteAsset"
+         },
+         "title": "Response List Favorite Assets Market Data Asset Favorites Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Favorite Assets",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/fii/segment": {
+   "get": {
+    "description": "List FII segments.",
+    "operationId": "list_fii_segments_market_data_asset_fii_segment_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Fii Segments",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/fixed_income": {
+   "post": {
+    "description": "Create a new fixed income asset.",
+    "operationId": "create_fixed_income_market_data_asset_fixed_income_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/FixedIncomeAsset"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Create Fixed Income",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/fixed_income/type": {
+   "get": {
+    "description": "List all fixed income types.",
+    "operationId": "list_fixed_income_types_market_data_asset_fixed_income_type_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/FixedIncomeType"
+         },
+         "title": "Response List Fixed Income Types Market Data Asset Fixed Income Type Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Fixed Income Types",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/index": {
+   "get": {
+    "description": "List all indexes (for fixed income reference).",
+    "operationId": "list_indexes_market_data_asset_index_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Indexes",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/treasury_bond/type": {
+   "get": {
+    "description": "List all treasury bond types.",
+    "operationId": "list_treasury_bond_types_market_data_asset_treasury_bond_type_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/TreasuryBondTypeOut"
+         },
+         "title": "Response List Treasury Bond Types Market Data Asset Treasury Bond Type Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Treasury Bond Types",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/type": {
+   "get": {
+    "description": "List all asset types.",
+    "operationId": "list_asset_types_market_data_asset_type_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AssetType"
+         },
+         "title": "Response List Asset Types Market Data Asset Type Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Asset Types",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/{asset_id}": {
+   "delete": {
+    "description": "Delete an asset by ID.",
+    "operationId": "delete_asset_market_data_asset__asset_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Asset",
+    "tags": [
+     "Asset"
+    ]
+   },
+   "get": {
+    "description": "Get a single asset with all details.",
+    "operationId": "get_asset_market_data_asset__asset_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AssetDetailsOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Asset",
+    "tags": [
+     "Asset"
+    ]
+   },
+   "put": {
+    "description": "Update an asset with subclass data.",
+    "operationId": "update_asset_market_data_asset__asset_id__put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AssetUpdate"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Update Asset",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/{asset_id}/visit": {
+   "post": {
+    "description": "Count a visit, which is what ranks the favourites.",
+    "operationId": "record_asset_visit_market_data_asset__asset_id__visit_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Record Asset Visit",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/broker": {
+   "get": {
+    "description": "List all brokers",
+    "operationId": "list_brokers_market_data_broker_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Broker"
+         },
+         "title": "Response List Brokers Market Data Broker Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Brokers",
+    "tags": [
+     "Broker"
+    ]
+   },
+   "post": {
+    "description": "Create a new broker",
+    "operationId": "create_broker_market_data_broker_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/BrokerCreate"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Broker"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Create Broker",
+    "tags": [
+     "Broker"
+    ]
+   }
+  },
+  "/market_data/broker/{broker_id}": {
+   "delete": {
+    "description": "Delete a broker",
+    "operationId": "delete_broker_market_data_broker__broker_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "broker_id",
+      "required": true,
+      "schema": {
+       "title": "Broker Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Broker",
+    "tags": [
+     "Broker"
+    ]
+   },
+   "get": {
+    "description": "Get a specific broker by ID",
+    "operationId": "get_broker_market_data_broker__broker_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "broker_id",
+      "required": true,
+      "schema": {
+       "title": "Broker Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Broker"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Broker",
+    "tags": [
+     "Broker"
+    ]
+   },
+   "put": {
+    "description": "Update an existing broker",
+    "operationId": "update_broker_market_data_broker__broker_id__put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "broker_id",
+      "required": true,
+      "schema": {
+       "title": "Broker Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/BrokerUpdate"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Broker"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Update Broker",
+    "tags": [
+     "Broker"
+    ]
+   }
+  },
+  "/market_data/fii/{asset_id}/profile": {
+   "get": {
+    "description": "Indicators and distribution history published for one real-estate fund.",
+    "operationId": "get_fii_profile_market_data_fii__asset_id__profile_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FIIProfileResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Fii Profile",
+    "tags": [
+     "FII"
+    ]
+   }
+  },
+  "/market_data/index": {
+   "get": {
+    "operationId": "list_indexes_market_data_index_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/MarketIndex"
+         },
+         "title": "Response List Indexes Market Data Index Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Indexes",
+    "tags": [
+     "Market Data Series"
+    ]
+   }
+  },
+  "/market_data/index/currency": {
+   "get": {
+    "operationId": "list_currencies_market_data_index_currency_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Currency"
+         },
+         "title": "Response List Currencies Market Data Index Currency Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Currencies",
+    "tags": [
+     "Market Data Series"
+    ]
+   }
+  },
+  "/market_data/index/time_series": {
+   "get": {
+    "operationId": "get_indexes_time_series_market_data_index_time_series_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MarketIndexesTimeSeries"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Get Indexes Time Series",
+    "tags": [
+     "Market Data Series"
+    ]
+   }
+  },
+  "/market_data/index/usd_brl": {
+   "get": {
+    "operationId": "get_usd_brl_history_market_data_index_usd_brl_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/USD_BRL_History"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Get Usd Brl History",
+    "tags": [
+     "Market Data Series"
+    ]
+   }
+  },
+  "/market_data/ingestions/market_data_series": {
+   "get": {
+    "operationId": "list_market_data_series_ingestions_market_data_ingestions_market_data_series_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+         },
+         "title": "Response List Market Data Series Ingestions Market Data Ingestions Market Data Series Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Market Data Series Ingestions",
+    "tags": [
+     "Data Ingestion"
+    ]
+   },
+   "post": {
+    "operationId": "run_market_data_series_ingestion_market_data_ingestions_market_data_series_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RunMarketDataSeriesIngestionRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Run Market Data Series Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/market_data_series/{execution_id}": {
+   "get": {
+    "operationId": "get_market_data_series_ingestion_market_data_ingestions_market_data_series__execution_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionDetailResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Market Data Series Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/market_data_series/{execution_id}/abort": {
+   "post": {
+    "operationId": "abort_market_data_series_ingestion_market_data_ingestions_market_data_series__execution_id__abort_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Abort Market Data Series Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/quote": {
+   "get": {
+    "operationId": "list_quote_ingestions_market_data_ingestions_quote_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+         },
+         "title": "Response List Quote Ingestions Market Data Ingestions Quote Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Quote Ingestions",
+    "tags": [
+     "Data Ingestion"
+    ]
+   },
+   "post": {
+    "operationId": "run_quote_ingestion_market_data_ingestions_quote_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RunDataIngestionRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Run Quote Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/quote/{execution_id}": {
+   "get": {
+    "operationId": "get_quote_ingestion_market_data_ingestions_quote__execution_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionDetailResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Quote Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/quote/{execution_id}/abort": {
+   "post": {
+    "operationId": "abort_quote_ingestion_market_data_ingestions_quote__execution_id__abort_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Abort Quote Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/usd_brl": {
+   "get": {
+    "operationId": "list_usd_brl_ingestions_market_data_ingestions_usd_brl_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+         },
+         "title": "Response List Usd Brl Ingestions Market Data Ingestions Usd Brl Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Usd Brl Ingestions",
+    "tags": [
+     "Data Ingestion"
+    ]
+   },
+   "post": {
+    "operationId": "run_usd_brl_ingestion_market_data_ingestions_usd_brl_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RunUsdBrlIngestionRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Run Usd Brl Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/usd_brl/{execution_id}": {
+   "get": {
+    "operationId": "get_usd_brl_ingestion_market_data_ingestions_usd_brl__execution_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionDetailResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Usd Brl Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/usd_brl/{execution_id}/abort": {
+   "post": {
+    "operationId": "abort_usd_brl_ingestion_market_data_ingestions_usd_brl__execution_id__abort_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Abort Usd Brl Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/quotes/asset/{asset_id}": {
+   "get": {
+    "description": "Quote history for one asset, from storage when it exists.\n\nPrices come back in ``currency``, converted through the USD/BRL history when\nthe asset is not quoted in it.",
+    "operationId": "get_asset_quote_history_market_data_quotes_asset__asset_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "start_date",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start Date"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AssetQuoteHistoryResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Asset Quote History",
+    "tags": [
+     "Quotes"
+    ]
+   }
+  },
+  "/market_data/quotes/on-demand": {
+   "get": {
+    "operationId": "get_on_demand_quotes_market_data_quotes_on_demand_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "ticker",
+      "required": true,
+      "schema": {
+       "maxLength": 30,
+       "minLength": 1,
+       "title": "Ticker",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "asset_type_id",
+      "required": true,
+      "schema": {
+       "minimum": 1,
+       "title": "Asset Type Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "start_date",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start Date"
+      }
+     },
+     {
+      "in": "query",
+      "name": "exchange",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 10,
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Exchange"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/OnDemandQuotesResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get On Demand Quotes",
+    "tags": [
+     "Quotes"
+    ]
+   }
+  },
+  "/market_data/quotes/persisted": {
+   "get": {
+    "operationId": "get_persisted_quotes_market_data_quotes_persisted_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "asset_ids",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "maxItems": 100,
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Asset Ids"
+      }
+     },
+     {
+      "in": "query",
+      "name": "tickers",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "string"
+         },
+         "maxItems": 100,
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tickers"
+      }
+     },
+     {
+      "in": "query",
+      "name": "asset_type_id",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Asset Type Id"
+      }
+     },
+     {
+      "in": "query",
+      "name": "start_date",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start Date"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/PersistedQuotesResponse"
+         },
+         "title": "Response Get Persisted Quotes Market Data Quotes Persisted Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Persisted Quotes",
+    "tags": [
+     "Quotes"
+    ]
+   }
+  },
+  "/market_data/series": {
+   "get": {
+    "operationId": "list_market_data_series_market_data_series_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/MarketDataSeriesResponse"
+         },
+         "title": "Response List Market Data Series Market Data Series Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Market Data Series",
+    "tags": [
+     "Market Data Series"
+    ]
+   }
+  },
+  "/market_data/series/options": {
+   "get": {
+    "description": "Selectable series, for pickers that only need identity.",
+    "operationId": "list_market_data_series_options_market_data_series_options_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/MarketDataSeriesOption"
+         },
+         "title": "Response List Market Data Series Options Market Data Series Options Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Market Data Series Options",
+    "tags": [
+     "Market Data Series"
+    ]
+   }
+  },
+  "/market_data/series/{series_id}/history": {
+   "get": {
+    "operationId": "get_market_data_series_history_market_data_series__series_id__history_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "series_id",
+      "required": true,
+      "schema": {
+       "title": "Series Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "start_date",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start Date"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/MarketDataSeriesHistoryPoint"
+         },
+         "title": "Response Get Market Data Series History Market Data Series  Series Id  History Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Market Data Series History",
+    "tags": [
+     "Market Data Series"
+    ]
+   }
+  },
+  "/market_data/usd-brl/convert": {
+   "post": {
+    "operationId": "convert_usd_brl_market_data_usd_brl_convert_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/UsdBrlConversionRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UsdBrlConversionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Convert Usd Brl",
+    "tags": [
+     "USD/BRL"
+    ]
+   }
+  },
+  "/market_data/usd-brl/history": {
+   "get": {
+    "operationId": "get_usd_brl_history_market_data_usd_brl_history_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "start_date",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start Date"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/UsdBrlHistoryPoint"
+         },
+         "title": "Response Get Usd Brl History Market Data Usd Brl History Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Usd Brl History",
+    "tags": [
+     "USD/BRL"
+    ]
+   }
+  },
+  "/portfolio": {
+   "get": {
+    "operationId": "list_user_portfolios_portfolio_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Portfolio"
+         },
+         "title": "Response List User Portfolios Portfolio Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List User Portfolios"
+   },
+   "post": {
+    "operationId": "create_portfolio_portfolio_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreatePortfolioRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Create Portfolio"
+   }
+  },
+  "/portfolio/all": {
+   "get": {
+    "description": "Every portfolio in the application, for administrative screens.",
+    "operationId": "list_all_portfolios_portfolio_all_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/PortfolioSummary"
+         },
+         "title": "Response List All Portfolios Portfolio All Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List All Portfolios"
+   }
+  },
+  "/portfolio/category": {
+   "post": {
+    "operationId": "save_custom_category_portfolio_category_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SaveCategoriesRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Save Custom Category",
+    "tags": [
+     "Portfolio Category"
+    ]
+   }
+  },
+  "/portfolio/category/assignment": {
+   "post": {
+    "operationId": "assign_category_to_assets_portfolio_category_assignment_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CategoryAssignmentRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Assign Category To Assets",
+    "tags": [
+     "Portfolio Category"
+    ]
+   }
+  },
+  "/portfolio/category/{category_id}": {
+   "delete": {
+    "operationId": "delete_custom_category_portfolio_category__category_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "category_id",
+      "required": true,
+      "schema": {
+       "title": "Category Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Custom Category",
+    "tags": [
+     "Portfolio Category"
+    ]
+   }
+  },
+  "/portfolio/dividend": {
+   "get": {
+    "operationId": "list_dividends_portfolio_dividend_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "start_date",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start Date"
+      }
+     },
+     {
+      "in": "query",
+      "name": "end_date",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End Date"
+      }
+     },
+     {
+      "in": "query",
+      "name": "asset_id",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Asset Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "anyOf": [
+         {
+          "items": {
+           "type": "integer"
+          },
+          "type": "array"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "title": "Asset Type Ids"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/Dividend"
+         },
+         "title": "Response List Dividends Portfolio Dividend Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Dividends",
+    "tags": [
+     "Portfolio Dividend"
+    ]
+   },
+   "post": {
+    "operationId": "create_dividend_portfolio_dividend_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DividendCreateRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Create Dividend",
+    "tags": [
+     "Portfolio Dividend"
+    ]
+   }
+  },
+  "/portfolio/dividend/{dividend_id}": {
+   "delete": {
+    "operationId": "delete_dividend_portfolio_dividend__dividend_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "dividend_id",
+      "required": true,
+      "schema": {
+       "title": "Dividend Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Dividend",
+    "tags": [
+     "Portfolio Dividend"
+    ]
+   },
+   "put": {
+    "operationId": "update_dividend_portfolio_dividend__dividend_id__put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "dividend_id",
+      "required": true,
+      "schema": {
+       "title": "Dividend Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DividendUpdateRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Update Dividend",
+    "tags": [
+     "Portfolio Dividend"
+    ]
+   }
+  },
+  "/portfolio/income_tax/{portfolio_id}/assets_and_rights": {
+   "get": {
+    "operationId": "get_assets_and_rights_portfolio_income_tax__portfolio_id__assets_and_rights_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "fiscal_year",
+      "required": true,
+      "schema": {
+       "title": "Fiscal Year",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Assets And Rights",
+    "tags": [
+     "Income Tax"
+    ]
+   }
+  },
+  "/portfolio/income_tax/{portfolio_id}/darf": {
+   "get": {
+    "operationId": "get_darf_portfolio_income_tax__portfolio_id__darf_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "fiscal_year",
+      "required": true,
+      "schema": {
+       "title": "Fiscal Year",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Darf",
+    "tags": [
+     "Income Tax"
+    ]
+   }
+  },
+  "/portfolio/income_tax/{portfolio_id}/variable_income/common_operation": {
+   "get": {
+    "operationId": "get_common_operations_tax_portfolio_income_tax__portfolio_id__variable_income_common_operation_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "fiscal_year",
+      "required": true,
+      "schema": {
+       "title": "Fiscal Year",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Common Operations Tax",
+    "tags": [
+     "Income Tax"
+    ]
+   }
+  },
+  "/portfolio/income_tax/{portfolio_id}/variable_income/fii_operation": {
+   "get": {
+    "operationId": "get_fiis_operations_tax_portfolio_income_tax__portfolio_id__variable_income_fii_operation_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "fiscal_year",
+      "required": true,
+      "schema": {
+       "title": "Fiscal Year",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Fiis Operations Tax",
+    "tags": [
+     "Income Tax"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}": {
+   "get": {
+    "operationId": "get_portfolio_position_portfolio_position__portfolio_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "most_recent",
+      "required": false,
+      "schema": {
+       "default": true,
+       "title": "Most Recent",
+       "type": "boolean"
+      }
+     },
+     {
+      "in": "query",
+      "name": "group_by_broker",
+      "required": false,
+      "schema": {
+       "default": false,
+       "title": "Group By Broker",
+       "type": "boolean"
+      }
+     },
+     {
+      "in": "query",
+      "name": "asset_id",
+      "required": false,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Portfolio Position",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/analysis": {
+   "get": {
+    "operationId": "get_portfolio_analysis_portfolio_position__portfolio_id__analysis_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Portfolio Analysis",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/asset/{asset_id}/analysis": {
+   "get": {
+    "operationId": "get_asset_analysis_portfolio_position__portfolio_id__asset__asset_id__analysis_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Asset Analysis",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/asset/{asset_id}/details": {
+   "get": {
+    "operationId": "get_asset_details_portfolio_position__portfolio_id__asset__asset_id__details_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AssetDetailsWithPosition"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Asset Details",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/asset/{asset_id}/returns": {
+   "get": {
+    "operationId": "get_asset_returns_portfolio_position__portfolio_id__asset__asset_id__returns_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "start_date",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start Date"
+      }
+     },
+     {
+      "in": "query",
+      "name": "end_date",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End Date"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Asset Returns",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/category/returns": {
+   "get": {
+    "operationId": "get_category_returns_portfolio_position__portfolio_id__category_returns_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "category_id",
+      "required": false,
+      "schema": {
+       "title": "Category Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "most_recent",
+      "required": false,
+      "schema": {
+       "default": false,
+       "title": "Most Recent",
+       "type": "boolean"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Category Returns",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/category/{category_id}/analysis": {
+   "get": {
+    "operationId": "get_category_analysis_portfolio_position__portfolio_id__category__category_id__analysis_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "path",
+      "name": "category_id",
+      "required": true,
+      "schema": {
+       "title": "Category Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Category Analysis",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/patrimony_evolution": {
+   "get": {
+    "operationId": "get_patrimony_evolution_portfolio_position__portfolio_id__patrimony_evolution_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "asset_id",
+      "required": false,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "asset_type_id",
+      "required": false,
+      "schema": {
+       "title": "Asset Type Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "asset_type_ids",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Asset Type Ids"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Patrimony Evolution",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/returns": {
+   "get": {
+    "operationId": "get_portfolio_returns_portfolio_position__portfolio_id__returns_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Portfolio Returns",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position_consolidator/{portfolio_id}/consolidate": {
+   "post": {
+    "operationId": "consolidate_portfolio_portfolio_position_consolidator__portfolio_id__consolidate_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Consolidate Portfolio",
+    "tags": [
+     "Portfolio Position Consolidator"
+    ]
+   }
+  },
+  "/portfolio/position_consolidator/{portfolio_id}/consolidate_category_returns": {
+   "post": {
+    "operationId": "consolidate_category_returns_portfolio_position_consolidator__portfolio_id__consolidate_category_returns_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Consolidate Category Returns",
+    "tags": [
+     "Portfolio Position Consolidator"
+    ]
+   }
+  },
+  "/portfolio/position_consolidator/{portfolio_id}/consolidate_portfolio_returns": {
+   "post": {
+    "operationId": "consolidate_portfolio_returns_portfolio_position_consolidator__portfolio_id__consolidate_portfolio_returns_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Consolidate Portfolio Returns",
+    "tags": [
+     "Portfolio Position Consolidator"
+    ]
+   }
+  },
+  "/portfolio/position_consolidator/{portfolio_id}/recalculate_all_position": {
+   "post": {
+    "operationId": "recalculate_all_positions_portfolio_position_consolidator__portfolio_id__recalculate_all_position_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Recalculate All Positions",
+    "tags": [
+     "Portfolio Position Consolidator"
+    ]
+   }
+  },
+  "/portfolio/position_consolidator/{portfolio_id}/recalculate_asset_position": {
+   "post": {
+    "operationId": "consolidate_portfolio_asset_portfolio_position_consolidator__portfolio_id__recalculate_asset_position_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Consolidate Portfolio Asset",
+    "tags": [
+     "Portfolio Position Consolidator"
+    ]
+   }
+  },
+  "/portfolio/rebalancing/{portfolio_id}": {
+   "get": {
+    "operationId": "get_rebalancing_portfolio_rebalancing__portfolio_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RebalancingResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Rebalancing",
+    "tags": [
+     "Portfolio Rebalancing"
+    ]
+   },
+   "put": {
+    "operationId": "save_rebalancing_targets_portfolio_rebalancing__portfolio_id__put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SaveTargetsRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Save Rebalancing Targets",
+    "tags": [
+     "Portfolio Rebalancing"
+    ]
+   }
+  },
+  "/portfolio/report/{portfolio_id}/performance_statement.xlsx": {
+   "get": {
+    "operationId": "get_portfolio_returns_portfolio_report__portfolio_id__performance_statement_xlsx_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "asset_ids",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Asset Ids"
+      }
+     },
+     {
+      "in": "query",
+      "name": "scope",
+      "required": false,
+      "schema": {
+       "$ref": "#/components/schemas/StatementScope",
+       "default": "portfolio"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Portfolio Returns",
+    "tags": [
+     "Portfolio Report"
+    ]
+   }
+  },
+  "/portfolio/transaction": {
+   "get": {
+    "operationId": "list_transactions_portfolio_transaction_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "asset_id",
+      "required": false,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "asset_type_ids",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Asset Type Ids"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency_id",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Currency Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Transactions",
+    "tags": [
+     "Portfolio Transaction"
+    ]
+   },
+   "post": {
+    "operationId": "create_transaction_portfolio_transaction_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/Transaction"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Create Transaction",
+    "tags": [
+     "Portfolio Transaction"
+    ]
+   }
+  },
+  "/portfolio/transaction/{transaction_id}": {
+   "delete": {
+    "operationId": "delete_transaction_portfolio_transaction__transaction_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "transaction_id",
+      "required": true,
+      "schema": {
+       "title": "Transaction Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_delete_transaction_portfolio_transaction__transaction_id__delete"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Transaction",
+    "tags": [
+     "Portfolio Transaction"
+    ]
+   },
+   "put": {
+    "operationId": "update_transaction_portfolio_transaction__transaction_id__put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "transaction_id",
+      "required": true,
+      "schema": {
+       "title": "Transaction Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Transaction",
+        "type": "object"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Update Transaction",
+    "tags": [
+     "Portfolio Transaction"
+    ]
+   }
+  },
+  "/portfolio/user_configuration/{portfolio_id}": {
+   "get": {
+    "operationId": "get_user_configurations_portfolio_user_configuration__portfolio_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get User Configurations",
+    "tags": [
+     "Portfolio User Configuration"
+    ]
+   },
+   "put": {
+    "operationId": "update_user_configuration_portfolio_user_configuration__portfolio_id__put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/UserConfigurationUpdateRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Update User Configuration",
+    "tags": [
+     "Portfolio User Configuration"
+    ]
+   }
+  },
+  "/portfolio/{portfolio_id}": {
+   "delete": {
+    "operationId": "delete_portfolio_portfolio__portfolio_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Portfolio"
+   },
+   "put": {
+    "operationId": "update_portfolio_portfolio__portfolio_id__put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/UpdatePortfolioRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Update Portfolio"
+   }
+  },
+  "/users": {
+   "get": {
+    "operationId": "list_users_users_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/UserRead"
+         },
+         "title": "Response List Users Users Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "List Users",
+    "tags": [
+     "Usuários"
+    ]
+   }
+  },
+  "/users/me": {
+   "get": {
+    "operationId": "users_current_user_users_me_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserRead"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "401": {
+      "description": "Missing token or inactive user."
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Users:Current User",
+    "tags": [
+     "Usuários"
+    ]
+   },
+   "patch": {
+    "operationId": "users_patch_current_user_users_me_patch",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/UserUpdate"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserRead"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "400": {
+      "content": {
+       "application/json": {
+        "examples": {
+         "UPDATE_USER_EMAIL_ALREADY_EXISTS": {
+          "summary": "A user with this email already exists.",
+          "value": {
+           "detail": "UPDATE_USER_EMAIL_ALREADY_EXISTS"
+          }
+         },
+         "UPDATE_USER_INVALID_PASSWORD": {
+          "summary": "Password validation failed.",
+          "value": {
+           "detail": {
+            "code": "UPDATE_USER_INVALID_PASSWORD",
+            "reason": "Password should beat least 3 characters"
+           }
+          }
+         }
+        },
+        "schema": {
+         "$ref": "#/components/schemas/ErrorModel"
+        }
+       }
+      },
+      "description": "Bad Request"
+     },
+     "401": {
+      "description": "Missing token or inactive user."
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Users:Patch Current User",
+    "tags": [
+     "Usuários"
+    ]
+   }
+  },
+  "/users/{id}": {
+   "delete": {
+    "operationId": "users_delete_user_users__id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "id",
+      "required": true,
+      "schema": {
+       "title": "Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "401": {
+      "description": "Missing token or inactive user."
+     },
+     "403": {
+      "description": "Not a superuser."
+     },
+     "404": {
+      "description": "The user does not exist."
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Users:Delete User",
+    "tags": [
+     "Usuários"
+    ]
+   },
+   "get": {
+    "operationId": "users_user_users__id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "id",
+      "required": true,
+      "schema": {
+       "title": "Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserRead"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "401": {
+      "description": "Missing token or inactive user."
+     },
+     "403": {
+      "description": "Not a superuser."
+     },
+     "404": {
+      "description": "The user does not exist."
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Users:User",
+    "tags": [
+     "Usuários"
+    ]
+   },
+   "patch": {
+    "operationId": "users_patch_user_users__id__patch",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "id",
+      "required": true,
+      "schema": {
+       "title": "Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/UserUpdate"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserRead"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "400": {
+      "content": {
+       "application/json": {
+        "examples": {
+         "UPDATE_USER_EMAIL_ALREADY_EXISTS": {
+          "summary": "A user with this email already exists.",
+          "value": {
+           "detail": "UPDATE_USER_EMAIL_ALREADY_EXISTS"
+          }
+         },
+         "UPDATE_USER_INVALID_PASSWORD": {
+          "summary": "Password validation failed.",
+          "value": {
+           "detail": {
+            "code": "UPDATE_USER_INVALID_PASSWORD",
+            "reason": "Password should beat least 3 characters"
+           }
+          }
+         }
+        },
+        "schema": {
+         "$ref": "#/components/schemas/ErrorModel"
+        }
+       }
+      },
+      "description": "Bad Request"
+     },
+     "401": {
+      "description": "Missing token or inactive user."
+     },
+     "403": {
+      "description": "Not a superuser."
+     },
+     "404": {
+      "description": "The user does not exist."
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Users:Patch User",
+    "tags": [
+     "Usuários"
+    ]
+   }
+  }
+ }
+}

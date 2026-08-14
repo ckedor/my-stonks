@@ -162,6 +162,31 @@ extend-exclude = ['app/infra/db/alembic/', 'manage.py', 'app/main.py']
 [tool.pytest.ini_options]
 pythonpath = "."
 addopts = '-p no:warnings'
+# Sem isto todo teste async precisa carregar @pytest.mark.asyncio.
+asyncio_mode = "auto"
+markers = [
+    "unit: sem IO — domínio, lib e serviço com dublê",
+    "integration: precisa do Postgres de teste ou de resposta gravada",
+    "e2e: sobe a app e entra por HTTP",
+    "contract: compara o contrato publicado com o snapshot versionado",
+]
+
+[tool.coverage.run]
+source = ['app']
+branch = true
+omit = [
+    'app/infra/db/alembic/*',
+    'app/lib/finance/main.py',
+    'manage.py',
+]
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = [
+    'if TYPE_CHECKING:',
+    'raise NotImplementedError',
+    '@(abc\.)?abstractmethod',
+]
 
 [tool.taskipy.tasks]
 run = 'fastapi dev app/main.py --port 7000'
@@ -170,6 +195,14 @@ test = 'pytest --cov=app -vv'
 post_test = 'coverage html'
 lint = 'ruff check . && ruff check . --diff'
 check = 'ruff check . ; lint-imports --config .importlinter ; pytest -q'
+test_unit = 'pytest -q -m unit'
+test_integration = 'pytest -q -m integration'
+test_e2e = 'pytest -q -m e2e'
+test_contract = 'pytest -q -m contract'
+openapi_update = 'python tests/contract/test_openapi_snapshot.py'
+coverage = 'pytest -q --cov --cov-report=term-missing'
+db_test_up = 'docker compose up -d db_test'
+db_test_down = 'docker compose stop db_test'
 architecture = 'lint-imports --config .importlinter'
 architecture_market_data = 'lint-imports --config .importlinter --contract market-data-domain-boundary --contract market-data-service-boundary --contract market-data-api-boundary --contract market-data-task-boundary --contract market-data-module-boundary'
 format = 'ruff check . --fix && ruff format .'
