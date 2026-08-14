@@ -86,7 +86,11 @@ unknown currency — are left out rather than guessed at.
 - **HTTP routers:** transport concerns only; call services.
 - **Services:** business workflow and transaction coordination.
 - **Repositories:** database access and persistence queries.
-- **Tasks and scheduler:** asynchronous entrypoints into services.
+- **Tasks and scheduler:** asynchronous entrypoints into services. A task is
+  built by the composition root and never assembles its own `UnitOfWork`, and
+  nothing dispatches a task by importing it — importing one pulls its service,
+  adapters and provider into the calling process, so an entrypoint enqueues by
+  name through `run_task_by_name`.
 - **Provider adapters:** translate external APIs such as Brapi into domain data.
 - **Frontend API clients:** translate HTTP contracts for UI consumers.
 
@@ -102,9 +106,15 @@ Write flows use a `UnitOfWork`, which creates one session and the repositories
 that share it, commits on successful exit, rolls back on exceptions, and closes
 the session. Services define the write transaction boundary.
 
-Simple read flows receive repositories from dependencies or factories that own
-the session lifecycle. Reads do not commit. A small shared repository context is
-used only where one read needs multiple repositories on the same session.
+Reads open the same `UnitOfWork` scope and leave without committing. There is no
+separate path for them: a service never receives a repository, and the unit of
+work is the only way into persistence.
+
+Building an entity from a dict never sets a relationship the caller did not
+name. A persisted entity is a dataclass, so its `__init__` assigns every field
+and an unmentioned relationship arrives as None, which SQLAlchemy reads as "no
+related row" and writes over the foreign key underneath it. The repository drops
+those before the flush.
 
 Application service instances remain stateless after construction. Dependencies
 are assigned only in `__init__`; repositories and collaborating services obtained
@@ -164,10 +174,11 @@ indexes into BRL. Nothing repopulates either: the next read misses and fills.
 
 ## Visual architecture map
 
-The frontend route `/architecture` renders a conceptual, read-only map. Its
-versioned graph data lives in
-`frontend/src/pages/architecture/graph/architecture-map.ts`; update that file
-when a main module boundary, scheduler, integration or operational flow changes.
+The frontend route `/admin/architecture` renders a conceptual, read-only map.
+Its versioned graph data lives in
+`frontend/src/pages/admin/architecture/graph/architecture-map.ts`; update that
+file when a main module boundary, scheduler, integration or operational flow
+changes.
 
 ## Domain language
 
