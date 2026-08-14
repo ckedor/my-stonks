@@ -4,8 +4,8 @@ from app.composition.market_data import (
     get_data_ingestion_read_service,
     get_data_ingestion_service,
 )
-from app.entrypoints.worker.task_runner import revoke_task, run_task, run_task_by_name
-from app.infra.exceptions import IntegrationUnavailable
+from app.core.exceptions import TaskDispatchError
+from app.entrypoints.worker.task_runner import revoke_task, run_task_by_name
 from app.modules.market_data.api.ingestion.schemas import (
     DataIngestionExecutionDetailResponse,
     DataIngestionExecutionResponse,
@@ -17,15 +17,22 @@ from app.modules.market_data.service.data_ingestion_service import (
     DataIngestionReadService,
     DataIngestionService,
 )
-from app.modules.market_data.tasks.ingest_market_data_series import ingest_market_data_series
-from app.modules.market_data.tasks.ingest_quotes import ingest_quotes
-from app.modules.market_data.tasks.ingest_usd_brl import ingest_usd_brl
 from app.modules.users.domain import User
 from app.modules.users.views import current_superuser
 
-#: Owned by the portfolio module, dispatched by name so market data keeps no
-#: code dependency on it. See portfolio.tasks.ingest_quotes_for_held_assets.
+#: Every task is dispatched by name, so this router never imports one.
+#:
+#: A task pulls in its service, its adapters and its provider, and importing one
+#: here would load all of that into the HTTP process at boot — an import error
+#: inside a worker task would take the API down with it, on a route nobody
+#: called. The names match the `@celery_async_task(name=...)` registrations.
+#:
+#: The first is owned by the portfolio module, which is where this pattern
+#: started. See portfolio.tasks.ingest_quotes_for_held_assets.
 INGEST_QUOTES_FOR_HELD_ASSETS_TASK = 'ingest_quotes_for_held_assets'
+INGEST_QUOTES_TASK = 'ingest_quotes'
+INGEST_MARKET_DATA_SERIES_TASK = 'ingest_market_data_series'
+INGEST_USD_BRL_TASK = 'ingest_usd_brl'
 
 router = APIRouter(
     prefix='/ingestions',
@@ -77,8 +84,8 @@ async def run_quote_ingestion(
     try:
         if payload.item_ids:
             # The assets are already chosen: no selection step needed.
-            task = run_task(
-                ingest_quotes,
+            task = run_task_by_name(
+                INGEST_QUOTES_TASK,
                 asset_ids=payload.item_ids,
                 execution_id=execution.id,
                 force_full_history=payload.force_full_history,
@@ -92,7 +99,7 @@ async def run_quote_ingestion(
         return await service.set_task_id(execution.id, task.id)
     except Exception as exc:
         await service.fail(execution.id, exc)
-        raise IntegrationUnavailable(provider='task_queue') from exc
+        raise TaskDispatchError from exc
 
 
 @router.post('/quote/{execution_id}/abort', response_model=DataIngestionExecutionResponse)
@@ -138,15 +145,15 @@ async def run_market_data_series_ingestion(
         force_full_history=payload.force_full_history,
     )
     try:
-        task = run_task(
-            ingest_market_data_series,
+        task = run_task_by_name(
+            INGEST_MARKET_DATA_SERIES_TASK,
             execution.id,
             payload.force_full_history,
         )
         return await service.set_task_id(execution.id, task.id)
     except Exception as exc:
         await service.fail(execution.id, exc)
-        raise IntegrationUnavailable(provider='task_queue') from exc
+        raise TaskDispatchError from exc
 
 
 @router.post(
@@ -192,15 +199,15 @@ async def run_usd_brl_ingestion(
         force_full_history=payload.force_full_history,
     )
     try:
-        task = run_task(
-            ingest_usd_brl,
+        task = run_task_by_name(
+            INGEST_USD_BRL_TASK,
             execution.id,
             payload.force_full_history,
         )
         return await service.set_task_id(execution.id, task.id)
     except Exception as exc:
         await service.fail(execution.id, exc)
-        raise IntegrationUnavailable(provider='task_queue') from exc
+        raise TaskDispatchError from exc
 
 
 @router.post('/usd_brl/{execution_id}/abort', response_model=DataIngestionExecutionResponse)

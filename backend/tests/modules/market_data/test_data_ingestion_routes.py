@@ -50,8 +50,9 @@ async def test_market_data_series_route_leaves_item_selection_to_backend():
     app.dependency_overrides[current_superuser] = lambda: SimpleNamespace(id=7)
     app.dependency_overrides[get_data_ingestion_service] = lambda: write_service
 
+    # Dispatched by name so the router keeps no import of the task itself.
     with patch(
-        'app.modules.market_data.api.ingestion.router.run_task',
+        'app.modules.market_data.api.ingestion.router.run_task_by_name',
         return_value=SimpleNamespace(id='task-4'),
     ) as run_task:
         async with AsyncClient(

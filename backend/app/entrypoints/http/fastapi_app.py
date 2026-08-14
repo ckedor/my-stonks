@@ -15,6 +15,7 @@ from app.core.exceptions import (
     BusinessRuleError,
     NotFoundError,
     PermissionDeniedError,
+    TaskDispatchError,
     ValidationError,
 )
 from app.entrypoints.http.module_docs import setup_module_docs
@@ -41,6 +42,7 @@ _STATUS_MAP: dict[type[AppError], int] = {
     IntegrationTimeout: 504,
     IntegrationRateLimited: 429,
     IntegrationUnavailable: 503,
+    TaskDispatchError: 503,
     IntegrationBadResponse: 502,
     IntegrationError: 502,
     DatabaseError: 500,
