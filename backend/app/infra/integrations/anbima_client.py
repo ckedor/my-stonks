@@ -2,8 +2,9 @@ import json
 from datetime import datetime
 
 import pandas as pd
-from app.infra.http import AsyncHttpClient
 from bs4 import BeautifulSoup
+
+from app.infra.http import AsyncHttpClient
 
 
 class AnbimaClient:
@@ -15,7 +16,9 @@ class AnbimaClient:
         )
 
     async def get_fund_history_df(self, anbima_class_code):
-        html = await self.http.request('GET', f'/fundos/{anbima_class_code}/periodicos', parse='text')
+        html = await self.http.request(
+            'GET', f'/fundos/{anbima_class_code}/periodicos', parse='text'
+        )
         soup = BeautifulSoup(html, 'html.parser')
 
         scripts = soup.find_all('script')

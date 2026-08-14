@@ -1,10 +1,10 @@
 import hashlib
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.core.exceptions import NotFoundError
-from app.modules.ai.domain.entities import AIArtifact, AIFeature
 from app.infra.db.unit_of_work import UnitOfWork
+from app.modules.ai.domain.entities import AIArtifact, AIFeature
 from app.modules.ai.domain.feature_keys import AIFeatureKey
 from app.modules.ai.domain.inputs import AIArtifactInput
 from app.modules.ai.domain.provider import AIProvider
@@ -28,9 +28,7 @@ class AIArtifactService:
     ) -> dict[str, Any]:
         input_hash = self._hash_input(input)
         async with self.uow as uow:
-            feature = await uow.repository.get(
-                AIFeature, by={'key': feature_key.value}, first=True
-            )
+            feature = await uow.repository.get(AIFeature, by={'key': feature_key.value}, first=True)
             if feature is None:
                 raise NotFoundError(f'AI feature {feature_key.value} is not configured')
             feature_id = feature.id
@@ -56,11 +54,9 @@ class AIArtifactService:
     def _needs_generation(artifact: AIArtifact | None, force_generate: bool) -> bool:
         if artifact is None or force_generate:
             return True
-        return artifact.expires_at <= datetime.now(timezone.utc)
+        return artifact.expires_at <= datetime.now(UTC)
 
-    async def _generate(
-        self, feature_key: AIFeatureKey, input: AIArtifactInput
-    ) -> AIResponse:
+    async def _generate(self, feature_key: AIFeatureKey, input: AIArtifactInput) -> AIResponse:
         handler_cls = ARTIFACT_HANDLERS.get(feature_key)
         if handler_cls is None:
             raise NotFoundError(f'AI feature {feature_key.value} has no handler')
@@ -80,7 +76,7 @@ class AIArtifactService:
         input_hash: str,
         ai_response: AIResponse,
     ) -> AIArtifact:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires_at = now + timedelta(hours=feature_ttl_hours)
 
         async with self.uow as uow:

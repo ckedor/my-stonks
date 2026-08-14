@@ -1,5 +1,4 @@
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Index, Integer
-from sqlalchemy import Table, Text, func
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Index, Integer, Table, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from app.infra.db.base import Base

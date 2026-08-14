@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-def calculate_fixed_income_price(
+def calculate_fixed_income_price(  # noqa: PLR0913
     initial_price: float,
     dates: pd.Series,
     daily_index_values: pd.Series,

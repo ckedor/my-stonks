@@ -2,6 +2,7 @@ import logging
 
 import httpx
 import pytest
+
 from app.infra.exceptions import IntegrationError
 from app.infra.http import AsyncHttpClient
 

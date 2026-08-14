@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, Query
 
-from app.entrypoints.worker.task_runner import revoke_task, run_task, run_task_by_name
-from app.infra.exceptions import IntegrationUnavailable
 from app.composition.market_data import (
     get_data_ingestion_read_service,
     get_data_ingestion_service,
 )
+from app.entrypoints.worker.task_runner import revoke_task, run_task, run_task_by_name
+from app.infra.exceptions import IntegrationUnavailable
 from app.modules.market_data.api.ingestion.schemas import (
     DataIngestionExecutionDetailResponse,
     DataIngestionExecutionResponse,
@@ -20,7 +20,6 @@ from app.modules.market_data.service.data_ingestion_service import (
 from app.modules.market_data.tasks.ingest_market_data_series import ingest_market_data_series
 from app.modules.market_data.tasks.ingest_quotes import ingest_quotes
 from app.modules.market_data.tasks.ingest_usd_brl import ingest_usd_brl
-
 from app.modules.users.domain import User
 from app.modules.users.views import current_superuser
 

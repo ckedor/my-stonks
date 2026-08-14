@@ -1,9 +1,10 @@
 from http import HTTPStatus
 
 import pytest
+from httpx import ASGITransport, AsyncClient
+
 from app.entrypoints.http.fastapi_app import create_app
 from app.entrypoints.http.module_docs import MODULE_DOCS, build_module_openapi
-from httpx import ASGITransport, AsyncClient
 
 
 def test_module_openapi_schemas_partition_all_application_paths():

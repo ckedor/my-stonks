@@ -30,11 +30,11 @@ def df_response(df: pd.DataFrame) -> JSONResponse:
 def df_to_xlsx_response(
     df: pd.DataFrame,
     filename: str,
-    sheet_name: str = "Sheet1",
+    sheet_name: str = 'Sheet1',
 ) -> StreamingResponse:
     output = BytesIO()
 
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(
             writer,
             index=False,
@@ -43,12 +43,10 @@ def df_to_xlsx_response(
 
     output.seek(0)
 
-    headers = {
-        "Content-Disposition": f'attachment; filename="{filename}"'
-    }
+    headers = {'Content-Disposition': f'attachment; filename="{filename}"'}
 
     return StreamingResponse(
         output,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         headers=headers,
     )

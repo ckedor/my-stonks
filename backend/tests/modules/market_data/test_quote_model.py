@@ -1,5 +1,5 @@
 from dataclasses import is_dataclass
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from sqlalchemy import UniqueConstraint, inspect
 
@@ -125,7 +125,7 @@ def test_market_data_entities_use_imperative_mapping():
 
 
 def test_ingestion_mapping_preserves_relationship_and_api_serialization():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     execution = DataIngestionExecution(
         id=1,
         ingestion_type=DataIngestionType.MARKET_DATA_SERIES.value,

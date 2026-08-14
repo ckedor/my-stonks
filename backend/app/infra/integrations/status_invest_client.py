@@ -3,6 +3,7 @@ import json
 from enum import IntEnum
 
 import pandas as pd
+
 from app.infra.http import AsyncHttpClient
 
 
@@ -31,20 +32,20 @@ class StatusInvestClient:
 
     async def get_fiis_df(self):
         search = {
-            "Segment": "",
-            "Gestao": "",
-            "my_range": "0;20",
-            "dy": {"Item1": None, "Item2": None},
-            "p_vp": {"Item1": None, "Item2": None},
-            "percentualcaixa": {"Item1": None, "Item2": None},
-            "numerocotistas": {"Item1": None, "Item2": None},
-            "dividend_cagr": {"Item1": None, "Item2": None},
-            "cota_cagr": {"Item1": None, "Item2": None},
-            "liquidezmediadiaria": {"Item1": None, "Item2": None},
-            "patrimonio": {"Item1": None, "Item2": None},
-            "valorpatrimonialcota": {"Item1": None, "Item2": None},
-            "numerocotas": {"Item1": None, "Item2": None},
-            "lastdividend": {"Item1": None, "Item2": None},
+            'Segment': '',
+            'Gestao': '',
+            'my_range': '0;20',
+            'dy': {'Item1': None, 'Item2': None},
+            'p_vp': {'Item1': None, 'Item2': None},
+            'percentualcaixa': {'Item1': None, 'Item2': None},
+            'numerocotistas': {'Item1': None, 'Item2': None},
+            'dividend_cagr': {'Item1': None, 'Item2': None},
+            'cota_cagr': {'Item1': None, 'Item2': None},
+            'liquidezmediadiaria': {'Item1': None, 'Item2': None},
+            'patrimonio': {'Item1': None, 'Item2': None},
+            'valorpatrimonialcota': {'Item1': None, 'Item2': None},
+            'numerocotas': {'Item1': None, 'Item2': None},
+            'lastdividend': {'Item1': None, 'Item2': None},
         }
 
         all_data = []
@@ -61,7 +62,9 @@ class StatusInvestClient:
                 'take': take,
                 'CategoryType': category,
             }
-            data = await self.http.request('GET', '/category/advancedsearchresultpaginated', params=params)
+            data = await self.http.request(
+                'GET', '/category/advancedsearchresultpaginated', params=params
+            )
             if len(data['list']) == 0:
                 break
             all_data.extend(data['list'])

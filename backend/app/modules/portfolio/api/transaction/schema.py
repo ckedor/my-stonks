@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -12,4 +12,4 @@ class Transaction(BaseModel):
     quantity: float
     price: float
     currency: Literal['BRL', 'USD'] = 'BRL'
-    id: Optional[int] = None
+    id: int | None = None

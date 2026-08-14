@@ -2,6 +2,7 @@
 from datetime import datetime
 
 import pandas as pd
+
 from app.core.exceptions import ValidationError
 from app.infra.http import AsyncHttpClient
 

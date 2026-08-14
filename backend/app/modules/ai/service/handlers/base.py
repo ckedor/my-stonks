@@ -26,5 +26,4 @@ class AIArtifactHandler(ABC, Generic[TInput]):
         self.provider = provider
 
     @abstractmethod
-    async def generate(self, input: TInput) -> AIResponse:
-        ...
+    async def generate(self, input: TInput) -> AIResponse: ...

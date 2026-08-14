@@ -1,4 +1,4 @@
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -18,4 +18,3 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         finally:
             if session.in_transaction():
                 await session.rollback()
-        

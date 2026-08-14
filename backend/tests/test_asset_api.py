@@ -4,11 +4,11 @@ E2E tests for the Asset API.
 Covers asset listing, types, fixed income CRUD, events, and FII segments.
 """
 
-from datetime import date
 from http import HTTPStatus
 
 import pytest
-from app.modules.market_data.domain.assets import Asset, AssetType, Event, FixedIncome
+
+from app.modules.market_data.domain.assets import Asset, Event, FixedIncome
 
 
 # ---------------------------------------------------------------------------
@@ -94,7 +94,7 @@ async def test_create_fixed_income(client, db):
         'fee': 12.5,
         'index_id': None,
         'fixed_income_type_id': 1,  # Prefixado
-        'asset_type_id': 8,          # CDB
+        'asset_type_id': 8,  # CDB
     }
 
     response = await client.post('/market_data/asset/fixed_income', json=payload)

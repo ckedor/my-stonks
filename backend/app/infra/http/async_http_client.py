@@ -8,13 +8,18 @@ Async HTTP client with retry, exponential backoff, and error translation.
 
 import asyncio
 from http import HTTPStatus
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import httpx
+
 from app.config.logger import logger
-from app.infra.exceptions import (IntegrationBadResponse, IntegrationError,
-                                  IntegrationRateLimited, IntegrationTimeout,
-                                  IntegrationUnavailable)
+from app.infra.exceptions import (
+    IntegrationBadResponse,
+    IntegrationError,
+    IntegrationRateLimited,
+    IntegrationTimeout,
+    IntegrationUnavailable,
+)
 
 
 def translate_httpx_error(exc: Exception, *, provider: str) -> IntegrationError:
@@ -30,7 +35,7 @@ def translate_httpx_error(exc: Exception, *, provider: str) -> IntegrationError:
         if status >= HTTPStatus.INTERNAL_SERVER_ERROR:
             return IntegrationUnavailable(message=detail, provider=provider, status_code=status)
         return IntegrationError(message=detail, provider=provider, status_code=status)
-    if isinstance(exc, (httpx.ConnectError, httpx.RemoteProtocolError)):
+    if isinstance(exc, httpx.ConnectError | httpx.RemoteProtocolError):
         return IntegrationUnavailable(message=f'{provider} connection failed', provider=provider)
     return IntegrationError(message=f'{provider} request failed: {exc}', provider=provider)
 
@@ -70,7 +75,7 @@ class AsyncHttpClient:
         provider: str,
         base_url: str = '',
         *,
-        headers: Optional[dict] = None,
+        headers: dict | None = None,
         timeout: float = 10.0,
         max_retries: int = 3,
         backoff_factor: float = 1.0,
@@ -83,7 +88,7 @@ class AsyncHttpClient:
         self.max_retries = max_retries
         self.backoff_factor = backoff_factor
         self.retry_statuses = retry_statuses
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Lazy initialization of the async client."""
@@ -114,10 +119,10 @@ class AsyncHttpClient:
         method: str,
         path: str,
         *,
-        params: Optional[dict] = None,
-        json: Optional[dict] = None,
-        data: Optional[dict] = None,
-        headers: Optional[dict] = None,
+        params: dict | None = None,
+        json: dict | None = None,
+        data: dict | None = None,
+        headers: dict | None = None,
         parse: Literal['json', 'text', 'raw'] = 'json',
     ) -> Any:
         """

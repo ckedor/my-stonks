@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 import pytest
+
 from app.modules.portfolio.domain.entities import CustomCategory, Portfolio
 from app.modules.users.domain import User
 

@@ -5,6 +5,7 @@ Revises: 610fba96aaf5
 Create Date: 2026-03-31 18:00:00.000000
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -18,8 +19,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column('position', sa.Column('total_invested', sa.Float(), nullable=True), schema='portfolio')
-    op.add_column('position', sa.Column('total_invested_usd', sa.Float(), nullable=True), schema='portfolio')
+    op.add_column(
+        'position', sa.Column('total_invested', sa.Float(), nullable=True), schema='portfolio'
+    )
+    op.add_column(
+        'position', sa.Column('total_invested_usd', sa.Float(), nullable=True), schema='portfolio'
+    )
 
 
 def downgrade() -> None:

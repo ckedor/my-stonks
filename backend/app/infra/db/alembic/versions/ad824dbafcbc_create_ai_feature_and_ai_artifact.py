@@ -5,6 +5,7 @@ Revises: 1095106b5968
 Create Date: 2026-04-21 18:32:46.173789
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -72,12 +73,9 @@ def upgrade() -> None:
     )
 
     op.execute(
-        'CREATE INDEX idx_ai_artifact_lookup '
-        'ON ai.ai_artifact (feature_id, generated_at DESC);'
+        'CREATE INDEX idx_ai_artifact_lookup ON ai.ai_artifact (feature_id, generated_at DESC);'
     )
-    op.execute(
-        'CREATE INDEX idx_ai_artifact_expires ON ai.ai_artifact (expires_at);'
-    )
+    op.execute('CREATE INDEX idx_ai_artifact_expires ON ai.ai_artifact (expires_at);')
     op.execute(
         'CREATE UNIQUE INDEX uq_ai_artifact_dedupe '
         'ON ai.ai_artifact (feature_id, input_hash) '

@@ -84,9 +84,7 @@ def downgrade() -> None:
         'DROP TRIGGER IF EXISTS trg_asset_price_history_set_updated_at '
         'ON market_data.asset_price_history;'
     )
-    op.execute(
-        'DROP FUNCTION IF EXISTS market_data.set_asset_price_history_updated_at();'
-    )
+    op.execute('DROP FUNCTION IF EXISTS market_data.set_asset_price_history_updated_at();')
 
     op.drop_constraint(
         'fk_asset_price_history_currency_id',

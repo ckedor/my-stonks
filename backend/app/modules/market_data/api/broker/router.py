@@ -1,7 +1,5 @@
 """Broker CRUD routes."""
 
-from typing import List
-
 from fastapi import APIRouter, Depends, status
 
 from app.composition.market_data import get_broker_service
@@ -15,7 +13,7 @@ from app.modules.market_data.service.brokers_service import BrokersService
 router = APIRouter(prefix='/broker', tags=['Broker'])
 
 
-@router.get('', response_model=List[Broker])
+@router.get('', response_model=list[Broker])
 async def list_brokers(
     service: BrokersService = Depends(get_broker_service),
 ):

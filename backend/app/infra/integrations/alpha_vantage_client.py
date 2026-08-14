@@ -4,6 +4,7 @@ import asyncio
 import pandas as pd
 from alpha_vantage.foreignexchange import ForeignExchange
 from alpha_vantage.timeseries import TimeSeries
+
 from app.config.settings import settings
 from app.infra.http import raise_for_provider
 
@@ -45,9 +46,7 @@ class AlphaVantageClient:
                 df['currency'] = 'USD'
 
             df = df.set_index('date').asfreq('D').reset_index()
-            df[['open', 'high', 'low', 'close']] = df[
-                ['open', 'high', 'low', 'close']
-            ].ffill()
+            df[['open', 'high', 'low', 'close']] = df[['open', 'high', 'low', 'close']].ffill()
 
             return df[['date', 'open', 'high', 'low', 'close', 'currency']]
 

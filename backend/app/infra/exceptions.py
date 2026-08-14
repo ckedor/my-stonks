@@ -4,7 +4,9 @@ from app.core.exceptions import AppError
 class InfraError(AppError):
     default_message = 'Infrastructure error'
 
-    def __init__(self, message: str | None = None, *, source: str = 'unknown', context: dict | None = None):
+    def __init__(
+        self, message: str | None = None, *, source: str = 'unknown', context: dict | None = None
+    ):
         super().__init__(message, context=context)
         self.source = source
 
@@ -51,15 +53,21 @@ class IntegrationTimeout(IntegrationError):
 class IntegrationUnavailable(IntegrationError):
     default_message = 'Integration unavailable'
 
-    def __init__(self, *, provider: str, status_code: int | None = None, context: dict | None = None):
-        super().__init__(provider=provider, status_code=status_code, retryable=True, context=context)
+    def __init__(
+        self, *, provider: str, status_code: int | None = None, context: dict | None = None
+    ):
+        super().__init__(
+            provider=provider, status_code=status_code, retryable=True, context=context
+        )
 
 
 class IntegrationRateLimited(IntegrationError):
     default_message = 'Integration rate limited'
 
     def __init__(self, *, provider: str, status_code: int = 429, context: dict | None = None):
-        super().__init__(provider=provider, status_code=status_code, retryable=True, context=context)
+        super().__init__(
+            provider=provider, status_code=status_code, retryable=True, context=context
+        )
 
 
 class IntegrationBadResponse(IntegrationError):

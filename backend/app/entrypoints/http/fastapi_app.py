@@ -2,6 +2,11 @@
 
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.middleware.sessions import SessionMiddleware
+
 from app.config.logger import logger
 from app.config.settings import settings
 from app.core.exceptions import (
@@ -26,10 +31,6 @@ from app.infra.exceptions import (
 )
 from app.infra.openai.openai_client import close_ai_provider
 from app.modules.users.views import setup_user_views
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from starlette.middleware.sessions import SessionMiddleware
 
 _STATUS_MAP: dict[type[AppError], int] = {
     NotFoundError: 404,
@@ -62,7 +63,9 @@ def register_exception_handlers(app: FastAPI) -> None:
         status = _status_for(exc)
         extra = {'path': request.url.path, 'context': exc.context}
         if status >= 500:
-            logger.exception('Server error [%s %d]: %s', type(exc).__name__, status, exc, extra=extra)
+            logger.exception(
+                'Server error [%s %d]: %s', type(exc).__name__, status, exc, extra=extra
+            )
         else:
             logger.warning('%s [%d]: %s', type(exc).__name__, status, exc, extra=extra)
         return JSONResponse(

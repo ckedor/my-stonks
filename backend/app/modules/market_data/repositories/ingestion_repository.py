@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, desc, func, select, update
 from sqlalchemy.orm import selectinload
@@ -132,7 +132,7 @@ class DataIngestionRepository(SQLAlchemyRepository):
         queued_timeout: timedelta = timedelta(minutes=2),
         running_timeout: timedelta = timedelta(hours=6),
     ) -> None:
-        current_time = now or datetime.now(timezone.utc)
+        current_time = now or datetime.now(UTC)
         await self.session.execute(
             update(DataIngestionExecution)
             .where(

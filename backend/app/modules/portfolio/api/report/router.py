@@ -1,9 +1,10 @@
+from fastapi import APIRouter, Depends, Query
+
 from app.composition.portfolio import get_portfolio_reports_service
 from app.modules.portfolio.domain.portfolio_reports import StatementScope
 from app.modules.portfolio.service.portfolio_reports_service import (
     PortfolioReportsService,
 )
-from fastapi import APIRouter, Depends, Query
 
 router = APIRouter(prefix='/report', tags=['Portfolio Report'])
 

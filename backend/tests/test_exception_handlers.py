@@ -1,5 +1,7 @@
 import pytest
 import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+
 from app.core.exceptions import (
     AlreadyExistsError,
     BusinessRuleError,
@@ -11,13 +13,13 @@ from app.infra.exceptions import (
     IntegrationError,
     IntegrationTimeout,
 )
-from httpx import ASGITransport, AsyncClient
 
 
 def _build_app_with_error_routes():
     """Create a minimal FastAPI app with routes that raise specific exceptions."""
-    from app.entrypoints.http.fastapi_app import register_exception_handlers
     from fastapi import FastAPI
+
+    from app.entrypoints.http.fastapi_app import register_exception_handlers
 
     app = FastAPI()
     register_exception_handlers(app)

@@ -1,7 +1,6 @@
 import ast
 from pathlib import Path
 
-
 SERVICE_ROOT = Path(__file__).parents[2] / 'app' / 'modules'
 
 
@@ -18,7 +17,7 @@ def _self_attributes(target: ast.expr) -> list[str]:
 def _assigned_targets(node: ast.AST) -> list[ast.expr]:
     if isinstance(node, ast.Assign):
         return list(node.targets)
-    if isinstance(node, (ast.AnnAssign, ast.AugAssign, ast.NamedExpr)):
+    if isinstance(node, ast.AnnAssign | ast.AugAssign | ast.NamedExpr):
         return [node.target]
     if isinstance(node, ast.Delete):
         return list(node.targets)
@@ -83,7 +82,7 @@ def _find_service_state_mutations() -> list[str]:
             methods = (
                 node
                 for node in class_node.body
-                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef)
                 and node.name != '__init__'
             )
             for method in methods:

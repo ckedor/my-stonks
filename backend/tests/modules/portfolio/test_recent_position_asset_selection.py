@@ -2,15 +2,16 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+
 import app.infra.db.bootstrap  # noqa: F401
 from app.modules.portfolio.domain.portfolio_consolidation import (
     DELTA_DAYS_FOR_PORTFOLIO_CONSOLIDATION,
 )
 from app.modules.portfolio.repositories.portfolio_repository import PortfolioRepository
-from tests.fakes import FakeUnitOfWork
 from app.modules.portfolio.service.portfolio_consolidator_service import (
     PortfolioConsolidatorService,
 )
+from tests.fakes import FakeUnitOfWork
 
 EXPECTED_RECENT_WINDOW_DAYS = 5
 

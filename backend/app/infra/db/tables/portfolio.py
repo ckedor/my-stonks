@@ -1,5 +1,16 @@
-from sqlalchemy import JSON, Boolean, Column, Date, DateTime, Float, ForeignKey
-from sqlalchemy import Integer, String, Table, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    UniqueConstraint,
+)
 
 from app.infra.db.base import Base
 

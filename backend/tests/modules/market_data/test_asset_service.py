@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+
 from app.core.exceptions import BusinessRuleError
 from app.modules.market_data.service.asset_service import AssetService
 from tests.fakes import FakeUnitOfWork

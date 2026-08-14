@@ -4,11 +4,11 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from tests.fakes import FakeUnitOfWork
 from app.modules.portfolio.service.portfolio_quote_ingestion_service import (
     RECENT_POSITION_WINDOW_DAYS,
     PortfolioQuoteIngestionService,
 )
+from tests.fakes import FakeUnitOfWork
 
 
 @pytest.mark.asyncio

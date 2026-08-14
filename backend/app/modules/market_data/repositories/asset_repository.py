@@ -1,8 +1,8 @@
 from sqlalchemy import select, text, update
 
+from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.modules.market_data.domain.asset_visit import AssetVisit
 from app.modules.market_data.domain.assets import Asset
-from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.modules.market_data.domain.ingestion import (
     DataIngestionAttempt,
     DataIngestionExecution,

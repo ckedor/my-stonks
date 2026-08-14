@@ -13,8 +13,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "2abd11219338"
-down_revision: Union[str, None] = "edcb48322b3a"
+revision: str = '2abd11219338'
+down_revision: Union[str, None] = 'edcb48322b3a'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -138,26 +138,26 @@ def upgrade() -> None:
     )
 
     # FII Types
-    tipos = ["Tijolo", "Papel", "Híbrido", "Fundo de Fundos", "Desenvolvimento"]
+    tipos = ['Tijolo', 'Papel', 'Híbrido', 'Fundo de Fundos', 'Desenvolvimento']
     for name in tipos:
         op.execute(
             sa.text(
-                "INSERT INTO asset.fii_type (name) VALUES (:name) ON CONFLICT (name) DO NOTHING"
+                'INSERT INTO asset.fii_type (name) VALUES (:name) ON CONFLICT (name) DO NOTHING'
             ).bindparams(name=name)
         )
 
     # FII Segments
     segmentos = [
-        ("Shoppings", "Tijolo"),
-        ("Lajes Corporativas", "Tijolo"),
-        ("Galpões Logísticos", "Tijolo"),
-        ("Hospitais", "Tijolo"),
-        ("Educacional", "Tijolo"),
-        ("Agências Bancárias", "Tijolo"),
-        ("Híbrido", "Híbrido"),
-        ("Papéis", "Papel"),
-        ("Fundos de Fundos", "Fundo de Fundos"),
-        ("Desenvolvimento", "Desenvolvimento"),
+        ('Shoppings', 'Tijolo'),
+        ('Lajes Corporativas', 'Tijolo'),
+        ('Galpões Logísticos', 'Tijolo'),
+        ('Hospitais', 'Tijolo'),
+        ('Educacional', 'Tijolo'),
+        ('Agências Bancárias', 'Tijolo'),
+        ('Híbrido', 'Híbrido'),
+        ('Papéis', 'Papel'),
+        ('Fundos de Fundos', 'Fundo de Fundos'),
+        ('Desenvolvimento', 'Desenvolvimento'),
     ]
 
     for name, tipo in segmentos:
@@ -179,10 +179,9 @@ def upgrade() -> None:
             (4, 'ETFs de Commodities'),
             (5, 'ETFs de Setores Específicos'),
             (6, 'ETFs de Sustentabilidade e Governança (ESG)');
-        """
-        )
+        """)
     )
-    
+
     bind.execute(
         sa.text(
             """
@@ -190,7 +189,7 @@ def upgrade() -> None:
             """
         )
     )
-    
+
     bind.execute(
         sa.text(
             """

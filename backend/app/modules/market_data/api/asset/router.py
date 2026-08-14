@@ -1,7 +1,5 @@
 """Asset, asset type, FII/ETF, fixed income, treasury bond, event and exchange routes."""
 
-from typing import List
-
 from fastapi import APIRouter, Depends, Query
 
 from app.composition.market_data import get_asset_service
@@ -27,7 +25,7 @@ router = APIRouter(prefix='/asset', tags=['Asset'])
 # ---------------------------------------------------------------------------
 # Auxiliary listings (declared first to avoid clashing with /{asset_id})
 # ---------------------------------------------------------------------------
-@router.get('/type', response_model=List[AssetType])
+@router.get('/type', response_model=list[AssetType])
 async def list_asset_types(
     service: AssetService = Depends(get_asset_service),
 ):
@@ -44,7 +42,7 @@ async def create_fixed_income(
     return await service.create_fixed_income(fixed_income.model_dump())
 
 
-@router.get('/fixed_income/type', response_model=List[FixedIncomeType])
+@router.get('/fixed_income/type', response_model=list[FixedIncomeType])
 async def list_fixed_income_types(
     service: AssetService = Depends(get_asset_service),
 ):
@@ -68,7 +66,7 @@ async def list_etf_segments(
     return await service.list_etf_segments()
 
 
-@router.get('/treasury_bond/type', response_model=List[TreasuryBondTypeOut])
+@router.get('/treasury_bond/type', response_model=list[TreasuryBondTypeOut])
 async def list_treasury_bond_types(
     service: AssetService = Depends(get_asset_service),
 ):
@@ -76,7 +74,7 @@ async def list_treasury_bond_types(
     return await service.list_treasury_bond_types()
 
 
-@router.get('/exchange', response_model=List[ExchangeOut])
+@router.get('/exchange', response_model=list[ExchangeOut])
 async def list_exchanges(
     service: AssetService = Depends(get_asset_service),
 ):
@@ -92,7 +90,7 @@ async def list_indexes(
     return await service.list_indexes()
 
 
-@router.get('/favorites', response_model=List[FavoriteAsset])
+@router.get('/favorites', response_model=list[FavoriteAsset])
 async def list_favorite_assets(
     limit: int = Query(default=8, ge=1, le=24),
     user: User = Depends(current_active_user),
@@ -117,7 +115,7 @@ async def record_asset_visit(
 # ---------------------------------------------------------------------------
 @router.get(
     '/event',
-    response_model=List[AssetEvent],
+    response_model=list[AssetEvent],
     dependencies=[Depends(current_superuser)],
 )
 async def list_events(

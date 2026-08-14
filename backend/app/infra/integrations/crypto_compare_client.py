@@ -2,6 +2,7 @@
 from datetime import datetime, time
 
 import pandas as pd
+
 from app.config.settings import settings
 from app.infra.http import AsyncHttpClient
 from app.lib.utils.df import extend_values_to_today
@@ -18,7 +19,7 @@ class CryptoCompareClient:
         )
 
     async def get_crypto_quotes_df(
-        self, symbol: str, market: str = 'cadli', init_date: datetime = None
+        self, symbol: str, market: str = 'cadli', init_date: datetime | None = None
     ) -> pd.DataFrame:
         if init_date is None:
             init_date = datetime(2015, 1, 1)
@@ -105,7 +106,9 @@ class CryptoCompareClient:
         return {
             'ticker': ticker,
             'currency': history_df['currency'].iloc[0] if not history_df.empty else None,
-            'quotes': history_df[['date', 'open', 'high', 'low', 'close']].to_dict(orient='records'),
+            'quotes': history_df[['date', 'open', 'high', 'low', 'close']].to_dict(
+                orient='records'
+            ),
         }
 
     async def aclose(self):

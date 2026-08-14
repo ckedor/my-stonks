@@ -1,5 +1,14 @@
 from functools import lru_cache
 
+from openai import (
+    APIConnectionError,
+    APIStatusError,
+    APITimeoutError,
+    AsyncOpenAI,
+    OpenAIError,
+    RateLimitError,
+)
+
 from app.config.settings import settings
 from app.infra.exceptions import (
     IntegrationBadResponse,
@@ -12,14 +21,6 @@ from app.modules.ai.domain.provider import (
     AIGenerationRequest,
     AIGenerationResult,
     AIProvider,
-)
-from openai import (
-    APIConnectionError,
-    APIStatusError,
-    APITimeoutError,
-    AsyncOpenAI,
-    OpenAIError,
-    RateLimitError,
 )
 
 PROVIDER = 'openai'
@@ -63,9 +64,7 @@ class OpenAIProvider:
             raise IntegrationError(provider=PROVIDER) from e
 
         if not response.output_text:
-            raise IntegrationBadResponse(
-                provider=PROVIDER, context={'reason': 'empty response'}
-            )
+            raise IntegrationBadResponse(provider=PROVIDER, context={'reason': 'empty response'})
         return AIGenerationResult(text=response.output_text, model=model)
 
     async def aclose(self) -> None:

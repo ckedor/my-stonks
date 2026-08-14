@@ -2,17 +2,21 @@ import asyncio
 import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from app.config.logger import logger
 from app.core.exceptions import NotFoundError, ValidationError
-from app.infra.redis.decorators import cached
-from app.modules.market_data.domain.constants import CURRENCY_MAP
 from app.infra.db.unit_of_work import UnitOfWork
-from app.modules.market_data.repositories.asset_repository import AssetRepository
+from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
+from app.modules.market_data.domain.constants import CURRENCY_MAP
+from app.modules.market_data.domain.ingestion import (
+    ABORTED_STATUS,
+    DataIngestionAttempt,
+    DataIngestionExecution,
+)
 from app.modules.market_data.domain.quote import (
     AssetQuoteIngestionResult,
     AssetSnapshot,
@@ -22,12 +26,8 @@ from app.modules.market_data.domain.quote import (
     convert_quotes_to_currency,
     historical_cagr,
 )
+from app.modules.market_data.repositories.asset_repository import AssetRepository
 from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
-from app.modules.market_data.domain.ingestion import (
-    ABORTED_STATUS,
-    DataIngestionAttempt,
-    DataIngestionExecution,
-)
 
 ASSET_CACHE_TTL_SECONDS = 600
 QUOTE_HISTORY_OVERLAP_DAYS = 7
@@ -748,7 +748,7 @@ class QuoteService:
         )
         attempt.status = status
         attempt.parameters = parameters
-        attempt.finished_at = datetime.now(timezone.utc)
+        attempt.finished_at = datetime.now(UTC)
         attempt.fetched_rows = fetched_rows
         attempt.upserted_rows = upserted_rows
         attempt.error = error
@@ -777,7 +777,7 @@ class QuoteService:
             parameters=missing_item,
         )
         attempt.status = 'failure'
-        attempt.finished_at = datetime.now(timezone.utc)
+        attempt.finished_at = datetime.now(UTC)
         attempt.error = result.error
         await self._increment_execution(
             ingestion_repo,

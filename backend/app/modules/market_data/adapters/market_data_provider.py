@@ -8,14 +8,14 @@ import pandas as pd
 
 from app.config.logger import logger
 from app.core.exceptions import ValidationError
-from app.lib.utils.df import extend_values_to_today
-from app.modules.market_data.domain.constants import ASSET_TYPE, FII_SEGMENT, INDEX
 from app.infra.integrations.bcb_client import BCBClient
 from app.infra.integrations.brapi_client import BrapiClient
 from app.infra.integrations.crypto_compare_client import CryptoCompareClient
 from app.infra.integrations.mais_retorno_client import MaisRetornoClient
 from app.infra.integrations.status_invest_client import StatusInvestClient
 from app.infra.integrations.tesouro_client import TesouroClient
+from app.lib.utils.df import extend_values_to_today
+from app.modules.market_data.domain.constants import ASSET_TYPE, FII_SEGMENT, INDEX
 from app.modules.market_data.domain.enums import EXCHANGE
 from app.modules.market_data.domain.fii import FIIDividend, FIIIndicators, FIIProfile
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
@@ -407,10 +407,7 @@ class MarketDataProvider:
             # it actually answers, under either spelling.
             segment=self._text(result.get('segmentoAtuacao') or result.get('segment')),
             shareholders=int(shareholders) if shareholders is not None else None,
-            **{
-                name: self._number(result.get(key))
-                for name, key in FII_INDICATOR_KEYS.items()
-            },
+            **{name: self._number(result.get(key)) for name, key in FII_INDICATOR_KEYS.items()},
         )
 
     def _fii_dividends(self, response: object, symbol: str) -> list[FIIDividend]:
@@ -486,7 +483,7 @@ class MarketDataProvider:
         if value is None or isinstance(value, bool):
             return None
         try:
-            if isinstance(value, (int, float)):
+            if isinstance(value, int | float):
                 return pd.to_datetime(value, unit='s', utc=True).date()
             return pd.to_datetime(value, utc=True).date()
         except (ValueError, TypeError, pd.errors.ParserError):

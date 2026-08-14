@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.modules.market_data.domain.constants import ASSET_TYPE
 from app.infra.integrations.brapi_client import BrapiClient
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
+from app.modules.market_data.domain.constants import ASSET_TYPE
 from app.modules.market_data.domain.ingestion import (
     ABORTED_STATUS,
     DataIngestionExecution,
@@ -17,10 +17,10 @@ from app.modules.market_data.domain.quote import (
     FetchedQuotes,
     Quote,
 )
-from tests.fakes import FakeUnitOfWork
 from app.modules.market_data.service.quote_service import (
     QuoteService,
 )
+from tests.fakes import FakeUnitOfWork
 
 EXPECTED_ADJUSTED_CLOSE = 34.5
 EXPECTED_PARALLEL_ASSETS = 4

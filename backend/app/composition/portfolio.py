@@ -3,10 +3,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends
 
+from app.composition.market_data import build_usd_brl_read_service
 from app.infra.db.unit_of_work import UnitOfWork, get_uow
 from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
-from app.composition.market_data import build_usd_brl_read_service
 from app.modules.market_data.service.market_data_service import MarketDataReadService
 from app.modules.portfolio.service.portfolio_base_service import PortfolioBaseService
 from app.modules.portfolio.service.portfolio_category_service import PortfolioCategoryService

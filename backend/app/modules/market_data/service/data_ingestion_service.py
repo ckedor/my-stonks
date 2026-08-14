@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.core.exceptions import AlreadyExistsError, NotFoundError, ValidationError
 from app.infra.db.unit_of_work import UnitOfWork
@@ -143,7 +143,7 @@ class DataIngestionService:
                     'Only a queued or running data ingestion can be aborted',
                     context={'execution_id': execution_id, 'status': execution.status},
                 )
-            aborted_at = datetime.now(timezone.utc)
+            aborted_at = datetime.now(UTC)
             await uow.ingestions.abort_unfinished_attempts(
                 execution_id,
                 now=aborted_at,
@@ -262,7 +262,7 @@ class DataIngestionService:
                 await uow.commit()
                 return None
             execution.status = 'running'
-            execution.started_at = datetime.now(timezone.utc)
+            execution.started_at = datetime.now(UTC)
             execution.error = None
             await uow.commit()
             return (
@@ -319,7 +319,7 @@ class DataIngestionService:
             attempt = await uow.ingestions.get(DataIngestionAttempt, id=attempt_id)
             attempt.status = status
             attempt.parameters = parameters
-            attempt.finished_at = datetime.now(timezone.utc)
+            attempt.finished_at = datetime.now(UTC)
             attempt.fetched_rows = fetched_rows
             attempt.upserted_rows = upserted_rows
             attempt.error = error
@@ -340,7 +340,7 @@ class DataIngestionService:
                 # The runner reached the end of what it had already started
                 # after the abort landed. The abort is the final word.
                 return
-            execution.finished_at = datetime.now(timezone.utc)
+            execution.finished_at = datetime.now(UTC)
             if execution.failed_items == 0:
                 execution.status = 'success'
             elif execution.succeeded_items == 0:
@@ -355,5 +355,5 @@ class DataIngestionService:
             if execution is not None and execution.status != ABORTED_STATUS:
                 execution.status = 'failure'
                 execution.error = str(error) or error.__class__.__name__
-                execution.finished_at = datetime.now(timezone.utc)
+                execution.finished_at = datetime.now(UTC)
             await uow.commit()

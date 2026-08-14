@@ -1,14 +1,15 @@
 # app/infra/integrations/brapi_client.py
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import pandas as pd
+
 from app.config.settings import settings
 from app.infra.http import AsyncHttpClient
 from app.lib.utils.df import extend_values_to_today
 
 
-class BrapiClient:  # noqa: PLR0904 - the public methods mirror the upstream API
+class BrapiClient:
     """Client for the brapi REST API."""
 
     def __init__(self):
@@ -19,7 +20,7 @@ class BrapiClient:  # noqa: PLR0904 - the public methods mirror the upstream API
             headers={'Authorization': f'Bearer {settings.BRAPI_API_TOKEN}'},
         )
 
-    async def _get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def _get(self, endpoint: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         return await self.http.request('GET', endpoint, params=params)
 
     # Crypto, currencies and dictionary
@@ -246,18 +247,22 @@ class BrapiClient:  # noqa: PLR0904 - the public methods mirror the upstream API
         return await self._get('/v2/user/usage', params)
 
     async def _get_quotes(
-        self, tickers: List[str], range: str = '1y', interval: str = '1d', modules: str = 'summaryProfile'
-    ) -> Dict[str, Any]:
+        self,
+        tickers: list[str],
+        range: str = '1y',
+        interval: str = '1d',
+        modules: str = 'summaryProfile',
+    ) -> dict[str, Any]:
         endpoint = f'/quote/{",".join(tickers)}'
         params = {'range': range, 'interval': interval, 'modules': modules, 'fundamental': True}
         return await self._get(endpoint, params)
 
-    async def available_stocks(self, search: Optional[str] = None):
+    async def available_stocks(self, search: str | None = None):
         endpoint = '/available'
         params = {'search': search}
         return await self._get(endpoint, params)
 
-    async def list_stocks(self, search: Optional[str] = None):
+    async def list_stocks(self, search: str | None = None):
         endpoint = '/quote/list'
         params = {'search': search}
         return await self._get(endpoint, params)
@@ -315,7 +320,7 @@ class BrapiClient:  # noqa: PLR0904 - the public methods mirror the upstream API
         end_date=None,
         currency: str = 'USD',
         interval: str = '1d',
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch cryptocurrency OHLCV history from ``GET /api/v2/crypto``."""
         range_param = self._brapi_range_from_init_date(start_date)
         response = await self._get(
@@ -360,8 +365,8 @@ class BrapiClient:  # noqa: PLR0904 - the public methods mirror the upstream API
         }
 
     async def get_dividends(
-        self, tickers: Union[str, List[str]], range: str = '1y'
-    ) -> List[Dict[str, Any]]:
+        self, tickers: str | list[str], range: str = '1y'
+    ) -> list[dict[str, Any]]:
         if isinstance(tickers, str):
             tickers = [tickers]
         endpoint = f'/quote/{",".join(tickers)}'

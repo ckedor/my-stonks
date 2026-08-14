@@ -4,18 +4,20 @@ Market data service - handles market indexes, USD/BRL history, and asset quotes.
 """
 
 from datetime import date, datetime
+from typing import ClassVar
+
 import pandas as pd
 
-from app.modules.market_data.domain.assets import Currency
-from app.modules.market_data.domain.constants import INDEX
+from app.infra.db.unit_of_work import UnitOfWork
 from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
 from app.lib.finance.returns import calculate_acc_returns_from_prices
 from app.lib.utils.df import df_to_named_dict, rows_to_df
+from app.modules.market_data.domain.assets import Currency
+from app.modules.market_data.domain.constants import INDEX
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.domain.usd_brl import usd_brl_payload_to_df
 from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
-from app.infra.db.unit_of_work import UnitOfWork
 
 INDEXES_HISTORY_CACHE_PREFIX = 'indexes_history'
 
@@ -50,10 +52,10 @@ class MarketDataReadService:
                 start_date=start_date,
             )
 
-    USD_INDEXES = {INDEX.SP500, INDEX.NASDAQ}
+    USD_INDEXES: ClassVar[set[int]] = {INDEX.SP500, INDEX.NASDAQ}
 
     async def get_index_history(
-        self, start_date: pd.Timestamp = None, index_id: int = None
+        self, start_date: pd.Timestamp = None, index_id: int | None = None
     ) -> pd.Series:
         """
         Returns a price-like Series with DatetimeIndex for a given index.
@@ -152,9 +154,7 @@ class MarketDataReadService:
         reader now holds the whole table either way.
         """
         min_required_date = start_date or (pd.Timestamp.today() - pd.DateOffset(years=10))
-        payload = await self.usd_brl.get_history(
-            start_date=pd.Timestamp(min_required_date).date()
-        )
+        payload = await self.usd_brl.get_history(start_date=pd.Timestamp(min_required_date).date())
         if as_df:
             return usd_brl_payload_to_df(payload)
         return payload

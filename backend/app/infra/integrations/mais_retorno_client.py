@@ -2,6 +2,7 @@
 from datetime import datetime
 
 import pandas as pd
+
 from app.infra.exceptions import IntegrationBadResponse
 from app.infra.http import AsyncHttpClient
 
@@ -30,7 +31,9 @@ class MaisRetornoClient:
 
         data = response.get('quotes', [])
         if not data:
-            raise IntegrationBadResponse(provider='mais_retorno', context={'reason': 'no price data'})
+            raise IntegrationBadResponse(
+                provider='mais_retorno', context={'reason': 'no price data'}
+            )
 
         df = pd.DataFrame(data)
         df['date'] = pd.to_datetime(df['d'], unit='ms').dt.normalize()
@@ -45,8 +48,8 @@ class MaisRetornoClient:
     async def get_quotes(
         self,
         fund_legal_id: str,
-        start_date: datetime = None,
-        end_date: datetime = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ):
         history_df = await self.get_fund_quotes_df(fund_legal_id, start_date)
         if start_date:

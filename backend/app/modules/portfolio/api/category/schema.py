@@ -1,5 +1,3 @@
-from typing import List
-
 from pydantic import BaseModel
 
 
@@ -12,7 +10,7 @@ class CustomCategory(BaseModel):
 
 
 class SaveCategoriesRequest(BaseModel):
-    categories: List[CustomCategory]
+    categories: list[CustomCategory]
 
 
 class CategoryAssignmentRequest(BaseModel):

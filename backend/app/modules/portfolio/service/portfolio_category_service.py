@@ -3,8 +3,8 @@
 Portfolio category service - handles custom category management.
 """
 
-from app.modules.portfolio.domain.entities import CustomCategory, CustomCategoryAssignment
 from app.infra.db.unit_of_work import UnitOfWork
+from app.modules.portfolio.domain.entities import CustomCategory, CustomCategoryAssignment
 
 
 class PortfolioCategoryService:

@@ -1,5 +1,14 @@
-from sqlalchemy import Column, Date, Float, ForeignKey, Integer, Numeric, String, Table
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import (
+    Column,
+    Date,
+    Float,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Table,
+    UniqueConstraint,
+)
 
 from app.infra.db.base import Base
 

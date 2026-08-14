@@ -10,8 +10,12 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+
 from app.config.logger import logger
 from app.core.exceptions import NotFoundError
+from app.infra.db.unit_of_work import UnitOfWork
+from app.lib.utils.df import rows_to_df
+from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.domain.assets import Asset, Event
 from app.modules.market_data.domain.constants import (
     ASSET_FIXED_INCOME_TYPE,
@@ -19,14 +23,11 @@ from app.modules.market_data.domain.constants import (
     CURRENCY,
     INDEX,
 )
-from app.modules.portfolio.domain.constants import USER_CONFIGURATION
 from app.modules.market_data.domain.market_data_series import MarketDataSeriesHistory
 from app.modules.market_data.domain.quote import persisted_close_prices_df
 from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
+from app.modules.portfolio.domain.constants import USER_CONFIGURATION
 from app.modules.portfolio.domain.entities import Dividend, PortfolioUserConfiguration, Position
-from app.infra.db.unit_of_work import UnitOfWork
-from app.lib.utils.df import rows_to_df
-from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.portfolio.domain.fixed_income import calculate_fixed_income_prices
 from app.modules.portfolio.repositories import PortfolioRepository
 
@@ -228,7 +229,7 @@ class PortfolioConsolidatorService:
                 'ticker': asset.ticker,
                 'missing_from': f'{first:%Y-%m-%d}',
                 'missing_to': f'{last:%Y-%m-%d}',
-                'unpriced_days': int(len(unpriced)),
+                'unpriced_days': len(unpriced),
             },
         )
 

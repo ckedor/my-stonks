@@ -20,19 +20,25 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    with op.batch_alter_table("position", schema="portfolio") as batch_op:
-        batch_op.add_column(sa.Column("price_usd", sa.Float(), nullable=False, server_default="0"))
-        batch_op.add_column(sa.Column("average_price_usd", sa.Float(), nullable=False, server_default="0"))
-        batch_op.add_column(sa.Column("daily_return_usd", sa.Float(), nullable=False, server_default="0"))
-        batch_op.add_column(sa.Column("acc_return_usd", sa.Float(), nullable=False, server_default="0"))
-        batch_op.add_column(sa.Column("twelve_months_return_usd", sa.Float(), nullable=True))
+    with op.batch_alter_table('position', schema='portfolio') as batch_op:
+        batch_op.add_column(sa.Column('price_usd', sa.Float(), nullable=False, server_default='0'))
+        batch_op.add_column(
+            sa.Column('average_price_usd', sa.Float(), nullable=False, server_default='0')
+        )
+        batch_op.add_column(
+            sa.Column('daily_return_usd', sa.Float(), nullable=False, server_default='0')
+        )
+        batch_op.add_column(
+            sa.Column('acc_return_usd', sa.Float(), nullable=False, server_default='0')
+        )
+        batch_op.add_column(sa.Column('twelve_months_return_usd', sa.Float(), nullable=True))
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    with op.batch_alter_table("position", schema="portfolio") as batch_op:
-        batch_op.drop_column("twelve_months_return_usd")
-        batch_op.drop_column("acc_return_usd")
-        batch_op.drop_column("daily_return_usd")
-        batch_op.drop_column("average_price_usd")
-        batch_op.drop_column("price_usd")
+    with op.batch_alter_table('position', schema='portfolio') as batch_op:
+        batch_op.drop_column('twelve_months_return_usd')
+        batch_op.drop_column('acc_return_usd')
+        batch_op.drop_column('daily_return_usd')
+        batch_op.drop_column('average_price_usd')
+        batch_op.drop_column('price_usd')

@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import pandas as pd
 
 from .constants import (
@@ -12,16 +14,15 @@ from .constants import (
 
 
 class TaxIncomeCalculator:
-    
-    REQUIRED_COLUMNS = ['realized_profit', 'gross_sales']
-    
+    REQUIRED_COLUMNS: ClassVar[list[str]] = ['realized_profit', 'gross_sales']
+
     def __init__(self, asset_type: TaxableAssetType, transactions_df: pd.DataFrame):
         self.asset_type = asset_type
         self.tax_rate = self._get_tax_rate()
         self.free_tax_limit = self._get_free_tax_limit()
         for col in TaxIncomeCalculator.REQUIRED_COLUMNS:
             if col not in transactions_df.columns:
-                raise ValueError(f"Missing required column: {col}")
+                raise ValueError(f'Missing required column: {col}')
         self.transactions_df = transactions_df
 
     def _get_tax_rate(self) -> float:
@@ -34,19 +35,17 @@ class TaxIncomeCalculator:
         elif self.asset_type == TaxableAssetType.CRIPTO:
             return TAX_RATE_CRYPTO
         else:
-            raise ValueError("Invalid asset type")
+            raise ValueError('Invalid asset type')
 
     def _get_free_tax_limit(self) -> float:
-        if self.asset_type == TaxableAssetType.FII:
-            return 0.0
-        elif self.asset_type == TaxableAssetType.ETF:
+        if self.asset_type in (TaxableAssetType.FII, TaxableAssetType.ETF):
             return 0.0
         elif self.asset_type == TaxableAssetType.STOCK:
             return FREE_TAX_LIMIT_STOCK
         elif self.asset_type == TaxableAssetType.CRIPTO:
             return FREE_TAX_LIMIT_CRYPTO
         else:
-            raise ValueError("Invalid asset type")
+            raise ValueError('Invalid asset type')
 
     def calculate_tax(self) -> pd.DataFrame:
         acc_loss = 0.0

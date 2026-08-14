@@ -1,4 +1,5 @@
 import pandas as pd
+
 from app.lib.finance.returns import calculate_acc_returns
 
 
@@ -13,13 +14,10 @@ def calculate_portfolio_daily_returns(pos_df: pd.DataFrame) -> pd.DataFrame:
 
     # BRL
     df['value'] = df['quantity'] * df['price']
-    df['contribution'] = (
-        df.groupby('asset_id')['quantity'].diff().fillna(0) * df['price']
-    )
-    df['net_value_day'] = (
-        df.groupby('date')['value'].transform('sum')
-        - df.groupby('date')['contribution'].transform('sum')
-    )
+    df['contribution'] = df.groupby('asset_id')['quantity'].diff().fillna(0) * df['price']
+    df['net_value_day'] = df.groupby('date')['value'].transform('sum') - df.groupby('date')[
+        'contribution'
+    ].transform('sum')
 
     df['asset_return'] = df.groupby('asset_id')['price'].pct_change(fill_method=None)
     base_valor = df['value'] - df['contribution']
@@ -28,13 +26,10 @@ def calculate_portfolio_daily_returns(pos_df: pd.DataFrame) -> pd.DataFrame:
 
     # USD
     df['value_usd'] = df['quantity'] * df['price_usd']
-    df['contribution_usd'] = (
-        df.groupby('asset_id')['quantity'].diff().fillna(0) * df['price_usd']
-    )
-    df['net_value_day_usd'] = (
-        df.groupby('date')['value_usd'].transform('sum')
-        - df.groupby('date')['contribution_usd'].transform('sum')
-    )
+    df['contribution_usd'] = df.groupby('asset_id')['quantity'].diff().fillna(0) * df['price_usd']
+    df['net_value_day_usd'] = df.groupby('date')['value_usd'].transform('sum') - df.groupby('date')[
+        'contribution_usd'
+    ].transform('sum')
 
     df['asset_return_usd'] = df.groupby('asset_id')['price_usd'].pct_change(fill_method=None)
     base_valor_usd = df['value_usd'] - df['contribution_usd']
@@ -57,9 +52,10 @@ def calculate_returns_portfolio(pos_df: pd.DataFrame) -> dict:
     category_df = portfolio_df.merge(category_df, on='date', how='left')
 
     return {
-        "assets_returns": assets_df,
-        "category_returns": category_df,
+        'assets_returns': assets_df,
+        'category_returns': category_df,
     }
+
 
 def calculate_portfolio_acc_return(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -82,21 +78,19 @@ def calculate_category_acc_return(df: pd.DataFrame) -> pd.DataFrame:
 
     df['base_value'] = (df['value'] - df['contribution']).replace(0, pd.NA)
     df['base_value_prev'] = df.groupby('asset_id')['base_value'].shift(1)
-    df['category_base_prev_total'] = df.groupby(['date', 'category'])[
-        'base_value_prev'
-    ].transform('sum')
-
-    df['category_weight'] = df['base_value_prev'] / df['category_base_prev_total'].replace(
-        0, pd.NA
+    df['category_base_prev_total'] = df.groupby(['date', 'category'])['base_value_prev'].transform(
+        'sum'
     )
+
+    df['category_weight'] = df['base_value_prev'] / df['category_base_prev_total'].replace(0, pd.NA)
     df['category_weight'] = pd.to_numeric(df['category_weight'], errors='coerce').fillna(0)
 
     df['category_weighted_return'] = df['category_weight'] * df['asset_return']
 
     daily = df.groupby(['date', 'category'])['category_weighted_return'].sum().reset_index()
-    pivot = daily.pivot(
-        index='date', columns='category', values='category_weighted_return'
-    ).fillna(0)
+    pivot = daily.pivot(index='date', columns='category', values='category_weighted_return').fillna(
+        0
+    )
     cumulative = (1 + pivot).cumprod() - 1
     return cumulative.reset_index()
 

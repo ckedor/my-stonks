@@ -6,12 +6,12 @@ from fastapi import Depends
 from app.infra.db.unit_of_work import UnitOfWork, get_uow
 from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
+from app.modules.market_data.service.asset_service import AssetService
+from app.modules.market_data.service.brokers_service import BrokersService
 from app.modules.market_data.service.data_ingestion_service import (
     DataIngestionReadService,
     DataIngestionService,
 )
-from app.modules.market_data.service.asset_service import AssetService
-from app.modules.market_data.service.brokers_service import BrokersService
 from app.modules.market_data.service.fii_service import FIIProfileReadService
 from app.modules.market_data.service.market_data_series_ingestion_service import (
     MarketDataSeriesIngestionService,

@@ -146,12 +146,14 @@ def build_service(quotes: list[dict], rates: list[dict]) -> AssetQuoteHistorySer
     return AssetQuoteHistoryService(
         persisted=SimpleNamespace(
             get_quotes=AsyncMock(
-                return_value=[{
-                    'asset_id': ASSET_ID,
-                    'ticker': TICKER,
-                    'asset_type_id': 4,
-                    'quotes': quotes,
-                }]
+                return_value=[
+                    {
+                        'asset_id': ASSET_ID,
+                        'ticker': TICKER,
+                        'asset_type_id': 4,
+                        'quotes': quotes,
+                    }
+                ]
             )
         ),
         on_demand=SimpleNamespace(

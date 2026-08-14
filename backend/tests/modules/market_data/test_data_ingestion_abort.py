@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -163,7 +163,7 @@ async def test_aborting_attempts_closes_only_the_ones_left_running():
 
     await repository.abort_unfinished_attempts(
         8,
-        now=datetime(2026, 8, 10, 5, 42, tzinfo=timezone.utc),
+        now=datetime(2026, 8, 10, 5, 42, tzinfo=UTC),
         error=ABORT_REASON,
     )
 

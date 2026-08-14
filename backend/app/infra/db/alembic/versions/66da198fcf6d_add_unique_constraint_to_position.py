@@ -5,6 +5,7 @@ Revises: 461142f00b2d
 Create Date: 2025-08-01 17:04:33.472344
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -23,7 +24,7 @@ def upgrade() -> None:
         constraint_name='uq_position_by_portfolio_asset_date',
         table_name='position',
         columns=['portfolio_id', 'asset_id', 'date'],
-        schema='portfolio'
+        schema='portfolio',
     )
 
 
@@ -32,5 +33,5 @@ def downgrade() -> None:
         constraint_name='uq_position_by_portfolio_asset_date',
         table_name='position',
         schema='portfolio',
-        type_='unique'
+        type_='unique',
     )

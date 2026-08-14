@@ -1,7 +1,6 @@
 """Asset domain schemas (assets, types, FII/ETF/fixed income, events, exchanges)."""
 
 from datetime import date, datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -58,25 +57,25 @@ class CurrencyOut(BaseModel):
 
 class StockOut(BaseModel):
     asset_id: int
-    sector: Optional[str]
-    country: Optional[str]
-    industry: Optional[str]
+    sector: str | None
+    country: str | None
+    industry: str | None
     model_config = {'from_attributes': True}
 
 
 class InvestmentFundOut(BaseModel):
     asset_id: int
-    legal_id: Optional[str]
-    anbima_code: Optional[str]
-    anbima_code_class: Optional[str]
-    anbima_category: Optional[str]
+    legal_id: str | None
+    anbima_code: str | None
+    anbima_code_class: str | None
+    anbima_category: str | None
     model_config = {'from_attributes': True}
 
 
 class FixedIncomeTypeOut(BaseModel):
     id: int
     name: str
-    description: Optional[str]
+    description: str | None
     model_config = {'from_attributes': True}
 
 
@@ -90,8 +89,8 @@ class IndexCurrencyOut(BaseModel):
 class IndexOut(BaseModel):
     id: int
     name: str
-    short_name: Optional[str]
-    symbol: Optional[str]
+    short_name: str | None
+    symbol: str | None
     currency_id: int
     currency: IndexCurrencyOut
     model_config = {'from_attributes': True}
@@ -99,12 +98,12 @@ class IndexOut(BaseModel):
 
 class FixedIncomeOut(BaseModel):
     asset_id: int
-    index_id: Optional[int]
-    fixed_income_type_id: Optional[int]
-    maturity_date: Optional[date]
-    fee: Optional[float]
-    fixed_income_type: Optional[FixedIncomeTypeOut]
-    index: Optional[IndexOut]
+    index_id: int | None
+    fixed_income_type_id: int | None
+    maturity_date: date | None
+    fee: float | None
+    fixed_income_type: FixedIncomeTypeOut | None
+    index: IndexOut | None
     model_config = {'from_attributes': True}
 
 
@@ -112,7 +111,7 @@ class TreasuryBondTypeOut(BaseModel):
     id: int
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
     model_config = {'from_attributes': True}
 
 
@@ -120,7 +119,7 @@ class TreasuryBondOut(BaseModel):
     id: int
     asset_id: int
     type_id: int
-    maturity_date: Optional[date]
+    maturity_date: date | None
     type: TreasuryBondTypeOut
     model_config = {'from_attributes': True}
 
@@ -154,26 +153,26 @@ class ETFSegmentOut(BaseModel):
 
 class ETFOut(BaseModel):
     asset_id: int
-    segment_id: Optional[int]
-    segment: Optional[ETFSegmentOut]
+    segment_id: int | None
+    segment: ETFSegmentOut | None
     model_config = {'from_attributes': True}
 
 
 class AssetDetailsOut(BaseModel):
     id: int
-    ticker: Optional[str]
+    ticker: str | None
     name: str
     asset_type_id: int
-    exchange_id: Optional[int] = None
+    exchange_id: int | None = None
 
     asset_type: AssetTypeOut
 
-    stock: Optional[StockOut] = None
-    fund: Optional[InvestmentFundOut] = None
-    fixed_income: Optional[FixedIncomeOut] = None
-    treasury_bond: Optional[TreasuryBondOut] = None
-    fii: Optional[FIIOut] = None
-    etf: Optional[ETFOut] = None
+    stock: StockOut | None = None
+    fund: InvestmentFundOut | None = None
+    fixed_income: FixedIncomeOut | None = None
+    treasury_bond: TreasuryBondOut | None = None
+    fii: FIIOut | None = None
+    etf: ETFOut | None = None
 
     model_config = {'from_attributes': True}
 
@@ -184,12 +183,12 @@ class AssetDetailsWithPosition(AssetDetailsOut):
     average_price: float = 0.0
     value: float = 0.0
     acc_return: float = 0.0
-    twelve_months_return: Optional[float] = None
-    cagr: Optional[float] = None
+    twelve_months_return: float | None = None
+    cagr: float | None = None
 
 
 class AssetEvent(BaseModel):
-    id: Optional[int]
+    id: int | None
     asset_id: int
     date: date
     factor: float
@@ -201,7 +200,7 @@ class AssetEvent(BaseModel):
 class FixedIncomeType(BaseModel):
     id: int
     name: str
-    description: Optional[str]
+    description: str | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -211,7 +210,7 @@ class FixedIncomeAsset(BaseModel):
     ticker: str
     maturity_date: date
     fee: float
-    index_id: Optional[int]
+    index_id: int | None
     fixed_income_type_id: int
     asset_type_id: int
 
@@ -219,36 +218,36 @@ class FixedIncomeAsset(BaseModel):
 
 
 class AssetCreate(BaseModel):
-    ticker: Optional[str] = None
+    ticker: str | None = None
     name: str
     asset_type_id: int
-    exchange_id: Optional[int] = None
+    exchange_id: int | None = None
 
     # Stock
-    country: Optional[str] = None
-    sector: Optional[str] = None
-    industry: Optional[str] = None
+    country: str | None = None
+    sector: str | None = None
+    industry: str | None = None
 
     # FII
-    fii_segment_id: Optional[int] = None
+    fii_segment_id: int | None = None
 
     # ETF
-    etf_segment_id: Optional[int] = None
+    etf_segment_id: int | None = None
 
     # Fixed Income
-    maturity_date: Optional[date] = None
-    fee: Optional[float] = None
-    index_id: Optional[int] = None
-    fixed_income_type_id: Optional[int] = None
+    maturity_date: date | None = None
+    fee: float | None = None
+    index_id: int | None = None
+    fixed_income_type_id: int | None = None
 
     # Investment Fund
-    legal_id: Optional[str] = None
-    anbima_code: Optional[str] = None
-    anbima_code_class: Optional[str] = None
-    anbima_category: Optional[str] = None
+    legal_id: str | None = None
+    anbima_code: str | None = None
+    anbima_code_class: str | None = None
+    anbima_category: str | None = None
 
     # Treasury Bond
-    treasury_bond_type_id: Optional[int] = None
+    treasury_bond_type_id: int | None = None
 
 
 class AssetUpdate(AssetCreate):
@@ -274,11 +273,11 @@ class FavoriteAsset(BaseModel):
     """An asset the user returns to, ranked by how often they open it."""
 
     id: int
-    ticker: Optional[str]
+    ticker: str | None
     name: str
     asset_type_id: int
     asset_type: FavoriteAssetType
     visit_count: int
-    last_visited_at: Optional[datetime]
+    last_visited_at: datetime | None
 
     model_config = ConfigDict(from_attributes=True)

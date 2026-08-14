@@ -5,6 +5,7 @@ Revises: 9307454660f4
 Create Date: 2025-04-18 18:16:57.470386
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -20,26 +21,26 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.add_column(
-        "custom_category",
-        sa.Column("benchmark_id", sa.Integer(), nullable=True),
-        schema="portfolio"
+        'custom_category',
+        sa.Column('benchmark_id', sa.Integer(), nullable=True),
+        schema='portfolio',
     )
     op.create_foreign_key(
-        "fk_custom_category_benchmark_id",
-        source_table="custom_category",
-        referent_table="index",
-        local_cols=["benchmark_id"],
-        remote_cols=["id"],
-        source_schema="portfolio",
-        referent_schema="market_data"
+        'fk_custom_category_benchmark_id',
+        source_table='custom_category',
+        referent_table='index',
+        local_cols=['benchmark_id'],
+        remote_cols=['id'],
+        source_schema='portfolio',
+        referent_schema='market_data',
     )
 
 
 def downgrade() -> None:
     op.drop_constraint(
-        "fk_custom_category_benchmark_id",
-        table_name="custom_category",
-        schema="portfolio",
-        type_="foreignkey"
+        'fk_custom_category_benchmark_id',
+        table_name='custom_category',
+        schema='portfolio',
+        type_='foreignkey',
     )
-    op.drop_column("custom_category", "benchmark_id", schema="portfolio")
+    op.drop_column('custom_category', 'benchmark_id', schema='portfolio')

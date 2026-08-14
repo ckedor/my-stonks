@@ -1,7 +1,5 @@
 """Compatibility routes for the former market-index URL."""
 
-from typing import List
-
 from fastapi import APIRouter, Depends
 
 from app.composition.market_data import (
@@ -18,7 +16,7 @@ from app.modules.market_data.service.market_data_service import MarketDataReadSe
 router = APIRouter(prefix='/index', tags=['Market Data Series'])
 
 
-@router.get('/currency', response_model=List[Currency])
+@router.get('/currency', response_model=list[Currency])
 async def list_currencies(
     service: MarketDataReadService = Depends(get_market_data_read_service),
 ):
@@ -39,7 +37,7 @@ async def get_usd_brl_history(
     return await service.get_usd_brl_history(as_df=False)
 
 
-@router.get('', response_model=List[MarketIndex])
+@router.get('', response_model=list[MarketIndex])
 async def list_indexes(
     service: MarketDataReadService = Depends(get_market_data_read_service),
 ):

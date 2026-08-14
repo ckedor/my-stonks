@@ -14,7 +14,6 @@ from sqlalchemy import (
 
 from app.infra.db.base import Base
 
-
 data_ingestion_execution_table = Table(
     'data_ingestion_execution',
     Base.metadata,

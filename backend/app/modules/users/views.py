@@ -1,11 +1,3 @@
-from typing import List
-
-from app.config.settings import settings
-from app.infra.db.unit_of_work import UnitOfWork, get_uow
-from app.modules.users.db import get_user_db
-from app.modules.users.manager import UserManager
-from app.modules.users.domain import User
-from app.modules.users.schemas import UserCreate, UserRead, UserUpdate
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import (
@@ -13,6 +5,13 @@ from fastapi_users.authentication import (
     BearerTransport,
     JWTStrategy,
 )
+
+from app.config.settings import settings
+from app.infra.db.unit_of_work import UnitOfWork, get_uow
+from app.modules.users.db import get_user_db
+from app.modules.users.domain import User
+from app.modules.users.manager import UserManager
+from app.modules.users.schemas import UserCreate, UserRead, UserUpdate
 
 
 def get_jwt_strategy() -> JWTStrategy:
@@ -86,7 +85,7 @@ def setup_user_views(app: FastAPI):
         tags=['Usuários'],
     )
 
-    @app.get('/users', response_model=List[UserRead], tags=['Usuários'])
+    @app.get('/users', response_model=list[UserRead], tags=['Usuários'])
     async def list_users(uow: UnitOfWork = Depends(get_uow)):
         async with uow:
             return await uow.repository.get(User, order_by='id')

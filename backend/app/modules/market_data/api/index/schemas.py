@@ -1,7 +1,6 @@
 """Index, currency and exchange-rate schemas."""
 
 from datetime import date
-from typing import Dict, List
 
 from pydantic import BaseModel, ConfigDict, RootModel
 
@@ -39,7 +38,7 @@ class IndexPoint(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class MarketIndexesTimeSeries(RootModel[Dict[str, List[IndexPoint]]]):
+class MarketIndexesTimeSeries(RootModel[dict[str, list[IndexPoint]]]):
     """Maps each index (ex: 'S&P500', 'USD/BRL') to its time series"""
 
     pass
@@ -51,5 +50,5 @@ class UsdBrlPoint(BaseModel):
     brl_usd: float
 
 
-class USD_BRL_History(RootModel[List[UsdBrlPoint]]):
+class USD_BRL_History(RootModel[list[UsdBrlPoint]]):
     model_config = ConfigDict(from_attributes=True)

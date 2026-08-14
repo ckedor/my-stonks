@@ -1,5 +1,4 @@
 import json
-from typing import Optional
 
 from redis.asyncio import Redis
 
@@ -14,15 +13,12 @@ class RedisService:
     def _format_key(self, key: str) -> str:
         return f'{self.prefix}:{key}'
 
-    async def set_json(self, key: str, value: dict, expire_seconds: Optional[int] = None) -> None:
+    async def set_json(self, key: str, value: dict, expire_seconds: int | None = None) -> None:
         full_key = self._format_key(key)
-        if isinstance(value, str):
-            data = value
-        else:
-            data = json.dumps(value, allow_nan=False)
+        data = value if isinstance(value, str) else json.dumps(value, allow_nan=False)
         await self.client.set(full_key, data, ex=expire_seconds)
 
-    async def get_json(self, key: str) -> Optional[dict]:
+    async def get_json(self, key: str) -> dict | None:
         full_key = self._format_key(key)
         data = await self.client.get(full_key)
         if data:

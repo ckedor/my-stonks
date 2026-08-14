@@ -6,11 +6,11 @@ from app.infra.db.base import Base
 from app.infra.db.bootstrap import start_mappers
 from app.modules.ai.domain.entities import AIArtifact, AIFeature
 from app.modules.market_data.domain import assets as asset_entities
+from app.modules.market_data.domain.asset_visit import AssetVisit
 from app.modules.market_data.domain.ingestion import (
     DataIngestionAttempt,
     DataIngestionExecution,
 )
-from app.modules.market_data.domain.asset_visit import AssetVisit
 from app.modules.market_data.domain.market_data_series import (
     MarketDataSeries,
     MarketDataSeriesHistory,
@@ -19,7 +19,6 @@ from app.modules.market_data.domain.quote import Quote
 from app.modules.market_data.domain.usd_brl import UsdBrlHistory
 from app.modules.portfolio.domain import entities as portfolio_entities
 from app.modules.users.domain import User
-
 
 PERSISTED_ENTITIES = [
     asset_entities.Exchange,

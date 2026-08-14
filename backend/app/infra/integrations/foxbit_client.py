@@ -6,6 +6,7 @@ import time
 from urllib.parse import urlencode
 
 import pandas as pd
+
 from app.infra.http import AsyncHttpClient
 
 
@@ -25,7 +26,9 @@ class FoxbitClient:
 
         timestamp = str(int(time.time() * 1000))
         pre_hash = f'{timestamp}{method.upper()}{"/rest/v3" + path}{query_string}{raw_body}'
-        signature = hmac.new(self.api_secret.encode(), pre_hash.encode(), hashlib.sha256).hexdigest()
+        signature = hmac.new(
+            self.api_secret.encode(), pre_hash.encode(), hashlib.sha256
+        ).hexdigest()
         return signature, timestamp
 
     def _auth_headers(self, method: str, path: str, params: dict | None, body: dict | None) -> dict:
@@ -57,7 +60,9 @@ class FoxbitClient:
         if end_time:
             params['end_time'] = end_time
 
-        candlesticks = await self._request('GET', f'/markets/{market_symbol}/candlesticks', params=params)
+        candlesticks = await self._request(
+            'GET', f'/markets/{market_symbol}/candlesticks', params=params
+        )
 
         close_data = []
         for candle in candlesticks:

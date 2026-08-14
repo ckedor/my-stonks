@@ -1,4 +1,4 @@
-from typing import List, Optional
+from fastapi import APIRouter, Body, Depends, Query
 
 from app.composition.portfolio import get_portfolio_transaction_service
 from app.entrypoints.worker.task_runner import run_task
@@ -8,7 +8,6 @@ from app.modules.portfolio.service.portfolio_transaction_service import (
 from app.modules.portfolio.tasks.recalculate_asset_position import (
     recalculate_position_asset,
 )
-from fastapi import APIRouter, Body, Depends, Query
 
 from .schema import Transaction
 
@@ -19,8 +18,8 @@ router = APIRouter(prefix='/transaction', tags=['Portfolio Transaction'])
 async def list_transactions(
     portfolio_id: int = Query(...),
     asset_id: int = Query(None),
-    asset_type_ids: Optional[List[int]] = Query(None),
-    currency_id: Optional[int] = Query(None),
+    asset_type_ids: list[int] | None = Query(None),
+    currency_id: int | None = Query(None),
     service: PortfolioTransactionService = Depends(get_portfolio_transaction_service),
 ):
     return await service.get_transactions(

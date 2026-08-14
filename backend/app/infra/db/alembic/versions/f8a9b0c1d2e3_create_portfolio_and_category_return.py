@@ -5,6 +5,7 @@ Revises: e7a1f2b3c4d5
 Create Date: 2026-03-31 12:00:00.000000
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -21,7 +22,9 @@ def upgrade() -> None:
     op.create_table(
         'portfolio_return',
         sa.Column('id', sa.Integer(), primary_key=True),
-        sa.Column('portfolio_id', sa.Integer(), sa.ForeignKey('portfolio.portfolio.id'), nullable=False),
+        sa.Column(
+            'portfolio_id', sa.Integer(), sa.ForeignKey('portfolio.portfolio.id'), nullable=False
+        ),
         sa.Column('date', sa.Date(), nullable=False),
         sa.Column('daily_return', sa.Float(), nullable=False),
         sa.Column('acc_return', sa.Float(), nullable=False),
@@ -33,13 +36,25 @@ def upgrade() -> None:
     op.create_table(
         'category_return',
         sa.Column('id', sa.Integer(), primary_key=True),
-        sa.Column('portfolio_id', sa.Integer(), sa.ForeignKey('portfolio.portfolio.id'), nullable=False),
-        sa.Column('custom_category_id', sa.Integer(), sa.ForeignKey('portfolio.custom_category.id'), nullable=False),
+        sa.Column(
+            'portfolio_id', sa.Integer(), sa.ForeignKey('portfolio.portfolio.id'), nullable=False
+        ),
+        sa.Column(
+            'custom_category_id',
+            sa.Integer(),
+            sa.ForeignKey('portfolio.custom_category.id'),
+            nullable=False,
+        ),
         sa.Column('date', sa.Date(), nullable=False),
         sa.Column('daily_return', sa.Float(), nullable=False),
         sa.Column('acc_return', sa.Float(), nullable=False),
         sa.Column('cagr', sa.Float(), nullable=True),
-        sa.UniqueConstraint('portfolio_id', 'custom_category_id', 'date', name='uq_category_return_portfolio_category_date'),
+        sa.UniqueConstraint(
+            'portfolio_id',
+            'custom_category_id',
+            'date',
+            name='uq_category_return_portfolio_category_date',
+        ),
         schema='portfolio',
     )
 

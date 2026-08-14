@@ -28,8 +28,7 @@ def _constructor_params(class_node: ast.ClassDef) -> list[str]:
         (
             node
             for node in class_node.body
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-            and node.name == '__init__'
+            if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and node.name == '__init__'
         ),
         None,
     )
@@ -37,9 +36,7 @@ def _constructor_params(class_node: ast.ClassDef) -> list[str]:
         return []
     args = init.args
     return [
-        arg.arg
-        for arg in (args.posonlyargs + args.args + args.kwonlyargs)
-        if arg.arg != 'self'
+        arg.arg for arg in (args.posonlyargs + args.args + args.kwonlyargs) if arg.arg != 'self'
     ]
 
 

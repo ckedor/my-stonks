@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 
 import pytest
+from sqlalchemy.sql.dml import Delete, Update
+
 from app.modules.market_data.repositories.ingestion_repository import (
     DataIngestionRepository,
 )
-from sqlalchemy.sql.dml import Delete, Update
 
 EXPECTED_MAINTENANCE_STATEMENTS = 3
 
@@ -14,7 +15,7 @@ EXPECTED_MAINTENANCE_STATEMENTS = 3
 async def test_execution_history_expires_stale_rows_and_deletes_old_rows():
     session = AsyncMock()
     repository = DataIngestionRepository(session)
-    now = datetime(2026, 8, 2, 20, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 8, 2, 20, 0, tzinfo=UTC)
 
     await repository.maintain_execution_history(
         now=now,

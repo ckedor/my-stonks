@@ -2,10 +2,11 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+
+from app.lib.finance.fixed_income import calculate_fixed_income_price
 from app.modules.market_data.domain.constants import (
     ASSET_FIXED_INCOME_TYPE,
 )
-from app.lib.finance.fixed_income import calculate_fixed_income_price
 
 
 def calculate_fixed_income_prices(

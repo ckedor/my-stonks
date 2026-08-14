@@ -24,9 +24,9 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer, primary_key=True),
         sa.Column('code', sa.String(length=10), nullable=False, unique=True),
         sa.Column('name', sa.String(length=100), nullable=False),
-        schema='asset'
+        schema='asset',
     )
-    
+
     op.execute("""
         INSERT INTO asset.exchange (code, name) VALUES
         ('NASDAQ', 'Nasdaq Stock Market'),
@@ -39,16 +39,17 @@ def upgrade() -> None:
     op.add_column('asset', sa.Column('exchange_id', sa.Integer(), nullable=True), schema='asset')
     op.create_foreign_key(
         'fk_asset_exchange_id',
-        'asset', 'exchange',
-        ['exchange_id'], ['id'],
+        'asset',
+        'exchange',
+        ['exchange_id'],
+        ['id'],
         source_schema='asset',
-        referent_schema='asset'
+        referent_schema='asset',
     )
 
     with op.batch_alter_table('asset', schema='asset') as batch_op:
         batch_op.create_unique_constraint(
-            'uq_asset_ticker_exchange_type',
-            ['ticker', 'exchange_id', 'asset_type_id']
+            'uq_asset_ticker_exchange_type', ['ticker', 'exchange_id', 'asset_type_id']
         )
 
 

@@ -1,8 +1,8 @@
-from app.config.logger import logger
 from app.composition.portfolio import (
     build_portfolio_position_service,
     portfolio_consolidator_service_context,
 )
+from app.config.logger import logger
 from app.entrypoints.worker.task_runner import celery_async_task, run_task
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.portfolio.tasks.consolidate_portfolio_returns import (

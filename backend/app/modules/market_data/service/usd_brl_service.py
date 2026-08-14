@@ -4,6 +4,7 @@ from decimal import Decimal
 import pandas as pd
 
 from app.core.exceptions import NotFoundError
+from app.infra.db.unit_of_work import UnitOfWork
 from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.domain.usd_brl import (
@@ -15,7 +16,6 @@ from app.modules.market_data.domain.usd_brl import (
     usd_brl_payload_slice,
     usd_brl_payload_to_df,
 )
-from app.infra.db.unit_of_work import UnitOfWork
 
 USD_BRL_HISTORY_CACHE_PREFIX = 'usd_brl_history'
 

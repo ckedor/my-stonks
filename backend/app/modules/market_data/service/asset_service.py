@@ -3,16 +3,22 @@
 Asset service - handles asset management operations.
 """
 
+import contextlib
+
 from app.config.logger import logger
 from app.core.exceptions import BusinessRuleError, NotFoundError
+from app.infra.db.repositories.base_repository import SQLAlchemyRepository
+from app.infra.db.unit_of_work import UnitOfWork
+from app.infra.redis.decorators import cached
+from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.domain.assets import (
+    ETF,
+    FII,
     Asset,
     AssetType,
-    ETF,
     ETFSegment,
     Event,
     Exchange,
-    FII,
     FIISegment,
     FixedIncome,
     FixedIncomeType,
@@ -22,10 +28,6 @@ from app.modules.market_data.domain.assets import (
     TreasuryBondType,
 )
 from app.modules.market_data.domain.constants import ASSET_TYPE
-from app.infra.db.repositories.base_repository import SQLAlchemyRepository
-from app.infra.db.unit_of_work import UnitOfWork
-from app.infra.redis.decorators import cached
-from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.domain.quote import Quote
 
@@ -301,17 +303,16 @@ class AssetService:
                     'anbima_category': data.get('anbima_category'),
                 },
             )
-        elif asset_type_id in TREASURY_TYPES:
-            if data.get('treasury_bond_type_id'):
-                await repository.create(
-                    TreasuryBond,
-                    {
-                        'asset_id': asset_id,
-                        'maturity_date': data.get('maturity_date'),
-                        'fee': data.get('fee'),
-                        'type_id': data['treasury_bond_type_id'],
-                    },
-                )
+        elif asset_type_id in TREASURY_TYPES and data.get('treasury_bond_type_id'):
+            await repository.create(
+                TreasuryBond,
+                {
+                    'asset_id': asset_id,
+                    'maturity_date': data.get('maturity_date'),
+                    'fee': data.get('fee'),
+                    'type_id': data['treasury_bond_type_id'],
+                },
+            )
 
     @staticmethod
     async def _delete_subclass(
@@ -319,14 +320,10 @@ class AssetService:
         asset_id: int,
     ):
         for model in [Stock, FII, ETF, FixedIncome, InvestmentFund]:
-            try:
+            with contextlib.suppress(Exception):
                 await repository.delete(model, by={'asset_id': asset_id})
-            except Exception:
-                pass
-        try:
+        with contextlib.suppress(Exception):
             await repository.delete(TreasuryBond, by={'asset_id': asset_id})
-        except Exception:
-            pass
 
     async def record_visit(self, user_id: int, asset_id: int) -> None:
         async with self.uow as uow:

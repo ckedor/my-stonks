@@ -12,7 +12,6 @@ from sqlalchemy import (
 
 from app.infra.db.base import Base
 
-
 usd_brl_history_table = Table(
     'usd_brl_history',
     Base.metadata,

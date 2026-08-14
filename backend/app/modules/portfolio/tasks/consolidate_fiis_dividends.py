@@ -3,8 +3,8 @@ import asyncio
 import nest_asyncio
 from celery import shared_task
 
-from app.config.logger import logger
 from app.composition.portfolio import portfolio_consolidator_service_context
+from app.config.logger import logger
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.portfolio.domain.entities import Portfolio
 

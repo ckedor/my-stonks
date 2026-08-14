@@ -98,8 +98,7 @@ def upgrade() -> None:
     )
 
     op.execute(
-        'ALTER TABLE market_data.quote '
-        'RENAME CONSTRAINT uq_asset_date TO uq_quote_asset_date'
+        'ALTER TABLE market_data.quote RENAME CONSTRAINT uq_asset_date TO uq_quote_asset_date'
     )
     _rename_constraints('asset_price_history', 'quote', 'quote')
     _rename_constraints(
@@ -149,8 +148,7 @@ def downgrade() -> None:
     _rename_sequences('quote', 'asset_price_history')
 
     op.execute(
-        'ALTER TABLE market_data.quote '
-        'RENAME CONSTRAINT uq_quote_asset_date TO uq_asset_date'
+        'ALTER TABLE market_data.quote RENAME CONSTRAINT uq_quote_asset_date TO uq_asset_date'
     )
     _rename_constraints('quote', 'asset_price_history', 'quote')
     _rename_constraints(

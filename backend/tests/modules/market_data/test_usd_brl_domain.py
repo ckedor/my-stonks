@@ -1,5 +1,5 @@
-from decimal import Decimal
 from datetime import date
+from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -7,6 +7,7 @@ import pytest
 
 from app.core.exceptions import NotFoundError
 from app.modules.market_data.domain.usd_brl import (
+    UsdBrlHistory,
     convert_brl_to_usd,
     convert_usd_to_brl,
     find_rate_on_or_before,
@@ -14,7 +15,6 @@ from app.modules.market_data.domain.usd_brl import (
     usd_brl_history_to_cache_payload,
     usd_brl_history_to_df,
     usd_brl_payload_slice,
-    UsdBrlHistory,
 )
 from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
 from tests.fakes import FakeCache, FakeUnitOfWork
@@ -127,12 +127,14 @@ def test_cache_payload_keeps_rates_as_strings_so_decimal_survives():
         )
     ])
 
-    assert payload == [{
-        'date': '2026-08-07',
-        'usd_brl': '5.43210987',
-        'brl_usd': '0.184090123456',
-        'source': 'bcb',
-    }]
+    assert payload == [
+        {
+            'date': '2026-08-07',
+            'usd_brl': '5.43210987',
+            'brl_usd': '0.184090123456',
+            'source': 'bcb',
+        }
+    ]
     rate = find_rate_on_or_before(payload, date(2026, 8, 7))
     assert rate.usd_brl == Decimal('5.43210987')
     assert rate.brl_usd == Decimal('0.184090123456')
@@ -166,9 +168,7 @@ def test_find_rate_falls_back_to_the_last_published_business_day():
 
 @pytest.mark.asyncio
 async def test_full_history_is_read_once_and_served_from_cache():
-    repository = SimpleNamespace(
-        get_usd_brl_history=AsyncMock(return_value=[build_rate('5')])
-    )
+    repository = SimpleNamespace(get_usd_brl_history=AsyncMock(return_value=[build_rate('5')]))
     service = UsdBrlReadService(FakeUnitOfWork(market_data=repository), cache=FakeCache())
 
     await service.get_history()

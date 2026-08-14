@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import pytest
+
 from app.infra.openai.openai_client import OpenAIProvider
 from app.modules.ai.domain.provider import AIGenerationRequest
 

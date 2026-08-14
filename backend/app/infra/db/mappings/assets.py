@@ -23,16 +23,16 @@ from app.infra.db.tables.assets import (
     treasury_bond_type_table,
 )
 from app.modules.market_data.domain.assets import (
+    ETF,
+    FII,
     Asset,
     AssetClass,
     AssetType,
     Broker,
     Currency,
-    ETF,
     ETFSegment,
     Event,
     Exchange,
-    FII,
     FIISegment,
     FIIType,
     FixedIncome,

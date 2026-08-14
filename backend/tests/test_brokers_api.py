@@ -7,6 +7,7 @@ Covers full request → route → service → DB → response flow.
 from http import HTTPStatus
 
 import pytest
+
 from app.modules.market_data.domain.assets import Broker
 
 

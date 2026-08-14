@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
-from app.modules.portfolio.domain.quote_ingestion import QuoteIngestionAssetSelection
 from app.infra.db.unit_of_work import UnitOfWork
+from app.modules.portfolio.domain.quote_ingestion import QuoteIngestionAssetSelection
 
 RECENT_POSITION_WINDOW_DAYS = 5
 

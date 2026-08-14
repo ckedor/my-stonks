@@ -1,3 +1,5 @@
+from fastapi import APIRouter, Depends
+
 from app.composition.portfolio import (
     get_portfolio_category_service,
     get_portfolio_position_service,
@@ -8,7 +10,6 @@ from app.modules.portfolio.service.portfolio_category_service import (
 from app.modules.portfolio.service.portfolio_position_service import (
     PortfolioPositionService,
 )
-from fastapi import APIRouter, Depends
 
 from .schema import CategoryAssignmentRequest, SaveCategoriesRequest
 

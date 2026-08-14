@@ -1,11 +1,13 @@
 import asyncio
 
+from fastapi import APIRouter, Depends
+
 from app.composition.portfolio import (
     get_portfolio_consolidator_service,
     get_portfolio_position_service,
+    get_portfolio_returns_consolidator_service,
     portfolio_consolidator_service_context,
 )
-from app.composition.portfolio import get_portfolio_returns_consolidator_service
 from app.entrypoints.worker.task_runner import run_task
 from app.modules.portfolio.service.portfolio_consolidator_service import (
     PortfolioConsolidatorService,
@@ -20,7 +22,6 @@ from app.modules.portfolio.tasks.consolidate_portfolio_returns import (
     consolidate_portfolio_returns as consolidate_portfolio_returns_task,
 )
 from app.modules.users.views import current_superuser
-from fastapi import APIRouter, Depends
 
 router = APIRouter(
     prefix='/position_consolidator',

@@ -8,4 +8,3 @@ class QuoteIngestionAssetSelection:
     position_reference_date: date | None
     position_window_days: int | None
     description: str
-

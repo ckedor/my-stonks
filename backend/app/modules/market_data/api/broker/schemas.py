@@ -1,7 +1,5 @@
 """Broker schemas."""
 
-from typing import Optional
-
 from pydantic import BaseModel, ConfigDict
 
 from app.modules.market_data.api.index.schemas import Currency
@@ -9,20 +7,20 @@ from app.modules.market_data.api.index.schemas import Currency
 
 class BrokerCreate(BaseModel):
     name: str
-    cnpj: Optional[str] = None
+    cnpj: str | None = None
     currency_id: int
 
 
 class BrokerUpdate(BaseModel):
-    name: Optional[str] = None
-    cnpj: Optional[str] = None
-    currency_id: Optional[int] = None
+    name: str | None = None
+    cnpj: str | None = None
+    currency_id: int | None = None
 
 
 class Broker(BaseModel):
     id: int
     currency: Currency
     name: str
-    cnpj: Optional[str]
+    cnpj: str | None
 
     model_config = ConfigDict(from_attributes=True)

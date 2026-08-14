@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
-from app.modules.market_data.domain.constants import ASSET_TYPE, CURRENCY
+
 from app.lib.finance.trade import average_price
+from app.modules.market_data.domain.constants import ASSET_TYPE, CURRENCY
 
 DELTA_DAYS_FOR_PORTFOLIO_CONSOLIDATION = 5
 
@@ -75,13 +76,10 @@ def build_transactions_df(rows) -> pd.DataFrame:
     # slow pandas groupby().apply path).
     df['_brl_num'] = df['price'] * df['quantity']
     df['_usd_num'] = df['price_usd'] * df['quantity']
-    df = (
-        df.groupby('date', as_index=False)
-        .agg(
-            quantity=('quantity', 'sum'),
-            _brl_num=('_brl_num', 'sum'),
-            _usd_num=('_usd_num', 'sum'),
-        )
+    df = df.groupby('date', as_index=False).agg(
+        quantity=('quantity', 'sum'),
+        _brl_num=('_brl_num', 'sum'),
+        _usd_num=('_usd_num', 'sum'),
     )
     df['transaction_price_brl'] = df['_brl_num'] / df['quantity']
     df['transaction_price_usd'] = df['_usd_num'] / df['quantity']
@@ -125,9 +123,7 @@ def build_prices_df(
     ``usd_brl`` and ``brl_usd``: both directions come ready from ingestion, so
     each conversion is a multiplication.
     """
-    df = close_prices_df.merge(
-        usd_brl_df[['date', 'usd_brl', 'brl_usd']], on='date', how='left'
-    )
+    df = close_prices_df.merge(usd_brl_df[['date', 'usd_brl', 'brl_usd']], on='date', how='left')
     # Close prices run to today, but the rate is only published on business
     # days. On a day without a publication the last published rate is the one
     # in effect; without this, a weekend turns every foreign price into NaN.
@@ -219,7 +215,7 @@ def trim_trailing_zero_positions(position_df: pd.DataFrame) -> pd.DataFrame:
     if nonzero_positions.empty:
         return position_df.iloc[0:0].copy()
 
-    return position_df.loc[:nonzero_positions[-1]].copy()
+    return position_df.loc[: nonzero_positions[-1]].copy()
 
 
 def calculate_returns(position_df: pd.DataFrame) -> pd.DataFrame:
@@ -231,9 +227,7 @@ def calculate_returns(position_df: pd.DataFrame) -> pd.DataFrame:
     no_exposure = (position_df['quantity'] == 0) | (prev_qty == 0)
 
     # BRL
-    position_df['daily_return'] = _coerce_numeric(
-        position_df['price'].pct_change(fill_method=None)
-    )
+    position_df['daily_return'] = _coerce_numeric(position_df['price'].pct_change(fill_method=None))
     if 'dividend' in position_df.columns:
         base_value = position_df['quantity'] * position_df['price'].shift(1)
         position_df['daily_return'] += _coerce_numeric(
@@ -244,11 +238,13 @@ def calculate_returns(position_df: pd.DataFrame) -> pd.DataFrame:
 
     position_df['twelve_months_return'] = None
     position_df['date_12m_ago'] = position_df['date'] - pd.DateOffset(years=1)
-    acc_map_brl = position_df.drop_duplicates(subset='date', keep='last').set_index('date')['acc_return']
+    acc_map_brl = position_df.drop_duplicates(subset='date', keep='last').set_index('date')[
+        'acc_return'
+    ]
     position_df['acc_return_12m_ago'] = position_df['date_12m_ago'].map(acc_map_brl)
-    position_df['twelve_months_return'] = (
-        (1 + position_df['acc_return']) / (1 + position_df['acc_return_12m_ago']) - 1
-    )
+    position_df['twelve_months_return'] = (1 + position_df['acc_return']) / (
+        1 + position_df['acc_return_12m_ago']
+    ) - 1
 
     # CAGR BRL
     start_date = position_df['date'].iloc[0]
@@ -270,15 +266,19 @@ def calculate_returns(position_df: pd.DataFrame) -> pd.DataFrame:
     position_df.loc[no_exposure, 'daily_return_usd'] = 0
     position_df['acc_return_usd'] = (1 + position_df['daily_return_usd']).cumprod() - 1
 
-    acc_map_usd = position_df.drop_duplicates(subset='date', keep='last').set_index('date')['acc_return_usd']
+    acc_map_usd = position_df.drop_duplicates(subset='date', keep='last').set_index('date')[
+        'acc_return_usd'
+    ]
     position_df['acc_return_usd_12m_ago'] = position_df['date_12m_ago'].map(acc_map_usd)
-    position_df['twelve_months_return_usd'] = (
-        (1 + position_df['acc_return_usd']) / (1 + position_df['acc_return_usd_12m_ago']) - 1
-    )
+    position_df['twelve_months_return_usd'] = (1 + position_df['acc_return_usd']) / (
+        1 + position_df['acc_return_usd_12m_ago']
+    ) - 1
 
     # CAGR USD
     position_df['cagr_usd'] = None
     years_usd = position_df.loc[mask, 'days_since_start'] / 365.25
-    position_df.loc[mask, 'cagr_usd'] = (1 + position_df.loc[mask, 'acc_return_usd']) ** (1 / years_usd) - 1
+    position_df.loc[mask, 'cagr_usd'] = (1 + position_df.loc[mask, 'acc_return_usd']) ** (
+        1 / years_usd
+    ) - 1
 
     return position_df

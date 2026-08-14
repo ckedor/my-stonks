@@ -3,16 +3,15 @@
 Portfolio transaction service - handles transaction CRUD and calculations.
 """
 
-from typing import List
-
 import numpy as np
 import pandas as pd
+
+from app.infra.db.unit_of_work import UnitOfWork
+from app.lib.finance import trade
+from app.lib.utils.fastapi import df_response
 from app.modules.market_data.domain.constants import CURRENCY
 from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
 from app.modules.portfolio.domain.entities import Transaction
-from app.lib.finance import trade
-from app.lib.utils.fastapi import df_response
-from app.infra.db.unit_of_work import UnitOfWork
 
 
 class PortfolioTransactionService:
@@ -50,9 +49,9 @@ class PortfolioTransactionService:
     async def get_transactions(
         self,
         portfolio_id: int,
-        asset_id: int = None,
-        asset_types_ids: List[int] = None,
-        currency_id: int = None,
+        asset_id: int | None = None,
+        asset_types_ids: list[int] | None = None,
+        currency_id: int | None = None,
     ) -> pd.DataFrame:
         async with self.uow as uow:
             rows = await uow.portfolios.get_transactions(

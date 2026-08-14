@@ -2,7 +2,7 @@ import math
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any, List, Optional, Type, TypeVar
+from typing import Any, TypeVar
 
 import pandas as pd
 from sqlalchemy import Date, DateTime, asc, desc, inspect, select, text
@@ -53,19 +53,19 @@ class SQLAlchemyRepository:
     @staticmethod
     def _normalize_datetime_columns(df: pd.DataFrame, model: ModelType) -> pd.DataFrame:
         for column in model.__table__.columns:
-            if isinstance(column.type, (DateTime, Date)) and column.name in df.columns:
+            if isinstance(column.type, DateTime | Date) and column.name in df.columns:
                 df[column.name] = pd.to_datetime(df[column.name])
         return df
 
-    async def get(
+    async def get(  # noqa: PLR0913, PLR0912
         self,
         model: ModelType,
-        id: Optional[int] = None,
-        by: Optional[dict] = None,
-        order_by: Optional[str] = None,
+        id: int | None = None,
+        by: dict | None = None,
+        order_by: str | None = None,
         first: bool = False,
         as_df: bool = False,
-        relations: Optional[list[str]] = None,
+        relations: list[str] | None = None,
     ) -> Any:
         if id is not None:
             stmt = select(model)
@@ -128,9 +128,7 @@ class SQLAlchemyRepository:
                 return float(value)
             elif isinstance(value, Enum):
                 return value.value
-            elif isinstance(value, DeclarativeMeta):
-                return self._serialize_instance(value)
-            elif hasattr(value, '__table__'):
+            elif isinstance(value, DeclarativeMeta) or hasattr(value, '__table__'):
                 return self._serialize_instance(value)
             elif value is None:
                 return {}
@@ -156,9 +154,9 @@ class SQLAlchemyRepository:
     async def get_all(
         self,
         model: ModelType,
-        relations: Optional[list[str]] = None,
+        relations: list[str] | None = None,
         as_df: bool = False,
-    ) -> List[Any] | pd.DataFrame:
+    ) -> list[Any] | pd.DataFrame:
         stmt = select(model)
 
         if relations:
@@ -197,7 +195,6 @@ class SQLAlchemyRepository:
         self.session.add_all(instances)
         await self.session.flush()
         return [obj.id for obj in instances]
-            
 
     @staticmethod
     def _persistable(value: Any) -> Any:
@@ -217,7 +214,7 @@ class SQLAlchemyRepository:
 
     async def upsert_bulk(self, model: ModelType, data: list[dict], unique_columns: list[str]):
         if not unique_columns:
-            raise ValueError("unique_columns must be provided for upsert operation")
+            raise ValueError('unique_columns must be provided for upsert operation')
 
         table = model.__table__
         table_name = f'{table.schema}.{table.name}' if table.schema else table.name
@@ -233,7 +230,7 @@ class SQLAlchemyRepository:
         update_cols = [col for col in columns if col not in unique_columns]
 
         if not update_cols:
-            raise ValueError("At least one non-unique column is required to update")
+            raise ValueError('At least one non-unique column is required to update')
 
         update_stmt = ', '.join(f'{col} = EXCLUDED.{col}' for col in update_cols)
         conflict_keys = ', '.join(unique_columns)
@@ -255,7 +252,7 @@ class SQLAlchemyRepository:
 
     async def update(
         self,
-        model: Type[ModelType],
+        model: type[ModelType],
         data: dict | ModelType | list[dict] | list[ModelType],
         *,
         flush: bool = False,
@@ -263,7 +260,7 @@ class SQLAlchemyRepository:
         if not isinstance(data, list):
             data = [data]
 
-        merged_instances: List[ModelType] = []
+        merged_instances: list[ModelType] = []
 
         for item in data:
             if isinstance(item, dict):
@@ -271,7 +268,7 @@ class SQLAlchemyRepository:
             elif isinstance(item, model):
                 instance = item
             else:
-                raise ValueError("Each update item must be a dict or a model instance")
+                raise ValueError('Each update item must be a dict or a model instance')
 
             merged = await self.session.merge(instance)
             merged_instances.append(merged)
@@ -284,8 +281,8 @@ class SQLAlchemyRepository:
     async def delete(
         self,
         model: ModelType,
-        id: Optional[int] = None,
-        by: Optional[dict] = None,
+        id: int | None = None,
+        by: dict | None = None,
     ) -> bool:
         if id is not None:
             instance = await self.get(model, id)

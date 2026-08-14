@@ -67,9 +67,7 @@ def upgrade() -> None:
         WHERE series_id = {USD_BRL_SERIES_ID}
         """
     )
-    op.execute(
-        f'DELETE FROM market_data.market_data_series WHERE id = {USD_BRL_SERIES_ID}'
-    )
+    op.execute(f'DELETE FROM market_data.market_data_series WHERE id = {USD_BRL_SERIES_ID}')
 
 
 def downgrade() -> None:

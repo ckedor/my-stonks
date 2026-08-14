@@ -7,9 +7,9 @@ user configuration, and rebalancing.
 
 from datetime import date, datetime
 from http import HTTPStatus
-from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.modules.market_data.domain.assets import Asset, Broker
 from app.modules.portfolio.domain.entities import (
     CustomCategory,
@@ -65,7 +65,6 @@ def _seed_portfolio(db, name='Carteira Test', user_id=1):
 # PORTFOLIO CRUD
 # ============================================================================
 class TestPortfolioCRUD:
-
     @pytest.mark.asyncio
     async def test_create_portfolio(self, client):
         response = await _create_portfolio(client)
@@ -146,7 +145,6 @@ class TestPortfolioCRUD:
 # TRANSACTIONS
 # ============================================================================
 class TestTransactions:
-
     @pytest.mark.asyncio
     async def test_create_transaction(self, client, db):
         portfolio = _seed_portfolio(db)
@@ -189,7 +187,7 @@ class TestTransactions:
         db.add(txn)
         db.commit()
 
-        response = await client.get(f'/portfolio/transaction', params={'portfolio_id': portfolio.id})
+        response = await client.get('/portfolio/transaction', params={'portfolio_id': portfolio.id})
 
         assert response.status_code == HTTPStatus.OK
 
@@ -225,7 +223,6 @@ class TestTransactions:
 # DIVIDENDS
 # ============================================================================
 class TestDividends:
-
     @pytest.mark.asyncio
     async def test_create_dividend(self, client, db):
         portfolio = _seed_portfolio(db)
@@ -255,7 +252,7 @@ class TestDividends:
         db.add(div)
         db.commit()
 
-        response = await client.get(f'/portfolio/dividend', params={'portfolio_id': portfolio.id})
+        response = await client.get('/portfolio/dividend', params={'portfolio_id': portfolio.id})
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
@@ -315,7 +312,6 @@ class TestDividends:
 # CATEGORIES
 # ============================================================================
 class TestCategories:
-
     @pytest.mark.asyncio
     async def test_save_custom_category(self, client, db):
         portfolio = _seed_portfolio(db)
@@ -383,7 +379,6 @@ class TestCategories:
 # USER CONFIGURATION
 # ============================================================================
 class TestUserConfiguration:
-
     @pytest.mark.asyncio
     async def test_get_user_configurations(self, client, db):
         portfolio = _seed_portfolio(db)
@@ -397,7 +392,6 @@ class TestUserConfiguration:
 # REBALANCING
 # ============================================================================
 class TestRebalancing:
-
     @pytest.mark.asyncio
     async def test_get_rebalancing_empty_portfolio(self, client, db):
         portfolio = _seed_portfolio(db)
@@ -447,7 +441,6 @@ class TestRebalancing:
 # POSITION (read-only endpoints, need seeded positions)
 # ============================================================================
 class TestPosition:
-
     @pytest.mark.asyncio
     async def test_get_portfolio_position(self, client, db):
         portfolio = _seed_portfolio(db)
@@ -477,7 +470,6 @@ class TestPosition:
 # INCOME TAX
 # ============================================================================
 class TestIncomeTax:
-
     @pytest.mark.asyncio
     async def test_get_assets_and_rights(self, client, db):
         portfolio = _seed_portfolio(db)

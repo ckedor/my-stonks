@@ -5,13 +5,13 @@ from datetime import date
 from io import StringIO
 
 import pandas as pd
+from redis.asyncio import Redis
+
 from app.config.settings import settings
 from app.infra.http import AsyncHttpClient
-from redis.asyncio import Redis
 
 
 class TesouroClient:
-    
     _cached_df: pd.DataFrame | None = None
     _cache_date: date | None = None
     _cache_lock: asyncio.Lock | None = None
@@ -76,6 +76,7 @@ class TesouroClient:
 
     async def _parse_csv(self, csv_content: str) -> pd.DataFrame:
         """Parse CSV em thread separada para não bloquear o event loop."""
+
         def parse():
             data = pd.read_csv(StringIO(csv_content), sep=';', decimal=',')
             data['Data Base'] = pd.to_datetime(data['Data Base'], format='%d/%m/%Y', dayfirst=True)

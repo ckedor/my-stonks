@@ -5,6 +5,7 @@ Revises: d1e2f3a4b5c6
 Create Date: 2026-04-04 19:43:38.724049
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -24,4 +25,12 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.add_column('asset', sa.Column('currency_id', sa.Integer(), nullable=True), schema='asset')
-    op.create_foreign_key('asset_currency_id_fkey', 'asset', 'currency', ['currency_id'], ['id'], source_schema='asset', referent_schema='asset')
+    op.create_foreign_key(
+        'asset_currency_id_fkey',
+        'asset',
+        'currency',
+        ['currency_id'],
+        ['id'],
+        source_schema='asset',
+        referent_schema='asset',
+    )

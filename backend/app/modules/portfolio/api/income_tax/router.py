@@ -1,7 +1,7 @@
-from app.composition.portfolio import get_portfolio_income_tax_service
-from app.modules.portfolio.service.portfolio_income_tax_service import \
-    PortfolioIncomeTaxService
 from fastapi import APIRouter, Depends, Query
+
+from app.composition.portfolio import get_portfolio_income_tax_service
+from app.modules.portfolio.service.portfolio_income_tax_service import PortfolioIncomeTaxService
 
 router = APIRouter(prefix='/income_tax', tags=['Income Tax'])
 

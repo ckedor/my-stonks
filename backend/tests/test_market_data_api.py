@@ -7,6 +7,7 @@ from http import HTTPStatus
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.modules.market_data.domain.market_data_series import MarketDataSeriesHistory
 from app.modules.market_data.domain.usd_brl import UsdBrlHistory, invert_rate
 

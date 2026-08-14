@@ -4,7 +4,7 @@ from pydantic import computed_field
 
 class UserRead(schemas.BaseUser[int]):
     username: str
-    
+
     @computed_field
     @property
     def is_admin(self) -> bool:
@@ -17,4 +17,3 @@ class UserCreate(schemas.BaseUserCreate):
 
 class UserUpdate(schemas.BaseUserUpdate):
     username: str | None = None
-

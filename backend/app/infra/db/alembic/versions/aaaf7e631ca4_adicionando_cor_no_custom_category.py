@@ -5,6 +5,7 @@ Revises: d49bf7734964
 Create Date: 2025-04-18 16:30:16.594186
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -21,8 +22,8 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.add_column(
         'custom_category',
-        sa.Column('color', sa.String(length=7), nullable=False, server_default="#000000"),
-        schema='portfolio'
+        sa.Column('color', sa.String(length=7), nullable=False, server_default='#000000'),
+        schema='portfolio',
     )
 
 

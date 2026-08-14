@@ -1,7 +1,7 @@
 import asyncio
 
-from app.config.logger import logger
 from app.composition.portfolio import portfolio_consolidator_service_context
+from app.config.logger import logger
 from app.entrypoints.worker.task_runner import celery_async_task
 
 

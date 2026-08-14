@@ -2,7 +2,6 @@ from sqlalchemy import Column, Date, ForeignKey, Integer, Numeric, String, Table
 
 from app.infra.db.base import Base
 
-
 market_data_series_table = Table(
     'market_data_series',
     Base.metadata,

@@ -1,5 +1,4 @@
 from datetime import date
-from typing import List
 
 from fastapi import APIRouter, Depends, Query
 
@@ -14,14 +13,14 @@ from app.modules.market_data.service.market_data_service import MarketDataReadSe
 router = APIRouter(prefix='/series', tags=['Market Data Series'])
 
 
-@router.get('', response_model=List[MarketDataSeriesResponse])
+@router.get('', response_model=list[MarketDataSeriesResponse])
 async def list_market_data_series(
     service: MarketDataReadService = Depends(get_market_data_read_service),
 ):
     return await service.list_market_data_series()
 
 
-@router.get('/options', response_model=List[MarketDataSeriesOption])
+@router.get('/options', response_model=list[MarketDataSeriesOption])
 async def list_market_data_series_options(
     service: MarketDataReadService = Depends(get_market_data_read_service),
 ):
@@ -29,7 +28,7 @@ async def list_market_data_series_options(
     return await service.list_market_data_series()
 
 
-@router.get('/{series_id}/history', response_model=List[MarketDataSeriesHistoryPoint])
+@router.get('/{series_id}/history', response_model=list[MarketDataSeriesHistoryPoint])
 async def get_market_data_series_history(
     series_id: int,
     start_date: date | None = Query(default=None),

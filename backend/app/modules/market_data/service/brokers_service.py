@@ -3,11 +3,9 @@
 Brokers service - handles broker management operations.
 """
 
-from typing import Optional
-
 from app.core.exceptions import AlreadyExistsError, NotFoundError
-from app.modules.market_data.domain.assets import Broker
 from app.infra.db.unit_of_work import UnitOfWork
+from app.modules.market_data.domain.assets import Broker
 
 
 class BrokersService:
@@ -25,7 +23,7 @@ class BrokersService:
                 raise NotFoundError('Broker not found')
             return broker
 
-    async def create_broker(self, name: str, cnpj: Optional[str], currency_id: int) -> Broker:
+    async def create_broker(self, name: str, cnpj: str | None, currency_id: int) -> Broker:
         async with self.uow as uow:
             if cnpj:
                 existing = await uow.repository.get(Broker, by={'cnpj': cnpj}, first=True)
@@ -45,9 +43,9 @@ class BrokersService:
     async def update_broker(
         self,
         broker_id: int,
-        name: Optional[str] = None,
-        cnpj: Optional[str] = None,
-        currency_id: Optional[int] = None,
+        name: str | None = None,
+        cnpj: str | None = None,
+        currency_id: int | None = None,
     ) -> Broker:
         async with self.uow as uow:
             broker = await uow.repository.get(Broker, id=broker_id)
