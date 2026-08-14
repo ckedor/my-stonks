@@ -77,6 +77,18 @@ class PortfolioDividendService:
             await uow.commit()
             return created
 
+    @staticmethod
+    def _as_record(dividend: Dividend) -> dict:
+        """What a dividend is, without the mapping it came from."""
+        return {
+            'id': dividend.id,
+            'portfolio_id': dividend.portfolio_id,
+            'asset_id': dividend.asset_id,
+            'date': dividend.date,
+            'amount': dividend.amount,
+            'amount_usd': dividend.amount_usd,
+        }
+
     async def update_dividend(self, dividend_data):
         async with self.uow as uow:
             existing_dividend = await uow.portfolios.get(Dividend, dividend_data.id)
@@ -94,7 +106,11 @@ class PortfolioDividendService:
                 )
             updated = await uow.portfolios.update(Dividend, update_data)
             await uow.commit()
-            return updated
+            # Read the columns while the session is still open. Handing the
+            # mapped entity back instead would leave the router serializing a
+            # detached row, and the first relationship it touched would raise
+            # DetachedInstanceError on a write that had already succeeded.
+            return self._as_record(updated[0])
 
     async def delete_dividend(self, dividend_id: int):
         async with self.uow as uow:

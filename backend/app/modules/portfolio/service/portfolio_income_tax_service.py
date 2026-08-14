@@ -21,6 +21,23 @@ _ASSET_TYPE_TO_TAXABLE: dict[ASSET_TYPE, TaxableAssetType] = {
     ASSET_TYPE.CRIPTO: TaxableAssetType.CRIPTO,
 }
 
+#: Colunas do informe de bens e direitos, na ordem em que a Receita as lê.
+#: Declaradas aqui porque a resposta vazia precisa ter a mesma forma da cheia:
+#: o cliente não deve descobrir que a carteira está vazia pelo formato.
+_ASSETS_AND_RIGHTS_COLUMNS: list[str] = [
+    'grupo',
+    'codigo',
+    'discriminacao',
+    'position_previous_year',
+    'position_fiscal_year',
+    'exempt_dividends',
+    'codigo_negociacao',
+    'negociado_em_bolsa',
+    'locale',
+    'cnpj',
+    'broker_name',
+]
+
 _EXEMPT_DIVIDEND_ASSET_TYPES: list[ASSET_TYPE] = [
     ASSET_TYPE.FII,
     ASSET_TYPE.CRI,
@@ -44,6 +61,13 @@ class PortfolioIncomeTaxService:
             position_prev_rows = await uow.portfolios.get_position_on_date_by_broker(
                 portfolio_id, last_day_previous_year
             )
+
+        if not position_fy_rows and not position_prev_rows:
+            # Uma carteira sem posição nos dois anos não tem o que declarar. Sem
+            # esta saída o merge abaixo procura asset_id num DataFrame que não
+            # tem coluna nenhuma, e a rota responde 500 em vez de um informe vazio.
+            return df_response(pd.DataFrame(columns=_ASSETS_AND_RIGHTS_COLUMNS))
+
         position_dec_fy = rows_to_df(
             position_fy_rows,
             datetime_cols=['date'],
@@ -110,21 +134,7 @@ class PortfolioIncomeTaxService:
         df['locale'] = df.apply(self._map_locale, axis=1)
         df['cnpj'] = df['broker_cnpj']
 
-        final_df = df[
-            [
-                'grupo',
-                'codigo',
-                'discriminacao',
-                'position_previous_year',
-                'position_fiscal_year',
-                'exempt_dividends',
-                'codigo_negociacao',
-                'negociado_em_bolsa',
-                'locale',
-                'cnpj',
-                'broker_name',
-            ]
-        ]
+        final_df = df[_ASSETS_AND_RIGHTS_COLUMNS]
 
         return df_response(final_df)
 
