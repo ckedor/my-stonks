@@ -164,6 +164,10 @@ pythonpath = "."
 addopts = '-p no:warnings'
 # Sem isto todo teste async precisa carregar @pytest.mark.asyncio.
 asyncio_mode = "auto"
+# Sem isto, cada fixture async pode receber seu próprio event loop, e uma conexão
+# asyncpg aberta numa fixture falha ao ser usada noutra com
+# "got Future attached to a different loop".
+asyncio_default_fixture_loop_scope = "function"
 markers = [
     "unit: sem IO — domínio, lib e serviço com dublê",
     "integration: precisa do Postgres de teste ou de resposta gravada",

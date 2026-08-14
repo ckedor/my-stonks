@@ -1,7 +1,30 @@
 # Plano de testes
 
 Desenhado a partir do que o projeto é, não do que já existe em `tests/`.
-Estado medido em 2026-08-14: **206 testes, 149 passando, 57 com erro, 57% de cobertura**.
+Estado inicial medido em 2026-08-14: **206 testes, 149 passando, 57 com erro, 57% de cobertura**.
+
+## Andamento
+
+- [x] **Fase 0 — instrumentação**
+- [x] **Fase 1 — contrato**: snapshot de OpenAPI versionado, verificado nos dois sentidos
+- [x] **Fase 2 — e2e vivo**: harness novo em `tests/e2e/`, 6 testes provando as
+      próprias garantias do harness. Faltam migrar os 57 testes antigos.
+- [ ] Fase 3 — o dinheiro
+- [ ] Fase 4 — as garantias documentadas
+- [ ] Fase 5 — repositório, serviço e trava
+
+Hoje: **156 passando, 1 xfail, 57 erros** (os 57 são os arquivos antigos na raiz
+de `tests/`, ainda não migrados para o harness novo).
+
+### Bug encontrado pelo harness
+
+`POST /portfolio` não pode funcionar. `Portfolio` mapeia `user` como relationship
+sobre a mesma coluna da FK `user_id`, e a dataclass inicializa `user=None`; no
+flush o relationship vence e grava NULL numa coluna NOT NULL. **39 relationships
+do domínio têm essa forma** — onde a coluna é nullable, grava NULL em silêncio em
+vez de levantar. Registrado como `xfail(strict=True)` em
+`tests/e2e/test_harness.py::test_creating_a_portfolio_over_http`, que passa a
+falhar sozinho quando alguém corrigir e esquecer de remover a marca.
 
 ## O que este projeto arrisca
 
