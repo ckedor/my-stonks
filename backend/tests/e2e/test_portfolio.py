@@ -8,13 +8,11 @@ user configuration, and rebalancing.
 from datetime import date, datetime
 from http import HTTPStatus
 
-import pytest
+from sqlalchemy import select
 
-from app.modules.market_data.domain.assets import Asset, Broker
 from app.modules.portfolio.domain.entities import (
     CustomCategory,
     Dividend,
-    Portfolio,
     Transaction,
 )
 
@@ -22,20 +20,19 @@ from app.modules.portfolio.domain.entities import (
 # ---------------------------------------------------------------------------
 # Helpers — seed data directly in the DB
 # ---------------------------------------------------------------------------
-def _seed_broker(db, name='XP', cnpj='02.332.886/0001-04', currency_id=1):
-    broker = Broker(name=name, cnpj=cnpj, currency_id=currency_id)
-    db.add(broker)
-    db.commit()
-    db.refresh(broker)
-    return broker
+class _Row:
+    """Just an id, so the call sites that read `.id` keep reading `.id`."""
+
+    def __init__(self, id):
+        self.id = id
 
 
-def _seed_asset(db, ticker='PETR4', name='Petrobras', asset_type_id=4, exchange_id=4):
-    asset = Asset(ticker=ticker, name=name, asset_type_id=asset_type_id, exchange_id=exchange_id)
-    db.add(asset)
-    db.commit()
-    db.refresh(asset)
-    return asset
+async def _seed_broker(factory, name='XP', cnpj='02.332.886/0001-04', currency_id=1):
+    return _Row(await factory.broker(name=name, cnpj=cnpj, currency_id=currency_id))
+
+
+async def _seed_asset(factory, ticker='PETR4', name='Petrobras'):
+    return _Row(await factory.asset(ticker=ticker, name=name))
 
 
 async def _create_portfolio(client, name='Carteira Principal', benchmark_id=6):
@@ -53,19 +50,14 @@ async def _create_portfolio(client, name='Carteira Principal', benchmark_id=6):
     return await client.post('/portfolio', json=payload)
 
 
-def _seed_portfolio(db, name='Carteira Test', user_id=1):
-    portfolio = Portfolio(name=name, user_id=user_id)
-    db.add(portfolio)
-    db.commit()
-    db.refresh(portfolio)
-    return portfolio
+async def _seed_portfolio(factory, name='Carteira Test'):
+    return _Row(await factory.portfolio(name=name))
 
 
 # ============================================================================
 # PORTFOLIO CRUD
 # ============================================================================
 class TestPortfolioCRUD:
-    @pytest.mark.asyncio
     async def test_create_portfolio(self, client):
         response = await _create_portfolio(client)
 
@@ -73,7 +65,6 @@ class TestPortfolioCRUD:
         # Returns the portfolio id
         assert isinstance(response.json(), int)
 
-    @pytest.mark.asyncio
     async def test_list_portfolios(self, client):
         await _create_portfolio(client, name='Portfolio 1')
         await _create_portfolio(client, name='Portfolio 2')
@@ -86,14 +77,12 @@ class TestPortfolioCRUD:
         names = {p['name'] for p in data}
         assert names == {'Portfolio 1', 'Portfolio 2'}
 
-    @pytest.mark.asyncio
     async def test_list_portfolios_empty(self, client):
         response = await client.get('/portfolio')
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []
 
-    @pytest.mark.asyncio
     async def test_update_portfolio(self, client):
         create_resp = await _create_portfolio(client)
         portfolio_id = create_resp.json()
@@ -113,7 +102,6 @@ class TestPortfolioCRUD:
         names = [p['name'] for p in list_resp.json()]
         assert 'Nome Atualizado' in names
 
-    @pytest.mark.asyncio
     async def test_delete_portfolio(self, client):
         create_resp = await _create_portfolio(client)
         portfolio_id = create_resp.json()
@@ -125,18 +113,18 @@ class TestPortfolioCRUD:
         list_resp = await client.get('/portfolio')
         assert list_resp.json() == []
 
-    @pytest.mark.asyncio
     async def test_delete_nonexistent_portfolio(self, client):
         response = await client.delete('/portfolio/99999')
 
         assert response.status_code == HTTPStatus.NOT_FOUND
 
-    @pytest.mark.asyncio
     async def test_create_portfolio_persists_categories(self, client, db):
         create_resp = await _create_portfolio(client)
         portfolio_id = create_resp.json()
 
-        categories = db.query(CustomCategory).filter_by(portfolio_id=portfolio_id).all()
+        categories = (
+            await db.scalars(select(CustomCategory).filter_by(portfolio_id=portfolio_id))
+        ).all()
         assert len(categories) == 1
         assert categories[0].name == 'Ações'
 
@@ -145,11 +133,10 @@ class TestPortfolioCRUD:
 # TRANSACTIONS
 # ============================================================================
 class TestTransactions:
-    @pytest.mark.asyncio
-    async def test_create_transaction(self, client, db):
-        portfolio = _seed_portfolio(db)
-        asset = _seed_asset(db)
-        broker = _seed_broker(db)
+    async def test_create_transaction(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
+        asset = await _seed_asset(factory)
+        broker = await _seed_broker(factory)
 
         payload = {
             'portfolio_id': portfolio.id,
@@ -164,50 +151,47 @@ class TestTransactions:
         assert response.status_code == HTTPStatus.OK
 
         # Verify persisted
-        txn = db.query(Transaction).filter_by(portfolio_id=portfolio.id).first()
+        txn = await db.scalar(select(Transaction).filter_by(portfolio_id=portfolio.id))
         assert txn is not None
         assert txn.quantity == 100
         assert txn.price == 35.50
 
-    @pytest.mark.asyncio
-    async def test_get_transactions(self, client, db):
-        portfolio = _seed_portfolio(db)
-        asset = _seed_asset(db)
-        broker = _seed_broker(db)
+    async def test_get_transactions(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
+        asset = await _seed_asset(factory)
+        broker = await _seed_broker(factory)
 
         # Create a transaction first
-        txn = Transaction(
-            portfolio_id=portfolio.id,
-            asset_id=asset.id,
-            broker_id=broker.id,
-            date=datetime(2025, 1, 15),
-            quantity=100,
-            price=35.50,
+        _Row(
+            await factory.transaction(
+                portfolio_id=portfolio.id,
+                asset_id=asset.id,
+                broker_id=broker.id,
+                on=datetime(2025, 1, 15),
+                quantity=100,
+                price=35.50,
+            )
         )
-        db.add(txn)
-        db.commit()
 
         response = await client.get('/portfolio/transaction', params={'portfolio_id': portfolio.id})
 
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.asyncio
-    async def test_delete_transaction(self, client, db):
-        portfolio = _seed_portfolio(db)
-        asset = _seed_asset(db)
-        broker = _seed_broker(db)
+    async def test_delete_transaction(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
+        asset = await _seed_asset(factory)
+        broker = await _seed_broker(factory)
 
-        txn = Transaction(
-            portfolio_id=portfolio.id,
-            asset_id=asset.id,
-            broker_id=broker.id,
-            date=datetime(2025, 1, 15),
-            quantity=50,
-            price=30.00,
+        txn = _Row(
+            await factory.transaction(
+                portfolio_id=portfolio.id,
+                asset_id=asset.id,
+                broker_id=broker.id,
+                on=datetime(2025, 1, 15),
+                quantity=50,
+                price=30.00,
+            )
         )
-        db.add(txn)
-        db.commit()
-        db.refresh(txn)
 
         response = await client.request(
             'DELETE',
@@ -216,17 +200,16 @@ class TestTransactions:
         )
 
         assert response.status_code == HTTPStatus.OK
-        assert db.query(Transaction).filter_by(id=txn.id).first() is None
+        assert await db.scalar(select(Transaction).filter_by(id=txn.id)) is None
 
 
 # ============================================================================
 # DIVIDENDS
 # ============================================================================
 class TestDividends:
-    @pytest.mark.asyncio
-    async def test_create_dividend(self, client, db):
-        portfolio = _seed_portfolio(db)
-        asset = _seed_asset(db)
+    async def test_create_dividend(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
+        asset = await _seed_asset(factory)
 
         payload = {
             'portfolio_id': portfolio.id,
@@ -238,19 +221,18 @@ class TestDividends:
 
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.asyncio
-    async def test_get_dividends(self, client, db):
-        portfolio = _seed_portfolio(db)
-        asset = _seed_asset(db)
+    async def test_get_dividends(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
+        asset = await _seed_asset(factory)
 
-        div = Dividend(
-            portfolio_id=portfolio.id,
-            asset_id=asset.id,
-            date=date(2025, 3, 15),
-            amount=1.50,
+        _Row(
+            await factory.dividend(
+                portfolio_id=portfolio.id,
+                asset_id=asset.id,
+                on=date(2025, 3, 15),
+                amount=1.50,
+            )
         )
-        db.add(div)
-        db.commit()
 
         response = await client.get('/portfolio/dividend', params={'portfolio_id': portfolio.id})
 
@@ -258,20 +240,18 @@ class TestDividends:
         data = response.json()
         assert len(data) >= 1
 
-    @pytest.mark.asyncio
-    async def test_update_dividend(self, client, db):
-        portfolio = _seed_portfolio(db)
-        asset = _seed_asset(db)
+    async def test_update_dividend(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
+        asset = await _seed_asset(factory)
 
-        div = Dividend(
-            portfolio_id=portfolio.id,
-            asset_id=asset.id,
-            date=date(2025, 3, 15),
-            amount=1.50,
+        div = _Row(
+            await factory.dividend(
+                portfolio_id=portfolio.id,
+                asset_id=asset.id,
+                on=date(2025, 3, 15),
+                amount=1.50,
+            )
         )
-        db.add(div)
-        db.commit()
-        db.refresh(div)
 
         update_payload = {
             'id': div.id,
@@ -281,27 +261,24 @@ class TestDividends:
 
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.asyncio
-    async def test_delete_dividend(self, client, db):
-        portfolio = _seed_portfolio(db)
-        asset = _seed_asset(db)
+    async def test_delete_dividend(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
+        asset = await _seed_asset(factory)
 
-        div = Dividend(
-            portfolio_id=portfolio.id,
-            asset_id=asset.id,
-            date=date(2025, 3, 15),
-            amount=1.50,
+        div = _Row(
+            await factory.dividend(
+                portfolio_id=portfolio.id,
+                asset_id=asset.id,
+                on=date(2025, 3, 15),
+                amount=1.50,
+            )
         )
-        db.add(div)
-        db.commit()
-        db.refresh(div)
 
         response = await client.delete(f'/portfolio/dividend/{div.id}')
 
         assert response.status_code == HTTPStatus.OK
-        assert db.query(Dividend).filter_by(id=div.id).first() is None
+        assert await db.scalar(select(Dividend).filter_by(id=div.id)) is None
 
-    @pytest.mark.asyncio
     async def test_delete_nonexistent_dividend(self, client):
         response = await client.delete('/portfolio/dividend/99999')
 
@@ -312,9 +289,8 @@ class TestDividends:
 # CATEGORIES
 # ============================================================================
 class TestCategories:
-    @pytest.mark.asyncio
-    async def test_save_custom_category(self, client, db):
-        portfolio = _seed_portfolio(db)
+    async def test_save_custom_category(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
 
         payload = {
             'categories': [
@@ -330,40 +306,34 @@ class TestCategories:
 
         assert response.status_code == HTTPStatus.OK
 
-        cats = db.query(CustomCategory).filter_by(portfolio_id=portfolio.id).all()
+        cats = (await db.scalars(select(CustomCategory).filter_by(portfolio_id=portfolio.id))).all()
         assert any(c.name == 'FIIs' for c in cats)
 
-    @pytest.mark.asyncio
-    async def test_delete_custom_category(self, client, db):
-        portfolio = _seed_portfolio(db)
-        cat = CustomCategory(
-            name='Para Deletar',
-            color='#000',
-            portfolio_id=portfolio.id,
-            benchmark_id=6,
+    async def test_delete_custom_category(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
+        cat = _Row(
+            await factory.category(
+                name='Para Deletar',
+                portfolio_id=portfolio.id,
+                benchmark_id=6,
+            )
         )
-        db.add(cat)
-        db.commit()
-        db.refresh(cat)
 
         response = await client.delete(f'/portfolio/category/{cat.id}')
 
         assert response.status_code == HTTPStatus.OK
-        assert db.query(CustomCategory).filter_by(id=cat.id).first() is None
+        assert await db.scalar(select(CustomCategory).filter_by(id=cat.id)) is None
 
-    @pytest.mark.asyncio
-    async def test_assign_category_to_asset(self, client, db):
-        portfolio = _seed_portfolio(db)
-        asset = _seed_asset(db)
-        cat = CustomCategory(
-            name='Ações BR',
-            color='#0000FF',
-            portfolio_id=portfolio.id,
-            benchmark_id=6,
+    async def test_assign_category_to_asset(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
+        asset = await _seed_asset(factory)
+        cat = _Row(
+            await factory.category(
+                name='Ações BR',
+                portfolio_id=portfolio.id,
+                benchmark_id=6,
+            )
         )
-        db.add(cat)
-        db.commit()
-        db.refresh(cat)
 
         payload = {
             'asset_id': asset.id,
@@ -379,9 +349,8 @@ class TestCategories:
 # USER CONFIGURATION
 # ============================================================================
 class TestUserConfiguration:
-    @pytest.mark.asyncio
-    async def test_get_user_configurations(self, client, db):
-        portfolio = _seed_portfolio(db)
+    async def test_get_user_configurations(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
 
         response = await client.get(f'/portfolio/user_configuration/{portfolio.id}')
 
@@ -392,27 +361,23 @@ class TestUserConfiguration:
 # REBALANCING
 # ============================================================================
 class TestRebalancing:
-    @pytest.mark.asyncio
-    async def test_get_rebalancing_empty_portfolio(self, client, db):
-        portfolio = _seed_portfolio(db)
+    async def test_get_rebalancing_empty_portfolio(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
 
         response = await client.get(f'/portfolio/rebalancing/{portfolio.id}')
 
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.asyncio
-    async def test_save_rebalancing_targets(self, client, db):
-        portfolio = _seed_portfolio(db)
-        asset = _seed_asset(db)
-        cat = CustomCategory(
-            name='Ações',
-            color='#FF0000',
-            portfolio_id=portfolio.id,
-            benchmark_id=6,
+    async def test_save_rebalancing_targets(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
+        asset = await _seed_asset(factory)
+        cat = _Row(
+            await factory.category(
+                name='Ações',
+                portfolio_id=portfolio.id,
+                benchmark_id=6,
+            )
         )
-        db.add(cat)
-        db.commit()
-        db.refresh(cat)
 
         payload = {
             'portfolio_id': portfolio.id,
@@ -441,25 +406,22 @@ class TestRebalancing:
 # POSITION (read-only endpoints, need seeded positions)
 # ============================================================================
 class TestPosition:
-    @pytest.mark.asyncio
-    async def test_get_portfolio_position(self, client, db):
-        portfolio = _seed_portfolio(db)
+    async def test_get_portfolio_position(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
 
         response = await client.get(f'/portfolio/position/{portfolio.id}')
 
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.asyncio
-    async def test_get_portfolio_returns(self, client, db):
-        portfolio = _seed_portfolio(db)
+    async def test_get_portfolio_returns(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
 
         response = await client.get(f'/portfolio/position/{portfolio.id}/returns')
 
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.asyncio
-    async def test_get_patrimony_evolution(self, client, db):
-        portfolio = _seed_portfolio(db)
+    async def test_get_patrimony_evolution(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
 
         response = await client.get(f'/portfolio/position/{portfolio.id}/patrimony_evolution')
 
@@ -470,9 +432,8 @@ class TestPosition:
 # INCOME TAX
 # ============================================================================
 class TestIncomeTax:
-    @pytest.mark.asyncio
-    async def test_get_assets_and_rights(self, client, db):
-        portfolio = _seed_portfolio(db)
+    async def test_get_assets_and_rights(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
 
         response = await client.get(
             f'/portfolio/income_tax/{portfolio.id}/assets_and_rights',
@@ -481,9 +442,8 @@ class TestIncomeTax:
 
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.asyncio
-    async def test_get_darf(self, client, db):
-        portfolio = _seed_portfolio(db)
+    async def test_get_darf(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
 
         response = await client.get(
             f'/portfolio/income_tax/{portfolio.id}/darf',

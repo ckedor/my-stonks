@@ -6,9 +6,8 @@ from decimal import Decimal
 from http import HTTPStatus
 from unittest.mock import AsyncMock, patch
 
-import pytest
+from sqlalchemy import text
 
-from app.modules.market_data.domain.market_data_series import MarketDataSeriesHistory
 from app.modules.market_data.domain.usd_brl import UsdBrlHistory, invert_rate
 
 EXPECTED_CURRENCY_COUNT = 2
@@ -20,7 +19,6 @@ EXPECTED_INGESTION_TASK_COUNT = 2
 # ---------------------------------------------------------------------------
 # CURRENCIES (seeded by migration)
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_list_currencies(client):
     response = await client.get('/market_data/index/currency')
 
@@ -34,7 +32,6 @@ async def test_list_currencies(client):
 # ---------------------------------------------------------------------------
 # INDEXES (seeded by migration)
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_list_indexes(client):
     response = await client.get('/market_data/index')
 
@@ -48,7 +45,6 @@ async def test_list_indexes(client):
 # ---------------------------------------------------------------------------
 # INDEX TIME SERIES (needs index_history rows)
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_indexes_time_series_empty(client):
     """With no index_history rows, the endpoint should still return 200."""
     response = await client.get('/market_data/index/time_series')
@@ -56,12 +52,16 @@ async def test_indexes_time_series_empty(client):
     assert response.status_code == HTTPStatus.OK
 
 
-@pytest.mark.asyncio
 async def test_indexes_time_series_with_data(client, db):
     """Seed index_history and verify the time series endpoint returns data."""
-    ih = MarketDataSeriesHistory(series_id=6, date=date(2025, 1, 2), close=130000)
-    db.add(ih)
-    db.commit()
+    await db.execute(
+        text(
+            'INSERT INTO market_data.market_data_series_history (series_id, date, close) '
+            'VALUES (:series_id, :date, :close)'
+        ),
+        {'series_id': 6, 'date': date(2025, 1, 2), 'close': 130000},
+    )
+    await db.commit()
 
     response = await client.get('/market_data/index/time_series')
 
@@ -74,14 +74,12 @@ async def test_indexes_time_series_with_data(client, db):
 # ---------------------------------------------------------------------------
 # USD/BRL HISTORY
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_usd_brl_history_empty(client):
     response = await client.get('/market_data/index/usd_brl')
 
     assert response.status_code == HTTPStatus.OK
 
 
-@pytest.mark.asyncio
 async def test_usd_brl_history_with_data(client, db):
     ih = UsdBrlHistory(
         date=date(2025, 1, 2),
@@ -89,8 +87,19 @@ async def test_usd_brl_history_with_data(client, db):
         brl_usd=invert_rate(Decimal('5.25')),
         source='test',
     )
-    db.add(ih)
-    db.commit()
+    await db.execute(
+        text(
+            'INSERT INTO market_data.usd_brl_history (date, usd_brl, brl_usd, source) '
+            'VALUES (:date, :usd_brl, :brl_usd, :source)'
+        ),
+        {
+            'date': ih.date,
+            'usd_brl': ih.usd_brl,
+            'brl_usd': ih.brl_usd,
+            'source': ih.source,
+        },
+    )
+    await db.commit()
 
     response = await client.get('/market_data/index/usd_brl')
 
@@ -102,7 +111,6 @@ async def test_usd_brl_history_with_data(client, db):
 # ---------------------------------------------------------------------------
 # QUOTES (requires external API – mock MarketDataProvider)
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_get_quotes_mocked(client):
     """Mock the external market data provider to return quotes."""
     mock_quotes = {
@@ -140,7 +148,6 @@ async def test_get_quotes_mocked(client):
 # ---------------------------------------------------------------------------
 # CONSOLIDATE HISTORY (superuser endpoint)
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_consolidate_history_returns_ok(client):
     """
     The consolidate endpoint explicitly dispatches both ingestion tasks.

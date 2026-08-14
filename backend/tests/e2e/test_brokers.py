@@ -6,7 +6,7 @@ Covers full request → route → service → DB → response flow.
 
 from http import HTTPStatus
 
-import pytest
+from sqlalchemy import select
 
 from app.modules.market_data.domain.assets import Broker
 
@@ -23,7 +23,6 @@ async def _create_broker(client, name='XP Investimentos', cnpj='02.332.886/0001-
 # ---------------------------------------------------------------------------
 # CREATE
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_create_broker(client):
     response = await _create_broker(client)
 
@@ -35,7 +34,6 @@ async def test_create_broker(client):
     assert 'id' in data
 
 
-@pytest.mark.asyncio
 async def test_create_broker_without_cnpj(client):
     payload = {'name': 'Broker Sem CNPJ', 'currency_id': 1}
     response = await client.post('/market_data/broker', json=payload)
@@ -46,7 +44,6 @@ async def test_create_broker_without_cnpj(client):
     assert data['cnpj'] is None
 
 
-@pytest.mark.asyncio
 async def test_create_broker_duplicate_cnpj(client):
     await _create_broker(client, name='Broker A', cnpj='11.111.111/0001-11')
     response = await _create_broker(client, name='Broker B', cnpj='11.111.111/0001-11')
@@ -57,7 +54,6 @@ async def test_create_broker_duplicate_cnpj(client):
 # ---------------------------------------------------------------------------
 # LIST
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_list_brokers_empty(client):
     response = await client.get('/market_data/broker')
 
@@ -65,7 +61,6 @@ async def test_list_brokers_empty(client):
     assert response.json() == []
 
 
-@pytest.mark.asyncio
 async def test_list_brokers_returns_created(client):
     await _create_broker(client, name='Broker 1', cnpj='11.111.111/0001-11')
     await _create_broker(client, name='Broker 2', cnpj='22.222.222/0001-22')
@@ -82,7 +77,6 @@ async def test_list_brokers_returns_created(client):
 # ---------------------------------------------------------------------------
 # GET by ID
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_get_broker_by_id(client):
     create_resp = await _create_broker(client)
     broker_id = create_resp.json()['id']
@@ -93,7 +87,6 @@ async def test_get_broker_by_id(client):
     assert response.json()['id'] == broker_id
 
 
-@pytest.mark.asyncio
 async def test_get_broker_not_found(client):
     response = await client.get('/market_data/broker/99999')
 
@@ -103,7 +96,6 @@ async def test_get_broker_not_found(client):
 # ---------------------------------------------------------------------------
 # UPDATE
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_update_broker(client):
     create_resp = await _create_broker(client)
     broker_id = create_resp.json()['id']
@@ -120,7 +112,6 @@ async def test_update_broker(client):
 # ---------------------------------------------------------------------------
 # DELETE
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_delete_broker(client):
     create_resp = await _create_broker(client)
     broker_id = create_resp.json()['id']
@@ -136,10 +127,9 @@ async def test_delete_broker(client):
 # ---------------------------------------------------------------------------
 # DB verification
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_create_broker_persists_in_db(client, db):
     await _create_broker(client, name='Persistência', cnpj='33.333.333/0001-33')
 
-    broker = db.query(Broker).filter_by(cnpj='33.333.333/0001-33').first()
+    broker = await db.scalar(select(Broker).filter_by(cnpj='33.333.333/0001-33'))
     assert broker is not None
     assert broker.name == 'Persistência'

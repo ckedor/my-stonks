@@ -173,9 +173,49 @@ class SQLAlchemyRepository:
 
         return items
 
+    @staticmethod
+    def _detach_unset_relationships(instance: Any, provided: set[str]) -> None:
+        """Drop relationship attributes that only hold their dataclass default.
+
+        Only for instances that were never persisted: on one loaded from the
+        database a None relationship is an answer, not an absence, and removing
+        it would trigger a reload.
+        """
+        state = inspect(instance)
+        if not state.transient:
+            return
+        for relationship in state.mapper.relationships:
+            key = relationship.key
+            if key not in provided and instance.__dict__.get(key) is None:
+                del instance.__dict__[key]
+
+    @classmethod
+    def _build(cls, model: ModelType, data: dict) -> ModelType:
+        """Construct an entity from a dict without losing the foreign keys in it.
+
+        Every persisted entity is a dataclass, so its `__init__` assigns *every*
+        field, relationships included, and an unmentioned one lands as None.
+        SQLAlchemy cannot tell that None apart from a deliberate "no related
+        row", and at flush time the relationship wins over the column beneath
+        it: `Portfolio(name=..., user_id=7)` also carries `user=None`, and the
+        INSERT writes NULL into `user_id`.
+
+        Thirty-nine relationships across the domain sit over a foreign key like
+        that. Where the column is NOT NULL the write fails outright — creating a
+        portfolio or a broker could not succeed — and where it is nullable the
+        foreign key is silently dropped.
+
+        Dropping the attribute from the instance state leaves it simply unset,
+        which is what the caller meant. A relationship named in `data` is left
+        alone, so passing `user=None` on purpose still clears it.
+        """
+        instance = model(**data)
+        cls._detach_unset_relationships(instance, set(data))
+        return instance
+
     async def create(self, model: ModelType, data: dict | list[dict | ModelType]) -> list[int]:
         if isinstance(data, dict):
-            instance = model(**data)
+            instance = self._build(model, data)
             self.session.add(instance)
             await self.session.flush()
             if hasattr(instance, 'id'):
@@ -186,9 +226,12 @@ class SQLAlchemyRepository:
         instances = []
         for item in data:
             if isinstance(item, model):
+                # Callers that build the entity themselves hit the same trap:
+                # every relationship they did not name is sitting at None.
+                self._detach_unset_relationships(item, set())
                 instances.append(item)
             elif isinstance(item, dict):
-                instances.append(model(**item))
+                instances.append(self._build(model, item))
             else:
                 raise ValueError('Items in list must be dict or model instances.')
 
@@ -264,8 +307,11 @@ class SQLAlchemyRepository:
 
         for item in data:
             if isinstance(item, dict):
-                instance = model(**item)
+                # Same reason as in create: an unmentioned relationship must stay
+                # unset, or merge() would null out the column it sits over.
+                instance = self._build(model, item)
             elif isinstance(item, model):
+                self._detach_unset_relationships(item, set())
                 instance = item
             else:
                 raise ValueError('Each update item must be a dict or a model instance')

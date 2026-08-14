@@ -6,7 +6,7 @@ Covers asset listing, types, fixed income CRUD, events, and FII segments.
 
 from http import HTTPStatus
 
-import pytest
+from sqlalchemy import select
 
 from app.modules.market_data.domain.assets import Asset, Event, FixedIncome
 
@@ -14,24 +14,19 @@ from app.modules.market_data.domain.assets import Asset, Event, FixedIncome
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-def _seed_asset(db, ticker='PETR4', name='Petrobras', asset_type_id=4, exchange_id=4):
-    """Insert an asset directly into the DB for tests that need pre-existing data."""
-    asset = Asset(
-        ticker=ticker,
-        name=name,
-        asset_type_id=asset_type_id,
-        exchange_id=exchange_id,
-    )
-    db.add(asset)
-    db.commit()
-    db.refresh(asset)
-    return asset
+class _Row:
+    def __init__(self, id):
+        self.id = id
+
+
+async def _seed_asset(factory, ticker='PETR4', name='Petrobras'):
+    """One asset row, with the reference ids looked up rather than hardcoded."""
+    return _Row(await factory.asset(ticker=ticker, name=name))
 
 
 # ---------------------------------------------------------------------------
 # LIST ASSETS
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_list_assets_empty(client):
     response = await client.get('/market_data/asset')
 
@@ -39,7 +34,6 @@ async def test_list_assets_empty(client):
     assert response.json() == []
 
 
-@pytest.mark.asyncio
 async def test_list_assets_returns_seeded(client, db):
     _seed_asset(db)
 
@@ -55,23 +49,21 @@ async def test_list_assets_returns_seeded(client, db):
 # ---------------------------------------------------------------------------
 # DELETE ASSET
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
-async def test_delete_asset(client, db):
-    asset = _seed_asset(db)
+async def test_delete_asset(client, db, factory):
+    asset = await _seed_asset(factory)
 
     response = await client.delete(f'/market_data/asset/{asset.id}')
 
     assert response.status_code == HTTPStatus.OK
 
     # Verify deleted from DB
-    remaining = db.query(Asset).filter_by(id=asset.id).first()
+    remaining = await db.scalar(select(Asset).filter_by(id=asset.id))
     assert remaining is None
 
 
 # ---------------------------------------------------------------------------
 # ASSET TYPES (reference data from migrations)
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_list_asset_types(client):
     response = await client.get('/market_data/asset/type')
 
@@ -85,7 +77,6 @@ async def test_list_asset_types(client):
 # ---------------------------------------------------------------------------
 # FIXED INCOME
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_create_fixed_income(client, db):
     payload = {
         'name': 'CDB Banco Inter',
@@ -102,16 +93,15 @@ async def test_create_fixed_income(client, db):
     assert response.status_code == HTTPStatus.OK
 
     # Verify in DB
-    asset = db.query(Asset).filter_by(ticker='CDB-INTER').first()
+    asset = await db.scalar(select(Asset).filter_by(ticker='CDB-INTER'))
     assert asset is not None
     assert asset.name == 'CDB Banco Inter'
 
-    fi = db.query(FixedIncome).filter_by(asset_id=asset.id).first()
+    fi = await db.scalar(select(FixedIncome).filter_by(asset_id=asset.id))
     assert fi is not None
     assert float(fi.fee) == 12.5
 
 
-@pytest.mark.asyncio
 async def test_list_fixed_income_types(client):
     response = await client.get('/market_data/asset/fixed_income/type')
 
@@ -125,7 +115,6 @@ async def test_list_fixed_income_types(client):
 # ---------------------------------------------------------------------------
 # FII SEGMENTS
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_list_fii_segments(client):
     response = await client.get('/market_data/asset/fii/segment')
 
@@ -137,7 +126,6 @@ async def test_list_fii_segments(client):
 # ---------------------------------------------------------------------------
 # EVENTS
 # ---------------------------------------------------------------------------
-@pytest.mark.asyncio
 async def test_list_events_empty(client):
     response = await client.get('/market_data/asset/event')
 
@@ -145,9 +133,8 @@ async def test_list_events_empty(client):
     assert response.json() == []
 
 
-@pytest.mark.asyncio
-async def test_create_event(client, db):
-    asset = _seed_asset(db)
+async def test_create_event(client, db, factory):
+    asset = await _seed_asset(factory)
 
     payload = {
         'id': None,
@@ -160,15 +147,14 @@ async def test_create_event(client, db):
 
     assert response.status_code == HTTPStatus.OK
 
-    event = db.query(Event).filter_by(asset_id=asset.id).first()
+    event = await db.scalar(select(Event).filter_by(asset_id=asset.id))
     assert event is not None
     assert event.type == 'SPLIT'
     assert float(event.factor) == 2.0
 
 
-@pytest.mark.asyncio
-async def test_create_and_list_events(client, db):
-    asset = _seed_asset(db)
+async def test_create_and_list_events(client, db, factory):
+    asset = await _seed_asset(factory)
 
     payload = {
         'id': None,
@@ -185,9 +171,8 @@ async def test_create_and_list_events(client, db):
     assert data[0]['type'] == 'SPLIT'
 
 
-@pytest.mark.asyncio
-async def test_update_event(client, db):
-    asset = _seed_asset(db)
+async def test_update_event(client, db, factory):
+    asset = await _seed_asset(factory)
 
     # Create
     create_payload = {
@@ -199,7 +184,7 @@ async def test_update_event(client, db):
     }
     await client.post('/market_data/asset/event', json=create_payload)
 
-    event = db.query(Event).filter_by(asset_id=asset.id).first()
+    event = await db.scalar(select(Event).filter_by(asset_id=asset.id))
     assert event is not None
 
     # Update
@@ -214,5 +199,5 @@ async def test_update_event(client, db):
     assert response.status_code == HTTPStatus.OK
 
     db.expire_all()
-    updated = db.query(Event).filter_by(id=event.id).first()
+    updated = await db.scalar(select(Event).filter_by(id=event.id))
     assert float(updated.factor) == 3.0

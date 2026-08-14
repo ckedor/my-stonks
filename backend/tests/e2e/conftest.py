@@ -240,3 +240,11 @@ async def client(connection, seed_user):
 def anything():
     """Placeholder used by assertions that only care a value is present."""
     return AsyncMock()
+
+
+@pytest_asyncio.fixture
+async def factory(db, seed_user_id):
+    """Row builders bound to this test's session. See tests/factories.py."""
+    from tests.factories import Factory
+
+    return Factory(db, seed_user_id)

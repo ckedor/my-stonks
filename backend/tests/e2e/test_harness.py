@@ -8,7 +8,6 @@ test that wrote it.
 
 from http import HTTPStatus
 
-import pytest
 from sqlalchemy import text
 
 
@@ -73,18 +72,15 @@ async def test_task_dispatch_does_not_need_a_broker(no_celery):
     assert no_celery['send_task'].call_count == 0
 
 
-@pytest.mark.xfail(
-    reason=(
-        'Portfolio maps `user` as a relationship over the same column as the '
-        '`user_id` foreign key, and the dataclass initialises it to None. On '
-        'flush the relationship wins and writes NULL into a NOT NULL column, so '
-        'creating a portfolio always fails. 39 relationships across the domain '
-        'have this shape; where the column is nullable it writes NULL silently '
-        'instead of raising.'
-    ),
-    strict=True,
-)
 async def test_creating_a_portfolio_over_http(client, db):
+    """Regression: the foreign key in the payload must survive the write.
+
+    `Portfolio` maps `user` as a relationship over the same column as the
+    `user_id` foreign key, and the dataclass initialises it to None; SQLAlchemy
+    read that as "no user" and wrote NULL into a NOT NULL column, so this route
+    could not succeed. Thirty-nine relationships share that shape — see
+    `SQLAlchemyRepository._build`.
+    """
     response = await client.post('/portfolio', json={'name': 'Nova', 'user_categories': []})
 
     assert response.status_code == HTTPStatus.OK, response.text
