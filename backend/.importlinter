@@ -46,16 +46,31 @@ forbidden_modules =
 allow_indirect_imports = True
 
 [importlinter:contract:api-boundary]
-name = API does not import persistence or providers directly
+name = API contains transport concerns only
 type = forbidden
 source_modules =
     app.modules.*.api
 forbidden_modules =
     app.modules.*.repositories
     app.modules.*.adapters
-    app.infra.db.unit_of_work
-    app.infra.integrations
-    app.infra.redis
+    app.modules.*.tasks
+    app.infra
+    sqlalchemy
+allow_indirect_imports = True
+
+# A task pulls in its service, its adapters and its provider. Importing one from
+# a router loads all of that into the HTTP process at boot, so an import error
+# inside a worker task takes the API down on a route nobody called. Dispatch by
+# name through app.entrypoints.worker.task_runner instead.
+[importlinter:contract:task-boundary]
+name = Tasks are thin entrypoints
+type = forbidden
+source_modules =
+    app.modules.*.tasks
+forbidden_modules =
+    app.modules.*.repositories
+    app.modules.*.adapters
+    app.infra
     sqlalchemy
 allow_indirect_imports = True
 
@@ -101,57 +116,4 @@ forbidden_modules =
     app.modules.portfolio.repositories
     app.modules.users.repositories
     app.modules.*.infra
-allow_indirect_imports = True
-
-[importlinter:contract:market-data-domain-boundary]
-name = Market data domain is independent
-type = forbidden
-source_modules =
-    app.modules.market_data.domain
-forbidden_modules =
-    app.modules.market_data.api
-    app.modules.market_data.service
-    app.modules.market_data.repositories
-    app.modules.market_data.adapters
-    app.modules.market_data.tasks
-    app.infra
-    app.entrypoints
-    app.composition
-allow_indirect_imports = True
-
-[importlinter:contract:market-data-service-boundary]
-name = Market data services do not import entrypoints or composition
-type = forbidden
-source_modules =
-    app.modules.market_data.service
-forbidden_modules =
-    app.modules.market_data.api
-    app.modules.market_data.tasks
-    app.entrypoints
-    app.composition
-allow_indirect_imports = True
-
-[importlinter:contract:market-data-api-boundary]
-name = Market data API contains transport concerns only
-type = forbidden
-source_modules =
-    app.modules.market_data.api
-forbidden_modules =
-    app.modules.market_data.repositories
-    app.modules.market_data.adapters
-    app.modules.market_data.tasks
-    app.infra
-    sqlalchemy
-allow_indirect_imports = True
-
-[importlinter:contract:market-data-task-boundary]
-name = Market data tasks are thin entrypoints
-type = forbidden
-source_modules =
-    app.modules.market_data.tasks
-forbidden_modules =
-    app.modules.market_data.repositories
-    app.modules.market_data.adapters
-    app.infra
-    sqlalchemy
 allow_indirect_imports = True

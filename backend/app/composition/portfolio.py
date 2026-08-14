@@ -145,3 +145,24 @@ async def portfolio_consolidator_service_context() -> AsyncIterator[PortfolioCon
         yield service
     finally:
         await service.aclose()
+
+
+def build_portfolio_service_for_task() -> PortfolioBaseService:
+    """Portfolio reader for a background run, owning its UnitOfWork.
+
+    A task is an entrypoint: it says what should happen, not how persistence is
+    assembled. These three exist so no task has to import UnitOfWork to build
+    the service it needs — the same reason the ingestion runners exist on the
+    market-data side.
+    """
+    return PortfolioBaseService(uow=UnitOfWork(), cache=RedisService())
+
+
+def build_portfolio_position_service_for_task() -> PortfolioPositionService:
+    """Position service for a background run, owning its UnitOfWork."""
+    return build_portfolio_position_service(UnitOfWork())
+
+
+def build_portfolio_returns_consolidator_for_task() -> PortfolioReturnsConsolidatorService:
+    """Returns consolidator for a background run, owning its UnitOfWork."""
+    return PortfolioReturnsConsolidatorService(UnitOfWork())

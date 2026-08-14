@@ -1,15 +1,16 @@
 from fastapi import APIRouter, Body, Depends, Query
 
 from app.composition.portfolio import get_portfolio_transaction_service
-from app.entrypoints.worker.task_runner import run_task
+from app.entrypoints.worker.task_runner import run_task_by_name
 from app.modules.portfolio.service.portfolio_transaction_service import (
     PortfolioTransactionService,
 )
-from app.modules.portfolio.tasks.recalculate_asset_position import (
-    recalculate_position_asset,
-)
 
 from .schema import Transaction
+
+#: Dispatched by name so this router keeps no import of the task, which would
+#: pull the consolidation service and its dependencies into the HTTP process.
+RECALCULATE_ASSET_POSITION_TASK = 'recalculate_asset_position'
 
 router = APIRouter(prefix='/transaction', tags=['Portfolio Transaction'])
 
@@ -36,7 +37,9 @@ async def create_transaction(
     service: PortfolioTransactionService = Depends(get_portfolio_transaction_service),
 ):
     await service.create_transaction(transaction.model_dump())
-    run_task(recalculate_position_asset, transaction.portfolio_id, transaction.asset_id)
+    run_task_by_name(
+        RECALCULATE_ASSET_POSITION_TASK, transaction.portfolio_id, transaction.asset_id
+    )
     return {'message': 'Transaction created'}
 
 
@@ -48,9 +51,11 @@ async def update_transaction(
 ):
     transaction = {**transaction, 'id': transaction_id}
     old_portfolio_id = await service.update_transaction(transaction)
-    run_task(recalculate_position_asset, transaction['portfolio_id'], transaction['asset_id'])
+    run_task_by_name(
+        RECALCULATE_ASSET_POSITION_TASK, transaction['portfolio_id'], transaction['asset_id']
+    )
     if transaction['portfolio_id'] != old_portfolio_id:
-        run_task(recalculate_position_asset, old_portfolio_id, transaction['asset_id'])
+        run_task_by_name(RECALCULATE_ASSET_POSITION_TASK, old_portfolio_id, transaction['asset_id'])
     return {'message': 'Transaction updated'}
 
 
@@ -62,5 +67,5 @@ async def delete_transaction(
     service: PortfolioTransactionService = Depends(get_portfolio_transaction_service),
 ):
     await service.delete_transaction(transaction_id)
-    run_task(recalculate_position_asset, portfolio_id, asset_id)
+    run_task_by_name(RECALCULATE_ASSET_POSITION_TASK, portfolio_id, asset_id)
     return {'message': 'Transaction deleted'}

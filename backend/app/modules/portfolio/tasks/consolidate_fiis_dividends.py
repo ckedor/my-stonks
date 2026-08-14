@@ -3,10 +3,11 @@ import asyncio
 import nest_asyncio
 from celery import shared_task
 
-from app.composition.portfolio import portfolio_consolidator_service_context
+from app.composition.portfolio import (
+    build_portfolio_service_for_task,
+    portfolio_consolidator_service_context,
+)
 from app.config.logger import logger
-from app.infra.db.unit_of_work import UnitOfWork
-from app.modules.portfolio.domain.entities import Portfolio
 
 
 @shared_task(name='consolidate_fiis_dividends')
@@ -14,9 +15,8 @@ def consolidate_fiis_dividends():
     logger.info('🟢 consolidate_fiis_dividends')
 
     async def wrapper():
-        async with UnitOfWork() as uow:
-            portfolios = await uow.portfolios.get_all(Portfolio)
-            portfolio_ids = [portfolio.id for portfolio in portfolios]
+        portfolios = await build_portfolio_service_for_task().list_all_portfolios()
+        portfolio_ids = [portfolio.id for portfolio in portfolios]
 
         async with portfolio_consolidator_service_context() as service:
             for portfolio_id in portfolio_ids:

@@ -8,7 +8,7 @@ from app.composition.portfolio import (
     get_portfolio_returns_consolidator_service,
     portfolio_consolidator_service_context,
 )
-from app.entrypoints.worker.task_runner import run_task
+from app.entrypoints.worker.task_runner import run_task_by_name
 from app.modules.portfolio.service.portfolio_consolidator_service import (
     PortfolioConsolidatorService,
 )
@@ -18,10 +18,11 @@ from app.modules.portfolio.service.portfolio_position_service import (
 from app.modules.portfolio.service.portfolio_returns_consolidator_service import (
     PortfolioReturnsConsolidatorService,
 )
-from app.modules.portfolio.tasks.consolidate_portfolio_returns import (
-    consolidate_portfolio_returns as consolidate_portfolio_returns_task,
-)
 from app.modules.users.views import current_superuser
+
+#: Dispatched by name, so the router does not import the task. See the note in
+#: the transaction router.
+CONSOLIDATE_PORTFOLIO_RETURNS_TASK = 'consolidate_portfolio_returns'
 
 router = APIRouter(
     prefix='/position_consolidator',
@@ -49,7 +50,7 @@ async def consolidate_portfolio(
     asset_ids = await service.get_asset_ids_to_consolidate(portfolio_id)
     await _recalculate_assets_in_parallel(portfolio_id, asset_ids)
     await position_service.invalidate_cached_analytics(portfolio_id)
-    run_task(consolidate_portfolio_returns_task, portfolio_id)
+    run_task_by_name(CONSOLIDATE_PORTFOLIO_RETURNS_TASK, portfolio_id)
     return {'message': 'OK'}
 
 
@@ -62,7 +63,7 @@ async def consolidate_portfolio_asset(
 ):
     await service.recalculate_position_asset(portfolio_id, asset_id)
     await position_service.invalidate_cached_analytics(portfolio_id)
-    run_task(consolidate_portfolio_returns_task, portfolio_id)
+    run_task_by_name(CONSOLIDATE_PORTFOLIO_RETURNS_TASK, portfolio_id)
     return {'message': 'OK'}
 
 
@@ -75,7 +76,7 @@ async def recalculate_all_positions(
     asset_ids = await service.get_asset_ids_with_transactions(portfolio_id)
     await _recalculate_assets_in_parallel(portfolio_id, asset_ids)
     await position_service.invalidate_cached_analytics(portfolio_id)
-    run_task(consolidate_portfolio_returns_task, portfolio_id)
+    run_task_by_name(CONSOLIDATE_PORTFOLIO_RETURNS_TASK, portfolio_id)
     return {'message': 'OK'}
 
 
