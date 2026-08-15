@@ -18,6 +18,19 @@ export type { AppGridProps, AppGridItemProps } from './AppGrid'
 export { default as AppCard } from './AppCard'
 export type { AppCardProps } from './AppCard'
 
+/* ── Controles e conteúdo ───────────────────── */
+export { default as AppButton } from './AppButton'
+export type { AppButtonProps } from './AppButton'
+export { default as AppChip } from './AppChip'
+export type { AppChipProps } from './AppChip'
+export { default as AppConfirmDialog } from './AppConfirmDialog'
+export type { AppConfirmDialogProps } from './AppConfirmDialog'
+export { default as AppSearchField } from './AppSearchField'
+export type { AppSearchFieldProps } from './AppSearchField'
+export { default as AppSnackbar } from './AppSnackbar'
+export type { AppSnackbarProps } from './AppSnackbar'
+export { default as PageTitle } from './PageTitle'
+
 /* ── Tokens ─────────────────────────────────── */
 export { useAppTheme } from './useAppTheme'
 export type { AppTheme } from './useAppTheme'

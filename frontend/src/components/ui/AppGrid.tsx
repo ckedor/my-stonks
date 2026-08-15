@@ -43,7 +43,7 @@ function responsiveRules(
 }
 
 const columnsCss = (n: number) => ({ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` })
-const spanCss = (n: number) => ({ gridColumn: `span ${n} / span ${n}` })
+const spanCss = (n: number) => ({ gridColumn: `span ${n}` })
 
 export interface AppGridProps {
   /** Número de colunas, fixo ou por breakpoint. Padrão: 1. */

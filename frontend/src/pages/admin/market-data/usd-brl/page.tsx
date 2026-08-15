@@ -3,7 +3,8 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { Alert, Box, Stack, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 
-import DataTable, { formatDate, formatNumber } from '../DataTable'
+import DataTable from '../DataTable'
+import { formatDate, formatNumber } from '../format'
 
 export default function AdminMarketDataUsdBrlPage() {
   const [rows, setRows] = useState<UsdBrlHistoryPoint[]>([])

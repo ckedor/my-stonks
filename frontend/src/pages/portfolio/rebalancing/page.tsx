@@ -244,7 +244,6 @@ export default function RebalancingPage() {
 
   const [data, setData] = useState<RebalancingResponse | null>(null)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [snackbar, setSnackbar] = useState<{
     open: boolean
     message: string
@@ -386,14 +385,6 @@ export default function RebalancingPage() {
   // ── Render ─────────────────────────────────────────────────────────
   if (showLoading) {
     return <LoadingSpinner />
-  }
-
-  if (error) {
-    return (
-      <Box mt={4}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
-    )
   }
 
   if (!data || data.categories.length === 0) {

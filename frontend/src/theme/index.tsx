@@ -5,7 +5,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import 'dayjs/locale/pt-br';
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ThemeModeContext, type ThemeMode, type ThemeModeContextValue } from "./theme-mode";
 import {
     darkThemes,
     DEFAULT_DARK_THEME_ID,
@@ -13,28 +14,6 @@ import {
     getThemeById,
     lightThemes,
 } from "./themes";
-
-type ThemeMode = "light" | "dark";
-
-type Ctx = {
-  mode: ThemeMode;
-  toggleTheme: () => void;
-  lightThemeId: string;
-  darkThemeId: string;
-  setLightTheme: (id: string) => void;
-  setDarkTheme: (id: string) => void;
-};
-
-export const ThemeModeContext = createContext<Ctx>({
-  mode: "dark",
-  toggleTheme: () => {},
-  lightThemeId: DEFAULT_LIGHT_THEME_ID,
-  darkThemeId: DEFAULT_DARK_THEME_ID,
-  setLightTheme: () => {},
-  setDarkTheme: () => {},
-});
-
-export const useThemeMode = () => useContext(ThemeModeContext);
 
 export function ThemeRegistry({ children }: { children: React.ReactNode }) {
   const getInitialMode = (): ThemeMode => {
@@ -100,7 +79,7 @@ export function ThemeRegistry({ children }: { children: React.ReactNode }) {
     return mode === "light" ? lightThemes[0].theme : darkThemes[0].theme;
   }, [mode, lightThemeId, darkThemeId]);
 
-  const ctx = useMemo<Ctx>(
+  const ctx = useMemo<ThemeModeContextValue>(
     () => ({ mode, toggleTheme, lightThemeId, darkThemeId, setLightTheme, setDarkTheme }),
     [mode, lightThemeId, darkThemeId],
   );

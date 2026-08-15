@@ -5,7 +5,8 @@ import api from '@/lib/api'
 import { Alert, Autocomplete, Box, Stack, TextField, Typography } from '@mui/material'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import DataTable, { formatDate, formatNumber } from '../DataTable'
+import DataTable from '../DataTable'
+import { formatDate, formatNumber } from '../format'
 
 const MAX_ASSET_OPTIONS_RENDERED = 100
 

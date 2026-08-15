@@ -11,7 +11,7 @@ interface CustomThemesState {
 }
 
 export const useCustomThemesStore = create<CustomThemesState>()(
-  withPersist('custom-themes', (set, get) => ({
+  withPersist('custom-themes', (set) => ({
     themes: [],
 
     addTheme: (entry) => {

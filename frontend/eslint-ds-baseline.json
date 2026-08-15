@@ -52,7 +52,6 @@
     "src/pages/admin/market-data/quotes/page.tsx",
     "src/pages/admin/market-data/series/page.tsx",
     "src/pages/admin/market-data/usd-brl/page.tsx",
-    "src/pages/admin/users/page.tsx",
     "src/pages/login/index.tsx",
     "src/pages/market/asset/AssetAIOverviewCard.tsx",
     "src/pages/market/asset/AssetQuoteCard.tsx",

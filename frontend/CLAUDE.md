@@ -63,10 +63,11 @@ From `frontend/`, run:
 ```bash
 npm run lint
 npm run lint:ds
+npm test
 npm run build
 ```
 
-`npm run lint` currently reports 6 pre-existing errors and 27 warnings that
-predate the design system work. They are not blocking: `pre-commit` runs
-ESLint only on staged files, so each one is cleaned when someone touches
-that file.
+All four are green and all four run in `pre-commit`. ESLint reports no
+errors; the 27 remaining warnings are `react-hooks/exhaustive-deps` and are
+deliberately left alone — changing a hook's dependency array without
+reading the effect is how render loops get introduced.

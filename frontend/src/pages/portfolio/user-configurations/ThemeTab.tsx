@@ -2,7 +2,7 @@ import {
     getCustomThemeDefinitions,
     useCustomThemesStore,
 } from '@/stores/custom-themes'
-import { useThemeMode } from '@/theme'
+import { useThemeMode } from '@/theme/theme-mode'
 import { darkThemes, lightThemes, type ThemeDefinition } from '@/theme/themes'
 import AddIcon from '@mui/icons-material/Add'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'

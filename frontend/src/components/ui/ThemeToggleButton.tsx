@@ -1,4 +1,4 @@
-import { useThemeMode } from '@/theme'; // seu hook do ThemeRegistry
+import { useThemeMode } from '@/theme/theme-mode'; // seu hook do ThemeRegistry
 import { DarkMode, LightMode } from '@mui/icons-material';
 import { IconButton, Tooltip, useTheme } from '@mui/material';
 

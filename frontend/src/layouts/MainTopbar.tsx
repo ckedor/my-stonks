@@ -8,7 +8,7 @@ import { useFavoritesStore } from '@/stores/favorites'
 import { useCurrencyStore } from '@/stores/currency'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { useTradeFormStore } from '@/stores/trade-form'
-import { useThemeMode } from '@/theme'
+import { useThemeMode } from '@/theme/theme-mode'
 
 import AccountCircle from '@mui/icons-material/AccountCircle'
 import AddIcon from '@mui/icons-material/Add'

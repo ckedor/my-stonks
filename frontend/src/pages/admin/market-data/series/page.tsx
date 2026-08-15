@@ -8,7 +8,8 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { Alert, Autocomplete, Box, Stack, TextField, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 
-import DataTable, { formatDate, formatNumber } from '../DataTable'
+import DataTable from '../DataTable'
+import { formatDate, formatNumber } from '../format'
 
 export default function AdminMarketDataSeriesPage() {
   const [options, setOptions] = useState<MarketDataSeriesOption[]>([])

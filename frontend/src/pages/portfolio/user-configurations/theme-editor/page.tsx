@@ -2,7 +2,7 @@ import {
     useCustomThemesStore,
 } from '@/stores/custom-themes'
 import { usePageTitleStore } from '@/stores/page-title'
-import { useThemeMode } from '@/theme'
+import { useThemeMode } from '@/theme/theme-mode'
 import { defaultDarkPalette, defaultLightPalette, type ThemePaletteConfig } from '@/theme/themes'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SaveIcon from '@mui/icons-material/Save'

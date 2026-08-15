@@ -15,6 +15,7 @@ import {
   TextField,
 } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
+import { formatDate } from './format'
 
 const ROWS_PER_PAGE_OPTIONS = [25, 50, 100]
 
@@ -22,20 +23,6 @@ export interface Column<Row> {
   label: string
   align?: 'left' | 'right' | 'center'
   render: (row: Row) => React.ReactNode
-}
-
-export const formatDate = (value: string) =>
-  new Date(`${value.slice(0, 10)}T00:00:00`).toLocaleDateString('pt-BR')
-
-export const formatNumber = (value: number | string | null, digits = 2) => {
-  if (value === null || value === undefined || value === '') return '—'
-  const parsed = typeof value === 'string' ? Number(value) : value
-  return Number.isFinite(parsed)
-    ? parsed.toLocaleString('pt-BR', {
-        minimumFractionDigits: digits,
-        maximumFractionDigits: digits,
-      })
-    : '—'
 }
 
 /** Read-only paginated table sorted and filterable by its date column.

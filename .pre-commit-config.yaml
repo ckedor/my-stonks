@@ -2,19 +2,20 @@
 # em ambientes que o pre-commit monta por fora. Assim a versão que roda no commit
 # é a mesma que você roda na mão via `task`.
 #
-# Bloqueio: ruff, eslint e ds-baseline bloqueiam; pytest e lint-imports não.
-# O ruff recebe só os arquivos staged, então ele é naturalmente incremental —
-# você limpa cada arquivo conforme encosta nele. pytest e lint-imports são
-# globais e hoje falham, então rodam com `|| true`: reportam e deixam passar.
-# Para torná-los bloqueantes, remova o `|| true` do `entry` correspondente.
+# Bloqueio: tudo bloqueia, menos pytest e lint-imports.
+# O ruff e o eslint recebem só os arquivos staged, então são naturalmente
+# incrementais — você limpa cada arquivo conforme encosta nele. pytest e
+# lint-imports são globais e hoje falham, então rodam com `|| true`: reportam e
+# deixam passar. Para torná-los bloqueantes, remova o `|| true` do `entry`.
 #
-# O eslint segue a mesma lógica do ruff: só os arquivos staged. Os 6 erros de
-# lint que o front tem hoje não travam ninguém até alguém encostar no arquivo.
+# O vitest e o ds-baseline também são globais, mas bloqueiam, porque hoje
+# passam — 68 testes e a fronteira do design system limpa. O critério é esse:
+# check verde entra bloqueando, check vermelho entra reportando até ficar
+# verde.
 #
-# O ds-baseline é global mas bloqueia, porque hoje passa. Ele guarda a
-# fronteira do design system: `frontend/eslint-ds-baseline.json` lista os
-# arquivos que ainda podem importar MUI, e essa lista só encolhe. Ver o
-# cabeçalho de `frontend/eslint.config.js`.
+# O ds-baseline guarda a fronteira do design system:
+# `frontend/eslint-ds-baseline.json` lista os arquivos que ainda podem importar
+# MUI, e essa lista só encolhe. Ver o cabeçalho de `frontend/eslint.config.js`.
 
 repos:
   - repo: local
@@ -55,6 +56,14 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+        verbose: true
+
+      - id: vitest
+        name: vitest (frontend)
+        entry: bash -c 'cd frontend && npm run --silent test'
+        language: system
+        pass_filenames: false
+        files: ^frontend/
         verbose: true
 
       - id: lint-imports

@@ -1,24 +1,18 @@
 import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
 import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+    AppButton,
+    AppChip,
+    AppConfirmDialog,
+    AppSearchField,
+    AppSnackbar,
+    AppStack,
+    LoadingSpinner,
+    PageTitle,
+} from '@/components/ui'
 import { AUTH_ROUTES, USER_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
-import {
-    Alert,
-    Box,
-    Button,
-    Chip,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    Snackbar,
-    Stack,
-    TextField,
-    Typography,
-} from '@mui/material'
 import { useEffect, useState } from 'react'
 
 interface User {
@@ -141,19 +135,19 @@ export default function AdminUsersPage() {
       field: 'is_active',
       label: 'Ativo',
       align: 'center',
-      format: (v) => <Chip label={v ? 'Sim' : 'Não'} color={v ? 'success' : 'default'} size="small" />,
+      format: (v) => <AppChip label={v ? 'Sim' : 'Não'} tone={v ? 'success' : 'neutral'} />,
     },
     {
       field: 'is_superuser',
       label: 'Admin',
       align: 'center',
-      format: (v) => <Chip label={v ? 'Sim' : 'Não'} color={v ? 'primary' : 'default'} size="small" />,
+      format: (v) => <AppChip label={v ? 'Sim' : 'Não'} tone={v ? 'primary' : 'neutral'} />,
     },
     {
       field: 'is_verified',
       label: 'Verificado',
       align: 'center',
-      format: (v) => <Chip label={v ? 'Sim' : 'Não'} color={v ? 'info' : 'default'} size="small" />,
+      format: (v) => <AppChip label={v ? 'Sim' : 'Não'} tone={v ? 'info' : 'neutral'} />,
     },
   ]
 
@@ -175,26 +169,25 @@ export default function AdminUsersPage() {
   if (loading) return <LoadingSpinner />
 
   return (
-    <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5">Gerenciamento de Usuários</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Novo Usuário
-        </Button>
-      </Stack>
+    <>
+      <AppStack gap="lg">
+        <AppStack direction="row" justify="between" align="center">
+          <PageTitle>Gerenciamento de Usuários</PageTitle>
+          <AppButton icon={<AddIcon />} onClick={handleCreate}>
+            Novo Usuário
+          </AppButton>
+        </AppStack>
 
-      <TextField
-        label="Buscar"
-        variant="outlined"
-        size="small"
-        fullWidth
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        sx={{ mb: 2, maxWidth: 400 }}
-        placeholder="Busque por username ou email..."
-      />
+        <AppStack gap="md">
+          <AppSearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Busque por username ou email..."
+          />
 
-      <CrudTable data={filteredUsers} columns={columns} onEdit={handleEdit} onDelete={handleDelete} />
+          <CrudTable data={filteredUsers} columns={columns} onEdit={handleEdit} onDelete={handleDelete} />
+        </AppStack>
+      </AppStack>
 
       <CrudForm
         open={formOpen}
@@ -206,32 +199,23 @@ export default function AdminUsersPage() {
         isEdit={!!selectedUser}
       />
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Confirmar Exclusão</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Tem certeza que deseja excluir o usuário <strong>{selectedUser?.username}</strong>? Esta ação não pode ser
-            desfeita.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
-            Excluir
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      <AppConfirmDialog
+        open={deleteDialogOpen}
+        title="Confirmar Exclusão"
+        confirmLabel="Excluir"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+        Tem certeza que deseja excluir o usuário <strong>{selectedUser?.username}</strong>? Esta ação
+        não pode ser desfeita.
+      </AppConfirmDialog>
+
+      <AppSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      />
+    </>
   )
 }
