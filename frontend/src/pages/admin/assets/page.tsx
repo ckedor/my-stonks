@@ -1,5 +1,3 @@
-import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
-import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
 import { ASSET_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
@@ -7,9 +5,13 @@ import axios from 'axios'
 import {
     AppButton,
     AppConfirmDialog,
+    AppCrudForm,
+    AppCrudTable,
     AppSearchField,
     AppSnackbar,
     AppStack,
+    type ColumnConfig,
+    type FieldConfig,
     LoadingSpinner,
     PageTitle,
 } from '@/components/ui'
@@ -390,11 +392,11 @@ export default function AdminAssetsPage() {
             placeholder="Busque por ticker, nome ou tipo..."
           />
 
-          <CrudTable data={filteredAssets} columns={columns} onEdit={handleEdit} onDelete={handleDelete} />
+          <AppCrudTable data={filteredAssets} columns={columns} onEdit={handleEdit} onDelete={handleDelete} />
         </AppStack>
       </AppStack>
 
-      <CrudForm
+      <AppCrudForm
         open={formOpen}
         onClose={handleFormClose}
         onSave={handleSave}

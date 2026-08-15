@@ -97,3 +97,17 @@ test('admin/ai-features — listagem', async ({ page, mockApi }) => {
 
   await expect(page).toHaveScreenshot('admin-ai-features.png')
 })
+
+/* O formulário só aparece ao abrir o drawer, então nenhum snapshot de
+   listagem o cobria. Esta referência nasceu antes de o `CrudForm` virar
+   componente do design system. */
+test('admin/users — formulário de criação', async ({ page, mockApi }) => {
+  await mockApi('/users', [])
+
+  await page.goto('/admin/users')
+  await page.getByRole('button', { name: 'Novo Usuário' }).click()
+
+  await expect(page.getByRole('heading', { name: 'Novo Usuário' })).toBeVisible()
+
+  await expect(page).toHaveScreenshot('admin-users-form.png')
+})

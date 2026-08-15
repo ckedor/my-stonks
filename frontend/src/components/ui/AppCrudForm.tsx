@@ -1,17 +1,22 @@
+/* Formulário em drawer, dirigido por uma lista de campos.
+ *
+ * Mesmo caso do AppCrudTable: recebe `fields` e um `onSave`, sem nenhuma
+ * noção de domínio, então é design system e não componente de admin. */
+
 import {
     Box,
-    Button,
     Divider,
     Drawer,
     FormControl,
     InputLabel,
     MenuItem,
     Select,
-    Stack,
     TextField,
     Typography,
 } from '@mui/material'
 import { useEffect, useState } from 'react'
+import AppButton from './AppButton'
+import AppStack from './AppStack'
 
 export interface FieldConfig {
   name: string
@@ -22,7 +27,7 @@ export interface FieldConfig {
   disabled?: boolean
 }
 
-interface CrudFormProps {
+export interface AppCrudFormProps {
   open: boolean
   onClose: () => void
   onSave: (data: any) => Promise<void>
@@ -33,7 +38,7 @@ interface CrudFormProps {
   onFieldChange?: (name: string, value: any) => void
 }
 
-export default function CrudForm({
+export default function AppCrudForm({
   open,
   onClose,
   onSave,
@@ -42,7 +47,7 @@ export default function CrudForm({
   initialData,
   isEdit = false,
   onFieldChange,
-}: CrudFormProps) {
+}: AppCrudFormProps) {
   const [formData, setFormData] = useState<any>({})
   const [loading, setLoading] = useState(false)
 
@@ -131,14 +136,14 @@ export default function CrudForm({
         {/* Footer Actions */}
         <Divider />
         <Box sx={{ p: 2 }}>
-          <Stack direction="row" spacing={2} justifyContent="flex-end">
-            <Button onClick={onClose} disabled={loading}>
+          <AppStack direction="row" gap="md" justify="end">
+            <AppButton tone="ghost" onClick={onClose} disabled={loading}>
               Cancelar
-            </Button>
-            <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+            </AppButton>
+            <AppButton onClick={handleSubmit} disabled={loading}>
               {loading ? 'Salvando...' : isEdit ? 'Atualizar' : 'Criar'}
-            </Button>
-          </Stack>
+            </AppButton>
+          </AppStack>
         </Box>
       </Box>
     </Drawer>

@@ -3,11 +3,13 @@ import {
     updateAIFeature,
     type AIFeature,
 } from '@/api/ai'
-import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
-import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
 import {
+    AppCrudForm,
+    AppCrudTable,
     AppSnackbar,
     AppStack,
+    type ColumnConfig,
+    type FieldConfig,
     LoadingSpinner,
     PageTitle,
 } from '@/components/ui'
@@ -79,10 +81,10 @@ export default function AdminAIFeaturesPage() {
       <AppStack gap="lg">
         <PageTitle>AI Features</PageTitle>
 
-        <CrudTable data={features} columns={columns} onEdit={handleEdit} />
+        <AppCrudTable data={features} columns={columns} onEdit={handleEdit} />
       </AppStack>
 
-      <CrudForm
+      <AppCrudForm
         open={formOpen}
         onClose={() => setFormOpen(false)}
         onSave={handleSave}

@@ -1,12 +1,14 @@
-import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
-import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
 import {
     AppButton,
     AppChip,
     AppConfirmDialog,
+    AppCrudForm,
+    AppCrudTable,
     AppSearchField,
     AppSnackbar,
     AppStack,
+    type ColumnConfig,
+    type FieldConfig,
     LoadingSpinner,
     PageTitle,
 } from '@/components/ui'
@@ -185,11 +187,11 @@ export default function AdminUsersPage() {
             placeholder="Busque por username ou email..."
           />
 
-          <CrudTable data={filteredUsers} columns={columns} onEdit={handleEdit} onDelete={handleDelete} />
+          <AppCrudTable data={filteredUsers} columns={columns} onEdit={handleEdit} onDelete={handleDelete} />
         </AppStack>
       </AppStack>
 
-      <CrudForm
+      <AppCrudForm
         open={formOpen}
         onClose={() => setFormOpen(false)}
         onSave={handleSave}

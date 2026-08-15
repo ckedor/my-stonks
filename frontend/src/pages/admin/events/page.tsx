@@ -1,14 +1,16 @@
-import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
-import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
 import { ASSET_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
 import {
     AppButton,
     AppConfirmDialog,
+    AppCrudForm,
+    AppCrudTable,
     AppSearchField,
     AppSnackbar,
     AppStack,
+    type ColumnConfig,
+    type FieldConfig,
     LoadingSpinner,
     PageTitle,
 } from '@/components/ui'
@@ -209,7 +211,7 @@ export default function AdminEventsPage() {
             placeholder="Busque por ativo, tipo ou data..."
           />
 
-          <CrudTable
+          <AppCrudTable
             data={filteredEvents}
             columns={columns}
             onEdit={handleEdit}
@@ -218,7 +220,7 @@ export default function AdminEventsPage() {
         </AppStack>
       </AppStack>
 
-      <CrudForm
+      <AppCrudForm
         open={formOpen}
         onClose={() => setFormOpen(false)}
         onSave={handleSave}

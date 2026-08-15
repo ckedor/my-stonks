@@ -16,8 +16,6 @@
     "src/components/RiskMetricsPanel.tsx",
     "src/components/TradeForm.tsx",
     "src/components/Trades.tsx",
-    "src/components/admin/CrudForm.tsx",
-    "src/components/admin/CrudTable.tsx",
     "src/components/asset/AssetHeader.tsx",
     "src/components/asset/AssetPositionCard.tsx",
     "src/components/charts/CandleChart.tsx",

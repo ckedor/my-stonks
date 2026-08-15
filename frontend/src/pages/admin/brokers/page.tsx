@@ -1,14 +1,16 @@
-import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
-import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
 import { BROKER_ROUTES, CURRENCY_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
 import {
     AppButton,
     AppConfirmDialog,
+    AppCrudForm,
+    AppCrudTable,
     AppSearchField,
     AppSnackbar,
     AppStack,
+    type ColumnConfig,
+    type FieldConfig,
     LoadingSpinner,
     PageTitle,
 } from '@/components/ui'
@@ -173,7 +175,7 @@ export default function AdminBrokersPage() {
             placeholder="Busque por nome, CNPJ ou moeda..."
           />
 
-          <CrudTable
+          <AppCrudTable
             data={filteredBrokers}
             columns={columns}
             onEdit={handleEdit}
@@ -182,7 +184,7 @@ export default function AdminBrokersPage() {
         </AppStack>
       </AppStack>
 
-      <CrudForm
+      <AppCrudForm
         open={formOpen}
         onClose={() => setFormOpen(false)}
         onSave={handleSave}

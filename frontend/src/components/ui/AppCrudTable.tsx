@@ -1,7 +1,17 @@
+/* Tabela paginada com ações por linha.
+ *
+ * Morava em `components/admin/`, o que sugeria uma tela específica, mas o
+ * componente não sabe nada de domínio: recebe colunas, linhas e callbacks.
+ * Isso o torna design system pela regra da camada 1, e é o que permite às
+ * cinco telas de admin não importarem mais MUI.
+ *
+ * Convive com o `AppTable`, que resolve outro problema — dados financeiros
+ * com ordenação, moeda e linha de total. Unificar os dois é uma decisão
+ * para quando as telas de portfolio migrarem. */
+
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
 import {
-    Box,
     IconButton,
     Paper,
     Table,
@@ -14,6 +24,7 @@ import {
     Tooltip,
 } from '@mui/material'
 import { useState } from 'react'
+import AppStack from './AppStack'
 
 export interface ColumnConfig {
   field: string
@@ -22,7 +33,7 @@ export interface ColumnConfig {
   format?: (value: any, row: any) => string | React.ReactNode
 }
 
-interface CrudTableProps {
+export interface AppCrudTableProps {
   data: any[]
   columns: ColumnConfig[]
   onEdit: (item: any) => void
@@ -31,14 +42,14 @@ interface CrudTableProps {
   rowsPerPageOptions?: number[]
 }
 
-export default function CrudTable({
+export default function AppCrudTable({
   data,
   columns,
   onEdit,
   onDelete,
   idField = 'id',
   rowsPerPageOptions = [10, 20, 50],
-}: CrudTableProps) {
+}: AppCrudTableProps) {
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(20)
 
@@ -78,7 +89,7 @@ export default function CrudTable({
                   </TableCell>
                 ))}
                 <TableCell align="center">
-                  <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                  <AppStack direction="row" gap="xs" justify="center">
                     <Tooltip title="Editar">
                       <IconButton size="small" onClick={() => onEdit(row)} color="primary">
                         <EditIcon fontSize="small" />
@@ -91,7 +102,7 @@ export default function CrudTable({
                         </IconButton>
                       </Tooltip>
                     )}
-                  </Box>
+                  </AppStack>
                 </TableCell>
               </TableRow>
             ))}
