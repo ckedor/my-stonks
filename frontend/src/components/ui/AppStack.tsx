@@ -44,13 +44,15 @@ export interface AppStackProps {
   wrap?: boolean
   /** Faz o stack ocupar o espaço livre do pai. */
   grow?: boolean
+  /** Ocupa a altura da viewport — para telas que se centram sozinhas. */
+  fullHeight?: boolean
 }
 
-const STYLE_PROPS = new Set(['direction', 'gap', 'align', 'justify', 'wrap', 'grow'])
+const STYLE_PROPS = new Set(['direction', 'gap', 'align', 'justify', 'wrap', 'grow', 'fullHeight'])
 
 const AppStack = styled('div', {
   shouldForwardProp: (prop) => !STYLE_PROPS.has(prop as string),
-})<AppStackProps>(({ theme, direction = 'column', gap = 'none', align, justify, wrap, grow }) => ({
+})<AppStackProps>(({ theme, direction = 'column', gap = 'none', align, justify, wrap, grow, fullHeight }) => ({
   display: 'flex',
   flexDirection: direction,
   gap: theme.spacing(space[gap]),
@@ -58,6 +60,7 @@ const AppStack = styled('div', {
   ...(justify ? { justifyContent: CSS_JUSTIFY[justify] } : null),
   ...(wrap ? { flexWrap: 'wrap' } : null),
   ...(grow ? { flex: 1, minWidth: 0 } : null),
+  ...(fullHeight ? { height: '100vh' } : null),
 }))
 
 export default AppStack

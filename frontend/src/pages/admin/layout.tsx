@@ -1,19 +1,17 @@
 import { useAuthStore } from '@/stores/auth'
 
-import { Box, Typography, useMediaQuery } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { AppShell, AppStack, AppText, PageTitle, SIDEBAR_WIDTH, useViewportMatches } from '@/components/ui'
 
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import AdminSidebar, { DRAWER_WIDTH } from './Sidebar'
+import AdminSidebar from './Sidebar'
 import AdminTopbar from './Topbar'
 
 const COLLAPSE_MEDIA = '(max-width: 1366px)'
 
 export default function AdminLayout() {
   const { isAuthenticated, isLoading, user } = useAuthStore()
-  const theme = useTheme()
-  const collapsedMode = useMediaQuery(COLLAPSE_MEDIA)
+  const collapsedMode = useViewportMatches(COLLAPSE_MEDIA)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   if (isLoading) return null
@@ -26,59 +24,30 @@ export default function AdminLayout() {
   // Verifica se o usuário é admin
   if (!user?.is_admin) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          gap: 2,
-        }}
-      >
-        <Typography variant="h4" color="error">
-          Acesso Negado
-        </Typography>
-        <Typography variant="body1">
-          Você não tem permissão para acessar esta área administrativa.
-        </Typography>
-      </Box>
+      <AppStack align="center" justify="center" gap="md" fullHeight>
+        <PageTitle tone="error">Acesso Negado</PageTitle>
+        <AppText>Você não tem permissão para acessar esta área administrativa.</AppText>
+      </AppStack>
     )
   }
 
   const variant = collapsedMode ? 'persistent' : 'permanent'
 
   return (
-    <Box sx={{ display: 'flex' }}>
-        <AdminSidebar
-          variant={variant}
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
+    <AppShell
+      sidebarOffset={variant === 'permanent' ? SIDEBAR_WIDTH : 0}
+      shiftedBy={variant === 'persistent' && drawerOpen ? SIDEBAR_WIDTH : 0}
+      sidebar={
+        <AdminSidebar variant={variant} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      }
+      topbar={
+        <AdminTopbar
+          showMenuButton={variant === 'persistent'}
+          onMenuClick={() => setDrawerOpen((v) => !v)}
         />
-        {variant === 'permanent' && <Box sx={{ width: DRAWER_WIDTH, flexShrink: 0 }} />}
-
-        <Box
-          sx={{
-            flexGrow: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100vh',
-            overflow: 'hidden',
-            ml:
-              variant === 'persistent' && drawerOpen ? `${DRAWER_WIDTH}px` : 0,
-            transition: theme.transitions.create('margin-left', {
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-          }}
-        >
-          <AdminTopbar
-            showMenuButton={variant === 'persistent'}
-            onMenuClick={() => setDrawerOpen((v) => !v)}
-          />
-          <Box px={4} pt={2} pb={1} sx={{ flexGrow: 1, overflow: 'auto' }}>
-            <Outlet />
-          </Box>
-        </Box>
-      </Box>
+      }
+    >
+      <Outlet />
+    </AppShell>
   )
 }

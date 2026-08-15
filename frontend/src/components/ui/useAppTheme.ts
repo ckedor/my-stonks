@@ -1,3 +1,4 @@
+import { useMediaQuery } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
 /* ──────────────────────────────────────────────
@@ -14,5 +15,11 @@ import { useTheme } from '@mui/material/styles'
    de caçar as dezenas de chamadas espalhadas. */
 
 export const useAppTheme = useTheme
+
+/* Estado da viewport, não estilo — mesma categoria do tema: a tela precisa
+   saber se está estreita para decidir o que renderizar, e isso não é
+   driblar o design system. Reexportado aqui para que `@mui/material` possa
+   ficar banido nas camadas de fora. */
+export const useViewportMatches = useMediaQuery
 
 export type { Theme as AppTheme } from '@mui/material/styles'

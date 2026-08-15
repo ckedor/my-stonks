@@ -10,9 +10,15 @@ import type { ReactNode } from 'react'
  * Diferente do `PageHeader`, que lê o título do store de navegação; este é
  * para as telas que declaram o próprio título. */
 
-export default function PageTitle({ children }: { children: ReactNode }) {
+export interface PageTitleProps {
+  children: ReactNode
+  /** `error` para telas de bloqueio. Padrão: `default`. */
+  tone?: 'default' | 'error'
+}
+
+export default function PageTitle({ children, tone = 'default' }: PageTitleProps) {
   return (
-    <Typography variant="h5" component="h1">
+    <Typography variant="h5" component="h1" color={tone === 'error' ? 'error' : undefined}>
       {children}
     </Typography>
   )
