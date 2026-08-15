@@ -17,5 +17,29 @@
     "eslint.config.js",
     "scripts/*.mjs"
   ],
-  "project": ["src/**/*.{ts,tsx}"]
+  "project": ["src/**/*.{ts,tsx}"],
+
+  // Mesmo critério do pre-commit, aplicado por categoria: o que está verde
+  // bloqueia, o que ainda não está reporta.
+  //
+  // `files` e `dependencies` estão zerados e passam a bloquear — é a
+  // categoria que importa contra o viés aditivo de um agente, que adiciona
+  // arquivo e quase nunca remove.
+  //
+  // `exports` e `types` ainda acusam ~30 símbolos. Tirar o `export` de um
+  // símbolo é seguro, mas apagá-lo exige julgamento caso a caso; ficam
+  // reportando até alguém passar por eles.
+  "rules": {
+    "files": "error",
+    "dependencies": "error",
+    "devDependencies": "error",
+    "unlisted": "error",
+    "binaries": "error",
+    "exports": "warn",
+    "types": "warn",
+    "duplicates": "warn",
+    "enumMembers": "warn",
+    "nsExports": "warn",
+    "nsTypes": "warn"
+  }
 }

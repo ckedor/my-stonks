@@ -18,8 +18,11 @@
 #
 # ── Bloqueia ou não ────────────────────────────────────────────────────────
 # O critério é: check verde entra bloqueando, check vermelho entra reportando
-# até ficar verde. Hoje pytest, lint-imports e knip rodam com `|| true`, porque
+# até ficar verde. Hoje só pytest e lint-imports rodam com `|| true`, porque
 # ainda falham. Para torná-los bloqueantes, remova o `|| true` do `entry`.
+#
+# O knip aplica esse mesmo critério por categoria, em `frontend/knip.jsonc`:
+# arquivo e dependência sem uso bloqueiam; export e tipo ainda reportam.
 #
 # O ruff e o eslint recebem só os arquivos staged, então são naturalmente
 # incrementais — você limpa cada arquivo conforme encosta nele.
@@ -65,8 +68,8 @@ repos:
         verbose: true
 
       - id: knip
-        name: knip / código morto (não bloqueia)
-        entry: bash -c 'cd frontend && npx knip --no-progress || true'
+        name: knip / código morto
+        entry: bash -c 'cd frontend && npx knip --no-progress'
         language: system
         pass_filenames: false
         files: ^frontend/

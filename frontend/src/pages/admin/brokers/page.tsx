@@ -1,23 +1,17 @@
 import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
 import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { BROKER_ROUTES, CURRENCY_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
 import {
-    Alert,
-    Box,
-    Button,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    Snackbar,
-    Stack,
-    TextField,
-    Typography,
-} from '@mui/material'
+    AppButton,
+    AppConfirmDialog,
+    AppSearchField,
+    AppSnackbar,
+    AppStack,
+    LoadingSpinner,
+    PageTitle,
+} from '@/components/ui'
 import { useEffect, useState } from 'react'
 
 interface Broker {
@@ -163,31 +157,30 @@ export default function AdminBrokersPage() {
   }
 
   return (
-    <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5">Gerenciamento de Corretoras</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Nova Corretora
-        </Button>
-      </Stack>
+    <>
+      <AppStack gap="lg">
+        <AppStack direction="row" justify="between" align="center">
+          <PageTitle>Gerenciamento de Corretoras</PageTitle>
+          <AppButton icon={<AddIcon />} onClick={handleCreate}>
+            Nova Corretora
+          </AppButton>
+        </AppStack>
 
-      <TextField
-        label="Buscar"
-        variant="outlined"
-        size="small"
-        fullWidth
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        sx={{ mb: 2, maxWidth: 400 }}
-        placeholder="Busque por nome, CNPJ ou moeda..."
-      />
+        <AppStack gap="md">
+          <AppSearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Busque por nome, CNPJ ou moeda..."
+          />
 
-      <CrudTable
-        data={filteredBrokers}
-        columns={columns}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+          <CrudTable
+            data={filteredBrokers}
+            columns={columns}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </AppStack>
+      </AppStack>
 
       <CrudForm
         open={formOpen}
@@ -199,32 +192,23 @@ export default function AdminBrokersPage() {
         isEdit={!!selectedBroker}
       />
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Confirmar Exclusão</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Tem certeza que deseja excluir a corretora <strong>{selectedBroker?.name}</strong>?
-            Esta ação não pode ser desfeita.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
-            Excluir
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      <AppConfirmDialog
+        open={deleteDialogOpen}
+        title="Confirmar Exclusão"
+        confirmLabel="Excluir"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+        Tem certeza que deseja excluir a corretora <strong>{selectedBroker?.name}</strong>?
+        Esta ação não pode ser desfeita.
+      </AppConfirmDialog>
+
+      <AppSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      />
+    </>
   )
 }

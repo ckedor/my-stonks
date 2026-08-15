@@ -5,14 +5,12 @@ import {
 } from '@/api/ai'
 import CrudForm, { FieldConfig } from '@/components/admin/CrudForm'
 import CrudTable, { ColumnConfig } from '@/components/admin/CrudTable'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import {
-    Alert,
-    Box,
-    Snackbar,
-    Stack,
-    Typography,
-} from '@mui/material'
+    AppSnackbar,
+    AppStack,
+    LoadingSpinner,
+    PageTitle,
+} from '@/components/ui'
 import { useEffect, useState } from 'react'
 
 export default function AdminAIFeaturesPage() {
@@ -77,12 +75,12 @@ export default function AdminAIFeaturesPage() {
   if (loading) return <LoadingSpinner />
 
   return (
-    <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5">AI Features</Typography>
-      </Stack>
+    <>
+      <AppStack gap="lg">
+        <PageTitle>AI Features</PageTitle>
 
-      <CrudTable data={features} columns={columns} onEdit={handleEdit} />
+        <CrudTable data={features} columns={columns} onEdit={handleEdit} />
+      </AppStack>
 
       <CrudForm
         open={formOpen}
@@ -94,16 +92,12 @@ export default function AdminAIFeaturesPage() {
         isEdit={!!selected}
       />
 
-      <Snackbar
+      <AppSnackbar
         open={snackbar.open}
-        autoHideDuration={4000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      />
+    </>
   )
 }

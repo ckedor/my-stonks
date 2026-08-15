@@ -70,16 +70,15 @@ npm run e2e       # regressão visual (Playwright)
 ```
 
 Todos rodam no `pre-commit` — os quatro primeiros a cada commit, `build` e
-`e2e` no push. ESLint não reporta erros; as 27 warnings restantes são
+`e2e` no push. ESLint não reporta erros; as 11 warnings restantes são
 `react-hooks/exhaustive-deps` e ficam de propósito: mexer no array de
 dependências sem ler o efeito é como se cria loop de render.
 
-`knip` ainda não bloqueia. Ele aponta 26 arquivos sem uso — as páginas
-`cripto`, `fii`, `fixed-income`, `pension`, `stocks-br` e `stocks-us`, mais
-a casca de navegação antiga (`pages/portfolio/layout.tsx`, `Sidebar.tsx`,
-`Topbar.tsx`). Nenhuma delas tem rota em `App.tsx` e nenhuma foi tocada
-desde maio de 2026. Apagar é decisão do mantenedor; quando sair, o `|| true`
-do hook sai junto.
+`knip` bloqueia em arquivo e dependência sem uso, que é a categoria que
+importa contra o viés aditivo de um agente. Export e tipo sem uso ainda
+são só reportados: tirar o `export` de um símbolo é seguro, mas apagá-lo
+exige julgamento caso a caso. O critério por categoria fica em
+`knip.jsonc`.
 
 ## Regressão visual
 
@@ -108,3 +107,16 @@ sem cobrir nada:
 
 O browser vem de `npx playwright install chromium`. Em ambiente onde ele é
 provisionado por fora, `PLAYWRIGHT_CHROMIUM_PATH` aponta para o binário.
+
+### Ao migrar uma tela para o design system
+
+A ordem importa, e é fácil errar: **o snapshot vem antes da migração.**
+
+1. Escreva o teste e gere a referência com a tela ainda no MUI.
+2. Migre.
+3. Rode `npm run e2e`. Passar é a prova de que a migração não mexeu no
+   visual; falhar aponta exatamente onde mexeu.
+
+Gerar o snapshot depois de migrar só congela o resultado, seja ele qual
+for — o teste passa e não prova nada. Se isso acontecer, dá para recuperar:
+guarde a migração (`git stash`), gere a referência, restaure e rode.

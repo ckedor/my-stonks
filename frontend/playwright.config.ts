@@ -40,6 +40,10 @@ export default defineConfig({
        salva. Fixar aqui e no localStorage evita que o snapshot dependa da
        configuração do sistema de quem roda. */
     colorScheme: 'light',
+    /* Telas que formatam data com `toLocaleString` renderiam horas
+       diferentes conforme o fuso da máquina que rodar o teste. */
+    timezoneId: 'America/Sao_Paulo',
+    locale: 'pt-BR',
   },
 
   expect: {
