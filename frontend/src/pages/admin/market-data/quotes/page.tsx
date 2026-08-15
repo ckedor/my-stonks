@@ -1,12 +1,18 @@
 import { fetchCurrencies, fetchPersistedQuotes, type PersistedQuote } from '@/api/market'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+    AppAlert,
+    AppAutocomplete,
+    AppDataTable,
+    AppStack,
+    AppText,
+    LoadingSpinner,
+    PageTitle,
+} from '@/components/ui'
 import { ASSET_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
-import { Alert, Autocomplete, Box, Stack, TextField, Typography } from '@mui/material'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import DataTable from '../DataTable'
-import { formatDate, formatNumber } from '../format'
+import { formatDate, formatNumber } from '@/lib/utils/format'
 
 const MAX_ASSET_OPTIONS_RENDERED = 100
 
@@ -82,38 +88,36 @@ export default function AdminMarketDataQuotesPage() {
   )
 
   return (
-    <Box>
-      <Typography variant="h5" mb={3}>
-        Cotações de ativos
-      </Typography>
+    <AppStack gap="lg">
+      <PageTitle>Cotações de ativos</PageTitle>
 
       {loadingAssets ? (
         <LoadingSpinner />
       ) : (
-        <Stack spacing={2}>
-          <Autocomplete
+        <AppStack gap="md">
+          <AppAutocomplete
             options={assets}
             value={selected}
-            onChange={(_, value) => setSelected(value)}
+            onChange={setSelected}
             getOptionLabel={assetLabel}
             filterOptions={filterOptions}
             isOptionEqualToValue={(option, value) => option.id === value.id}
-            renderInput={(params) => <TextField {...params} label="Ativo" />}
-            sx={{ maxWidth: 520 }}
+            label="Ativo"
+            size="lg"
           />
 
-          {error && <Alert severity="error">{error}</Alert>}
+          {error && <AppAlert severity="error">{error}</AppAlert>}
 
           {!selected ? (
-            <Alert severity="info">Selecione um ativo para ver as cotações persistidas.</Alert>
+            <AppAlert severity="info">Selecione um ativo para ver as cotações persistidas.</AppAlert>
           ) : loadingQuotes ? (
             <LoadingSpinner />
           ) : (
             <>
-              <Typography variant="body2" color="text.secondary">
+              <AppText variant="bodySmall" tone="secondary">
                 {rows.length} cotações.
-              </Typography>
-              <DataTable
+              </AppText>
+              <AppDataTable
                 rows={rows}
                 emptyMessage="Nenhuma cotação persistida para este ativo."
                 getDate={(row) => row.date}
@@ -141,8 +145,8 @@ export default function AdminMarketDataQuotesPage() {
               />
             </>
           )}
-        </Stack>
+        </AppStack>
       )}
-    </Box>
+    </AppStack>
   )
 }

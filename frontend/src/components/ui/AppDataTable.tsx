@@ -1,9 +1,17 @@
+/* Tabela paginada, ordenável e filtrável por data.
+ *
+ * Morava em `pages/admin/market-data/`, mas não sabe nada de market data:
+ * recebe linhas, colunas e uma função que diz a data de cada linha. Pela
+ * regra da camada 1 é design system, e é o que tira o MUI das três telas
+ * que a usam.
+ *
+ * Terceira tabela do design system, ao lado de `AppTable` (dados
+ * financeiros com moeda e total) e `AppCrudTable` (ações por linha).
+ * Unificá-las é decisão para quando o portfolio migrar e os casos de uso
+ * estiverem todos à vista. */
+
 import {
-  Alert,
-  Box,
-  Button,
   Paper,
-  Stack,
   Table,
   TableBody,
   TableCell,
@@ -15,11 +23,14 @@ import {
   TextField,
 } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
-import { formatDate } from './format'
+import AppAlert from './AppAlert'
+import AppButton from './AppButton'
+import AppStack from './AppStack'
+import { formatDate } from '@/lib/utils/format'
 
 const ROWS_PER_PAGE_OPTIONS = [25, 50, 100]
 
-export interface Column<Row> {
+export interface AppDataTableColumn<Row> {
   label: string
   align?: 'left' | 'right' | 'center'
   render: (row: Row) => React.ReactNode
@@ -29,14 +40,14 @@ export interface Column<Row> {
  *
  * Every row set here is already fully loaded, so sorting and the day lookup
  * run in memory instead of costing another round trip. */
-export default function DataTable<Row>({
+export default function AppDataTable<Row>({
   rows,
   columns,
   emptyMessage,
   getDate,
 }: {
   rows: Row[]
-  columns: Column<Row>[]
+  columns: AppDataTableColumn<Row>[]
   emptyMessage: string
   /** ISO date the row belongs to, used for sorting and the day filter. */
   getDate: (row: Row) => string
@@ -64,12 +75,12 @@ export default function DataTable<Row>({
   const paginated = visibleRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
   if (rows.length === 0) {
-    return <Alert severity="info">{emptyMessage}</Alert>
+    return <AppAlert severity="info">{emptyMessage}</AppAlert>
   }
 
   return (
-    <Box>
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+    <AppStack gap="md">
+      <AppStack direction="row" gap="sm" align="center">
         <TextField
           type="date"
           size="small"
@@ -80,14 +91,14 @@ export default function DataTable<Row>({
           sx={{ width: 200 }}
         />
         {dayFilter && (
-          <Button size="small" onClick={() => setDayFilter('')}>
+          <AppButton tone="ghost" size="sm" onClick={() => setDayFilter('')}>
             Limpar
-          </Button>
+          </AppButton>
         )}
-      </Stack>
+      </AppStack>
 
       {visibleRows.length === 0 ? (
-        <Alert severity="info">Nenhum registro em {formatDate(dayFilter)}.</Alert>
+        <AppAlert severity="info">Nenhum registro em {formatDate(dayFilter)}.</AppAlert>
       ) : (
         <Paper>
           <TableContainer sx={{ overflowX: 'auto' }}>
@@ -147,6 +158,6 @@ export default function DataTable<Row>({
           />
         </Paper>
       )}
-    </Box>
+    </AppStack>
   )
 }

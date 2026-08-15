@@ -4,12 +4,17 @@ import {
   type MarketDataSeriesHistoryPoint,
   type MarketDataSeriesOption,
 } from '@/api/market'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
-import { Alert, Autocomplete, Box, Stack, TextField, Typography } from '@mui/material'
+import {
+    AppAlert,
+    AppAutocomplete,
+    AppDataTable,
+    AppStack,
+    AppText,
+    LoadingSpinner,
+    PageTitle,
+} from '@/components/ui'
+import { formatDate, formatNumber } from '@/lib/utils/format'
 import { useEffect, useState } from 'react'
-
-import DataTable from '../DataTable'
-import { formatDate, formatNumber } from '../format'
 
 export default function AdminMarketDataSeriesPage() {
   const [options, setOptions] = useState<MarketDataSeriesOption[]>([])
@@ -56,35 +61,33 @@ export default function AdminMarketDataSeriesPage() {
   }, [selected])
 
   return (
-    <Box>
-      <Typography variant="h5" mb={3}>
-        Séries
-      </Typography>
+    <AppStack gap="lg">
+      <PageTitle>Séries</PageTitle>
 
       {loadingOptions ? (
         <LoadingSpinner />
       ) : (
-        <Stack spacing={2}>
-          <Autocomplete
+        <AppStack gap="md">
+          <AppAutocomplete
             options={options}
             value={selected}
-            onChange={(_, value) => setSelected(value)}
+            onChange={setSelected}
             getOptionLabel={(option) => `${option.short_name} — ${option.id}`}
             isOptionEqualToValue={(option, value) => option.id === value.id}
-            renderInput={(params) => <TextField {...params} label="Série" />}
-            sx={{ maxWidth: 420 }}
+            label="Série"
+            size="md"
           />
 
-          {error && <Alert severity="error">{error}</Alert>}
+          {error && <AppAlert severity="error">{error}</AppAlert>}
 
           {loadingHistory ? (
             <LoadingSpinner />
           ) : (
             <>
-              <Typography variant="body2" color="text.secondary">
+              <AppText variant="bodySmall" tone="secondary">
                 {rows.length} observações.
-              </Typography>
-              <DataTable
+              </AppText>
+              <AppDataTable
                 rows={rows}
                 emptyMessage="Nenhum histórico importado para esta série."
                 getDate={(row) => row.date}
@@ -103,8 +106,8 @@ export default function AdminMarketDataSeriesPage() {
               />
             </>
           )}
-        </Stack>
+        </AppStack>
       )}
-    </Box>
+    </AppStack>
   )
 }

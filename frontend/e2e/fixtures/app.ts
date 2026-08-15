@@ -14,9 +14,15 @@ export interface AppFixtures {
   mockApi: (path: string, body: unknown) => Promise<void>
 }
 
+/* Casa por pathname, não pela URL inteira: várias chamadas levam query
+   string (`?asset_ids=1&start_date=...`) e um glob de caminho exato não
+   pegaria nenhuma delas — o teste cairia no catch-all 404 sem dizer por quê. */
 async function json(page: Page, path: string, body: unknown) {
-  await page.route(`${API_ORIGIN}${path}`, (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) }),
+  const origin = new URL(API_ORIGIN).origin
+  await page.route(
+    (url) => url.origin === origin && url.pathname === path,
+    (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) }),
   )
 }
 

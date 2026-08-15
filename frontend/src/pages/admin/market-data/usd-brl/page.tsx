@@ -1,10 +1,14 @@
 import { fetchUsdBrlHistory, type UsdBrlHistoryPoint } from '@/api/market'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
-import { Alert, Box, Stack, Typography } from '@mui/material'
+import {
+    AppAlert,
+    AppDataTable,
+    AppStack,
+    AppText,
+    LoadingSpinner,
+    PageTitle,
+} from '@/components/ui'
+import { formatDate, formatNumber } from '@/lib/utils/format'
 import { useEffect, useState } from 'react'
-
-import DataTable from '../DataTable'
-import { formatDate, formatNumber } from '../format'
 
 export default function AdminMarketDataUsdBrlPage() {
   const [rows, setRows] = useState<UsdBrlHistoryPoint[]>([])
@@ -29,21 +33,19 @@ export default function AdminMarketDataUsdBrlPage() {
   }, [])
 
   return (
-    <Box>
-      <Typography variant="h5" mb={3}>
-        Dólar
-      </Typography>
+    <AppStack gap="lg">
+      <PageTitle>Dólar</PageTitle>
 
       {loading ? (
         <LoadingSpinner />
       ) : error ? (
-        <Alert severity="error">{error}</Alert>
+        <AppAlert severity="error">{error}</AppAlert>
       ) : (
-        <Stack spacing={2}>
-          <Typography variant="body2" color="text.secondary">
+        <AppStack gap="md">
+          <AppText variant="bodySmall" tone="secondary">
             {rows.length} observações — as duas direções são gravadas na ingestão.
-          </Typography>
-          <DataTable
+          </AppText>
+          <AppDataTable
             rows={rows}
             emptyMessage="Nenhuma cotação de dólar importada."
             getDate={(row) => row.date}
@@ -54,8 +56,8 @@ export default function AdminMarketDataUsdBrlPage() {
               { label: 'Fonte', render: (row) => row.source },
             ]}
           />
-        </Stack>
+        </AppStack>
       )}
-    </Box>
+    </AppStack>
   )
 }
