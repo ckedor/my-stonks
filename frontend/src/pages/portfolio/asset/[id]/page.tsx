@@ -1,5 +1,5 @@
 import AssetDetailPanel from '@/components/AssetDetailPanel'
-import BackButton from '@/components/ui/BackButton'
+import AppBreadcrumbs from '@/components/ui/AppBreadcrumbs'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { usePositionsStore } from '@/stores/portfolio/positions'
 import type { PortfolioPositionEntry } from '@/types'
@@ -205,6 +205,7 @@ export default function PortfolioAssetPage() {
   const portfolioId = selectedPortfolio?.id
   const positions = usePositionsStore(s => s.positions)
   const assetId = id ? parseInt(id, 10) : null
+  const ticker = positions.find((p) => p.asset_id === assetId)?.ticker
 
   if (!portfolioId || !assetId) return null
 
@@ -219,16 +220,12 @@ export default function PortfolioAssetPage() {
         pb: 5,
       }}
     >
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="flex-start"
-        gap={2}
-        flexWrap="wrap"
-        sx={{ mb: 2.5 }}
-      >
-        <BackButton fallbackHref="/portfolio/asset" />
-      </Box>
+      <AppBreadcrumbs
+        items={[
+          { label: 'Ativos', href: '/portfolio/asset' },
+          { label: ticker ?? '' },
+        ]}
+      />
 
       <AssetDetailPanel
         assetId={assetId}

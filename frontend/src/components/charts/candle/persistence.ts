@@ -27,6 +27,14 @@ export interface PersistedChartState {
   movingAverage?: boolean
   volume?: boolean
   view?: PersistedView | null
+  /** Do gráfico do ativo em carteira (`portfolio-asset/PortfolioAssetChart`),
+   *  que guarda estado com as mesmas funções: um armazenamento por chave, e as
+   *  chaves dos dois gráficos não se cruzam. */
+  assetChartMode?: 'rentabilidade' | 'preco' | 'anualizado'
+  trades?: boolean
+  quantity?: boolean
+  averagePrice?: boolean
+  benchmark?: string
 }
 
 /** The stored axis mode, upgrading the boolean that came before it. */

@@ -6,6 +6,7 @@ import {
   TRANSACTION_ROUTES,
 } from '@/constants/routes'
 import api from '@/lib/api'
+import { toISODate } from '@/lib/utils/date'
 import type { AssetAnalysis, CategoryReturnEntry, Dividend, PatrimonyEntry, Portfolio, PortfolioPositionEntry, PortfolioReturnEntry, ReturnsEntry, Trade } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -48,17 +49,25 @@ export const fetchCategoryReturns = (
 export const fetchCategoryAnalysis = (portfolioId: number, categoryId: number, currency: string = 'BRL'): Promise<AssetAnalysis> =>
   api.get<AssetAnalysis>(POSITION_ROUTES.categoryAnalysis(portfolioId, categoryId), { params: { currency } }).then((r) => r.data)
 
-export const fetchAssetReturns = (portfolioId: number, assetId: number, currency: string = 'BRL'): Promise<Record<string, ReturnsEntry[]>> =>
-  api.get(POSITION_ROUTES.assetReturns(portfolioId, assetId), { params: { currency } }).then((r) => {
+export const fetchAssetReturns = (
+  portfolioId: number,
+  assetId: number,
+  currency: string = 'BRL',
+  startDate?: string,
+): Promise<Record<string, ReturnsEntry[]>> =>
+  api.get(POSITION_ROUTES.assetReturns(portfolioId, assetId), { params: { currency, start_date: startDate } }).then((r) => {
     const rows: Record<string, any>[] = r.data?.data ?? r.data ?? []
     // df_response returns [{date, TICKER: value, ...}, ...] — pivot to {TICKER: [{date, value}]}
+    // Dates arrive as datetimes here and as plain days in the benchmark series;
+    // they are compared to each other as strings downstream, so they are cut to
+    // the day at the boundary rather than in each consumer.
     const result: Record<string, ReturnsEntry[]> = {}
     for (const row of rows) {
       const { date, ...rest } = row
       for (const [ticker, val] of Object.entries(rest)) {
         if (val == null) continue
         if (!result[ticker]) result[ticker] = []
-        result[ticker].push({ date, value: val as number })
+        result[ticker].push({ date: toISODate(date), value: val as number })
       }
     }
     return result

@@ -174,7 +174,12 @@ export function formatSpan(days: number): string {
 const DAYS_IN_MONTH = 30
 const DAYS_IN_YEAR = 365
 
-export function periodPerformance(data: CandleDataPoint[]): PeriodPerformance | null {
+/** Aberto a qualquer série de fechamentos datados, e não só a velas: o gráfico
+ *  do ativo em carteira mede o próprio período do mesmo jeito, e a regra de
+ *  quando anualizar não deve existir em duas versões. */
+export function periodPerformance(
+  data: { time: string; close: number }[],
+): PeriodPerformance | null {
   if (data.length < 2) return null
 
   const first = data[0]

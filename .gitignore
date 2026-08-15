@@ -1,5 +1,9 @@
 *.sql
 
+# Worktrees do Claude Code: são checkouts próprios dentro do repositório, e sem
+# isto o conteúdo de cada um aparece como untracked no checkout principal.
+.claude/worktrees/
+
 # Scratch / noodling
 backend/app/domain/finance/noodling/
 backend/app/domain/finance/main.py

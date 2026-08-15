@@ -1,0 +1,10 @@
+# Arquivos que o git ignora, mas sem os quais um worktree não roda.
+#
+# Um worktree é um checkout limpo: só o que está versionado aparece nele. O
+# .env do backend guarda DATABASE_URL, JWT_SECRET e as chaves dos provedores,
+# e nada disso está no repositório — sem esta cópia o backend não sobe.
+#
+# Sintaxe de .gitignore. Só é copiado o que casa com um padrão *e* é
+# gitignored: o que está versionado já vem no checkout e nunca é duplicado.
+backend/.env
+backend/.env.test

@@ -20,6 +20,11 @@ import {
 } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers'
 import dayjs, { Dayjs } from 'dayjs'
+// `isSameOrBefore` não vem no dayjs base. O plugin chegava aqui de carona por
+// outro módulo que já não existe; a extensão mora onde o método é usado.
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
+
+dayjs.extend(isSameOrBefore)
 import { useMemo, useState } from 'react'
 import PortfolioMonthlyAportsChart from './PortfolioMonthlyAportsChart'
 

@@ -1,3 +1,5 @@
+import datetime as dt
+
 from fastapi import APIRouter, Depends, Query
 
 from app.composition.portfolio import get_portfolio_position_service
@@ -86,8 +88,12 @@ async def get_category_analysis(
 async def get_asset_returns(  # noqa: PLR0913
     portfolio_id: int,
     asset_id: int,
-    start_date: str | None = None,
-    end_date: str | None = None,
+    # Datas, e não texto: o repositório compara a coluna `date` direto, e o
+    # Postgres não compara `date` com `varchar` -- estes dois parâmetros
+    # devolviam 500 sempre que preenchidos. Mesma anotação que o módulo de
+    # dividendos já usa.
+    start_date: dt.date | None = None,
+    end_date: dt.date | None = None,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):

@@ -2,9 +2,8 @@
 import PortfolioReturnsChart from '@/components/PortfolioReturnsChart'
 import AppCard from '@/components/ui/AppCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
-import { useAnalysisStore } from '@/stores/portfolio/analysis'
 import { useReturnsStore } from '@/stores/portfolio/returns'
-import { Box, Chip, Grid, Typography } from '@mui/material'
+import { Box, Grid, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import PortfolioMonthlyHeatmap from './PortfolioMonthlyHeatmap'
 import PortfolioMonthlyReturnsChart from './PortfolioMonthlyReturnsChart'
@@ -17,7 +16,6 @@ interface SeriesPoint {
 
 export default function PortfolioReturnsPage() {
   const { categoryReturns, loading: returnsLoading } = useReturnsStore()
-  const { analysis } = useAnalysisStore()
 
   const loading = returnsLoading && Object.keys(categoryReturns).length === 0
 
@@ -44,50 +42,6 @@ export default function PortfolioReturnsPage() {
       <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>Rentabilidade Carteira</Typography>
       <Grid container spacing={2}>
         {/* Performance metrics row */}
-        {analysis && (
-          <Grid size={12}>
-            <AppCard>
-              <Box
-                display="flex"
-                flexWrap="wrap"
-                gap={1}
-                alignItems="center"
-              >
-              <Chip
-                label={`CAGR ${analysis.performance_metrics.cagr.toFixed(2)}%`}
-                size="small"
-                sx={{
-                  fontWeight: 700,
-                  color: analysis.performance_metrics.cagr >= 0 ? 'success.main' : 'error.main',
-                  bgcolor: 'transparent',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                }}
-              />
-              {Object.entries(analysis.performance_metrics.benchmarks_metrics).map(([name, bm]) => (
-                <Box key={name} display="flex" alignItems="center" gap={0.5}>
-                  <Chip
-                    label={`α ${name} ${bm.alpha >= 0 ? '+' : ''}${bm.alpha.toFixed(2)}%`}
-                    size="small"
-                    sx={{
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                      color: bm.alpha >= 0 ? 'success.main' : 'error.main',
-                      bgcolor: 'transparent',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    β {bm.beta.toFixed(2)} · ρ {bm.correlation.toFixed(2)}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-            </AppCard>
-          </Grid>
-        )}
-
         {/* Linha 1 - Gráfico principal full width */}
         <Grid size={12}>
           <AppCard>
@@ -97,6 +51,7 @@ export default function PortfolioReturnsPage() {
               selectedBenchmark="CDI"
               defaultRange={range}
               onRangeChange={setRange}
+              persistKey="portfolio-returns"
             />
           </AppCard>
         </Grid>

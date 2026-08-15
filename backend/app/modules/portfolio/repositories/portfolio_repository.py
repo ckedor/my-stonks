@@ -16,6 +16,7 @@ from app.modules.market_data.domain.assets import (
     Broker,
     FIISegment,
     FixedIncome,
+    FixedIncomeType,
     TreasuryBond,
 )
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
@@ -561,11 +562,21 @@ class PortfolioRepository(SQLAlchemyRepository):
                 AssetType.short_name.label('type'),
                 AssetType.id.label('type_id'),
                 AssetClass.name.label('class'),
+                # O que remunera um papel de renda fixa: indexador, taxa e a
+                # forma de combinar os dois (prefixado, index+, %index). Nulo
+                # para todo o resto, que é a maioria das linhas.
+                MarketDataSeries.short_name.label('index'),
+                FixedIncome.fee.label('fee'),
+                FixedIncomeType.id.label('fixed_income_type_id'),
+                FixedIncomeType.name.label('fixed_income_type'),
             )
             .join(Asset, Position.asset_id == Asset.id)
             .outerjoin(cat_assignment_subq, cat_assignment_subq.c.asset_id == Position.asset_id)
             .join(AssetType, Asset.asset_type_id == AssetType.id)
             .join(AssetClass, AssetType.asset_class_id == AssetClass.id)
+            .outerjoin(FixedIncome, FixedIncome.asset_id == Asset.id)
+            .outerjoin(MarketDataSeries, FixedIncome.index_id == MarketDataSeries.id)
+            .outerjoin(FixedIncomeType, FixedIncome.fixed_income_type_id == FixedIncomeType.id)
             .outerjoin(
                 Dividend,
                 and_(

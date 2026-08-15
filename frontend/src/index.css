@@ -19,7 +19,10 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter Variable', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  /* Algarismos de largura fixa. Em uma tela cheia de tabelas de dinheiro, sem
+     isso as colunas de valores dançam de linha para linha. */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -54,4 +57,39 @@ svg[tabindex]:focus:not(:focus-visible) {
 
 .recharts-wrapper, svg[tabindex] {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Barras de rolagem discretas.
+   O padrão do navegador desenha uma faixa larga e escura que, dentro de um card
+   claro, chama mais atenção que o conteúdo rolado. Cinza translúcido funciona
+   nos dois temas sem precisar saber qual está ativo. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 128, 128, 0.35) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.35);
+  border-radius: 8px;
+  /* A borda transparente com `background-clip` afina o polegar sem estreitar a
+     área de clique. */
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(128, 128, 128, 0.55);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }

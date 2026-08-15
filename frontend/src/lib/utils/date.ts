@@ -5,6 +5,16 @@ type WithDate = {
 }
 export type DateRangeKey = 'ytd' | '1y' | '2y' | '3y' | '4y' | '5y' | '6y' | '7y' | '8y' | '9y' | '10y' | 'max'
 
+/** O dia, sem hora: `2023-02-16T00:00:00` e `2023-02-16` viram a mesma coisa.
+ *
+ *  A API devolve os dois formatos — séries de mercado em dia puro, séries de
+ *  posição em datetime — e comparar as duas como texto trata o mesmo dia como
+ *  dois. Isso passava despercebido enquanto tudo era reparseado com dayjs;
+ *  gráficos que indexam por data precisam de uma forma só. */
+export function toISODate(date: string): string {
+  return date.slice(0, 10)
+}
+
 export function getOldestDateISO<T extends WithDate>(
   data: T[]
 ): string | null {

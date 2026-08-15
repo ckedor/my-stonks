@@ -2,11 +2,12 @@ import { CATEGORY_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
+import GridViewIcon from '@mui/icons-material/GridView'
+import ViewListIcon from '@mui/icons-material/ViewList'
 import {
     Alert,
     Box,
     Button,
-    CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
@@ -19,6 +20,9 @@ import {
     Snackbar,
     Stack,
     TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+    Tooltip,
     Typography,
     useTheme,
 } from '@mui/material'
@@ -26,6 +30,8 @@ import { DatePicker } from '@mui/x-date-pickers'
 import { Dayjs } from 'dayjs'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import MiniDonut from '@/components/ui/MiniDonut'
+import AssetCard from './AssetCard'
 
 interface Position {
   ticker: string
@@ -53,39 +59,15 @@ interface AssetListProps {
 
 const GRID_COLS = '40px 1.8fr 0.8fr 0.8fr 1fr 1fr 1fr 1fr 160px'
 
-function MiniDonut({ value, color, size = 32 }: { value: number; color: string; size?: number }) {
-  const pct = Math.max(0, Math.min(100, value))
-  return (
-    <Box sx={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-      <CircularProgress
-        variant="determinate"
-        value={100}
-        size={size}
-        thickness={4}
-        sx={{ color: 'action.hover', position: 'absolute' }}
-      />
-      <CircularProgress
-        variant="determinate"
-        value={pct}
-        size={size}
-        thickness={4}
-        sx={{ color, position: 'absolute' }}
-      />
-      <Box
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Typography sx={{ fontSize: 8, fontWeight: 700, lineHeight: 1 }}>
-          {pct < 1 ? '<1' : Math.round(pct)}%
-        </Typography>
-      </Box>
-    </Box>
-  )
+type ViewMode = 'list' | 'card'
+
+const VIEW_STORAGE_KEY = 'my-stonks:asset-list-view'
+
+/** A escolha entre lista e cards é uma preferência de leitura, não um estado da
+ *  sessão: quem prefere cards os quer de novo na próxima visita. */
+function readView(): ViewMode {
+  if (typeof window === 'undefined') return 'list'
+  return window.localStorage.getItem(VIEW_STORAGE_KEY) === 'card' ? 'card' : 'list'
 }
 
 export default function AssetList({ positions, groupBy = 'category', onGroupByChange }: AssetListProps) {
@@ -93,7 +75,17 @@ export default function AssetList({ positions, groupBy = 'category', onGroupByCh
   const navigate = useNavigate()
   const userCategories = selectedPortfolio?.custom_categories ?? []
   const [search, setSearch] = useState('')
+  const [view, setViewState] = useState<ViewMode>(readView)
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null)
+
+  const setView = (next: ViewMode) => {
+    setViewState(next)
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, next)
+    } catch {
+      // Armazenamento cheio ou bloqueado não pode quebrar a listagem.
+    }
+  }
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
     categoryId: number | null
@@ -167,8 +159,7 @@ export default function AssetList({ positions, groupBy = 'category', onGroupByCh
 
   const { format: formatCurrency } = useCurrency()
 
-  const fmtBRL = (v: number, decimals = 2) =>
-    formatCurrency(v)
+  const fmtBRL = (v: number) => formatCurrency(v)
 
   const pctColor = (v: number | null | undefined) =>
     v == null ? theme.palette.text.primary : v > 0 ? positiveColor : v < 0 ? negativeColor : theme.palette.text.primary
@@ -200,13 +191,30 @@ export default function AssetList({ positions, groupBy = 'category', onGroupByCh
             <MenuItem value="broker">Corretora</MenuItem>
           </Select>
         </FormControl>
-        <Stack sx={{ flexGrow: 1 }} direction="row" justifyContent="flex-end">
+        <Stack sx={{ flexGrow: 1 }} direction="row" justifyContent="flex-end" spacing={2} alignItems="center">
           <DatePicker
             label="Data"
             value={selectedDate}
             onChange={(newValue) => setSelectedDate(newValue)}
             slotProps={{ textField: { size: 'small' } }}
           />
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={view}
+            onChange={(_, next: ViewMode | null) => next && setView(next)}
+          >
+            <ToggleButton value="list" sx={{ px: 1, py: 0.5 }}>
+              <Tooltip title="Lista">
+                <ViewListIcon fontSize="small" />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="card" sx={{ px: 1, py: 0.5 }}>
+              <Tooltip title="Cards">
+                <GridViewIcon fontSize="small" />
+              </Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
         </Stack>
       </Stack>
 
@@ -238,6 +246,32 @@ export default function AssetList({ positions, groupBy = 'category', onGroupByCh
                 </Typography>
               </Box>
 
+              {view === 'card' ? (
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(2, minmax(0, 1fr))',
+                      md: 'repeat(3, minmax(0, 1fr))',
+                      xl: 'repeat(4, minmax(0, 1fr))',
+                    },
+                    gap: 2,
+                    mt: 1.5,
+                  }}
+                >
+                  {items.map((pos) => (
+                    <AssetCard
+                      key={pos.asset_id}
+                      position={pos}
+                      portfolioId={selectedPortfolio!.id}
+                      weight={totalPortfolioValue > 0 ? (pos.value / totalPortfolioValue) * 100 : 0}
+                      accentColor={catColor}
+                    />
+                  ))}
+                </Box>
+              ) : (
+              <>
               {/* Column headers */}
               <Box
                 sx={{
@@ -369,6 +403,8 @@ export default function AssetList({ positions, groupBy = 'category', onGroupByCh
                   </Box>
                 )
               })}
+              </>
+              )}
             </Box>
           )
         })}

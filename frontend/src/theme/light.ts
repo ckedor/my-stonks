@@ -123,7 +123,7 @@ export const lightTheme = createTheme({
   },
 
   typography: {
-    fontFamily: `'Inter', 'Roboto', sans-serif`,
+    fontFamily: `'Inter Variable', 'Inter', 'Roboto', sans-serif`,
     h6: { fontWeight: 600 },
     body1: { color: '#1F2328' },
     body2: { color: '#5C6670' },

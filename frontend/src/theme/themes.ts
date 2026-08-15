@@ -138,7 +138,7 @@ const darkComponents = {
 }
 
 const baseTypography = {
-  fontFamily: `'Inter', 'Helvetica Neue', 'Arial', sans-serif`,
+  fontFamily: `'Inter Variable', 'Inter', 'Helvetica Neue', Arial, sans-serif`,
   h5: { fontWeight: 600, letterSpacing: '-0.01em' },
   h6: { fontWeight: 600, letterSpacing: '-0.01em' },
   subtitle2: { fontWeight: 600, letterSpacing: '0.02em' },

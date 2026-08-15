@@ -71,7 +71,9 @@ export default function Trades({ assetId, assetTypes, currencyId }: TradesProps)
 
   return (
     <Box sx={{ p: 2, height: 500, display: 'flex', flexDirection: 'column' }}>
-      <Box mb={2} display="flex" justifyContent="space-between" alignItems="center">
+      {/* `px: 2` alinha o título com o texto da primeira coluna: a célula da
+          tabela traz 16px de recuo próprio, que o cabeçalho não tinha. */}
+      <Box mb={2} px={2} display="flex" justifyContent="space-between" alignItems="center">
         <Typography variant="h6">Compras / Vendas</Typography>
         <Button variant="contained" onClick={handleNew}>
           Nova Operação
