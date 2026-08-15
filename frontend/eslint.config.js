@@ -59,6 +59,16 @@ export default defineConfig([
     },
   },
 
+  /* ── Testes de ponta a ponta ──
+     Não há React aqui. As fixtures do Playwright recebem um callback
+     chamado `use`, que a regra de hooks confunde com o `use` do React. */
+  {
+    files: ['e2e/**/*.ts'],
+    rules: {
+      'react-hooks/rules-of-hooks': 'off',
+    },
+  },
+
   /* ── Regime 2: consumidores do design system ── */
   {
     files: ['src/**/*.{ts,tsx}'],

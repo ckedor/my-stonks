@@ -3,6 +3,27 @@
 These instructions apply to the entire repository. More specific instructions
 exist in `backend/CLAUDE.md` and `frontend/CLAUDE.md`.
 
+## Who maintains this
+
+One developer, no team and no remote CI. Three things follow from that, and
+they are requirements rather than context:
+
+- **`.pre-commit-config.yaml` is the CI.** It is the only automatic barrier
+  between the code and the repository, so a check that is not wired there does
+  not run. Fast checks run on commit; slow ones (`tsc` + build, visual
+  regression) run on push. Both hook types must be installed:
+  `pre-commit install --hook-type pre-commit --hook-type pre-push`.
+- **There is no reviewer.** Nobody will catch a mistake by reading the diff
+  later, which is why the guards lean toward the mechanical: a rule that fails
+  loudly beats a convention written down somewhere.
+- **Test the guard, not only the code.** A check that silently stops matching
+  is worse than no check, because it is trusted. When you add enforcement, add
+  the case that proves it still fires.
+
+Prefer removing dead code to keeping it for a hypothetical future reader —
+there is no other reader. But deleting a feature is the maintainer's call:
+report it and ask.
+
 ## Before changing code
 
 - Read `docs/architecture/overview.md` for domain and system context.

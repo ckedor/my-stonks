@@ -61,13 +61,50 @@ names a file that no longer exists. Both checks run in `pre-commit`.
 From `frontend/`, run:
 
 ```bash
-npm run lint
-npm run lint:ds
-npm test
-npm run build
+npm run lint      # ESLint, incluindo a fronteira do design system
+npm run lint:ds   # ratchet: a dívida do design system só encolhe
+npm test          # vitest
+npm run knip      # arquivos, exports e dependências sem uso
+npm run build     # tsc + vite build
+npm run e2e       # regressão visual (Playwright)
 ```
 
-All four are green and all four run in `pre-commit`. ESLint reports no
-errors; the 27 remaining warnings are `react-hooks/exhaustive-deps` and are
-deliberately left alone — changing a hook's dependency array without
-reading the effect is how render loops get introduced.
+Todos rodam no `pre-commit` — os quatro primeiros a cada commit, `build` e
+`e2e` no push. ESLint não reporta erros; as 27 warnings restantes são
+`react-hooks/exhaustive-deps` e ficam de propósito: mexer no array de
+dependências sem ler o efeito é como se cria loop de render.
+
+`knip` ainda não bloqueia. Ele aponta 26 arquivos sem uso — as páginas
+`cripto`, `fii`, `fixed-income`, `pension`, `stocks-br` e `stocks-us`, mais
+a casca de navegação antiga (`pages/portfolio/layout.tsx`, `Sidebar.tsx`,
+`Topbar.tsx`). Nenhuma delas tem rota em `App.tsx` e nenhuma foi tocada
+desde maio de 2026. Apagar é decisão do mantenedor; quando sair, o `|| true`
+do hook sai junto.
+
+## Regressão visual
+
+`e2e/` guarda os snapshots de referência, e eles são versionados — são a
+linha de base. A API nunca é chamada: `VITE_API_URL` aponta para uma origem
+inexistente e o fixture em `e2e/fixtures/app.ts` intercepta tudo, então o
+teste não depende do backend nem dos dados de ontem.
+
+Depois de uma mudança visual **intencional**, regenere e confira a imagem
+antes de commitar:
+
+```bash
+npm run e2e:update
+```
+
+Duas armadilhas que já custaram caro aqui, ambas do tipo que passa verde
+sem cobrir nada:
+
+- Os layouts ocupam `100vh` e rolam por dentro, então `fullPage: true` não
+  captura além da viewport. Os testes usam viewport alta e chamam
+  `expectNothingClipped`, que falha quando o conteúdo cresce além dela.
+- Os limites de diferença precisaram sair do padrão. Com
+  `maxDiffPixelRatio: 0.01` e `threshold: 0.2`, trocar `radius.md` de 8px
+  para 14px passava despercebido. Ver o comentário em
+  `playwright.config.ts` antes de afrouxá-los.
+
+O browser vem de `npx playwright install chromium`. Em ambiente onde ele é
+provisionado por fora, `PLAYWRIGHT_CHROMIUM_PATH` aponta para o binário.

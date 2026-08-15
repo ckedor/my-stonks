@@ -15,6 +15,12 @@ dist-ssr
 # Cache incremental do tsc: regenerado a cada build, só gera ruído no diff
 tsconfig.tsbuildinfo
 
+# Playwright: artefatos de execução. Os snapshots de referência ficam em
+# e2e/**-snapshots/ e SÃO versionados — são eles a linha de base.
+test-results
+playwright-report
+blob-report
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

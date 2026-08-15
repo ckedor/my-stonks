@@ -1,25 +1,39 @@
-# Todos os hooks rodam os binários do venv do backend (language: system), e não
-# em ambientes que o pre-commit monta por fora. Assim a versão que roda no commit
-# é a mesma que você roda na mão via `task`.
+# Este repositório é de desenvolvedor único e não tem CI remoto: estes hooks
+# SÃO o CI. É a única barreira automática entre o código e o repositório, então
+# ela existe principalmente para cercar o que um agente faz sem perceber.
 #
-# Bloqueio: tudo bloqueia, menos pytest e lint-imports.
+# Instale os dois tipos de hook — sem o segundo, metade dos gates nunca roda:
+#
+#     pre-commit install --hook-type pre-commit --hook-type pre-push
+#
+# Todos os hooks rodam os binários do venv do backend e do node_modules do
+# frontend (language: system), e não em ambientes que o pre-commit monta por
+# fora. Assim a versão que roda no commit é a mesma que você roda na mão.
+#
+# ── Onde cada check roda ───────────────────────────────────────────────────
+# COMMIT: o que é rápido e responde sobre o arquivo que você acabou de mexer —
+#         ruff, eslint, knip, ds-baseline, vitest.
+# PUSH:   o que é lento demais para pagar a cada commit, mas você não quer
+#         mandar para o repositório sem — tsc + build e a regressão visual.
+#
+# ── Bloqueia ou não ────────────────────────────────────────────────────────
+# O critério é: check verde entra bloqueando, check vermelho entra reportando
+# até ficar verde. Hoje pytest, lint-imports e knip rodam com `|| true`, porque
+# ainda falham. Para torná-los bloqueantes, remova o `|| true` do `entry`.
+#
 # O ruff e o eslint recebem só os arquivos staged, então são naturalmente
-# incrementais — você limpa cada arquivo conforme encosta nele. pytest e
-# lint-imports são globais e hoje falham, então rodam com `|| true`: reportam e
-# deixam passar. Para torná-los bloqueantes, remova o `|| true` do `entry`.
-#
-# O vitest e o ds-baseline também são globais, mas bloqueiam, porque hoje
-# passam — 68 testes e a fronteira do design system limpa. O critério é esse:
-# check verde entra bloqueando, check vermelho entra reportando até ficar
-# verde.
+# incrementais — você limpa cada arquivo conforme encosta nele.
 #
 # O ds-baseline guarda a fronteira do design system:
 # `frontend/eslint-ds-baseline.json` lista os arquivos que ainda podem importar
 # MUI, e essa lista só encolhe. Ver o cabeçalho de `frontend/eslint.config.js`.
 
+default_install_hook_types: [pre-commit, pre-push]
+
 repos:
   - repo: local
     hooks:
+      # ── pre-commit ───────────────────────────────────────────────────────
       - id: ruff-check
         name: ruff check (staged files)
         entry: backend/.venv/bin/ruff check --force-exclude --fix
@@ -40,11 +54,27 @@ repos:
         # dentro de frontend/, então o prefixo sai de cada argumento.
         entry: bash -c 'cd frontend && npx eslint --no-warn-ignored "${@#frontend/}"' --
         language: system
-        files: ^frontend/src/.*\.(ts|tsx)$
+        files: ^frontend/(src|e2e)/.*\.(ts|tsx)$
 
       - id: ds-baseline
         name: design system ratchet
         entry: bash -c 'cd frontend && npm run --silent lint:ds'
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        verbose: true
+
+      - id: knip
+        name: knip / código morto (não bloqueia)
+        entry: bash -c 'cd frontend && npx knip --no-progress || true'
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        verbose: true
+
+      - id: vitest
+        name: vitest (frontend)
+        entry: bash -c 'cd frontend && npm run --silent test'
         language: system
         pass_filenames: false
         files: ^frontend/
@@ -58,18 +88,32 @@ repos:
         always_run: true
         verbose: true
 
-      - id: vitest
-        name: vitest (frontend)
-        entry: bash -c 'cd frontend && npm run --silent test'
-        language: system
-        pass_filenames: false
-        files: ^frontend/
-        verbose: true
-
       - id: lint-imports
         name: lint-imports / task architecture (não bloqueia)
         entry: bash -c 'cd backend && PATH="$PWD/.venv/bin:$PATH" task architecture || true'
         language: system
         pass_filenames: false
         always_run: true
+        verbose: true
+
+      # ── pre-push ─────────────────────────────────────────────────────────
+      - id: frontend-build
+        name: tsc + vite build
+        entry: bash -c 'cd frontend && npm run --silent build'
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        stages: [pre-push]
+        verbose: true
+
+      - id: visual-regression
+        name: playwright / regressão visual
+        # Sobe o dev server sozinho e mocka a API inteira: não depende do
+        # backend estar de pé. Precisa do browser uma vez:
+        #     cd frontend && npx playwright install chromium
+        entry: bash -c 'cd frontend && npm run --silent e2e'
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        stages: [pre-push]
         verbose: true

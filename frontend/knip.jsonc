@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+
+  // `src/components/ui/index.ts` entra como entry point de propósito: o design
+  // system é superfície pública, e durante a migração ele exporta coisas que
+  // nenhuma página consome ainda. Sem isso, o knip lista uma dúzia de falsos
+  // positivos e vira ruído que se aprende a ignorar.
+  //
+  // O preço é real: componente do design system que morrer não é detectado
+  // aqui. Vale revisitar quando o baseline chegar a zero e as exportações
+  // tiverem consumidor de verdade.
+  "entry": [
+    "src/main.tsx",
+    "src/components/ui/index.ts",
+    "e2e/**/*.spec.ts",
+    "playwright.config.ts",
+    "eslint.config.js",
+    "scripts/*.mjs"
+  ],
+  "project": ["src/**/*.{ts,tsx}"]
+}
