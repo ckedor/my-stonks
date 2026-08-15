@@ -1,4 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
+import { radius, space } from './tokens';
 
 /* ──────────────────────────────────────────────
    Module augmentation (single source of truth)
@@ -96,7 +97,7 @@ const lightComponents = {
   MuiButton: {
     styleOverrides: {
       root: {
-        borderRadius: 10,
+        borderRadius: radius.lg,
         textTransform: 'none' as const,
       },
       containedPrimary: {
@@ -129,7 +130,7 @@ const darkComponents = {
   MuiButton: {
     styleOverrides: {
       root: {
-        borderRadius: 10,
+        borderRadius: radius.lg,
         textTransform: 'none' as const,
       },
     },
@@ -148,7 +149,11 @@ const baseTypography = {
 
 /* ──────────────────────────────────────────────
    Theme factory — builds a MUI Theme from config
-   ────────────────────────────────────────────── */
+   ──────────────────────────────────────────────
+
+   Todo tema do app passa por aqui, inclusive os customizados do usuário.
+   É o único lugar que injeta `radius` e `space`, então nenhum tema pode
+   existir sem os tokens do design system. */
 export function buildMuiTheme(config: ThemePaletteConfig): Theme {
   const isLight = config.mode === 'light'
   return createTheme({
@@ -171,6 +176,8 @@ export function buildMuiTheme(config: ThemePaletteConfig): Theme {
     },
     components: isLight ? lightComponents : darkComponents,
     typography: baseTypography,
+    radius,
+    space,
   })
 }
 
@@ -239,6 +246,72 @@ export const defaultDarkPalette: ThemePaletteConfig = {
    LIGHT THEMES
    ══════════════════════════════════════════════ */
 
+const cafeCorporatePalette: ThemePaletteConfig = {
+  mode: 'light',
+  background: { default: '#F5F0EB', paper: '#FFFFFF' },
+  text: { primary: '#2C1810', secondary: '#6B5B4F' },
+  primary: '#6F4E37',
+  secondary: '#D4A76A',
+  error: '#C0392B',
+  warning: '#D4A76A',
+  success: '#5B8C5A',
+  info: '#5B7FA5',
+  golden: '#D4A76A',
+  dark: '#2C1810',
+  sidebar: '#3C2A1E',
+  topbar: { background: '#3C2A1E', text: '#F5EDE6', activeText: '#FFFFFF', activeBg: '#6F4E37' },
+  divider: 'rgba(44,24,16,0.10)',
+  chart: {
+    grid: 'rgba(44,24,16,0.10)',
+    label: '#2C1810',
+    colors: ['#C47035', '#4A90A4', '#D4A04A', '#6BAF7B', '#C75B5B', '#8B7DB8', '#D18E6E', '#5B8C9A'],
+  },
+}
+
+const slateNeutralPalette: ThemePaletteConfig = {
+  mode: 'light',
+  background: { default: '#F3F4F6', paper: '#FFFFFF' },
+  text: { primary: '#111827', secondary: '#6B7280' },
+  primary: '#374151',
+  secondary: '#6366F1',
+  error: '#DC2626',
+  warning: '#F59E0B',
+  success: '#10B981',
+  info: '#3B82F6',
+  golden: '#F59E0B',
+  dark: '#111827',
+  sidebar: '#1F2937',
+  topbar: { background: '#1F2937', text: '#F3F4F6', activeText: '#FFFFFF', activeBg: '#374151' },
+  divider: 'rgba(17,24,39,0.10)',
+  chart: {
+    grid: 'rgba(17,24,39,0.10)',
+    label: '#111827',
+    colors: ['#6366F1', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#F472B6', '#8B5CF6', '#06B6D4'],
+  },
+}
+
+const executiveGreenPalette: ThemePaletteConfig = {
+  mode: 'light',
+  background: { default: '#F2F5F3', paper: '#FFFFFF' },
+  text: { primary: '#14332A', secondary: '#4A6356' },
+  primary: '#1A4D3E',
+  secondary: '#2E8B6D',
+  error: '#C94040',
+  warning: '#D4A849',
+  success: '#2E8B6D',
+  info: '#4895EF',
+  golden: '#D4A849',
+  dark: '#14332A',
+  sidebar: '#14332A',
+  topbar: { background: '#14332A', text: '#E8F0EC', activeText: '#FFFFFF', activeBg: '#1B5E45' },
+  divider: 'rgba(20,51,42,0.10)',
+  chart: {
+    grid: 'rgba(20,51,42,0.10)',
+    label: '#14332A',
+    colors: ['#2E8B6D', '#D4A849', '#5B8DD6', '#D16060', '#8B6FB8', '#3DB5A0', '#E09050', '#7CA0B0'],
+  },
+}
+
 export const lightThemes: ThemeDefinition[] = [
   /* ── 1. Principal ─────────────────────────── */
   {
@@ -251,6 +324,8 @@ export const lightThemes: ThemeDefinition[] = [
   },
 
   /* ── 2. Café Corporate ────────────────────── */
+  /* O preview não sai de buildPreview: ele mostra o texto do topbar
+     (claro sobre o header escuro), não o text.primary da página. */
   {
     id: 'cafe-corporate',
     name: 'Café Corporate',
@@ -265,31 +340,7 @@ export const lightThemes: ThemeDefinition[] = [
       sidebar: '#3C2A1E',
       text: '#FFFAF5',
     },
-    theme: createTheme({
-      palette: {
-        mode: 'light',
-        background: { default: '#F5F0EB', paper: '#FFFFFF' },
-        text: { primary: '#2C1810', secondary: '#6B5B4F' },
-        primary: { main: '#6F4E37' },
-        secondary: { main: '#D4A76A' },
-        error: { main: '#C0392B' },
-        warning: { main: '#D4A76A' },
-        success: { main: '#5B8C5A' },
-        info: { main: '#5B7FA5' },
-        golden: '#D4A76A',
-        dark: '#2C1810',
-        sidebar: '#3C2A1E',
-        topbar: { background: '#3C2A1E', text: '#F5EDE6', activeText: '#FFFFFF', activeBg: '#6F4E37' },
-        divider: 'rgba(44,24,16,0.10)',
-        chart: {
-          grid: 'rgba(44,24,16,0.10)',
-          label: '#2C1810',
-          colors: ['#C47035', '#4A90A4', '#D4A04A', '#6BAF7B', '#C75B5B', '#8B7DB8', '#D18E6E', '#5B8C9A'],
-        },
-      },
-      components: lightComponents,
-      typography: baseTypography,
-    }),
+    theme: buildMuiTheme(cafeCorporatePalette),
   },
 
   /* ── 3. Grafite Neutro ────────────────────── */
@@ -307,31 +358,7 @@ export const lightThemes: ThemeDefinition[] = [
       sidebar: '#1F2937',
       text: '#F3F4F6',
     },
-    theme: createTheme({
-      palette: {
-        mode: 'light',
-        background: { default: '#F3F4F6', paper: '#FFFFFF' },
-        text: { primary: '#111827', secondary: '#6B7280' },
-        primary: { main: '#374151' },
-        secondary: { main: '#6366F1' },
-        error: { main: '#DC2626' },
-        warning: { main: '#F59E0B' },
-        success: { main: '#10B981' },
-        info: { main: '#3B82F6' },
-        golden: '#F59E0B',
-        dark: '#111827',
-        sidebar: '#1F2937',
-        topbar: { background: '#1F2937', text: '#F3F4F6', activeText: '#FFFFFF', activeBg: '#374151' },
-        divider: 'rgba(17,24,39,0.10)',
-        chart: {
-          grid: 'rgba(17,24,39,0.10)',
-          label: '#111827',
-          colors: ['#6366F1', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#F472B6', '#8B5CF6', '#06B6D4'],
-        },
-      },
-      components: lightComponents,
-      typography: baseTypography,
-    }),
+    theme: buildMuiTheme(slateNeutralPalette),
   },
 
   /* ── 4. Verde Executivo ───────────────────── */
@@ -349,37 +376,79 @@ export const lightThemes: ThemeDefinition[] = [
       sidebar: '#14332A',
       text: '#E8F0EC',
     },
-    theme: createTheme({
-      palette: {
-        mode: 'light',
-        background: { default: '#F2F5F3', paper: '#FFFFFF' },
-        text: { primary: '#14332A', secondary: '#4A6356' },
-        primary: { main: '#1A4D3E' },
-        secondary: { main: '#2E8B6D' },
-        error: { main: '#C94040' },
-        warning: { main: '#D4A849' },
-        success: { main: '#2E8B6D' },
-        info: { main: '#4895EF' },
-        golden: '#D4A849',
-        dark: '#14332A',
-        sidebar: '#14332A',
-        topbar: { background: '#14332A', text: '#E8F0EC', activeText: '#FFFFFF', activeBg: '#1B5E45' },
-        divider: 'rgba(20,51,42,0.10)',
-        chart: {
-          grid: 'rgba(20,51,42,0.10)',
-          label: '#14332A',
-          colors: ['#2E8B6D', '#D4A849', '#5B8DD6', '#D16060', '#8B6FB8', '#3DB5A0', '#E09050', '#7CA0B0'],
-        },
-      },
-      components: lightComponents,
-      typography: baseTypography,
-    }),
+    theme: buildMuiTheme(executiveGreenPalette),
   },
 ]
 
 /* ══════════════════════════════════════════════
    DARK THEMES
    ══════════════════════════════════════════════ */
+
+const obsidianPalette: ThemePaletteConfig = {
+  mode: 'dark',
+  background: { default: '#101010', paper: '#1A1A1A' },
+  text: { primary: '#E4E4E7', secondary: '#A1A1AA' },
+  primary: '#FAFAFA',
+  secondary: '#A78BFA',
+  error: '#EF4444',
+  warning: '#FBBF24',
+  success: '#22C55E',
+  info: '#60A5FA',
+  golden: '#F59E0B',
+  dark: '#0A0A0A',
+  sidebar: '#1A1A1A',
+  topbar: { background: '#1A1A1A', text: '#E4E4E7', activeText: '#FFFFFF', activeBg: '#333333' },
+  divider: 'rgba(255,255,255,0.08)',
+  chart: {
+    grid: 'rgba(255,255,255,0.10)',
+    label: '#E4E4E7',
+    colors: ['#A78BFA', '#34D399', '#FBBF24', '#F472B6', '#60A5FA', '#FB923C', '#22D3EE', '#C084FC'],
+  },
+}
+
+const steelSmokePalette: ThemePaletteConfig = {
+  mode: 'dark',
+  background: { default: '#18181B', paper: '#27272A' },
+  text: { primary: '#E4E4E7', secondary: '#A1A1AA' },
+  primary: '#E4E4E7',
+  secondary: '#71717A',
+  error: '#EF4444',
+  warning: '#F59E0B',
+  success: '#22C55E',
+  info: '#3B82F6',
+  golden: '#F59E0B',
+  dark: '#09090B',
+  sidebar: '#27272A',
+  topbar: { background: '#27272A', text: '#E4E4E7', activeText: '#FFFFFF', activeBg: '#3F3F46' },
+  divider: 'rgba(255,255,255,0.08)',
+  chart: {
+    grid: 'rgba(161,161,170,0.12)',
+    label: '#E4E4E7',
+    colors: ['#F59E0B', '#3B82F6', '#22C55E', '#EF4444', '#A78BFA', '#EC4899', '#06B6D4', '#FB923C'],
+  },
+}
+
+const cafeNoirPalette: ThemePaletteConfig = {
+  mode: 'dark',
+  background: { default: '#1A1210', paper: '#261C18' },
+  text: { primary: '#F5E6D3', secondary: '#C4A882' },
+  primary: '#D4A76A',
+  secondary: '#A0724E',
+  error: '#E57373',
+  warning: '#E8A838',
+  success: '#81C784',
+  info: '#64B5F6',
+  golden: '#E8A838',
+  dark: '#100C0A',
+  sidebar: '#261C18',
+  topbar: { background: '#261C18', text: '#F5E6D3', activeText: '#FFFFFF', activeBg: '#3B2E27' },
+  divider: 'rgba(255,255,255,0.08)',
+  chart: {
+    grid: 'rgba(196,168,130,0.12)',
+    label: '#F5E6D3',
+    colors: ['#D4A76A', '#81C784', '#E57373', '#64B5F6', '#CE93D8', '#FFB74D', '#4DB6AC', '#E8A838'],
+  },
+}
 
 export const darkThemes: ThemeDefinition[] = [
   /* ── 1. Principal ─────────────────────────── */
@@ -407,31 +476,7 @@ export const darkThemes: ThemeDefinition[] = [
       sidebar: '#1A1A1A',
       text: '#E4E4E7',
     },
-    theme: createTheme({
-      palette: {
-        mode: 'dark',
-        background: { default: '#101010', paper: '#1A1A1A' },
-        text: { primary: '#E4E4E7', secondary: '#A1A1AA' },
-        primary: { main: '#FAFAFA' },
-        secondary: { main: '#A78BFA' },
-        error: { main: '#EF4444' },
-        warning: { main: '#FBBF24' },
-        success: { main: '#22C55E' },
-        info: { main: '#60A5FA' },
-        golden: '#F59E0B',
-        dark: '#0A0A0A',
-        sidebar: '#1A1A1A',
-        topbar: { background: '#1A1A1A', text: '#E4E4E7', activeText: '#FFFFFF', activeBg: '#333333' },
-        divider: 'rgba(255,255,255,0.08)',
-        chart: {
-          grid: 'rgba(255,255,255,0.10)',
-          label: '#E4E4E7',
-          colors: ['#A78BFA', '#34D399', '#FBBF24', '#F472B6', '#60A5FA', '#FB923C', '#22D3EE', '#C084FC'],
-        },
-      },
-      components: darkComponents,
-      typography: baseTypography,
-    }),
+    theme: buildMuiTheme(obsidianPalette),
   },
 
   /* ── 3. Aço Fumê ──────────────────────────── */
@@ -449,31 +494,7 @@ export const darkThemes: ThemeDefinition[] = [
       sidebar: '#27272A',
       text: '#E4E4E7',
     },
-    theme: createTheme({
-      palette: {
-        mode: 'dark',
-        background: { default: '#18181B', paper: '#27272A' },
-        text: { primary: '#E4E4E7', secondary: '#A1A1AA' },
-        primary: { main: '#E4E4E7' },
-        secondary: { main: '#71717A' },
-        error: { main: '#EF4444' },
-        warning: { main: '#F59E0B' },
-        success: { main: '#22C55E' },
-        info: { main: '#3B82F6' },
-        golden: '#F59E0B',
-        dark: '#09090B',
-        sidebar: '#27272A',
-        topbar: { background: '#27272A', text: '#E4E4E7', activeText: '#FFFFFF', activeBg: '#3F3F46' },
-        divider: 'rgba(255,255,255,0.08)',
-        chart: {
-          grid: 'rgba(161,161,170,0.12)',
-          label: '#E4E4E7',
-          colors: ['#F59E0B', '#3B82F6', '#22C55E', '#EF4444', '#A78BFA', '#EC4899', '#06B6D4', '#FB923C'],
-        },
-      },
-      components: darkComponents,
-      typography: baseTypography,
-    }),
+    theme: buildMuiTheme(steelSmokePalette),
   },
 
   /* ── 4. Café Noir ─────────────────────────── */
@@ -491,31 +512,7 @@ export const darkThemes: ThemeDefinition[] = [
       sidebar: '#261C18',
       text: '#F5E6D3',
     },
-    theme: createTheme({
-      palette: {
-        mode: 'dark',
-        background: { default: '#1A1210', paper: '#261C18' },
-        text: { primary: '#F5E6D3', secondary: '#C4A882' },
-        primary: { main: '#D4A76A' },
-        secondary: { main: '#A0724E' },
-        error: { main: '#E57373' },
-        warning: { main: '#E8A838' },
-        success: { main: '#81C784' },
-        info: { main: '#64B5F6' },
-        golden: '#E8A838',
-        dark: '#100C0A',
-        sidebar: '#261C18',
-        topbar: { background: '#261C18', text: '#F5E6D3', activeText: '#FFFFFF', activeBg: '#3B2E27' },
-        divider: 'rgba(255,255,255,0.08)',
-        chart: {
-          grid: 'rgba(196,168,130,0.12)',
-          label: '#F5E6D3',
-          colors: ['#D4A76A', '#81C784', '#E57373', '#64B5F6', '#CE93D8', '#FFB74D', '#4DB6AC', '#E8A838'],
-        },
-      },
-      components: darkComponents,
-      typography: baseTypography,
-    }),
+    theme: buildMuiTheme(cafeNoirPalette),
   },
 ]
 

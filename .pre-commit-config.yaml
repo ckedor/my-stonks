@@ -2,11 +2,19 @@
 # em ambientes que o pre-commit monta por fora. Assim a versão que roda no commit
 # é a mesma que você roda na mão via `task`.
 #
-# Bloqueio: ruff bloqueia, pytest e lint-imports não.
+# Bloqueio: ruff, eslint e ds-baseline bloqueiam; pytest e lint-imports não.
 # O ruff recebe só os arquivos staged, então ele é naturalmente incremental —
 # você limpa cada arquivo conforme encosta nele. pytest e lint-imports são
 # globais e hoje falham, então rodam com `|| true`: reportam e deixam passar.
 # Para torná-los bloqueantes, remova o `|| true` do `entry` correspondente.
+#
+# O eslint segue a mesma lógica do ruff: só os arquivos staged. Os 6 erros de
+# lint que o front tem hoje não travam ninguém até alguém encostar no arquivo.
+#
+# O ds-baseline é global mas bloqueia, porque hoje passa. Ele guarda a
+# fronteira do design system: `frontend/eslint-ds-baseline.json` lista os
+# arquivos que ainda podem importar MUI, e essa lista só encolhe. Ver o
+# cabeçalho de `frontend/eslint.config.js`.
 
 repos:
   - repo: local
@@ -24,6 +32,22 @@ repos:
         language: system
         types: [python]
         files: ^backend/
+
+      - id: eslint
+        name: eslint (staged files)
+        # O pre-commit passa caminhos a partir da raiz do repo; o eslint roda
+        # dentro de frontend/, então o prefixo sai de cada argumento.
+        entry: bash -c 'cd frontend && npx eslint --no-warn-ignored "${@#frontend/}"' --
+        language: system
+        files: ^frontend/src/.*\.(ts|tsx)$
+
+      - id: ds-baseline
+        name: design system ratchet
+        entry: bash -c 'cd frontend && npm run --silent lint:ds'
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        verbose: true
 
       - id: pytest
         name: pytest (não bloqueia)

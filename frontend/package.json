@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "lint:ds": "node scripts/check-ds-baseline.mjs",
     "test": "vitest run",
     "preview": "vite preview"
   },
