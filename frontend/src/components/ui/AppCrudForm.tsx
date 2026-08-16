@@ -137,7 +137,7 @@ export default function AppCrudForm({
         <Divider />
         <Box sx={{ p: 2 }}>
           <AppStack direction="row" gap="md" justify="end">
-            <AppButton tone="ghost" onClick={onClose} disabled={loading}>
+            <AppButton emphasis="ghost" onClick={onClose} disabled={loading}>
               Cancelar
             </AppButton>
             <AppButton onClick={handleSubmit} disabled={loading}>

@@ -1,232 +1,124 @@
-
 import PortfolioPatrimonyChart from '@/components/PortfolioPatrimonyChart'
-import AppCard from '@/components/ui/AppCard'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+    AppCard,
+    AppHeroMetric,
+    AppStack,
+    AppText,
+    LoadingSpinner,
+    PageTitle,
+    type AppSelectOption,
+} from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { usePatrimonyStore } from '@/stores/portfolio/patrimony'
-import {
-    Box,
-    FormControlLabel,
-    Grid,
-    MenuItem,
-    Paper,
-    Select,
-    SelectChangeEvent,
-    Stack,
-    Switch,
-    TextField,
-    Typography,
-} from '@mui/material'
-import { DatePicker } from '@mui/x-date-pickers'
-import dayjs, { Dayjs } from 'dayjs'
-// `isSameOrBefore` não vem no dayjs base. O plugin chegava aqui de carona por
-// outro módulo que já não existe; a extensão mora onde o método é usado.
-import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
-
-dayjs.extend(isSameOrBefore)
+import { useReturnsStore } from '@/stores/portfolio/returns'
+import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
 import PortfolioMonthlyAportsChart from './PortfolioMonthlyAportsChart'
 
 export default function PortfolioPatrimonyEvolution() {
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
   const userCategories = selectedPortfolio?.custom_categories ?? []
-  const { symbol } = useCurrency()
+  const { format: formatCurrency } = useCurrency()
 
-  const patrimonyEvolution = usePatrimonyStore(s => s.patrimony)
-  const patrimonyLoading = usePatrimonyStore(s => s.loading) && patrimonyEvolution.length === 0
-
-  const loading = patrimonyLoading
+  const patrimonyEvolution = usePatrimonyStore((s) => s.patrimony)
+  const loading = usePatrimonyStore((s) => s.loading) && patrimonyEvolution.length === 0
+  const categoryCagr = useReturnsStore((s) => s.categoryCagr)
 
   const [selectedCategory, setSelectedCategory] = useState<string>('portfolio')
-  const [startDate, setStartDate] = useState<Dayjs | null>(null)
-  const [endDate, setEndDate] = useState<Dayjs | null>(null)
 
-  const [showProjection, setShowProjection] = useState(false)
-  const [projectionRate, setProjectionRate] = useState(10)
-  const [projectionYears, setProjectionYears] = useState(1)
-  const [monthlyContribution, setMonthlyContribution] = useState(2000)
+  const categoryOptions = useMemo<AppSelectOption[]>(
+    () => [
+      { value: 'portfolio', label: 'Carteira' },
+      ...userCategories.map((category) => ({ value: category.name, label: category.name })),
+    ],
+    [userCategories],
+  )
 
-  const filteredData = useMemo(() => {
-    if (!patrimonyEvolution) return []
+  /* O patrimônio de hoje é o último ponto da série escolhida, e não a soma das
+     posições: a página inteira fala da série, e um número vindo de outra fonte
+     apareceria em desacordo com a ponta da própria curva logo abaixo dele. */
+  const current = useMemo(() => {
+    for (let i = patrimonyEvolution.length - 1; i >= 0; i--) {
+      const value = patrimonyEvolution[i][selectedCategory]
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return { value, date: patrimonyEvolution[i].date }
+      }
+    }
+    return null
+  }, [patrimonyEvolution, selectedCategory])
 
-    return patrimonyEvolution.filter((entry) => {
-      const date = dayjs(entry.date)
-      const afterStart = !startDate || date.isSameOrAfter(startDate, 'day')
-      const beforeEnd = !endDate || date.isSameOrBefore(endDate, 'day')
-      return afterStart && beforeEnd
-    })
-  }, [patrimonyEvolution, startDate, endDate])
+  const categoryLabel =
+    categoryOptions.find((option) => option.value === selectedCategory)?.label ?? 'Carteira'
 
-  if (loading) {
-    return (
-      <LoadingSpinner />
-    )
-  }
+  /* O que a projeção assume por padrão: o que a carteira já vem fazendo.
+   *
+   *  A taxa é o CAGR da série escolhida, que o store guarda em fração. */
+  const defaultRate = useMemo(() => {
+    const cagr = categoryCagr[selectedCategory]
+    return cagr == null ? null : Number((cagr * 100).toFixed(2))
+  }, [categoryCagr, selectedCategory])
+
+  /* O aporte é a média mensal do que entrou, e ele é líquido: `aported` vem do
+   *  backend como quantidade × preço somada por dia, e venda entra com
+   *  quantidade negativa — então resgate já desconta sozinho, sem a página
+   *  precisar tratar saída como caso à parte.
+   *
+   *  A média é do histórico inteiro, e não dos últimos doze meses: o número
+   *  serve de ponto de partida para uma projeção de anos, e uma janela curta
+   *  faria um mês atípico virar a premissa de uma década. É portfolio-wide,
+   *  igual para toda categoria — `aported` não é recortado por categoria. */
+  const defaultContribution = useMemo(() => {
+    if (patrimonyEvolution.length === 0) return null
+
+    let total = 0
+    for (const entry of patrimonyEvolution) {
+      const value = entry.aported
+      if (typeof value === 'number' && Number.isFinite(value)) total += value
+    }
+    if (total === 0) return null
+
+    const first = dayjs(patrimonyEvolution[0].date)
+    const last = dayjs(patrimonyEvolution[patrimonyEvolution.length - 1].date)
+    const months = Math.max(1, last.diff(first, 'month'))
+
+    return Math.round(total / months)
+  }, [patrimonyEvolution])
+
+  if (loading) return <LoadingSpinner />
 
   return (
-    <Box pt={2}>
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>Evolução do Patrimônio</Typography>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        alignItems="center"
-        spacing={3}
-        ml={6}
-        mb={3}
-        pr={5}
-        mr={2}
-      >
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center">
-          <Box minWidth={180}>
-            <Select
-              fullWidth
-              size="small"
-              variant="standard"
-              value={selectedCategory}
-              onChange={(e: SelectChangeEvent) => setSelectedCategory(e.target.value)}
-              sx={{
-                outline: 'none',
-                '&::before, &::after': { borderBottom: '1px solid #ccc' },
-                '&:hover:not(.Mui-disabled):before': {
-                  borderBottom: '2px solid #1976d2',
-                },
-              }}
-            >
-              <MenuItem value="portfolio">Carteira</MenuItem>
-              {userCategories.map((cat) => (
-                <MenuItem key={cat.id} value={cat.name}>
-                  {cat.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
+    <AppStack gap="lg">
+      <PageTitle>Evolução do Patrimônio</PageTitle>
 
-          <DatePicker
-            value={startDate}
-            onChange={(newValue) => setStartDate(newValue)}
-            slotProps={{
-              textField: {
-                size: 'small',
-                variant: 'standard',
-                sx: {
-                  outline: 'none',
-                  '& .MuiInput-root::before': { borderBottom: '1px solid #ccc' },
-                  '& .MuiInput-root:hover::before': {
-                    borderBottom: '2px solid #1976d2',
-                  },
-                },
-              },
-            }}
-          />
+      <AppHeroMetric
+        label={selectedCategory === 'portfolio' ? 'Patrimônio' : `Patrimônio · ${categoryLabel}`}
+        value={current ? formatCurrency(current.value) : '—'}
+        detail={
+          current && (
+            <AppText variant="bodySmall" tone="secondary">
+              Última posição em {new Date(current.date).toLocaleDateString('pt-BR')}
+            </AppText>
+          )
+        }
+      />
 
-          <DatePicker
-            value={endDate}
-            onChange={(newValue) => setEndDate(newValue)}
-            slotProps={{
-              textField: {
-                size: 'small',
-                variant: 'standard',
-                sx: {
-                  outline: 'none',
-                  '& .MuiInput-root::before': { borderBottom: '1px solid #ccc' },
-                  '& .MuiInput-root:hover::before': {
-                    borderBottom: '2px solid #1976d2',
-                  },
-                },
-              },
-            }}
-          />
-        </Stack>
+      <AppCard>
+        <PortfolioPatrimonyChart
+          patrimonyEvolution={patrimonyEvolution}
+          selected={selectedCategory}
+          onSelectedChange={setSelectedCategory}
+          categoryOptions={categoryOptions}
+          defaultRate={defaultRate}
+          defaultContribution={defaultContribution}
+          height={520}
+          persistKey="portfolio-patrimony"
+        />
+      </AppCard>
 
-        <Paper
-          variant="outlined"
-          sx={{
-            pt: 1,
-            border: '1px solid #ddd',
-            borderRadius: 2,
-            bgcolor: 'background.paper',
-          }}
-        >
-          <Stack direction="row" spacing={2} alignItems="center">
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={showProjection}
-                  onChange={(e) => setShowProjection(e.target.checked)}
-                />
-              }
-              label="Projeção"
-            />
-
-            <TextField
-              label="Taxa (%)"
-              type="number"
-              value={projectionRate}
-              onChange={(e) => setProjectionRate(Number(e.target.value))}
-              variant="standard"
-              size="small"
-              InputProps={{ inputProps: { min: 0, step: 0.1 } }}
-              sx={{ width: 80 }}
-            />
-
-            <TextField
-              label="Anos"
-              type="number"
-              value={projectionYears}
-              onChange={(e) => setProjectionYears(Number(e.target.value))}
-              variant="standard"
-              size="small"
-              InputProps={{ inputProps: { min: 1, step: 1 } }}
-              sx={{ width: 60 }}
-            />
-
-            <TextField
-              label="Aporte"
-              type="number"
-              value={monthlyContribution}
-              onChange={(e) => setMonthlyContribution(Number(e.target.value))}
-              variant="standard"
-              size="small"
-              InputProps={{
-                inputProps: { min: 0, step: 100 },
-                startAdornment: <span style={{ marginRight: 4 }}>{symbol}</span>,
-              }}
-              sx={{ width: 120 }}
-            />
-          </Stack>
-        </Paper>
-      </Stack>
-      <Grid container spacing={2}>
-        <Grid size={12}>
-          <AppCard>
-            <PortfolioPatrimonyChart
-            size={520}
-            selected={selectedCategory}
-            patrimonyEvolution={filteredData}
-            projection={
-              showProjection
-                ? {
-                    rate: projectionRate / 100,
-                    years: projectionYears,
-                    monthlyContribution,
-                  }
-                : undefined
-            }
-          />
-          </AppCard>
-        </Grid>
-        <Grid size={12} sx={{ mt: 0, mb: 4 }}>
-          <AppCard>
-            <PortfolioMonthlyAportsChart
-              height={300}
-              groupBy="month"
-              defaultRange="1y"
-            />
-          </AppCard>
-        </Grid>
-      </Grid>
-
-    </Box>
+      <AppCard>
+        <PortfolioMonthlyAportsChart height={300} groupBy="month" defaultRange="1y" />
+      </AppCard>
+    </AppStack>
   )
 }

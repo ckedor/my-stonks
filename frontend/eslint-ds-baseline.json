@@ -11,7 +11,6 @@
     "src/components/FixedIncomeForm.tsx",
     "src/components/PortfolioDividendsChart.tsx",
     "src/components/PortfolioForm.tsx",
-    "src/components/PortfolioPatrimonyChart.tsx",
     "src/components/PortfolioReturnsChart.tsx",
     "src/components/RiskMetricsPanel.tsx",
     "src/components/TradeForm.tsx",
@@ -20,8 +19,6 @@
     "src/components/asset/AssetPositionCard.tsx",
     "src/components/charts/CandleChart.tsx",
     "src/components/charts/app-bar-chart/AppBarChart.tsx",
-    "src/components/charts/shared/DateRangeMenu.tsx",
-    "src/components/charts/shared/ToolbarSwitch.tsx",
     "src/components/portfolio-asset/BenchmarkComparison.tsx",
     "src/components/portfolio-asset/ChartSection.tsx",
     "src/components/portfolio-asset/PortfolioAssetChart.tsx",
@@ -32,11 +29,9 @@
     "src/pages/admin/architecture/ArchitecturePage.test.tsx",
     "src/pages/admin/architecture/ArchitecturePage.tsx",
     "src/pages/admin/architecture/nodes/ArchitectureNode.tsx",
-    "src/pages/admin/consolidation/page.tsx",
     "src/pages/admin/design-system/ChartsTab.tsx",
     "src/pages/admin/design-system/GeneralTab.tsx",
     "src/pages/admin/design-system/page.tsx",
-    "src/pages/admin/ingestion/DataIngestionPage.tsx",
     "src/pages/login/index.tsx",
     "src/pages/market/asset/AssetQuoteCard.tsx",
     "src/pages/market/asset/MarketAssetSkeleton.tsx",
@@ -82,7 +77,6 @@
     "src/pages/portfolio/user-configurations/page.tsx",
     "src/pages/portfolio/user-configurations/theme-editor/ThemePaletteForm.tsx",
     "src/pages/portfolio/user-configurations/theme-editor/ThemePreviewPanel.tsx",
-    "src/pages/portfolio/user-configurations/theme-editor/page.tsx",
-    "src/pages/portfolio/wealth/page.tsx"
+    "src/pages/portfolio/user-configurations/theme-editor/page.tsx"
   ]
 }

@@ -46,13 +46,32 @@ export interface AppStackProps {
   grow?: boolean
   /** Ocupa a altura da viewport — para telas que se centram sozinhas. */
   fullHeight?: boolean
+  /** Abaixo deste breakpoint a linha vira coluna. Só faz sentido com
+   *  `direction="row"`.
+   *
+   *  O alinhamento no eixo cruzado volta a `stretch` junto: numa linha, um
+   *  `align="center"` centra verticalmente e é o que se quer; na coluna, o
+   *  mesmo valor espreme cada filho na largura do próprio conteúdo — foi
+   *  por isso que as telas escreviam `alignItems={{ xs: 'stretch', md:
+   *  'center' }}` à mão. As duas decisões andam juntas, então andam juntas
+   *  aqui. */
+  collapseBelow?: 'sm' | 'md'
 }
 
-const STYLE_PROPS = new Set(['direction', 'gap', 'align', 'justify', 'wrap', 'grow', 'fullHeight'])
+const STYLE_PROPS = new Set([
+  'direction',
+  'gap',
+  'align',
+  'justify',
+  'wrap',
+  'grow',
+  'fullHeight',
+  'collapseBelow',
+])
 
 const AppStack = styled('div', {
   shouldForwardProp: (prop) => !STYLE_PROPS.has(prop as string),
-})<AppStackProps>(({ theme, direction = 'column', gap = 'none', align, justify, wrap, grow, fullHeight }) => ({
+})<AppStackProps>(({ theme, direction = 'column', gap = 'none', align, justify, wrap, grow, fullHeight, collapseBelow }) => ({
   display: 'flex',
   flexDirection: direction,
   gap: theme.spacing(space[gap]),
@@ -61,6 +80,14 @@ const AppStack = styled('div', {
   ...(wrap ? { flexWrap: 'wrap' } : null),
   ...(grow ? { flex: 1, minWidth: 0 } : null),
   ...(fullHeight ? { height: '100vh' } : null),
+  ...(collapseBelow
+    ? {
+        [theme.breakpoints.down(collapseBelow)]: {
+          flexDirection: 'column',
+          alignItems: 'stretch',
+        },
+      }
+    : null),
 }))
 
 export default AppStack

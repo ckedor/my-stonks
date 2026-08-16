@@ -1,4 +1,17 @@
 import AppCard from '@/components/ui/AppCard'
+import {
+    AppAlert,
+    AppButton,
+    AppChip,
+    AppDivider,
+    AppProgressBar,
+    AppSimpleTable,
+    AppStack,
+    AppStatCard,
+    AppText,
+    AppTooltip,
+    SectionTitle,
+} from '@/components/ui'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
@@ -254,6 +267,125 @@ export default function GeneralTab() {
           </Grid>
         </Grid>
       </AppCard>
+
+      {/* ── Design system ──
+          Tudo acima é inventário do MUI cru, herdado de quando a página
+          nasceu. Daqui para baixo são os primitivos de `@/components/ui`,
+          que é o que as telas têm permissão de usar — e o que precisa estar
+          documentado. Esta seção é escrita sem nenhum import do MUI, de
+          propósito: ela é o exemplo de como uma tela se escreve hoje. */}
+      <AppCard>
+        <AppStack gap="lg">
+          <SectionTitle>Design system — primitivos</SectionTitle>
+
+          <AppStack gap="sm">
+            <AppText variant="bodySmall" tone="secondary">
+              AppButton — tone (intenção) × emphasis (peso)
+            </AppText>
+            <AppStack direction="row" gap="sm" wrap>
+              <AppButton>primary · solid</AppButton>
+              <AppButton emphasis="outline">primary · outline</AppButton>
+              <AppButton emphasis="ghost">primary · ghost</AppButton>
+              <AppButton tone="danger">danger · solid</AppButton>
+              <AppButton tone="danger" emphasis="outline">danger · outline</AppButton>
+              <AppButton tone="caution" emphasis="outline">caution · outline</AppButton>
+              <AppButton disabled>disabled</AppButton>
+            </AppStack>
+          </AppStack>
+
+          <AppStack gap="sm">
+            <AppText variant="bodySmall" tone="secondary">
+              AppChip — mesmos dois eixos
+            </AppText>
+            <AppStack direction="row" gap="sm" wrap align="center">
+              <AppChip label="neutral" />
+              <AppChip label="primary" tone="primary" />
+              <AppChip label="info" tone="info" />
+              <AppChip label="success" tone="success" />
+              <AppChip label="danger" tone="danger" />
+              <AppChip label="neutral · outline" emphasis="outline" />
+              <AppTooltip title="AppTooltip — o detalhe que não cabe na tela">
+                <AppChip label="passe o mouse" tone="info" emphasis="outline" />
+              </AppTooltip>
+            </AppStack>
+          </AppStack>
+
+          <AppStack gap="sm">
+            <AppText variant="bodySmall" tone="secondary">
+              AppText — variant × tone × weight
+            </AppText>
+            <AppText>body — the quick brown fox</AppText>
+            <AppText variant="bodySmall">bodySmall — the quick brown fox</AppText>
+            <AppText variant="bodySmall" weight="strong">bodySmall · strong</AppText>
+            <AppText variant="bodySmall" tone="secondary">bodySmall · secondary</AppText>
+            <AppText variant="bodySmall" tone="danger">bodySmall · danger</AppText>
+            <AppText variant="caption" tone="secondary">caption · secondary</AppText>
+          </AppStack>
+
+          <AppDivider />
+
+          <AppStack gap="sm">
+            <AppText variant="bodySmall" tone="secondary">
+              AppStatCard — uma fileira de tiles de um número só
+            </AppText>
+            <AppStack direction="row" gap="md" wrap collapseBelow="sm">
+              <AppStatCard label="Processados" value="120/120" helper="Histórico completo" />
+              <AppStatCard label="Sucessos" value={117} helper="4.310 linhas persistidas" />
+              <AppStatCard label="Falhas" value={3} helper="Consulte as tentativas" />
+            </AppStack>
+          </AppStack>
+
+          <AppStack gap="sm">
+            <AppText variant="bodySmall" tone="secondary">
+              AppProgressBar — determinada e indeterminada
+            </AppText>
+            <AppProgressBar value={65} />
+            <AppProgressBar value={40} tone="danger" />
+            <AppProgressBar />
+          </AppStack>
+
+          <AppStack gap="sm">
+            <AppText variant="bodySmall" tone="secondary">
+              AppAlert — fixo no fluxo, diferente do snackbar
+            </AppText>
+            <AppAlert severity="success">success — a ação que você disparou deu certo.</AppAlert>
+            <AppAlert severity="info">info — não há nada para mostrar aqui ainda.</AppAlert>
+            <AppAlert severity="error">error — a requisição falhou.</AppAlert>
+          </AppStack>
+
+          <AppStack gap="sm">
+            <AppText variant="bodySmall" tone="secondary">
+              AppSimpleTable — cabeçalho e linhas, sem paginação nem ordenação
+            </AppText>
+            <AppSimpleTable
+              rows={SAMPLE_ROWS}
+              getRowKey={(row) => row.id}
+              surface="outlined"
+              columns={[
+                { label: 'ID', render: (row) => `#${row.id}` },
+                {
+                  label: 'Status',
+                  render: (row) => <AppChip label={row.label} tone={row.tone} />,
+                },
+                { label: 'Detalhe', width: 'clamped', render: (row) => row.detail },
+                { label: 'Linhas', align: 'right', render: (row) => row.rows },
+              ]}
+            />
+          </AppStack>
+        </AppStack>
+      </AppCard>
     </Stack>
   )
 }
+
+const SAMPLE_ROWS = [
+  {
+    id: 7,
+    label: 'Sucesso',
+    tone: 'success' as const,
+    detail: 'Um texto longo o bastante para a coluna clamped cortar com reticências',
+    rows: 4310,
+  },
+  { id: 6, label: 'Falha', tone: 'danger' as const, detail: 'timeout no provedor', rows: 0 },
+  { id: 5, label: 'Na fila', tone: 'neutral' as const, detail: '—', rows: 0 },
+]

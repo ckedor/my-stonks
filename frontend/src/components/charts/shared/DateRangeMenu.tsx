@@ -1,12 +1,14 @@
-import { DateRangeKey } from "@/lib/utils/date"
-import { Stack, Typography } from "@mui/material"
+import { AppInlineToggle } from '@/components/ui'
+import { DateRangeKey } from '@/lib/utils/date'
 
 export interface RangeOption {
   label: string
   value: DateRangeKey
 }
 
-
+/** O período que o gráfico mostra. É só o `AppInlineToggle` amarrado às
+ *  chaves de período — o que sobrou depois que a aparência virou decisão do
+ *  design system. */
 export default function DateRangeMenu({
   show,
   range,
@@ -18,26 +20,7 @@ export default function DateRangeMenu({
   options: RangeOption[]
   onChange: (v: DateRangeKey) => void
 }) {
+  if (!show) return null
 
-    const fontSize = 13
-
-    if (!show) return null
-
-    return (
-        <Stack direction="row" spacing={1}>
-        {options.map((r) => (
-            <Typography
-            key={r.value}
-            onClick={() => onChange(r.value)}
-            sx={{
-                cursor: 'pointer',
-                fontWeight: range === r.value ? 700 : 400,
-                fontSize: {fontSize},
-            }}
-            >
-            {r.label}
-            </Typography>
-        ))}
-        </Stack>
-    )
+  return <AppInlineToggle options={options} value={range} onChange={onChange} />
 }

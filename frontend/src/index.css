@@ -19,9 +19,15 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Inter Variable', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  /* Cópia de `fontFamily` em `src/theme/tokens.ts`, que é a fonte de verdade.
+     Existe aqui só para a pintura anterior ao mount do React — depois dele o
+     CssBaseline aplica a mesma pilha vinda do tema. Mantenha as duas iguais. */
+  font-family: 'Hanken Grotesk Variable', 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif;
   /* Algarismos de largura fixa. Em uma tela cheia de tabelas de dinheiro, sem
-     isso as colunas de valores dançam de linha para linha. */
+     isso as colunas de valores dançam de linha para linha.
+     A Hanken Grotesk não traz a feature `tnum` — não precisa, os dez dígitos
+     já têm a mesma largura (560 de 1000 unidades/em). A declaração fica pelas
+     fontes de fallback, onde ainda faz diferença. */
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

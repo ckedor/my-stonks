@@ -1,4 +1,18 @@
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+  AppAlert,
+  AppAutocomplete,
+  AppButton,
+  AppCard,
+  AppChip,
+  AppDivider,
+  AppProgressBar,
+  AppSimpleTable,
+  AppStack,
+  AppText,
+  LoadingSpinner,
+  PageTitle,
+  SectionTitle,
+} from '@/components/ui'
 import {
   ASSET_ROUTES,
   PORTFOLIO_ROUTES,
@@ -6,25 +20,6 @@ import {
   USER_ROUTES,
 } from '@/constants/routes'
 import api from '@/lib/api'
-import {
-  Alert,
-  Autocomplete,
-  Box,
-  Button,
-  Chip,
-  Divider,
-  LinearProgress,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from '@mui/material'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 const MAX_ASSET_OPTIONS_RENDERED = 100
@@ -61,11 +56,11 @@ const STATE_LABEL: Record<RunState, string> = {
   failure: 'Falhou',
 }
 
-const STATE_COLOR: Record<RunState, 'default' | 'info' | 'success' | 'error'> = {
-  pending: 'default',
+const STATE_TONE: Record<RunState, 'neutral' | 'info' | 'success' | 'danger'> = {
+  pending: 'neutral',
   running: 'info',
   success: 'success',
-  failure: 'error',
+  failure: 'danger',
 }
 
 function errorMessage(error: unknown): string {
@@ -88,7 +83,7 @@ export default function AdminConsolidationPage() {
   const [selectedAsset, setSelectedAsset] = useState<AssetOption | null>(null)
   const [assetRunning, setAssetRunning] = useState(false)
   const [assetResult, setAssetResult] = useState<
-    { severity: 'success' | 'error'; message: string } | null
+    { severity: 'error' | 'success'; message: string } | null
   >(null)
 
   useEffect(() => {
@@ -116,10 +111,14 @@ export default function AdminConsolidationPage() {
     [users],
   )
 
-  const portfolioLabel = useCallback(
-    (portfolio: PortfolioSummary) =>
-      `${portfolio.name} — ${emailByUserId[portfolio.user_id] ?? `user #${portfolio.user_id}`}`,
+  const userEmail = useCallback(
+    (userId: number) => emailByUserId[userId] ?? `user #${userId}`,
     [emailByUserId],
+  )
+
+  const portfolioLabel = useCallback(
+    (portfolio: PortfolioSummary) => `${portfolio.name} — ${userEmail(portfolio.user_id)}`,
+    [userEmail],
   )
 
   const assetLabel = useCallback(
@@ -194,149 +193,123 @@ export default function AdminConsolidationPage() {
   }
 
   if (loading) return <LoadingSpinner />
-  if (loadError) return <Alert severity="error">{loadError}</Alert>
+  if (loadError) return <AppAlert severity="error">{loadError}</AppAlert>
 
   const finished = runs.filter((run) => run.state === 'success' || run.state === 'failure').length
 
   return (
-    <Box>
-      <Typography variant="h5" mb={3}>
-        Consolidação
-      </Typography>
+    <AppStack gap="lg">
+      <PageTitle>Consolidação</PageTitle>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-          Recalcular todas as posições
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>
-          Percorre as {portfolios.length} carteiras do app, uma de cada vez, recalculando todos os
-          ativos com transação.
-        </Typography>
+      <AppCard padding="lg">
+        <AppStack gap="md">
+          <AppStack gap="xs">
+            <SectionTitle>Recalcular todas as posições</SectionTitle>
+            <AppText variant="bodySmall" tone="secondary">
+              Percorre as {portfolios.length} carteiras do app, uma de cada vez, recalculando todos
+              os ativos com transação.
+            </AppText>
+          </AppStack>
 
-        <Button
-          variant="contained"
-          onClick={recalculateEveryPortfolio}
-          disabled={runningAll || portfolios.length === 0}
-        >
-          {runningAll ? 'Recalculando…' : 'Recalcular todas as carteiras'}
-        </Button>
+          <AppStack align="start">
+            <AppButton
+              onClick={recalculateEveryPortfolio}
+              disabled={runningAll || portfolios.length === 0}
+            >
+              {runningAll ? 'Recalculando…' : 'Recalcular todas as carteiras'}
+            </AppButton>
+          </AppStack>
 
-        {runs.length > 0 && (
-          <Box sx={{ mt: 3 }}>
-            <LinearProgress
-              variant="determinate"
-              value={(finished / runs.length) * 100}
-              sx={{ mb: 2, borderRadius: 1 }}
-            />
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 600 }}>Carteira</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Usuário</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Erro</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {runs.map((run) => (
-                    <TableRow key={run.portfolio.id} hover>
-                      <TableCell>{run.portfolio.name}</TableCell>
-                      <TableCell>
-                        {emailByUserId[run.portfolio.user_id] ?? `user #${run.portfolio.user_id}`}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={STATE_LABEL[run.state]}
-                          color={STATE_COLOR[run.state]}
-                          variant={run.state === 'pending' ? 'outlined' : 'filled'}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ color: 'error.main', fontSize: 13 }}>
+          {runs.length > 0 && (
+            <AppStack gap="md">
+              <AppProgressBar value={(finished / runs.length) * 100} />
+              <AppSimpleTable
+                rows={runs}
+                getRowKey={(run) => run.portfolio.id}
+                columns={[
+                  { label: 'Carteira', render: (run) => run.portfolio.name },
+                  { label: 'Usuário', render: (run) => userEmail(run.portfolio.user_id) },
+                  {
+                    label: 'Status',
+                    render: (run) => (
+                      <AppChip
+                        label={STATE_LABEL[run.state]}
+                        tone={STATE_TONE[run.state]}
+                        emphasis={run.state === 'pending' ? 'outline' : 'solid'}
+                      />
+                    ),
+                  },
+                  {
+                    label: 'Erro',
+                    render: (run) => (
+                      <AppText variant="bodySmall" tone="danger">
                         {run.error ?? '—'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
-        )}
-      </Paper>
+                      </AppText>
+                    ),
+                  },
+                ]}
+              />
+            </AppStack>
+          )}
+        </AppStack>
+      </AppCard>
 
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-          Consolidar um ativo
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>
-          Recalcula a posição de um único ativo numa única carteira.
-        </Typography>
+      <AppCard padding="lg">
+        <AppStack gap="md">
+          <AppStack gap="xs">
+            <SectionTitle>Consolidar um ativo</SectionTitle>
+            <AppText variant="bodySmall" tone="secondary">
+              Recalcula a posição de um único ativo numa única carteira.
+            </AppText>
+          </AppStack>
 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="flex-start">
-          <Autocomplete
-            options={portfolios}
-            value={selectedPortfolio}
-            onChange={(_, value) => setSelectedPortfolio(value)}
-            getOptionLabel={portfolioLabel}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            renderInput={(params) => <TextField {...params} label="Carteira" />}
-            sx={{ width: { xs: '100%', md: 340 } }}
-          />
-          <Autocomplete
-            options={assets}
-            value={selectedAsset}
-            onChange={(_, value) => setSelectedAsset(value)}
-            getOptionLabel={assetLabel}
-            filterOptions={filterAssets}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            renderInput={(params) => <TextField {...params} label="Ativo" />}
-            sx={{ width: { xs: '100%', md: 420 } }}
-          />
-          <Button
-            variant="contained"
-            onClick={recalculateSingleAsset}
-            disabled={assetRunning || !selectedPortfolio || !selectedAsset}
-            sx={{ mt: { md: 1 } }}
-          >
-            {assetRunning ? 'Consolidando…' : 'Consolidar'}
-          </Button>
-        </Stack>
+          <AppStack direction="row" gap="md" align="start" wrap>
+            <AppAutocomplete
+              options={portfolios}
+              value={selectedPortfolio}
+              onChange={setSelectedPortfolio}
+              getOptionLabel={portfolioLabel}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              label="Carteira"
+              size="sm"
+            />
+            <AppAutocomplete
+              options={assets}
+              value={selectedAsset}
+              onChange={setSelectedAsset}
+              getOptionLabel={assetLabel}
+              filterOptions={filterAssets}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              label="Ativo"
+            />
+            <AppButton
+              onClick={recalculateSingleAsset}
+              disabled={assetRunning || !selectedPortfolio || !selectedAsset}
+            >
+              {assetRunning ? 'Consolidando…' : 'Consolidar'}
+            </AppButton>
+          </AppStack>
 
-        {assetResult && (
-          <Alert severity={assetResult.severity} sx={{ mt: 2 }}>
-            {assetResult.message}
-          </Alert>
-        )}
+          {assetResult && <AppAlert severity={assetResult.severity}>{assetResult.message}</AppAlert>}
 
-        <Divider sx={{ my: 3 }} />
+          <AppDivider />
 
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          {portfolios.length} carteiras no app
-        </Typography>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Carteira</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Usuário</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {portfolios.map((portfolio) => (
-                <TableRow key={portfolio.id} hover>
-                  <TableCell>{portfolio.id}</TableCell>
-                  <TableCell>{portfolio.name}</TableCell>
-                  <TableCell>
-                    {emailByUserId[portfolio.user_id] ?? `user #${portfolio.user_id}`}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
-    </Box>
+          <AppStack gap="sm">
+            <AppText variant="bodySmall" tone="secondary">
+              {portfolios.length} carteiras no app
+            </AppText>
+            <AppSimpleTable
+              rows={portfolios}
+              getRowKey={(portfolio) => portfolio.id}
+              columns={[
+                { label: 'ID', render: (portfolio) => portfolio.id },
+                { label: 'Carteira', render: (portfolio) => portfolio.name },
+                { label: 'Usuário', render: (portfolio) => userEmail(portfolio.user_id) },
+              ]}
+            />
+          </AppStack>
+        </AppStack>
+      </AppCard>
+    </AppStack>
   )
 }

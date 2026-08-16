@@ -12,17 +12,19 @@ import type { ReactNode } from 'react'
  * (Escrevi este componente uma vez antes e apaguei: na época nenhuma tela
  * precisava dele.) */
 
-type Variant = 'body' | 'bodySmall'
-type Tone = 'default' | 'secondary'
+type Variant = 'body' | 'bodySmall' | 'caption'
+type Tone = 'default' | 'secondary' | 'danger'
 
-const VARIANT: Record<Variant, 'body1' | 'body2'> = {
+const VARIANT: Record<Variant, 'body1' | 'body2' | 'caption'> = {
   body: 'body1',
   bodySmall: 'body2',
+  caption: 'caption',
 }
 
 const TONE: Record<Tone, string | undefined> = {
   default: undefined,
   secondary: 'text.secondary',
+  danger: 'error.main',
 }
 
 export interface AppTextProps {
@@ -31,11 +33,23 @@ export interface AppTextProps {
   variant?: Variant
   /** Padrão: `default`. */
   tone?: Tone
+  /** `strong` destaca a linha principal de uma célula com duas linhas.
+   *  Padrão: `regular`. */
+  weight?: 'regular' | 'strong'
 }
 
-export default function AppText({ children, variant = 'body', tone = 'default' }: AppTextProps) {
+export default function AppText({
+  children,
+  variant = 'body',
+  tone = 'default',
+  weight = 'regular',
+}: AppTextProps) {
   return (
-    <Typography variant={VARIANT[variant]} color={TONE[tone]}>
+    <Typography
+      variant={VARIANT[variant]}
+      color={TONE[tone]}
+      fontWeight={weight === 'strong' ? 600 : undefined}
+    >
       {children}
     </Typography>
   )

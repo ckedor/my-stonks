@@ -1,8 +1,8 @@
-import { Stack, Switch, Typography } from '@mui/material'
+import { AppSwitch } from '@/components/ui'
 
-/** Rótulo antes do controle, como na barra do `CandleChart`: a barra se lê da
- *  esquerda para a direita, e o `FormControlLabel` invertia essa ordem e ainda
- *  trazia margens próprias que desalinhavam a linha. */
+/** Liga e desliga na barra de um gráfico. A ordem rótulo-antes-do-controle
+ *  virou decisão do `AppSwitch`; aqui sobrou o nome pelo qual os gráficos
+ *  já o chamam. */
 export default function ToolbarSwitch({
   label,
   checked,
@@ -12,12 +12,5 @@ export default function ToolbarSwitch({
   checked: boolean
   onChange: (value: boolean) => void
 }) {
-  return (
-    <Stack direction="row" spacing={0.5} alignItems="center">
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      <Switch size="small" checked={checked} onChange={(_, value) => onChange(value)} />
-    </Stack>
-  )
+  return <AppSwitch label={label} checked={checked} onChange={onChange} />
 }

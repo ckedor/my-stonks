@@ -8,7 +8,23 @@ import {
   type DataIngestionExecution,
   type DataIngestionExecutionDetail,
 } from '@/api/dataIngestion'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+  AppAlert,
+  AppButton,
+  AppCard,
+  AppChip,
+  AppConfirmDialog,
+  AppProgressBar,
+  AppSimpleTable,
+  AppSnackbar,
+  AppStack,
+  AppStatCard,
+  AppText,
+  AppTooltip,
+  LoadingSpinner,
+  PageTitle,
+  SectionTitle,
+} from '@/components/ui'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import HistoryIcon from '@mui/icons-material/History'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
@@ -16,31 +32,6 @@ import RefreshIcon from '@mui/icons-material/Refresh'
 import StopCircleIcon from '@mui/icons-material/StopCircle'
 import StorageIcon from '@mui/icons-material/Storage'
 import TaskAltIcon from '@mui/icons-material/TaskAlt'
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  LinearProgress,
-  Paper,
-  Snackbar,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tooltip,
-  Typography,
-} from '@mui/material'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const TERMINAL_STATUSES = new Set<IngestionStatus>([
@@ -63,16 +54,16 @@ const STATUS_LABELS: Record<IngestionStatus, string> = {
   aborted: 'Abortada',
 }
 
-const STATUS_COLORS: Record<
-  IngestionStatus,
-  'default' | 'info' | 'success' | 'warning' | 'error'
-> = {
-  queued: 'default',
+/* O design system não tem tom `warning` em chip, e `partial_success` não é
+   nem sucesso nem falha. `info` é o mais próximo do que ele comunica: algo
+   a conferir, sem afirmar que deu errado. */
+const STATUS_TONES: Record<IngestionStatus, 'neutral' | 'info' | 'success' | 'danger'> = {
+  queued: 'neutral',
   running: 'info',
   success: 'success',
-  partial_success: 'warning',
-  failure: 'error',
-  aborted: 'default',
+  partial_success: 'info',
+  failure: 'danger',
+  aborted: 'neutral',
 }
 
 const formatDateTime = (value: string | null) =>
@@ -84,46 +75,12 @@ const formatDateTime = (value: string | null) =>
     : '—'
 
 const StatusChip = ({ status }: { status: IngestionStatus }) => (
-  <Chip
-    size="small"
+  <AppChip
     label={STATUS_LABELS[status] ?? status}
-    color={STATUS_COLORS[status] ?? 'default'}
-    variant={status === 'queued' ? 'outlined' : 'filled'}
+    tone={STATUS_TONES[status] ?? 'neutral'}
+    emphasis={status === 'queued' ? 'outline' : 'solid'}
   />
 )
-
-function SummaryCard({
-  title,
-  value,
-  helper,
-  icon,
-}: {
-  title: string
-  value: string | number
-  helper: string
-  icon: React.ReactNode
-}) {
-  return (
-    <Card variant="outlined" sx={{ minWidth: 190, flex: 1 }}>
-      <CardContent>
-        <Stack direction="row" justifyContent="space-between" alignItems="start">
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              {title}
-            </Typography>
-            <Typography variant="h4" sx={{ mt: 0.5 }}>
-              {value}
-            </Typography>
-          </Box>
-          <Box color="primary.main">{icon}</Box>
-        </Stack>
-        <Typography variant="caption" color="text.secondary">
-          {helper}
-        </Typography>
-      </CardContent>
-    </Card>
-  )
-}
 
 export interface DataIngestionPageProps {
   ingestionType: DataIngestionType
@@ -300,260 +257,249 @@ export function DataIngestionPage({
     return Math.min(100, (detail.processed_items / detail.total_items) * 100)
   }, [detail])
 
+  const selectExecution = (execution: DataIngestionExecution) => {
+    selectedIdRef.current = execution.id
+    setSelectedId(execution.id)
+    void fetchDetail(execution.id)
+  }
+
   if (loading) return <LoadingSpinner />
 
   return (
-    <Box>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'stretch', md: 'center' }}
-        gap={2}
-        mb={3}
-      >
-        <Box>
-          <Typography variant="h5">{title}</Typography>
-          <Typography variant="body2" color="text.secondary">
+    <AppStack gap="lg">
+      <AppStack direction="row" justify="between" align="center" gap="md" collapseBelow="md">
+        <AppStack gap="xs">
+          <PageTitle>{title}</PageTitle>
+          <AppText variant="bodySmall" tone="secondary">
             {description}
-          </Typography>
-        </Box>
-        <Stack direction={{ xs: 'column', sm: 'row' }} gap={1}>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
+          </AppText>
+        </AppStack>
+        <AppStack direction="row" gap="sm" collapseBelow="sm">
+          <AppButton
+            emphasis="outline"
+            icon={<RefreshIcon />}
             onClick={() => void refreshExecutions()}
             disabled={runningRequest}
           >
             Atualizar
-          </Button>
+          </AppButton>
           {hasActiveExecution && (
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<StopCircleIcon />}
+            <AppButton
+              tone="danger"
+              emphasis="outline"
+              icon={<StopCircleIcon />}
               onClick={() => setAbortDialogOpen(true)}
               disabled={runningRequest}
             >
               Abortar
-            </Button>
+            </AppButton>
           )}
-          <Button
-            variant="outlined"
-            color="warning"
-            startIcon={<HistoryIcon />}
+          <AppButton
+            tone="caution"
+            emphasis="outline"
+            icon={<HistoryIcon />}
             onClick={() => setForceDialogOpen(true)}
             disabled={runningRequest || hasActiveExecution}
           >
             Histórico completo
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<PlayArrowIcon />}
+          </AppButton>
+          <AppButton
+            icon={<PlayArrowIcon />}
             onClick={() => void startExecution(false)}
             disabled={runningRequest || hasActiveExecution}
           >
             Executar agora
-          </Button>
-        </Stack>
-      </Stack>
+          </AppButton>
+        </AppStack>
+      </AppStack>
 
       {detail ? (
         <>
-          <Stack direction={{ xs: 'column', sm: 'row' }} gap={2} mb={2} flexWrap="wrap">
-            <SummaryCard
-              title="Processados"
+          <AppStack direction="row" gap="md" wrap collapseBelow="sm">
+            <AppStatCard
+              label="Processados"
               value={`${detail.processed_items}/${detail.total_items}`}
               helper={detail.force_full_history ? 'Histórico completo' : 'Incremental com overlap'}
               icon={<StorageIcon />}
             />
-            <SummaryCard
-              title="Sucessos"
+            <AppStatCard
+              label="Sucessos"
               value={detail.succeeded_items}
               helper={`${detail.upserted_rows.toLocaleString('pt-BR')} linhas persistidas`}
               icon={<TaskAltIcon />}
             />
-            <SummaryCard
-              title="Falhas"
+            <AppStatCard
+              label="Falhas"
               value={detail.failed_items}
               helper="Consulte as tentativas abaixo"
               icon={<ErrorOutlineIcon />}
             />
-          </Stack>
+          </AppStack>
 
-          <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="subtitle2">Execução #{detail.id}</Typography>
-              <StatusChip status={detail.status} />
-            </Stack>
-            <LinearProgress
-              variant={detail.status === 'queued' ? 'indeterminate' : 'determinate'}
-              value={progress}
-              color={detail.status === 'failure' ? 'error' : 'primary'}
-            />
-            <Typography variant="caption" color="text.secondary">
-              Solicitada em {formatDateTime(detail.requested_at)} · início {formatDateTime(detail.started_at)} · fim {formatDateTime(detail.finished_at)}
-            </Typography>
-            {detail.error && <Alert severity="error" sx={{ mt: 1 }}>{detail.error}</Alert>}
-          </Paper>
+          <AppCard>
+            <AppStack gap="sm">
+              <AppStack direction="row" justify="between" align="center">
+                <SectionTitle>Execução #{detail.id}</SectionTitle>
+                <StatusChip status={detail.status} />
+              </AppStack>
+              <AppProgressBar
+                value={detail.status === 'queued' ? undefined : progress}
+                tone={detail.status === 'failure' ? 'danger' : 'primary'}
+              />
+              <AppText variant="caption" tone="secondary">
+                Solicitada em {formatDateTime(detail.requested_at)} · início{' '}
+                {formatDateTime(detail.started_at)} · fim {formatDateTime(detail.finished_at)}
+              </AppText>
+              {detail.error && <AppAlert severity="error">{detail.error}</AppAlert>}
+            </AppStack>
+          </AppCard>
         </>
       ) : (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          Nenhuma importação executada até agora.
-        </Alert>
+        <AppAlert severity="info">Nenhuma importação executada até agora.</AppAlert>
       )}
 
-      <Stack direction="row" justifyContent="space-between" alignItems="baseline" mb={1}>
-        <Typography variant="h6">Últimas execuções</Typography>
-        <Typography variant="caption" color="text.secondary">
-          Histórico mantido por 2 dias
-        </Typography>
-      </Stack>
-      <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Disparo</TableCell>
-              <TableCell>Modo</TableCell>
-              <TableCell>Solicitada em</TableCell>
-              <TableCell align="right">Progresso</TableCell>
-              <TableCell align="right">Sucessos</TableCell>
-              <TableCell align="right">Falhas</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {executions.map((execution) => (
-              <TableRow
-                key={execution.id}
-                hover
-                selected={execution.id === selectedId}
-                onClick={() => {
-                  selectedIdRef.current = execution.id
-                  setSelectedId(execution.id)
-                  void fetchDetail(execution.id)
-                }}
-                sx={{ cursor: 'pointer' }}
-              >
-                <TableCell>#{execution.id}</TableCell>
-                <TableCell><StatusChip status={execution.status} /></TableCell>
-                <TableCell>{execution.trigger === 'manual' ? 'Manual' : 'Agendado'}</TableCell>
-                <TableCell>{execution.force_full_history ? 'Completo' : 'Incremental'}</TableCell>
-                <TableCell>{formatDateTime(execution.requested_at)}</TableCell>
-                <TableCell align="right">{execution.processed_items}/{execution.total_items}</TableCell>
-                <TableCell align="right">{execution.succeeded_items}</TableCell>
-                <TableCell align="right">{execution.failed_items}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <AppStack gap="sm">
+        <AppStack direction="row" justify="between" align="baseline">
+          <SectionTitle>Últimas execuções</SectionTitle>
+          <AppText variant="caption" tone="secondary">
+            Histórico mantido por 2 dias
+          </AppText>
+        </AppStack>
+        <AppSimpleTable
+          rows={executions}
+          getRowKey={(execution) => execution.id}
+          surface="outlined"
+          onRowClick={selectExecution}
+          isRowSelected={(execution) => execution.id === selectedId}
+          emptyMessage="Nenhuma execução registrada."
+          columns={[
+            { label: 'ID', render: (execution) => `#${execution.id}` },
+            { label: 'Status', render: (execution) => <StatusChip status={execution.status} /> },
+            {
+              label: 'Disparo',
+              render: (execution) => (execution.trigger === 'manual' ? 'Manual' : 'Agendado'),
+            },
+            {
+              label: 'Modo',
+              render: (execution) => (execution.force_full_history ? 'Completo' : 'Incremental'),
+            },
+            {
+              label: 'Solicitada em',
+              render: (execution) => formatDateTime(execution.requested_at),
+            },
+            {
+              label: 'Progresso',
+              align: 'right',
+              render: (execution) => `${execution.processed_items}/${execution.total_items}`,
+            },
+            {
+              label: 'Sucessos',
+              align: 'right',
+              render: (execution) => execution.succeeded_items,
+            },
+            { label: 'Falhas', align: 'right', render: (execution) => execution.failed_items },
+          ]}
+        />
+      </AppStack>
 
-      <Typography variant="h6" mb={1}>Tentativas por {itemName}</Typography>
-      <TableContainer component={Paper} variant="outlined">
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>{itemName}</TableCell>
-              <TableCell>Fonte</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Tentativa</TableCell>
-              <TableCell>Parâmetros</TableCell>
-              <TableCell align="right">Recebidas</TableCell>
-              <TableCell align="right">Persistidas</TableCell>
-              <TableCell>Erro</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {detail?.attempts.length ? detail.attempts.map((attempt) => (
-              <TableRow key={attempt.id} hover>
-                <TableCell>
-                  <Typography variant="body2" fontWeight={600}>{attempt.item_label}</Typography>
-                  <Typography variant="caption" color="text.secondary">ID {attempt.item_id ?? '—'}</Typography>
-                </TableCell>
-                <TableCell><Chip size="small" variant="outlined" label={attempt.source} /></TableCell>
-                <TableCell><StatusChip status={attempt.status} /></TableCell>
-                <TableCell>
-                  <Typography variant="body2">{formatDateTime(attempt.attempted_at)}</Typography>
-                  <Typography variant="caption" color="text.secondary">fim {formatDateTime(attempt.finished_at)}</Typography>
-                </TableCell>
-                <TableCell sx={{ maxWidth: 330 }}>
-                  <Tooltip title={JSON.stringify(attempt.parameters, null, 2)}>
-                    <Typography variant="caption" component="code" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {JSON.stringify(attempt.parameters)}
-                    </Typography>
-                  </Tooltip>
-                </TableCell>
-                <TableCell align="right">{attempt.fetched_rows}</TableCell>
-                <TableCell align="right">{attempt.upserted_rows}</TableCell>
-                <TableCell sx={{ maxWidth: 280 }}>
-                  <Typography variant="body2" color={attempt.error ? 'error' : 'text.secondary'}>
-                    {attempt.error ?? '—'}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )) : (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                  {detail && !TERMINAL_STATUSES.has(detail.status)
-                    ? 'Aguardando as primeiras tentativas…'
-                    : 'Nenhuma tentativa registrada.'}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <AppStack gap="sm">
+        <SectionTitle>Tentativas por {itemName}</SectionTitle>
+        <AppSimpleTable
+          rows={detail?.attempts ?? []}
+          getRowKey={(attempt) => attempt.id}
+          surface="outlined"
+          emptyMessage={
+            detail && !TERMINAL_STATUSES.has(detail.status)
+              ? 'Aguardando as primeiras tentativas…'
+              : 'Nenhuma tentativa registrada.'
+          }
+          columns={[
+            {
+              label: itemName,
+              render: (attempt) => (
+                <AppStack>
+                  <AppText variant="bodySmall" weight="strong">
+                    {attempt.item_label}
+                  </AppText>
+                  <AppText variant="caption" tone="secondary">
+                    ID {attempt.item_id ?? '—'}
+                  </AppText>
+                </AppStack>
+              ),
+            },
+            {
+              label: 'Fonte',
+              render: (attempt) => <AppChip label={attempt.source} emphasis="outline" />,
+            },
+            { label: 'Status', render: (attempt) => <StatusChip status={attempt.status} /> },
+            {
+              label: 'Tentativa',
+              render: (attempt) => (
+                <AppStack>
+                  <AppText variant="bodySmall">{formatDateTime(attempt.attempted_at)}</AppText>
+                  <AppText variant="caption" tone="secondary">
+                    fim {formatDateTime(attempt.finished_at)}
+                  </AppText>
+                </AppStack>
+              ),
+            },
+            {
+              label: 'Parâmetros',
+              width: 'clamped',
+              render: (attempt) => (
+                <AppTooltip title={JSON.stringify(attempt.parameters, null, 2)}>
+                  <AppText variant="caption" tone="secondary">
+                    {JSON.stringify(attempt.parameters)}
+                  </AppText>
+                </AppTooltip>
+              ),
+            },
+            { label: 'Recebidas', align: 'right', render: (attempt) => attempt.fetched_rows },
+            { label: 'Persistidas', align: 'right', render: (attempt) => attempt.upserted_rows },
+            {
+              label: 'Erro',
+              width: 'clamped',
+              render: (attempt) => (
+                <AppText variant="bodySmall" tone={attempt.error ? 'danger' : 'secondary'}>
+                  {attempt.error ?? '—'}
+                </AppText>
+              ),
+            },
+          ]}
+        />
+      </AppStack>
 
-      <Dialog open={forceDialogOpen} onClose={() => setForceDialogOpen(false)}>
-        <DialogTitle>Buscar histórico completo?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Essa execução ignora a última data persistida e solicita o máximo disponível. Ela pode consumir mais tempo e chamadas externas.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setForceDialogOpen(false)}>Cancelar</Button>
-          <Button color="warning" variant="contained" onClick={() => void startExecution(true)}>
-            Executar histórico completo
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={abortDialogOpen} onClose={() => setAbortDialogOpen(false)}>
-        <DialogTitle>Abortar a execução #{activeExecution?.id}?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            A execução é encerrada e libera a fila na hora, e o worker para nos itens
-            seguintes. O item que já está sendo buscado agora termina normalmente. O que
-            foi persistido até aqui é mantido.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAbortDialogOpen(false)}>Cancelar</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => void abortExecution()}
-            disabled={runningRequest}
-          >
-            Abortar execução
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
+      <AppConfirmDialog
+        open={forceDialogOpen}
+        title="Buscar histórico completo?"
+        tone="caution"
+        confirmLabel="Executar histórico completo"
+        onConfirm={() => void startExecution(true)}
+        onCancel={() => setForceDialogOpen(false)}
       >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+        Essa execução ignora a última data persistida e solicita o máximo disponível. Ela pode
+        consumir mais tempo e chamadas externas.
+      </AppConfirmDialog>
+
+      <AppConfirmDialog
+        open={abortDialogOpen}
+        title={`Abortar a execução #${activeExecution?.id}?`}
+        confirmLabel="Abortar execução"
+        confirmDisabled={runningRequest}
+        onConfirm={() => void abortExecution()}
+        onCancel={() => setAbortDialogOpen(false)}
+      >
+        A execução é encerrada e libera a fila na hora, e o worker para nos itens seguintes. O item
+        que já está sendo buscado agora termina normalmente. O que foi persistido até aqui é
+        mantido.
+      </AppConfirmDialog>
+
+      <AppSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
+      />
+    </AppStack>
   )
 }

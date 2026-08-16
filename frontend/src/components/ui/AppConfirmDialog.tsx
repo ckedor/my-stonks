@@ -23,8 +23,12 @@ export interface AppConfirmDialogProps {
   confirmLabel?: string
   /** Padrão: `Cancelar`. */
   cancelLabel?: string
-  /** `danger` para exclusões, `primary` para o resto. Padrão: `danger`. */
-  tone?: 'danger' | 'primary'
+  /** `danger` para exclusões, `caution` para o que é caro mas reversível,
+   *  `primary` para o resto. Padrão: `danger`. */
+  tone?: 'danger' | 'caution' | 'primary'
+  /** Bloqueia o confirmar enquanto a ação anterior ainda está no ar — sem
+   *  isso um duplo clique dispara a mesma requisição duas vezes. */
+  confirmDisabled?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
@@ -36,6 +40,7 @@ export default function AppConfirmDialog({
   confirmLabel = 'Confirmar',
   cancelLabel = 'Cancelar',
   tone = 'danger',
+  confirmDisabled = false,
   onConfirm,
   onCancel,
 }: AppConfirmDialogProps) {
@@ -46,10 +51,10 @@ export default function AppConfirmDialog({
         <DialogContentText>{children}</DialogContentText>
       </DialogContent>
       <DialogActions>
-        <AppButton tone="ghost" onClick={onCancel}>
+        <AppButton emphasis="ghost" onClick={onCancel}>
           {cancelLabel}
         </AppButton>
-        <AppButton tone={tone} onClick={onConfirm}>
+        <AppButton tone={tone} onClick={onConfirm} disabled={confirmDisabled}>
           {confirmLabel}
         </AppButton>
       </DialogActions>

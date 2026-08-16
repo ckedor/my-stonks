@@ -91,7 +91,7 @@ export default function AppDataTable<Row>({
           sx={{ width: 200 }}
         />
         {dayFilter && (
-          <AppButton tone="ghost" size="sm" onClick={() => setDayFilter('')}>
+          <AppButton emphasis="ghost" size="sm" onClick={() => setDayFilter('')}>
             Limpar
           </AppButton>
         )}

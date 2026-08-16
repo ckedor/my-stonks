@@ -21,13 +21,13 @@ export interface AppAutocompleteProps<T> {
   label: string
   /** Compara opção e valor, já que objetos iguais não são o mesmo objeto. */
   isOptionEqualToValue: (option: T, value: T) => boolean
-  /** `md` = 420px, `lg` = 520px. Padrão: `md`. */
-  size?: 'md' | 'lg'
+  /** `sm` = 340px, `md` = 420px, `lg` = 520px. Padrão: `md`. */
+  size?: 'sm' | 'md' | 'lg'
   /** Filtro próprio — útil quando a lista é grande demais para renderizar. */
   filterOptions?: (options: T[], state: { inputValue: string }) => T[]
 }
 
-const WIDTH = { md: 420, lg: 520 } as const
+const WIDTH = { sm: 340, md: 420, lg: 520 } as const
 
 export default function AppAutocomplete<T>({
   options,
@@ -48,7 +48,10 @@ export default function AppAutocomplete<T>({
       isOptionEqualToValue={isOptionEqualToValue}
       filterOptions={filterOptions}
       renderInput={(params) => <TextField {...params} label={label} />}
-      sx={{ maxWidth: WIDTH[size] }}
+      /* `width` junto do `maxWidth` para o campo não encolher até o conteúdo
+         quando o pai é uma linha em flex: numa coluna os dois dão no mesmo,
+         numa linha só o `maxWidth` deixaria o campo minúsculo. */
+      sx={{ width: '100%', maxWidth: WIDTH[size] }}
     />
   )
 }

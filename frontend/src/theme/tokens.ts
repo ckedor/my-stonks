@@ -15,6 +15,17 @@
    ────────────────────────────────────────────── */
 
 /** Raios de canto, em px. */
+/** Pilha de fontes do app — fonte única de verdade.
+ *
+ * Precisa ser uma string literal, e não `var(--alguma-coisa)`: os gráficos
+ * de candle repassam `theme.typography.fontFamily` para o lightweight-charts,
+ * que desenha em canvas, e canvas não resolve custom property de CSS.
+ *
+ * `src/index.css` repete a pilha para a pintura anterior ao mount do React.
+ * As duas precisam continuar iguais. */
+export const fontFamily =
+  `'Hanken Grotesk Variable', 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif`
+
 export const radius = {
   /** Chips, inputs e elementos pequenos. */
   sm: 6,

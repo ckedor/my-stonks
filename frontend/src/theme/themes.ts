@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { radius, space } from './tokens';
+import { fontFamily, radius, space } from './tokens';
 
 /* ──────────────────────────────────────────────
    Module augmentation (single source of truth)
@@ -139,7 +139,7 @@ const darkComponents = {
 }
 
 const baseTypography = {
-  fontFamily: `'Inter Variable', 'Inter', 'Helvetica Neue', Arial, sans-serif`,
+  fontFamily,
   h5: { fontWeight: 600, letterSpacing: '-0.01em' },
   h6: { fontWeight: 600, letterSpacing: '-0.01em' },
   subtitle2: { fontWeight: 600, letterSpacing: '0.02em' },
@@ -281,12 +281,17 @@ const slateNeutralPalette: ThemePaletteConfig = {
   golden: '#F59E0B',
   dark: '#111827',
   sidebar: '#1F2937',
-  topbar: { background: '#1F2937', text: '#F3F4F6', activeText: '#FFFFFF', activeBg: '#374151' },
+  topbar: { background: '#2b3848', text: '#F3F4F6', activeText: '#FFFFFF', activeBg: '#374151' },
   divider: 'rgba(17,24,39,0.10)',
   chart: {
     grid: 'rgba(17,24,39,0.10)',
     label: '#111827',
-    colors: ['#6366F1', '#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#F472B6', '#8B5CF6', '#06B6D4'],
+    /* Série do `defaultDarkPalette`, que nasceu para o fundo #303030. A
+       terceira era #FFF5E1 — creme, 1.08:1 sobre o branco do paper, ou seja
+       invisível. No lugar dela vai o oposto do papel que ela cumpria lá: era
+       o neutro claro sobre fundo escuro, aqui é o neutro escuro sobre fundo
+       claro (6.1:1), e a luminosidade separa ela de todas as outras. */
+    colors: ['#D2A679', '#D15F57', '#7A5C43', '#A3C1AD', '#AB4E52', '#a3c1bd', '#9CAFB7', '#FFD700'],
   },
 }
 

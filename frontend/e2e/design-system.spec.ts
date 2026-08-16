@@ -5,10 +5,11 @@ import { expect, expectNothingClipped, test } from './fixtures/app'
    token, de paleta ou de componente aparece aqui antes de aparecer numa
    tela de verdade. */
 
-/* A aba General tem ~2900px de conteúdo e o layout do admin rola por
-   dentro, então a viewport precisa comportar a página inteira.
+/* A aba General passou de ~2900px para ~4000px quando ganhou a seção dos
+   primitivos do design system, e o layout do admin rola por dentro, então a
+   viewport precisa comportar a página inteira.
    `expectNothingClipped` avisa quando esta altura deixar de bastar. */
-test.use({ viewport: { width: 1440, height: 3000 } })
+test.use({ viewport: { width: 1440, height: 4200 } })
 
 test('design system — componentes e paleta', async ({ page }) => {
   await page.goto('/admin/design-system')

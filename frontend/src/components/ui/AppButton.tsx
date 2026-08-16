@@ -3,24 +3,39 @@ import type { ReactNode } from 'react'
 
 /* Botão do app.
  *
- * As quatro tonalidades saíram das combinações que as páginas já usavam —
- * `contained`+primary, `outlined`, `text` e `contained`+error. Elas são o
- * vocabulário; `variant` e `color` do MUI não passam adiante, senão cada
- * página volta a inventar a sua combinação. */
+ * `tone` diz a intenção (do que se trata) e `emphasis` diz o peso (quanto
+ * a ação deve puxar o olho). Os dois nasceram fundidos numa prop só —
+ * `secondary` e `ghost` eram peso, `danger` era intenção — e a fusão parou
+ * de fechar na tela de importação, que precisa de um "abortar" vermelho
+ * discreto e um "histórico completo" âmbar discreto: combinações que não
+ * tinham nome porque não cabiam num eixo. Separá-los é a mesma decisão já
+ * tomada no `AppChip`.
+ *
+ * As combinações antigas seguem existindo, agora escritas em dois eixos:
+ * `secondary` = primary + outline, `ghost` = primary + ghost,
+ * `danger` = danger + solid. */
 
-type Tone = 'primary' | 'secondary' | 'ghost' | 'danger'
+type Tone = 'primary' | 'danger' | 'caution'
+type Emphasis = 'solid' | 'outline' | 'ghost'
 
-const TONE: Record<Tone, { variant: 'contained' | 'outlined' | 'text'; color: 'primary' | 'error' }> = {
-  primary: { variant: 'contained', color: 'primary' },
-  secondary: { variant: 'outlined', color: 'primary' },
-  ghost: { variant: 'text', color: 'primary' },
-  danger: { variant: 'contained', color: 'error' },
+const COLOR: Record<Tone, 'primary' | 'error' | 'warning'> = {
+  primary: 'primary',
+  danger: 'error',
+  caution: 'warning',
+}
+
+const VARIANT: Record<Emphasis, 'contained' | 'outlined' | 'text'> = {
+  solid: 'contained',
+  outline: 'outlined',
+  ghost: 'text',
 }
 
 export interface AppButtonProps {
   children: ReactNode
-  /** Peso visual da ação. Padrão: `primary`. */
+  /** Do que se trata a ação. Padrão: `primary`. */
   tone?: Tone
+  /** Quanto peso visual ela carrega. Padrão: `solid`. */
+  emphasis?: Emphasis
   size?: 'sm' | 'md'
   /** Ícone à esquerda do rótulo. */
   icon?: ReactNode
@@ -32,18 +47,17 @@ export interface AppButtonProps {
 export default function AppButton({
   children,
   tone = 'primary',
+  emphasis = 'solid',
   size = 'md',
   icon,
   onClick,
   disabled,
   type = 'button',
 }: AppButtonProps) {
-  const { variant, color } = TONE[tone]
-
   return (
     <Button
-      variant={variant}
-      color={color}
+      variant={VARIANT[emphasis]}
+      color={COLOR[tone]}
       size={size === 'sm' ? 'small' : 'medium'}
       startIcon={icon}
       onClick={onClick}
