@@ -34,6 +34,11 @@ export interface AppSelectProps {
    *  editar aquilo que se está escolhendo. Sem elas o fluxo obriga a fechar
    *  a lista, ir a outra tela e voltar. */
   actions?: AppSelectAction[]
+  /** `compact` é altura de barra; `comfortable` é altura de formulário,
+   *  para o campo não ficar mais baixo que o vizinho na mesma linha.
+   *  Padrão: `compact`. */
+  density?: 'compact' | 'comfortable'
+  error?: boolean
 }
 
 const WIDTH = { sm: 180, md: 260, full: '100%' } as const
@@ -45,12 +50,15 @@ export default function AppSelect({
   label,
   size = 'sm',
   actions,
+  density = 'compact',
+  error = false,
 }: AppSelectProps) {
   return (
     <TextField
       select
-      size="small"
+      size={density === 'compact' ? 'small' : 'medium'}
       label={label}
+      error={error}
       value={value}
       /* Clicar numa ação também dispara o `onChange` do Select, com o
          `value` vazio do `<MenuItem>` que a desenha — e o campo ficaria em
@@ -68,7 +76,16 @@ export default function AppSelect({
       sx={{ width: WIDTH[size], flexShrink: 0 }}
       /* A lista abre sem travar a rolagem da página por baixo: travar faz a
          barra de rolagem sumir e tudo saltar alguns pixels para o lado. */
-      slotProps={{ select: { MenuProps: { disableScrollLock: true } } }}
+      slotProps={{
+        select: {
+          MenuProps: { disableScrollLock: true },
+          /* Uma opção de valor vazio é uma escolha — "sem benchmark" — e não
+             a ausência de escolha. Sem `displayEmpty` o `Select` desenha o
+             campo em branco justamente no caso em que a pessoa escolheu
+             alguma coisa. */
+          displayEmpty: options.some((option) => option.value === ''),
+        },
+      }}
     >
       {options.map((option) => (
         <MenuItem key={option.value} value={option.value}>

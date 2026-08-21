@@ -90,4 +90,25 @@ const AppStack = styled('div', {
     : null),
 }))
 
+/* Filho que ocupa uma fatia proporcional da linha.
+ *
+ * Existe para a linha de formulário onde os campos não têm o mesmo peso —
+ * nome largo, benchmark médio, cor estreita. O `AppGridItem` não serve:
+ * grade trabalha em colunas inteiras, e 2 : 1.5 não é coluna inteira. */
+export interface AppStackItemProps {
+  /** Fatia do espaço livre. Padrão: 1. */
+  grow?: number
+  /** Piso em px, para a fatia não sumir quando a linha aperta. */
+  minWidth?: number
+}
+
+const ITEM_STYLE_PROPS = new Set(['grow', 'minWidth'])
+
+export const AppStackItem = styled('div', {
+  shouldForwardProp: (prop) => !ITEM_STYLE_PROPS.has(prop as string),
+})<AppStackItemProps>(({ grow = 1, minWidth }) => ({
+  flex: grow,
+  minWidth: minWidth ?? 0,
+}))
+
 export default AppStack

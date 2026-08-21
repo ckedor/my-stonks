@@ -42,6 +42,9 @@ export interface AppButtonProps {
   onClick?: () => void
   disabled?: boolean
   type?: 'button' | 'submit'
+  /** Ocupa a largura do container — a ação que fecha um formulário em
+   *  painel, onde a coluna inteira é o alvo de clique. */
+  fullWidth?: boolean
 }
 
 export default function AppButton({
@@ -53,6 +56,7 @@ export default function AppButton({
   onClick,
   disabled,
   type = 'button',
+  fullWidth = false,
 }: AppButtonProps) {
   return (
     <Button
@@ -63,6 +67,7 @@ export default function AppButton({
       onClick={onClick}
       disabled={disabled}
       type={type}
+      fullWidth={fullWidth}
     >
       {children}
     </Button>

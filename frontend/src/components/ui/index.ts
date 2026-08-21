@@ -11,8 +11,8 @@
    tela usando. Sem variante especulativa. */
 
 /* ── Layout ─────────────────────────────────── */
-export { default as AppStack } from './AppStack'
-export type { AppStackProps } from './AppStack'
+export { default as AppStack, AppStackItem } from './AppStack'
+export type { AppStackItemProps, AppStackProps } from './AppStack'
 export { default as AppGrid, AppGridItem } from './AppGrid'
 export type { AppGridProps, AppGridItemProps } from './AppGrid'
 export { default as AppCard } from './AppCard'
@@ -53,6 +53,12 @@ export { default as AppAutocomplete } from './AppAutocomplete'
 export type { AppAutocompleteProps } from './AppAutocomplete'
 export { default as AppConfirmDialog } from './AppConfirmDialog'
 export type { AppConfirmDialogProps } from './AppConfirmDialog'
+export { default as AppColorField } from './AppColorField'
+export type { AppColorFieldProps } from './AppColorField'
+export { default as AppFormDrawer } from './AppFormDrawer'
+export type { AppFormDrawerProps } from './AppFormDrawer'
+export { default as AppTextField } from './AppTextField'
+export type { AppTextFieldProps } from './AppTextField'
 export { default as AppCrudForm } from './AppCrudForm'
 export type { AppCrudFormProps, FieldConfig } from './AppCrudForm'
 export { default as AppCrudTable } from './AppCrudTable'
