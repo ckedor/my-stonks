@@ -24,7 +24,13 @@ const DRAWDOWN_SERIES = [
 
 const ANALYSIS = {
   start_date: '2025-01-31',
-  performance_metrics: { cagr: 0.1432, benchmarks_metrics: {} },
+  performance_metrics: {
+    cagr: 0.1432,
+    benchmarks_metrics: {
+      CDI: { cagr: 10.75, alpha: 3.57, beta: 0.12, correlation: 0.08 },
+      IBOV: { cagr: 8.42, alpha: 5.9, beta: 1.14, correlation: 0.83 },
+    },
+  },
   risk_metrics: {
     annualized_vol: 0.1873,
     sharpe_ratio: 0.84,
@@ -274,4 +280,14 @@ test('portfolio/asset — aba de dividendos', async ({ page, mockApi }) => {
   await expect(page.getByText('2026')).toBeVisible()
 
   await expect(page).toHaveScreenshot('panel-dividends.png')
+})
+
+test('portfolio/asset — aba de visão geral', async ({ page, mockApi }) => {
+  await abrirFichaDoAtivo(page, mockApi)
+
+  await expect(page.getByRole('heading', { name: 'Comparação com Benchmarks' })).toBeVisible()
+  await expect(page.getByText('Correlação')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Evolução Patrimonial' })).toBeVisible()
+
+  await expect(page).toHaveScreenshot('panel-overview-tab.png', { fullPage: true })
 })
