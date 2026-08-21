@@ -112,8 +112,9 @@ export default function AssetSelector({ value, onChange, initialAsset }: AssetSe
       <Grid container direction="row" spacing={2} alignItems="center">
         <Grid size={{ xs: 4 }}>
           <FormControl fullWidth>
-            <InputLabel>Tipo de Ativo</InputLabel>
+            <InputLabel id="asset-selector-type-label">Tipo de Ativo</InputLabel>
             <Select
+              labelId="asset-selector-type-label"
               value={selectedType}
               label="Tipo de Ativo"
               onChange={(e) => setSelectedType(Number(e.target.value))}

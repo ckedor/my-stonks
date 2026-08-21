@@ -36,6 +36,11 @@ const ASSETS = [
   { id: 2, ticker: 'HGLG11', name: 'CSHG Logística', asset_type_id: 2 },
 ]
 
+const FIXED_INCOME_TYPES = [
+  { id: 1, name: 'Pré', description: 'taxa fixa' },
+  { id: 2, name: 'Índice +', description: 'índice mais taxa' },
+]
+
 const BROKERS = [
   { id: 1, name: 'Rico', legalId: '1', currency: { id: 1, name: 'Real', code: 'BRL' } },
   { id: 2, name: 'Avenue', legalId: '2', currency: { id: 2, name: 'Dólar', code: 'USD' } },
@@ -157,4 +162,31 @@ test('formulário de negociação', async ({ page, mockApi }) => {
   await expectNothingClipped(page)
 
   await expect(page).toHaveScreenshot('form-trade.png')
+})
+
+test('formulário de ativo de renda fixa', async ({ page, mockApi }) => {
+  await mockApi('/portfolio', PORTFOLIOS)
+  await mockApi('/market_data/asset/type', ASSET_TYPES)
+  await mockApi('/market_data/asset', ASSETS)
+  await mockApi('/market_data/broker', BROKERS)
+  await mockApi('/market_data/asset/fixed_income/type', FIXED_INCOME_TYPES)
+  await mockApi('/market_data/series', BENCHMARKS)
+
+  await openApp(page)
+  await page.getByRole('button', { name: 'Ações rápidas' }).click()
+  await page.getByRole('menuitem', { name: 'Comprar Ativo' }).click()
+  await expect(page.getByRole('heading', { name: 'Nova Negociação' })).toBeVisible()
+
+  /* O atalho de criar só aparece quando o tipo escolhido é de renda fixa:
+     é ali que um ativo pode não existir ainda no cadastro. */
+  await page.getByRole('combobox', { name: 'Tipo de Ativo' }).click()
+  await page.getByRole('option', { name: 'CDB' }).click()
+  await page.getByRole('combobox', { name: 'Ativo', exact: true }).click()
+  await page.getByText('Novo ativo de renda fixa…').click()
+
+  await expect(page.getByRole('heading', { name: 'Novo Ativo de Renda Fixa' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Criar ativo' })).toBeVisible()
+  await expectNothingClipped(page)
+
+  await expect(page).toHaveScreenshot('form-fixed-income.png')
 })
