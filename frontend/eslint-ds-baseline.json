@@ -3,10 +3,8 @@
   "files": [
     "src/components/AssetDetailPanel.tsx",
     "src/components/AssetDetailPanelSkeleton.tsx",
-    "src/components/AssetSelector.tsx",
     "src/components/DividendsCategoryChart.tsx",
     "src/components/DrawdownChart.tsx",
-    "src/components/FixedIncomeForm.tsx",
     "src/components/PortfolioDividendsChart.tsx",
     "src/components/PortfolioReturnsChart.tsx",
     "src/components/RiskMetricsPanel.tsx",

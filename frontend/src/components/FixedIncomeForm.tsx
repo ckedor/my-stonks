@@ -5,21 +5,12 @@ import { ASSET_ROUTES, MARKET_DATA_SERIES_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { Asset } from '@/types'
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Drawer,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    Snackbar,
-    Stack,
-    TextField,
-    Typography,
-} from '@mui/material'
-import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+    AppDateField,
+    AppFormDrawer,
+    AppSelect,
+    AppSnackbar,
+    AppTextField,
+} from '@/components/ui'
 import dayjs, { Dayjs } from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -50,7 +41,7 @@ interface Props {
 export default function FixedIncomeForm({ open, assetTypeId, onClose }: Props) {
   const [nickname, setNickname] = useState('')
   const [maturity, setMaturity] = useState<Dayjs | null>(dayjs().add(1, 'year'))
-  const [fee, setFee] = useState<number | ''>('')
+  const [fee, setFee] = useState('')
 
   const [fiTypeId, setFiTypeId] = useState<number | ''>('')
   const [indexId, setIndexId] = useState<number | ''>('')
@@ -156,96 +147,73 @@ export default function FixedIncomeForm({ open, assetTypeId, onClose }: Props) {
 
   return (
     <>
-      <Drawer anchor="right" open={open} onClose={() => onClose()}>
-        <Box p={3} width={500} display="flex" flexDirection="column" height="100%" position="relative">
-          <Stack spacing={3} p={1} flex={1} overflow="auto">
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-              <Typography variant="h6">Novo Ativo de Renda Fixa</Typography>
-            </Box>
-
-            <TextField
-              label="Nome"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              error={touched && nickname.trim().length === 0}
-              fullWidth
-            />
-
-            <FormControl fullWidth error={touched && assetTypeIdState === ''}>
-              <InputLabel>Tipo de Ativo</InputLabel>
-              <Select
-                value={assetTypeIdState}
-                label="Tipo de Ativo"
-                onChange={(e) => setAssetTypeIdState(Number(e.target.value))}
-              >
-                {assetTypes.map((t) => (
-                  <MenuItem key={t.id} value={t.id}>
-                    {t.short_name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth error={touched && fiTypeId === ''}>
-              <InputLabel>Tipo</InputLabel>
-              <Select value={fiTypeId} label="Tipo" onChange={(e) => setFiTypeId(Number(e.target.value))}>
-                {fiTypes.map((t) => (
-                  <MenuItem key={t.id} value={t.id}>
-                    {t.name} - {t.description}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {isPostFixed && (
-              <FormControl fullWidth error={touched && indexId === ''}>
-                <InputLabel>Indexador</InputLabel>
-                <Select value={indexId} label="Indexador" onChange={(e) => setIndexId(Number(e.target.value))}>
-                  {indexes.map((idx) => (
-                    <MenuItem key={idx.id} value={idx.id}>
-                      {idx.short_name || idx.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-
-            <TextField
-              label={isPostFixed ? 'Taxa' : 'Taxa (% a.a. pré)'}
-              type="number"
-              value={fee}
-              onChange={(e) => setFee(e.target.value === '' ? '' : Number(e.target.value))}
-              error={touched && fee === ''}
-              fullWidth
-            />
-
-            <DatePicker label="Vencimento" value={maturity} onChange={(v) => setMaturity(v)} />
-          </Stack>
-
-          <Box mt={2}>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleSubmit}
-              disabled={loading || fetching}
-              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
-            >
-              Criar ativo
-            </Button>
-          </Box>
-        </Box>
-      </Drawer>
-
-      <Snackbar
-        open={snackOpen}
-        autoHideDuration={5000}
-        onClose={() => setSnackOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      <AppFormDrawer
+        open={open}
+        onClose={() => onClose()}
+        title="Novo Ativo de Renda Fixa"
+        width="md"
+        gap="lg"
+        submitLabel="Criar ativo"
+        onSubmit={handleSubmit}
+        submitDisabled={fetching}
+        submitting={loading}
       >
-        <Alert severity="error" onClose={() => setSnackOpen(false)}>
-          {error}
-        </Alert>
-      </Snackbar>
+        <AppTextField
+          label="Nome"
+          value={nickname}
+          onChange={setNickname}
+          error={touched && nickname.trim().length === 0}
+        />
+
+        <AppSelect
+          label="Tipo de Ativo"
+          size="full"
+          density="comfortable"
+          error={touched && assetTypeIdState === ''}
+          options={assetTypes.map((t) => ({ value: String(t.id), label: t.short_name }))}
+          value={assetTypeIdState === '' ? '' : String(assetTypeIdState)}
+          onChange={(value) => setAssetTypeIdState(Number(value))}
+        />
+
+        <AppSelect
+          label="Tipo"
+          size="full"
+          density="comfortable"
+          error={touched && fiTypeId === ''}
+          options={fiTypes.map((t) => ({ value: String(t.id), label: `${t.name} - ${t.description}` }))}
+          value={fiTypeId === '' ? '' : String(fiTypeId)}
+          onChange={(value) => setFiTypeId(Number(value))}
+        />
+
+        {isPostFixed && (
+          <AppSelect
+            label="Indexador"
+            size="full"
+            density="comfortable"
+            error={touched && indexId === ''}
+            options={indexes.map((idx) => ({ value: String(idx.id), label: idx.short_name || idx.name }))}
+            value={indexId === '' ? '' : String(indexId)}
+            onChange={(value) => setIndexId(Number(value))}
+          />
+        )}
+
+        <AppTextField
+          label={isPostFixed ? 'Taxa' : 'Taxa (% a.a. pré)'}
+          type="number"
+          value={fee}
+          onChange={setFee}
+          error={touched && fee === ''}
+        />
+
+        <AppDateField label="Vencimento" value={maturity} onChange={setMaturity} />
+      </AppFormDrawer>
+
+      <AppSnackbar
+        open={snackOpen}
+        message={error ?? ''}
+        severity="error"
+        onClose={() => setSnackOpen(false)}
+      />
     </>
   )
 }
