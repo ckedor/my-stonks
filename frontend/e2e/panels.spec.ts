@@ -222,6 +222,16 @@ const TRADES = [
   },
 ]
 
+/* Dois anos de proventos, para o gráfico ter as duas séries que compara.
+   Valores escritos à mão pelo mesmo motivo da série de drawdown. */
+const PROVENTOS = [
+  { id: 1, asset_id: 5, date: '2025-02-14', ticker: 'PETR4', amount: 120.5, category: 'Ações', portfolio_id: 1 },
+  { id: 2, asset_id: 5, date: '2025-05-14', ticker: 'PETR4', amount: 98.2, category: 'Ações', portfolio_id: 1 },
+  { id: 3, asset_id: 5, date: '2025-08-14', ticker: 'PETR4', amount: 143.7, category: 'Ações', portfolio_id: 1 },
+  { id: 4, asset_id: 5, date: '2025-11-14', ticker: 'PETR4', amount: 76.4, category: 'Ações', portfolio_id: 1 },
+  { id: 5, asset_id: 5, date: '2026-02-13', ticker: 'PETR4', amount: 165.9, category: 'Ações', portfolio_id: 1 },
+]
+
 async function abrirFichaDoAtivo(page: import('@playwright/test').Page, mockApi: (path: string, body: unknown) => Promise<void>) {
   await page.clock.setFixedTime(HOJE)
   await mockApi('/portfolio', PORTFOLIOS)
@@ -230,7 +240,7 @@ async function abrirFichaDoAtivo(page: import('@playwright/test').Page, mockApi:
   await mockApi('/portfolio/position/1/asset/5/analysis', ANALYSIS)
   await mockApi('/portfolio/position/1/asset/5/returns', { PETR4: RETORNOS_DO_ATIVO })
   await mockApi('/portfolio/position/1/patrimony_evolution', [])
-  await mockApi('/portfolio/dividend', [])
+  await mockApi('/portfolio/dividend', PROVENTOS)
   await mockApi('/portfolio/transaction', TRADES)
   await page.goto('/portfolio/asset/5')
 }
@@ -254,4 +264,14 @@ test('portfolio/asset — aba de trades', async ({ page, mockApi }) => {
   await expect(page.getByText('Lucro Realizado')).toBeVisible()
 
   await expect(page).toHaveScreenshot('panel-trades.png')
+})
+
+test('portfolio/asset — aba de dividendos', async ({ page, mockApi }) => {
+  await abrirFichaDoAtivo(page, mockApi)
+
+  await page.getByRole('tab', { name: 'Dividendos' }).click()
+  await expect(page.getByRole('heading', { name: 'Dividendos' })).toBeVisible()
+  await expect(page.getByText('2026')).toBeVisible()
+
+  await expect(page).toHaveScreenshot('panel-dividends.png')
 })
