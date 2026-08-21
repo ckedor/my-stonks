@@ -1,5 +1,5 @@
+import { AppMetric, AppStack, SectionTitle, useAppTheme } from '@/components/ui'
 import { DrawdownEntry, DrawdownStats } from '@/types'
-import { Box, Stack, Typography, useTheme } from '@mui/material'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 import {
@@ -19,21 +19,8 @@ interface Props {
   size?: number
 }
 
-function StatItem({ label, value, color }: { label: string; value: string; color?: string }) {
-  return (
-    <Box sx={{ textAlign: 'center', px: 2 }}>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body2" fontWeight={700} color={color ?? 'text.primary'}>
-        {value}
-      </Typography>
-    </Box>
-  )
-}
-
 export default function DrawdownChart({ series, stats, size = 300 }: Props) {
-  const theme = useTheme()
+  const theme = useAppTheme()
   const gridColor = theme.palette.chart.grid
   const labelColor = theme.palette.chart.label
 
@@ -57,39 +44,44 @@ export default function DrawdownChart({ series, stats, size = 300 }: Props) {
   const pad = Math.abs(minVal) * 0.1
 
   return (
-    <Box>
-      <Typography variant="subtitle2" fontWeight={600} mb={1}>
-        Drawdown
-      </Typography>
+    <AppStack gap="md">
+      <SectionTitle>Drawdown</SectionTitle>
 
-      {/* Stats row */}
-      <Stack direction="row" spacing={1} mb={2} flexWrap="wrap" justifyContent="center">
-        <StatItem
+      <AppStack direction="row" gap="xl" wrap justify="center">
+        <AppMetric
+          align="center"
           label="Max Drawdown"
           value={`${(stats.max_drawdown * 100).toFixed(2)}%`}
-          color="error.main"
+          tone="danger"
         />
-        <StatItem
+        <AppMetric
+          align="center"
           label="Data do Pico"
           value={dayjs(stats.peak_date_before_max_dd).format('DD/MM/YY')}
         />
-        <StatItem
+        <AppMetric
+          align="center"
           label="Data do Max DD"
           value={dayjs(stats.max_drawdown_date).format('DD/MM/YY')}
         />
         {stats.recovery_date && (
-          <StatItem
+          <AppMetric
+            align="center"
             label="Recuperação"
             value={dayjs(stats.recovery_date).format('DD/MM/YY')}
           />
         )}
         {stats.recovery_days != null && (
-          <StatItem label="Dias p/ Recuperar" value={`${stats.recovery_days}d`} />
+          <AppMetric align="center" label="Dias p/ Recuperar" value={`${stats.recovery_days}d`} />
         )}
         {stats.max_drawdown_duration_days != null && (
-          <StatItem label="Duração Max DD" value={`${stats.max_drawdown_duration_days}d`} />
+          <AppMetric
+            align="center"
+            label="Duração Max DD"
+            value={`${stats.max_drawdown_duration_days}d`}
+          />
         )}
-      </Stack>
+      </AppStack>
 
       <ResponsiveContainer width="100%" height={size}>
         <ComposedChart data={chartData} margin={{ left: 10 }}>
@@ -132,6 +124,6 @@ export default function DrawdownChart({ series, stats, size = 300 }: Props) {
           />
         </ComposedChart>
       </ResponsiveContainer>
-    </Box>
+    </AppStack>
   )
 }

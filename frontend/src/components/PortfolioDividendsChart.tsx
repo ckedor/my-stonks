@@ -1,7 +1,7 @@
 
 import { useCurrency } from '@/hooks/useCurrency'
 import { Dividend } from '@/types'
-import { Box, Typography, useTheme } from '@mui/material'
+import { AppChartArea, useAppTheme } from '@/components/ui'
 import dayjs from 'dayjs'
 import {
     Bar,
@@ -23,7 +23,7 @@ interface Props {
 
 export default function PortfolioDividendsChartByYear({ dividends, selected, size = 370 }: Props) {
   
-  const theme = useTheme()
+  const theme = useAppTheme()
   const { symbol, locale } = useCurrency()
 
   const filtered =
@@ -65,28 +65,11 @@ export default function PortfolioDividendsChartByYear({ dividends, selected, siz
   for (let i = 0; i <= upper; i += tickStep) yTicks.push(i)
 
   if (!filtered.length) {
-    return (
-      <Box position="relative" height={size}>
-        <Box
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Typography variant="subtitle1" color="text.secondary">
-            Ativo não recebeu dividendos no período
-          </Typography>
-        </Box>
-      </Box>
-    )
+    return <AppChartArea height={size} emptyMessage="Ativo não recebeu dividendos no período" />
   }
 
   return (
-    <Box position="relative" height={size}>
+    <AppChartArea height={size}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ left: 48 }}>
           <CartesianGrid 
@@ -124,6 +107,6 @@ export default function PortfolioDividendsChartByYear({ dividends, selected, siz
             strokeWidth={1.5} />
         </BarChart>
       </ResponsiveContainer>
-    </Box>
+    </AppChartArea>
   )
 }

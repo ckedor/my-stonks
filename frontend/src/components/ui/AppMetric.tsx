@@ -32,6 +32,10 @@ export interface AppMetricProps {
   /** Colado ao lado do valor, na mesma linha de base — a taxa que qualifica
    *  o número sem virar uma métrica própria. */
   suffix?: ReactNode
+  /** `center` para a fileira de números que legenda um gráfico, onde o
+   *  alinhamento à esquerda deixa os rótulos desencontrados dos valores.
+   *  Padrão: `start`. */
+  align?: 'start' | 'center'
 }
 
 export default function AppMetric({
@@ -40,9 +44,10 @@ export default function AppMetric({
   size = 'sm',
   tone = 'default',
   suffix,
+  align = 'start',
 }: AppMetricProps) {
   return (
-    <Box sx={{ minWidth: { xs: MIN_WIDTH_XS, sm: 'auto' } }}>
+    <Box sx={{ minWidth: { xs: MIN_WIDTH_XS, sm: 'auto' }, textAlign: align }}>
       <Typography
         variant={size === 'lg' ? 'body2' : 'caption'}
         color="text.secondary"
@@ -50,7 +55,14 @@ export default function AppMetric({
       >
         {label}
       </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: align === 'center' ? 'center' : 'flex-start',
+          gap: 1,
+        }}
+      >
         <Typography
           variant={size === 'lg' ? 'h5' : 'body1'}
           sx={{ fontWeight: 700, color: TONE[tone], lineHeight: size === 'lg' ? 1.15 : 1.35 }}
