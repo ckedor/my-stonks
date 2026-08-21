@@ -8,6 +8,7 @@ import {
   TableRow,
 } from '@mui/material'
 import type { ReactNode } from 'react'
+import AppTooltip from './AppTooltip'
 
 /* Tabela estática: cabeçalho e linhas, sem paginação nem ordenação.
  *
@@ -27,6 +28,9 @@ const CLAMPED_WIDTH = 320
 
 export interface AppSimpleTableColumn<Row> {
   label: string
+  /** O que a coluna responde, em uma frase, para o cabeçalho que é jargão.
+   *  Aparece ao passar o mouse. */
+  hint?: string
   align?: 'left' | 'right'
   /** `clamped` corta o conteúdo com reticências numa largura fixa — para a
    *  coluna que carrega um texto longo que não pode empurrar as outras.
@@ -78,7 +82,11 @@ export default function AppSimpleTable<Row>({
                 align={column.align ?? 'left'}
                 sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}
               >
-                {column.label}
+                {column.hint ? (
+                  <AppTooltip title={column.hint}>{column.label}</AppTooltip>
+                ) : (
+                  column.label
+                )}
               </TableCell>
             ))}
           </TableRow>

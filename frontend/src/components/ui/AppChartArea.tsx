@@ -1,5 +1,6 @@
 import { Box } from '@mui/material'
-import type { ReactNode } from 'react'
+import { space } from '@/theme/tokens'
+import type { ReactNode, Ref } from 'react'
 import AppText from './AppText'
 
 /* Moldura de gráfico: controles em cima, desenho embaixo, altura conhecida.
@@ -14,16 +15,24 @@ import AppText from './AppText'
  * sobra — é o que serve dentro de um card de altura fixa.
  *
  * `emptyMessage` ocupa a mesma altura em vez de sumir: a faixa que encolhe
- * quando não há dado faz o resto da página saltar. */
+ * quando não há dado faz o resto da página saltar.
+ *
+ * Sem `height`, a área cresce com o que estiver dentro — é o que serve para
+ * as bibliotecas de canvas, que criam o próprio elemento com a altura que
+ * receberam e não medem o pai. Para elas, `plotRef` entrega o nó onde
+ * desenhar. */
 
 export interface AppChartAreaProps {
-  height: number | string
+  /** Omitida, a área cresce com o conteúdo. */
+  height?: number | string
   /** Padrão: `chart`. */
   sizing?: 'chart' | 'frame'
   /** Controles acima do desenho — título, período, agrupamento. */
   toolbar?: ReactNode
   /** Mostrado, centrado, quando não há o que desenhar. */
   emptyMessage?: string
+  /** Nó onde uma biblioteca de canvas desenha. */
+  plotRef?: Ref<HTMLDivElement>
   children?: ReactNode
 }
 
@@ -32,6 +41,7 @@ export default function AppChartArea({
   sizing = 'chart',
   toolbar,
   emptyMessage,
+  plotRef,
   children,
 }: AppChartAreaProps) {
   if (emptyMessage) {
@@ -44,10 +54,11 @@ export default function AppChartArea({
 
   const plot = (
     <Box
+      ref={plotRef}
       sx={
         sizing === 'frame'
           ? { flex: 1, minHeight: 0, position: 'relative' }
-          : { height, position: 'relative' }
+          : { width: '100%', ...(height ? { height } : null), position: 'relative' }
       }
     >
       {children}
@@ -61,6 +72,7 @@ export default function AppChartArea({
       sx={{
         display: 'flex',
         flexDirection: 'column',
+        gap: space.sm,
         ...(sizing === 'frame' ? { height, minHeight: 0 } : null),
       }}
     >
