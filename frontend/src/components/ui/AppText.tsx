@@ -12,10 +12,14 @@ import type { ReactNode } from 'react'
  * (Escrevi este componente uma vez antes e apaguei: na época nenhuma tela
  * precisava dele.) */
 
-type Variant = 'body' | 'bodySmall' | 'caption'
+type Variant = 'pageHeading' | 'body' | 'bodySmall' | 'caption'
 type Tone = 'default' | 'secondary' | 'success' | 'caution' | 'danger'
 
-const VARIANT: Record<Variant, 'body1' | 'body2' | 'caption'> = {
+const VARIANT: Record<Variant, 'h4' | 'body1' | 'body2' | 'caption'> = {
+  /** O nome da coisa que a tela é sobre — o ticker de um ativo. Maior que
+   *  o `PageTitle` de propósito: ali o título nomeia a tela, aqui nomeia o
+   *  assunto dela. */
+  pageHeading: 'h4',
   body: 'body1',
   bodySmall: 'body2',
   caption: 'caption',
@@ -43,6 +47,10 @@ export interface AppTextProps {
   /** Impede a quebra de linha — para o número que não pode virar duas
    *  linhas quando a coluna aperta. */
   noWrap?: boolean
+  /** Renderiza como `span`, para o trecho destacado dentro de uma frase.
+   *  Sem isto o texto vira um parágrafo dentro de outro, que o navegador
+   *  desfaz quebrando a linha no meio. */
+  inline?: boolean
 }
 
 export default function AppText({
@@ -51,15 +59,20 @@ export default function AppText({
   tone = 'default',
   weight = 'regular',
   noWrap = false,
+  inline = false,
 }: AppTextProps) {
-  return (
-    <Typography
-      variant={VARIANT[variant]}
-      color={TONE[tone]}
-      fontWeight={weight === 'strong' ? 600 : undefined}
-      whiteSpace={noWrap ? 'nowrap' : undefined}
-    >
+  const common = {
+    variant: VARIANT[variant],
+    color: TONE[tone],
+    fontWeight: weight === 'strong' ? 600 : variant === 'pageHeading' ? 'bold' : undefined,
+    whiteSpace: noWrap ? ('nowrap' as const) : undefined,
+  }
+
+  return inline ? (
+    <Typography component="span" {...common}>
       {children}
     </Typography>
+  ) : (
+    <Typography {...common}>{children}</Typography>
   )
 }

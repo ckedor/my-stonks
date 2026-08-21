@@ -8,8 +8,6 @@
     "src/components/PortfolioDividendsChart.tsx",
     "src/components/PortfolioReturnsChart.tsx",
     "src/components/Trades.tsx",
-    "src/components/asset/AssetHeader.tsx",
-    "src/components/asset/AssetPositionCard.tsx",
     "src/components/charts/CandleChart.tsx",
     "src/components/charts/app-bar-chart/AppBarChart.tsx",
     "src/components/portfolio-asset/BenchmarkComparison.tsx",

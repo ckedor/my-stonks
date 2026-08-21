@@ -1,8 +1,14 @@
+import {
+  AppChip,
+  AppIconLink,
+  AppLogoImage,
+  AppStack,
+  AppText,
+  AppTooltip,
+} from '@/components/ui'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
-import { Box, Link as MuiLink, Stack, Tooltip, Typography } from '@mui/material'
 import dayjs from 'dayjs'
-import { useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import type { ReactNode } from 'react'
 
 /** Retorno anual composto, em pontos percentuais.
  *
@@ -48,87 +54,35 @@ export default function AssetHeader({
   marketHref,
   action,
 }: Props) {
-  // O provedor anuncia logo para tickers dos quais não tem arte e a URL dá 404,
-  // então a própria imagem é o único sinal confiável.
-  //
-  // Guarda a URL que falhou, e não um booleano: o header não é remontado ao
-  // navegar de um ativo para outro, e um booleano deixaria o logo do próximo
-  // escondido por causa do erro do anterior.
-  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null)
-  const showLogo = Boolean(logoUrl) && failedLogoUrl !== logoUrl
-
   return (
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) auto' },
-        gap: { xs: 2, md: 4 },
-        alignItems: 'start',
-      }}
-    >
-      <Box minWidth={0}>
-        <Stack direction="row" alignItems="center" spacing={1.25} flexWrap="wrap" useFlexGap>
-          {showLogo && (
-            <Box
-              component="img"
-              src={logoUrl!}
-              alt=""
-              onError={() => setFailedLogoUrl(logoUrl!)}
-              sx={{ width: 28, height: 28, borderRadius: 1, objectFit: 'contain' }}
-            />
-          )}
-          <Typography variant="h4" fontWeight="bold">
-            {ticker}
-          </Typography>
-          {typeShortName && (
-            <Typography
-              component="span"
-              sx={{
-                color: 'text.secondary',
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                borderRadius: 999,
-                bgcolor: 'action.hover',
-                px: 1,
-                py: 0.375,
-              }}
-            >
-              {typeShortName}
-            </Typography>
-          )}
-        </Stack>
+    <AppStack direction="row" justify="between" align="start" gap="xl" collapseBelow="md">
+      <AppStack gap="xs" grow>
+        <AppStack direction="row" align="center" gap="sm" wrap>
+          <AppLogoImage src={logoUrl} />
+          <AppText variant="pageHeading">{ticker}</AppText>
+          {typeShortName && <AppChip label={typeShortName} />}
+        </AppStack>
 
-        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.5 }}>
+        <AppStack direction="row" align="center" gap="xs">
           {name && (
-            <Typography variant="body1" color="text.secondary">
+            <AppText variant="body" tone="secondary">
               {name}
-            </Typography>
+            </AppText>
           )}
-          {/* Só o ícone: ao lado do nome do ativo, "Ver no mercado" por extenso
-              pesa mais que o próprio nome, e o ícone já é o idioma de "abre em
-              outro lugar". O rótulo fica no tooltip. */}
           {marketHref && (
-            <Tooltip title="Ver no mercado">
-              <MuiLink
-                component={Link}
-                to={marketHref}
-                color="text.secondary"
-                aria-label="Ver no mercado"
-                sx={{ display: 'inline-flex', '&:hover': { color: 'text.primary' } }}
-              >
-                <OpenInNewIcon sx={{ fontSize: 16 }} />
-              </MuiLink>
-            </Tooltip>
+            <AppTooltip title="Ver no mercado">
+              <AppIconLink to={marketHref} label="Ver no mercado">
+                <OpenInNewIcon fontSize="inherit" />
+              </AppIconLink>
+            </AppTooltip>
           )}
-        </Stack>
+        </AppStack>
 
         {cagr && <CagrLine cagr={cagr} hint={cagrHint} />}
-      </Box>
+      </AppStack>
 
-      {action && <Box sx={{ justifySelf: { xs: 'start', md: 'end' } }}>{action}</Box>}
-    </Box>
+      {action}
+    </AppStack>
   )
 }
 
@@ -137,27 +91,28 @@ export default function AssetHeader({
  *  uma atenção que ela não merece. */
 function CagrLine({ cagr, hint }: { cagr: AssetHeaderCagr; hint?: string }) {
   const label = hint ? (
-    <Tooltip title={hint}>
-      <Box component="span" sx={{ cursor: 'help' }}>
+    <AppTooltip title={hint}>
+      <AppText variant="bodySmall" tone="secondary" inline>
         CAGR
-      </Box>
-    </Tooltip>
+      </AppText>
+    </AppTooltip>
   ) : (
     'CAGR'
   )
 
   return (
-    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+    <AppText variant="bodySmall" tone="secondary">
       {label}{' '}
-      <Typography
-        component="span"
-        variant="body2"
-        sx={{ fontWeight: 600, color: cagr.value >= 0 ? 'success.main' : 'error.main' }}
+      <AppText
+        variant="bodySmall"
+        weight="strong"
+        tone={cagr.value >= 0 ? 'success' : 'danger'}
+        inline
       >
         {cagr.value >= 0 ? '+' : ''}
         {cagr.value.toFixed(2).replace('.', ',')}% a.a.
-      </Typography>
+      </AppText>
       {cagr.startDate && ` desde ${dayjs(cagr.startDate).format('DD/MM/YYYY')}`}
-    </Typography>
+    </AppText>
   )
 }
