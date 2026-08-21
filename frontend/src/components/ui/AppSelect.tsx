@@ -27,9 +27,11 @@ export interface AppSelectProps {
   /** Rótulo flutuante. Omitido, o campo aparece sem rótulo — é o que serve
    *  numa barra de gráfico, onde o contexto já está na tela. */
   label?: string
-  /** `sm` = 180px, `md` = 260px, `full` = a largura do container. Padrão:
-   *  `sm`. */
-  size?: 'sm' | 'md' | 'full'
+  /** `sm` = 180px, `md` = 260px, `full` = a largura do container, `auto` =
+   *  a do próprio conteúdo — para o seletor de uma palavra numa barra de
+   *  controles, onde uma largura fixa sobra e desequilibra a barra.
+   *  Padrão: `sm`. */
+  size?: 'sm' | 'md' | 'full' | 'auto'
   /** Ações no fim da lista, separadas das opções por uma régua — criar ou
    *  editar aquilo que se está escolhendo. Sem elas o fluxo obriga a fechar
    *  a lista, ir a outra tela e voltar. */
@@ -43,7 +45,7 @@ export interface AppSelectProps {
   helperText?: string
 }
 
-const WIDTH = { sm: 180, md: 260, full: '100%' } as const
+const WIDTH = { sm: 180, md: 260, full: '100%', auto: 'auto' } as const
 
 export default function AppSelect({
   options,

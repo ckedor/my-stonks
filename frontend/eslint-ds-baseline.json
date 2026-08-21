@@ -4,7 +4,6 @@
     "src/components/DividendsCategoryChart.tsx",
     "src/components/PortfolioReturnsChart.tsx",
     "src/components/charts/CandleChart.tsx",
-    "src/components/charts/app-bar-chart/AppBarChart.tsx",
     "src/components/portfolio-asset/BenchmarkComparison.tsx",
     "src/components/portfolio-asset/PortfolioAssetChart.tsx",
     "src/components/portfolio-asset/PortfolioAssetPatrimonyChart.tsx",
