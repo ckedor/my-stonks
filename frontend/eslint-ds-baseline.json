@@ -1,13 +1,10 @@
 {
   "_": "Dívida do design system. Cada arquivo aqui ainda pode importar @mui/material e usar sx/style. A lista só encolhe: migre o arquivo para @/components/ui e remova a linha. Validado por: npm run lint:ds",
   "files": [
-    "src/components/AssetDetailPanel.tsx",
-    "src/components/AssetDetailPanelSkeleton.tsx",
     "src/components/DividendsCategoryChart.tsx",
     "src/components/DrawdownChart.tsx",
     "src/components/PortfolioDividendsChart.tsx",
     "src/components/PortfolioReturnsChart.tsx",
-    "src/components/Trades.tsx",
     "src/components/charts/CandleChart.tsx",
     "src/components/charts/app-bar-chart/AppBarChart.tsx",
     "src/components/portfolio-asset/BenchmarkComparison.tsx",

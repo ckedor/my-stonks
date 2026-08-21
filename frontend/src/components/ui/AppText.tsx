@@ -13,7 +13,7 @@ import type { ReactNode } from 'react'
  * precisava dele.) */
 
 type Variant = 'pageHeading' | 'body' | 'bodySmall' | 'caption'
-type Tone = 'default' | 'secondary' | 'success' | 'caution' | 'danger'
+type Tone = 'default' | 'secondary' | 'primary' | 'success' | 'caution' | 'danger'
 
 const VARIANT: Record<Variant, 'h4' | 'body1' | 'body2' | 'caption'> = {
   /** O nome da coisa que a tela é sobre — o ticker de um ativo. Maior que
@@ -28,6 +28,7 @@ const VARIANT: Record<Variant, 'h4' | 'body1' | 'body2' | 'caption'> = {
 const TONE: Record<Tone, string | undefined> = {
   default: undefined,
   secondary: 'text.secondary',
+  primary: 'primary.main',
   success: 'success.main',
   caution: 'warning.main',
   danger: 'error.main',

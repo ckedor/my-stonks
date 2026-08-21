@@ -25,7 +25,19 @@ import { Asset, AssetAnalysis, Dividend, ReturnsEntry } from '@/types'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import PaymentsIcon from '@mui/icons-material/Payments'
 import RefreshIcon from '@mui/icons-material/Refresh'
-import { Alert, Box, Button, CircularProgress, Divider, IconButton, Snackbar, Stack, Tab, Tabs, Tooltip, Typography } from '@mui/material'
+import {
+    AppButton,
+    AppDivider,
+    AppGrid,
+    AppIconButton,
+    AppMetric,
+    AppSnackbar,
+    AppStack,
+    AppTabs,
+    AppText,
+    AppTooltip,
+    LoadingSpinner,
+} from '@/components/ui'
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
 
 /** Tudo o que a página carrega de uma vez, sob uma chave de cache só, para o
@@ -59,22 +71,17 @@ const TABS: { key: TabKey; label: string }[] = [
 
 function EmptyTabContent({ label }: { label: string }) {
   return (
-    <Box
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      height={400}
-    >
-      <Typography variant="subtitle1" color="text.secondary">
-        {label} — em breve
-      </Typography>
-    </Box>
+    <AppStack align="center" justify="center">
+      <AppText tone="secondary">{label} — em breve</AppText>
+    </AppStack>
   )
 }
 
-function formatReturn(value: number | null | undefined) {
+type ReturnTone = 'default' | 'secondary' | 'success' | 'danger'
+
+function formatReturn(value: number | null | undefined): { text: string; tone: ReturnTone } {
   if (value === null || value === undefined || Number.isNaN(Number(value))) {
-    return { text: '—', color: 'text.secondary' }
+    return { text: '—', tone: 'secondary' }
   }
 
   const pct = Number(value) * 100
@@ -83,29 +90,8 @@ function formatReturn(value: number | null | undefined) {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}%`,
-    color: pct > 0 ? 'success.main' : pct < 0 ? 'error.main' : 'text.primary',
+    tone: pct > 0 ? 'success' : pct < 0 ? 'danger' : 'default',
   }
-}
-
-function MetricItem({
-  label,
-  value,
-  color,
-}: {
-  label: string
-  value: string
-  color?: string
-}) {
-  return (
-    <Box sx={{ minWidth: { xs: 128, sm: 'auto' } }}>
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>
-        {label}
-      </Typography>
-      <Typography variant="body1" sx={{ fontWeight: 700, color: color ?? 'text.primary', lineHeight: 1.35 }}>
-        {value}
-      </Typography>
-    </Box>
-  )
 }
 
 interface AssetDetailPanelProps {
@@ -213,11 +199,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
   }
 
   if (!asset) {
-    return (
-      <Box p={4}>
-        <Typography>Ativo não encontrado.</Typography>
-      </Box>
-    )
+    return <AppText>Ativo não encontrado.</AppText>
   }
 
   const accReturn = formatReturn(asset.acc_return)
@@ -237,7 +219,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
     switch (activeTab) {
       case 'visao-geral':
         return (
-          <Box display="flex" flexDirection="column" gap={3}>
+          <AppStack gap="lg">
             <ChartSection>
               <PortfolioAssetChart
                 history={history}
@@ -260,19 +242,12 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
 
             {asset.fixed_income && fixedIncomeDescription && (
               <ChartSection title="Renda Fixa">
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, minmax(130px, 1fr))' },
-                    gap: 2,
-                    maxWidth: 820,
-                  }}
-                >
-                  <MetricItem label="Tipo RF" value={fixedIncomeDescription} />
-                  {asset.fixed_income.index?.name && <MetricItem label="Índice" value={asset.fixed_income.index.name} />}
-                  {asset.fixed_income.fee != null && <MetricItem label="Taxa" value={formatFixedIncomeFee(asset.fixed_income.fee)} />}
-                  {asset.fixed_income.maturity_date && <MetricItem label="Vencimento" value={String(asset.fixed_income.maturity_date)} />}
-                </Box>
+                <AppGrid cols={{ xs: 1, sm: 4 }} gap="md">
+                  <AppMetric label="Tipo RF" value={fixedIncomeDescription} />
+                  {asset.fixed_income.index?.name && <AppMetric label="Índice" value={asset.fixed_income.index.name} />}
+                  {asset.fixed_income.fee != null && <AppMetric label="Taxa" value={formatFixedIncomeFee(asset.fixed_income.fee)} />}
+                  {asset.fixed_income.maturity_date && <AppMetric label="Vencimento" value={String(asset.fixed_income.maturity_date)} />}
+                </AppGrid>
               </ChartSection>
             )}
 
@@ -284,12 +259,11 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
                 persistKey={`portfolio-asset-patrimony:${asset.ticker}`}
               />
             </ChartSection>
-
-          </Box>
+          </AppStack>
         )
       case 'risco':
         return analysis ? (
-          <Box display="flex" flexDirection="column" gap={3}>
+          <AppStack gap="lg">
             {/* Dois cards, e não um: juntos, o título interno do gráfico caía
                 colado na última linha das métricas. */}
             <ChartSection title="Métricas de Risco">
@@ -303,7 +277,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
                 size={SECTION_CHART_HEIGHT}
               />
             </ChartSection>
-          </Box>
+          </AppStack>
         ) : (
           <EmptyTabContent label="Risco — dados não disponíveis" />
         )
@@ -325,10 +299,8 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
   }
 
   return (
-    <Box>
-      {/* Sem borda inferior aqui: as abas logo abaixo já trazem a delas, e as
-          duas juntas desenhavam duas linhas coladas. */}
-      <Box sx={{ pb: 2.5 }}>
+    <AppStack gap="lg">
+      <AppStack gap="lg">
         <AssetHeader
           ticker={asset.ticker}
           name={asset.name}
@@ -339,152 +311,92 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
 
         {/* A posição e o CAGR: quanto se tem, e a que ritmo isso cresceu. As
             demais medidas qualificam essas duas e ficam na linha abaixo. */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            flexWrap: 'wrap',
-            gap: 2,
-            mt: 3,
-          }}
-        >
-          <Box>
-            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.2 }}>
-              Posição
-            </Typography>
-            <Stack direction="row" alignItems="baseline" spacing={1.25} sx={{ mt: 0.25 }}>
-              <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.15 }}>
-                {formatRoundedCurrency(asset.value)}
-              </Typography>
-              {cagr != null && (
-                <Typography
-                  variant="body1"
-                  sx={{ fontWeight: 600, color: cagr >= 0 ? 'success.main' : 'error.main' }}
-                >
+        <AppStack direction="row" justify="between" align="end" gap="md" wrap>
+          <AppMetric
+            label="Posição"
+            value={formatRoundedCurrency(asset.value)}
+            size="lg"
+            suffix={
+              cagr != null && (
+                <AppText weight="strong" tone={cagr >= 0 ? 'success' : 'danger'} inline>
                   {cagr >= 0 ? '+' : ''}
                   {cagr.toFixed(2).replace('.', ',')}% a.a.
-                </Typography>
-              )}
-            </Stack>
-          </Box>
+                </AppText>
+              )
+            }
+          />
 
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddShoppingCartIcon />}
-              onClick={handleBuy}
-              sx={{ textTransform: 'none' }}
-            >
+          <AppStack direction="row" gap="sm" align="center">
+            <AppButton size="sm" icon={<AddShoppingCartIcon />} onClick={handleBuy}>
               Comprar
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<PaymentsIcon />}
+            </AppButton>
+            <AppButton
+              size="sm"
+              emphasis="outline"
+              icon={<PaymentsIcon />}
               onClick={() => setDividendFormOpen(true)}
-              sx={{ textTransform: 'none' }}
             >
               Provento
-            </Button>
-            <Tooltip title="Recalcular posição">
-              {/* `span` porque um botão desabilitado não emite os eventos de
-                  mouse que o tooltip escuta. */}
-              <span>
-                <IconButton
-                  size="small"
-                  onClick={handleRecalculate}
-                  disabled={recalculating}
-                  aria-label="Recalcular posição"
-                  sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
-                >
-                  {recalculating ? <CircularProgress size={16} /> : <RefreshIcon fontSize="small" />}
-                </IconButton>
-              </span>
-            </Tooltip>
-          </Stack>
-        </Box>
+            </AppButton>
+            <AppTooltip title="Recalcular posição">
+              <AppIconButton
+                label="Recalcular posição"
+                size="sm"
+                bordered
+                disabled={recalculating}
+                onClick={handleRecalculate}
+              >
+                {recalculating ? <LoadingSpinner variant="inline" /> : <RefreshIcon fontSize="small" />}
+              </AppIconButton>
+            </AppTooltip>
+          </AppStack>
+        </AppStack>
 
         {/* Dois grupos numa linha só, separados por uma régua: o que a posição
             é hoje, e o que ela rendeu. */}
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={{ xs: 2, sm: 3 }}
-          divider={<Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' } }} />}
-          alignItems={{ xs: 'flex-start', sm: 'center' }}
-          useFlexGap
-          flexWrap="wrap"
-          sx={{ mt: 2.5 }}
-        >
-          <Stack direction="row" spacing={3} useFlexGap flexWrap="wrap">
-            <MetricItem label="Preço atual" value={formatRoundedCurrency(asset.price)} />
-            <MetricItem label="Preço médio" value={formatRoundedCurrency(asset.average_price)} />
-            <MetricItem label="Quantidade" value={asset.quantity.toLocaleString('pt-BR', { maximumFractionDigits: 8 })} />
-            <MetricItem label="Peso" value={`${assetPct.toFixed(1).replace('.', ',')}%`} />
+        <AppStack direction="row" gap="lg" collapseBelow="sm" align="center" wrap>
+          <AppStack direction="row" gap="lg" wrap>
+            <AppMetric label="Preço atual" value={formatRoundedCurrency(asset.price)} />
+            <AppMetric label="Preço médio" value={formatRoundedCurrency(asset.average_price)} />
+            <AppMetric label="Quantidade" value={asset.quantity.toLocaleString('pt-BR', { maximumFractionDigits: 8 })} />
+            <AppMetric label="Peso" value={`${assetPct.toFixed(1).replace('.', ',')}%`} />
             {asset.fixed_income && fixedIncomeDescription && (
-              <MetricItem label="Indexador" value={fixedIncomeDescription} />
+              <AppMetric label="Indexador" value={fixedIncomeDescription} />
             )}
-          </Stack>
+          </AppStack>
 
-          <Stack direction="row" spacing={3} useFlexGap flexWrap="wrap">
-            <MetricItem label="12m" value={twelveReturn.text} color={twelveReturn.color} />
-            <MetricItem label="Acumulado" value={accReturn.text} color={accReturn.color} />
-          </Stack>
-        </Stack>
-      </Box>
+          <AppDivider orientation="vertical" hideBelow="sm" />
 
-      <Divider sx={{ mt: 2.5 }} />
+          <AppStack direction="row" gap="lg" wrap>
+            <AppMetric label="12m" value={twelveReturn.text} tone={twelveReturn.tone} />
+            <AppMetric label="Acumulado" value={accReturn.text} tone={accReturn.tone} />
+          </AppStack>
+        </AppStack>
+      </AppStack>
 
-      <Tabs
+      <AppDivider />
+
+      <AppTabs
+        label="Seções do ativo"
+        items={TABS.map((tab) => ({ id: tab.key, label: tab.label }))}
         value={activeTab}
-        onChange={(_, v) => setActiveTab(v)}
-        variant="scrollable"
-        scrollButtons="auto"
-        sx={{
-          // Sem borda inferior: a régua acima já separa as abas da ficha, e
-          // uma segunda linha logo abaixo delas as encaixotaria. O indicador da
-          // aba ativa é o que marca onde se está.
-          minHeight: 40,
-          '& .MuiTabs-indicator': { height: 2 },
-          '& .MuiTab-root': {
-            textTransform: 'none',
-            minHeight: 40,
-            fontWeight: 600,
-            fontSize: '0.9rem',
-            px: 0,
-            mr: 3,
-            minWidth: 0,
-            color: 'text.secondary',
-          },
-          '& .MuiTab-root.Mui-selected': { color: 'text.primary' },
-        }}
-      >
-        {TABS.map((tab) => (
-          <Tab key={tab.key} value={tab.key} label={tab.label} />
-        ))}
-      </Tabs>
+        onChange={setActiveTab}
+      />
 
-      <Box sx={{ py: 3 }}>
-        {renderTabContent()}
-      </Box>
+      {renderTabContent()}
 
-      <Snackbar
+      <AppSnackbar
         open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar(s => ({ ...s, open: false }))}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+      />
 
       <DividendForm
         open={dividendFormOpen}
         onClose={() => setDividendFormOpen(false)}
         initialAsset={asset}
       />
-    </Box>
+    </AppStack>
   )
 }

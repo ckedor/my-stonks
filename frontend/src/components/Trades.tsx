@@ -1,20 +1,17 @@
+import {
+  AppButton,
+  AppSimpleTable,
+  AppStack,
+  AppText,
+  LoadingSpinner,
+  SectionTitle,
+  type AppSimpleTableColumn,
+} from '@/components/ui'
 import { TRANSACTION_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { Trade } from '@/types'
-import {
-    Box,
-    Button,
-    CircularProgress,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Typography,
-} from '@mui/material'
 import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
 import TradeForm from './TradeForm'
@@ -24,6 +21,14 @@ interface TradesProps {
   assetTypes?: number[]
   currencyId?: number
 }
+
+/** Passando disto a tabela rola por dentro, e o cabeçalho fica parado. */
+const TABLE_MAX_HEIGHT = 420
+
+type Tone = 'default' | 'secondary' | 'success' | 'danger'
+
+const sign = (value: number): Tone =>
+  value > 0 ? 'success' : value < 0 ? 'danger' : 'secondary'
 
 export default function Trades({ assetId, assetTypes, currencyId }: TradesProps) {
   const [trades, setTrades] = useState<Trade[]>([])
@@ -64,141 +69,75 @@ export default function Trades({ assetId, assetTypes, currencyId }: TradesProps)
     setDrawerOpen(true)
   }
 
-  const handleEdit = (trade: Trade) => {
-    setSelectedTrade(trade)
-    setDrawerOpen(true)
-  }
+  const number = (value: number) => value.toLocaleString('pt-BR', { maximumFractionDigits: 8 })
+
+  const columns: AppSimpleTableColumn<Trade>[] = [
+    { label: 'Data', render: (trade) => dayjs(trade.date).format('DD/MM/YYYY') },
+    { label: 'Ativo', render: (trade) => trade.ticker },
+    { label: 'Corretora', render: (trade) => trade.broker },
+    {
+      label: 'Tipo',
+      render: (trade) => (
+        <AppText variant="body" weight="strong" tone={trade.type === 'Compra' ? 'primary' : 'success'} inline>
+          {trade.type}
+        </AppText>
+      ),
+    },
+    { label: 'Qtd', align: 'right', render: (trade) => number(trade.quantity) },
+    { label: 'Qtd Acum.', align: 'right', render: (trade) => number(trade.acc_quantity) },
+    { label: 'Preço', align: 'right', render: (trade) => formatCurrency(trade.price) },
+    { label: 'Valor Total', align: 'right', render: (trade) => formatCurrency(trade.value) },
+    { label: 'Posição na Data', align: 'right', render: (trade) => formatCurrency(trade.position) },
+    { label: 'Preço Médio', align: 'right', render: (trade) => formatCurrency(trade.average_price) },
+    {
+      label: 'Lucro Realizado',
+      align: 'right',
+      // Compra não realiza lucro: o traço diz isso melhor do que um zero,
+      // que se leria como "realizou zero".
+      render: (trade) =>
+        trade.type === 'Compra' ? (
+          '-'
+        ) : (
+          <AppText variant="body" weight="strong" tone={sign(trade.realized_profit)} inline>
+            {formatCurrency(trade.realized_profit)}
+          </AppText>
+        ),
+    },
+    {
+      label: '%Lucro',
+      align: 'right',
+      render: (trade) =>
+        trade.type === 'Compra' ? (
+          '-'
+        ) : (
+          <AppText variant="body" weight="strong" tone={sign(trade.profit_pct)} inline>
+            {`${trade.profit_pct.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} %`}
+          </AppText>
+        ),
+    },
+  ]
 
   return (
-    <Box sx={{ p: 2, height: 500, display: 'flex', flexDirection: 'column' }}>
-      {/* `px: 2` alinha o título com o texto da primeira coluna: a célula da
-          tabela traz 16px de recuo próprio, que o cabeçalho não tinha. */}
-      <Box mb={2} px={2} display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="h6">Compras / Vendas</Typography>
-        <Button variant="contained" onClick={handleNew}>
-          Nova Operação
-        </Button>
-      </Box>
+    <AppStack gap="md">
+      <AppStack direction="row" justify="between" align="center" gap="md">
+        <SectionTitle>Compras / Vendas</SectionTitle>
+        <AppButton onClick={handleNew}>Nova Operação</AppButton>
+      </AppStack>
 
       {loading ? (
-        <Box flex={1} display="flex" alignItems="center" justifyContent="center">
-          <CircularProgress size={60} />
-        </Box>
+        <LoadingSpinner />
       ) : (
-        <TableContainer sx={{ overflowY: 'auto', flex: 1 }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold' }}>Data</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Ativo</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Corretora</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Tipo</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Qtd
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Qtd Acum.
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Preço
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Valor Total
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Posição na Data
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Preço Médio
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Lucro Realizado
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  %Lucro
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {trades.map((trade, idx) => (
-                <TableRow
-                  key={idx}
-                  onClick={() => handleEdit(trade)}
-                  sx={{
-                    cursor: 'pointer',
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
-                    },
-                  }}
-                >
-                  <TableCell>{dayjs(trade.date).format('DD/MM/YYYY')}</TableCell>
-                  <TableCell>{trade.ticker}</TableCell>
-                  <TableCell>{trade.broker}</TableCell>
-                  <TableCell
-                    sx={{
-                      textTransform: 'capitalize',
-                      color: trade.type === 'Compra' ? 'primary.main' : 'success.main',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {trade.type}
-                  </TableCell>
-                  <TableCell align="right">
-                    {trade.quantity.toLocaleString('pt-BR', { maximumFractionDigits: 8 })}
-                  </TableCell>
-                  <TableCell align="right">
-                    {trade.acc_quantity.toLocaleString('pt-BR', { maximumFractionDigits: 8 })}
-                  </TableCell>
-                  <TableCell align="right">
-                    {formatCurrency(trade.price)}
-                  </TableCell>
-                  <TableCell align="right">
-                    {formatCurrency(trade.value)}
-                  </TableCell>
-                  <TableCell align="right">
-                    {formatCurrency(trade.position)}
-                  </TableCell>
-                  <TableCell align="right">
-                    {formatCurrency(trade.average_price)}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      color:
-                        trade.realized_profit > 0
-                          ? 'success.main'
-                          : trade.realized_profit < 0
-                            ? 'error.main'
-                            : 'text.secondary',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {trade.type === 'Compra'
-                      ? '-'
-                      : formatCurrency(trade.realized_profit)}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      color:
-                        trade.profit_pct > 0
-                          ? 'success.main'
-                          : trade.profit_pct < 0
-                            ? 'error.main'
-                            : 'text.secondary',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {trade.type === 'Compra'
-                      ? '-'
-                      : trade.profit_pct.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) +
-                        ' %'}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <AppSimpleTable
+          rows={trades}
+          columns={columns}
+          getRowKey={(trade) => trade.id}
+          maxHeight={TABLE_MAX_HEIGHT}
+          onRowClick={(trade) => {
+            setSelectedTrade(trade)
+            setDrawerOpen(true)
+          }}
+          emptyMessage="Nenhuma operação registrada."
+        />
       )}
 
       <TradeForm
@@ -208,6 +147,6 @@ export default function Trades({ assetId, assetTypes, currencyId }: TradesProps)
         trade={selectedTrade}
         assetId={assetId}
       />
-    </Box>
+    </AppStack>
   )
 }

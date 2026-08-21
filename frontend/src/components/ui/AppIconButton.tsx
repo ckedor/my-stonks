@@ -28,6 +28,10 @@ export interface AppIconButtonProps {
   tooltip?: boolean
   /** Compensa o padding do ícone quando ele abre uma barra. */
   edge?: 'start' | false
+  /** Desenha a moldura, para o botão se ler como botão ao lado de outros.
+   *  Sem ela, um ícone solto na mesma linha de dois botões parece
+   *  decoração. */
+  bordered?: boolean
 }
 
 export default function AppIconButton({
@@ -39,6 +43,7 @@ export default function AppIconButton({
   disabled,
   tooltip = false,
   edge = false,
+  bordered = false,
 }: AppIconButtonProps) {
   const button = (
     <IconButton
@@ -48,6 +53,7 @@ export default function AppIconButton({
       size={SIZE[size]}
       disabled={disabled}
       edge={edge}
+      sx={bordered ? { border: '1px solid', borderColor: 'divider', borderRadius: 1 } : undefined}
     >
       {children}
     </IconButton>

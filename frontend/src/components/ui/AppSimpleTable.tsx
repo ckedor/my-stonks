@@ -49,6 +49,9 @@ export interface AppSimpleTableProps<Row> {
   isRowSelected?: (row: Row) => boolean
   /** Mostrado no lugar das linhas quando não há nenhuma. */
   emptyMessage?: string
+  /** Altura máxima em px: passando dela, o corpo rola e o cabeçalho fica
+   *  parado. Sem isso uma tabela longa empurra o resto da tela para baixo. */
+  maxHeight?: number
 }
 
 export default function AppSimpleTable<Row>({
@@ -59,13 +62,14 @@ export default function AppSimpleTable<Row>({
   onRowClick,
   isRowSelected,
   emptyMessage,
+  maxHeight,
 }: AppSimpleTableProps<Row>) {
   return (
     <TableContainer
       component={surface === 'outlined' ? Paper : 'div'}
-      sx={{ overflowX: 'auto' }}
+      sx={{ overflowX: 'auto', ...(maxHeight ? { maxHeight, overflowY: 'auto' } : null) }}
     >
-      <Table size="small">
+      <Table size="small" stickyHeader={Boolean(maxHeight)}>
         <TableHead>
           <TableRow>
             {columns.map((column) => (
