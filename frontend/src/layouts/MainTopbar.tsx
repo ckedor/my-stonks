@@ -540,7 +540,7 @@ export default function MainTopbar() {
             </Box>
 
             {/* Quick actions ⋮ menu */}
-            <IconButton onClick={(e) => setActionsAnchor(e.currentTarget)} sx={{ color: 'topbar.text' }}>
+            <IconButton aria-label="Ações rápidas" onClick={(e) => setActionsAnchor(e.currentTarget)} sx={{ color: 'topbar.text' }}>
               <MoreVertIcon />
             </IconButton>
             <Menu anchorEl={actionsAnchor} open={Boolean(actionsAnchor)} onClose={() => setActionsAnchor(null)} disableScrollLock>
@@ -569,7 +569,7 @@ export default function MainTopbar() {
             </Menu>
 
             {/* User menu */}
-            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ color: 'topbar.text' }}>
+            <IconButton aria-label="Conta" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ color: 'topbar.text' }}>
               <AccountCircle />
             </IconButton>
             <Menu anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)} disableScrollLock>
