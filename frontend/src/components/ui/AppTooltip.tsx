@@ -17,7 +17,9 @@ export interface AppTooltipProps {
 export default function AppTooltip({ title, children }: AppTooltipProps) {
   return (
     <Tooltip title={title} slotProps={{ tooltip: { sx: { whiteSpace: 'pre-wrap' } } }}>
-      <span>{children}</span>
+      {/* O cursor é o que avisa que há explicação aqui: sem ele, só quem
+          já parou o mouse por cima descobre. */}
+      <span style={{ cursor: 'help' }}>{children}</span>
     </Tooltip>
   )
 }

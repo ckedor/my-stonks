@@ -13,7 +13,7 @@ import type { ReactNode } from 'react'
  * precisava dele.) */
 
 type Variant = 'body' | 'bodySmall' | 'caption'
-type Tone = 'default' | 'secondary' | 'danger'
+type Tone = 'default' | 'secondary' | 'success' | 'caution' | 'danger'
 
 const VARIANT: Record<Variant, 'body1' | 'body2' | 'caption'> = {
   body: 'body1',
@@ -24,6 +24,8 @@ const VARIANT: Record<Variant, 'body1' | 'body2' | 'caption'> = {
 const TONE: Record<Tone, string | undefined> = {
   default: undefined,
   secondary: 'text.secondary',
+  success: 'success.main',
+  caution: 'warning.main',
   danger: 'error.main',
 }
 
@@ -31,11 +33,16 @@ export interface AppTextProps {
   children: ReactNode
   /** Padrão: `body`. */
   variant?: Variant
-  /** Padrão: `default`. */
+  /** `success`, `caution` e `danger` são os três degraus de um número que
+   *  se lê pelo sinal — um retorno, uma perda, uma métrica de risco.
+   *  Padrão: `default`. */
   tone?: Tone
   /** `strong` destaca a linha principal de uma célula com duas linhas.
    *  Padrão: `regular`. */
   weight?: 'regular' | 'strong'
+  /** Impede a quebra de linha — para o número que não pode virar duas
+   *  linhas quando a coluna aperta. */
+  noWrap?: boolean
 }
 
 export default function AppText({
@@ -43,12 +50,14 @@ export default function AppText({
   variant = 'body',
   tone = 'default',
   weight = 'regular',
+  noWrap = false,
 }: AppTextProps) {
   return (
     <Typography
       variant={VARIANT[variant]}
       color={TONE[tone]}
       fontWeight={weight === 'strong' ? 600 : undefined}
+      whiteSpace={noWrap ? 'nowrap' : undefined}
     >
       {children}
     </Typography>

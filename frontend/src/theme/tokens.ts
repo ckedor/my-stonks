@@ -46,6 +46,8 @@ export const space = {
   sm: 1,
   md: 2,
   lg: 3,
+  /** Separa blocos que são assuntos diferentes na mesma faixa. */
+  xl: 4,
 } as const
 
 export type SpaceToken = keyof typeof space
