@@ -182,11 +182,15 @@ export default function CategoryForm({ open, onClose, onSave }: CategoryFormProp
                 <Box display="flex" alignItems="center" gap={1}>
                   <input
                     type="color"
+                    aria-label={`Cor da categoria ${cat.name}`}
                     value={cat.color}
                     onChange={(e) => handleChange(index, 'color', e.target.value)}
                     style={{ width: 36, height: 36, border: 'none', cursor: 'pointer' }}
                   />
-                  <IconButton onClick={() => setConfirmDelete(index)}>
+                  <IconButton
+                    aria-label={`Excluir categoria ${cat.name}`}
+                    onClick={() => setConfirmDelete(index)}
+                  >
                     <DeleteIcon />
                   </IconButton>
                 </Box>

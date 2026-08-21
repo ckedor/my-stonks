@@ -187,7 +187,7 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             <Typography variant="h6">{isEdit ? `Editar Carteira` : 'Nova Carteira'}</Typography>
             {isEdit && (
-              <IconButton onClick={() => setConfirmDelete(true)}>
+              <IconButton aria-label="Excluir carteira" onClick={() => setConfirmDelete(true)}>
                 <Delete />
               </IconButton>
             )}
@@ -234,11 +234,15 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
                 <Box display="flex" alignItems="center" gap={1}>
                   <input
                     type="color"
+                    aria-label={`Cor da categoria ${cat.name}`}
                     value={cat.color}
                     onChange={(e) => handleChange(index, 'color', e.target.value)}
                     style={{ width: 36, height: 36, border: 'none', cursor: 'pointer' }}
                   />
-                  <IconButton onClick={() => setConfirmDeleteCategory(index)}>
+                  <IconButton
+                    aria-label={`Excluir categoria ${cat.name}`}
+                    onClick={() => setConfirmDeleteCategory(index)}
+                  >
                     <Delete />
                   </IconButton>
                 </Box>
