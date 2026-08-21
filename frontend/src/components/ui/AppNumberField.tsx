@@ -1,4 +1,4 @@
-import { TextField } from '@mui/material'
+import { CircularProgress, TextField } from '@mui/material'
 
 /* Campo numérico de barra de controle.
  *
@@ -22,13 +22,22 @@ export interface AppNumberFieldProps {
   /** Texto curto colado depois do número — uma unidade, um `%`. Fica no
    *  campo e não no rótulo porque rótulo cortado não diz unidade nenhuma. */
   suffix?: string
-  /** `xs` cabe 3 dígitos, `sm` cabe 5, `md` cabe um valor com milhar.
-   *  A largura precisa caber o rótulo também: `xs` só serve para rótulo de
-   *  uma palavra curta. Padrão: `sm`. */
-  size?: 'xs' | 'sm' | 'md'
+  /** `xs` cabe 3 dígitos, `sm` cabe 5, `md` cabe um valor com milhar,
+   *  `full` ocupa a largura do container. A largura precisa caber o rótulo
+   *  também: `xs` só serve para rótulo de uma palavra curta. Padrão: `sm`. */
+  size?: 'xs' | 'sm' | 'md' | 'full'
+  /** `compact` é altura de barra; `comfortable` é altura de formulário.
+   *  Padrão: `compact`. */
+  density?: 'compact' | 'comfortable'
+  error?: boolean
+  /** Mensagem sob o campo. Com `error`, é o motivo da recusa. */
+  helperText?: string
+  /** Spinner no canto do campo: o valor está sendo buscado, e o que está
+   *  escrito ainda vai mudar. */
+  busy?: boolean
 }
 
-const WIDTH = { xs: 72, sm: 104, md: 148 } as const
+const WIDTH = { xs: 72, sm: 104, md: 148, full: '100%' } as const
 
 export default function AppNumberField({
   label,
@@ -39,12 +48,18 @@ export default function AppNumberField({
   prefix,
   suffix,
   size = 'sm',
+  density = 'compact',
+  error = false,
+  helperText,
+  busy = false,
 }: AppNumberFieldProps) {
   return (
     <TextField
       label={label}
       type="number"
-      size="small"
+      size={density === 'compact' ? 'small' : 'medium'}
+      error={error}
+      helperText={helperText}
       value={value}
       onChange={(event) => {
         const next = Number(event.target.value)
@@ -54,7 +69,11 @@ export default function AppNumberField({
         htmlInput: { min, step },
         input: {
           startAdornment: prefix ? <span>{prefix}&nbsp;</span> : undefined,
-          endAdornment: suffix ? <span>&nbsp;{suffix}</span> : undefined,
+          endAdornment: busy ? (
+            <CircularProgress size={18} />
+          ) : suffix ? (
+            <span>&nbsp;{suffix}</span>
+          ) : undefined,
         },
       }}
       sx={{ width: WIDTH[size] }}

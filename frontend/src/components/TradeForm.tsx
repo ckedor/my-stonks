@@ -2,30 +2,15 @@ import { BROKER_ROUTES, QUOTE_ROUTES, TRANSACTION_ROUTES } from '@/constants/rou
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { Asset, Trade } from '@/types'
-import { Delete } from '@mui/icons-material'
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    Drawer,
-    FormControl,
-    IconButton,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Select,
-    Snackbar,
-    Stack,
-    TextField,
-    Typography,
-} from '@mui/material'
-import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+    AppConfirmDialog,
+    AppDateField,
+    AppFormDrawer,
+    AppNumberField,
+    AppSelect,
+    AppSnackbar,
+    AppTextField,
+} from '@/components/ui'
 import dayjs, { Dayjs } from 'dayjs'
 import { useCallback, useEffect, useState } from 'react'
 import AssetSelector from './AssetSelector'
@@ -213,159 +198,113 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
 
   return (
     <>
-      <Drawer anchor="right" open={open} onClose={onClose}>
-        <Box p={3} width={500} display="flex" flexDirection="column" height="100%">
-          <Stack spacing={3} p={1} flex={1} overflow="auto">
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-              <Typography variant="h6">
-                {isEdit ? 'Editar Negociação' : 'Nova Negociação'}
-              </Typography>
-              {isEdit && (
-                <IconButton onClick={() => setConfirmOpen(true)}>
-                  <Delete />
-                </IconButton>
-              )}
-            </Box>
-
-            {isEdit ? (
-              <TextField
-                label="Ativo"
-                value={trade?.ticker ?? ''}
-                InputProps={{ readOnly: true }}
-                fullWidth
-              />
-            ) : (
-              <AssetSelector
-                value={selectedAsset?.id ?? null}
-                onChange={setSelectedAsset}
-                initialAsset={initialAsset}
-              />
-            )}
-
-            <FormControl fullWidth error={touched && portfolioId === ''}>
-              <InputLabel>Carteira</InputLabel>
-              <Select
-                value={portfolioId}
-                label="Carteira"
-                onChange={(e) => setPortfolioId(Number(e.target.value))}
-              >
-                {portfolios.map((p) => (
-                  <MenuItem key={p.id} value={p.id}>
-                    {p.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <DatePicker label="Data" value={date} onChange={setDate} />
-
-            <FormControl fullWidth>
-              <InputLabel>Tipo</InputLabel>
-              <Select value={type} label="Tipo" onChange={(e) => setType(e.target.value as any)}>
-                <MenuItem value="Compra">Compra</MenuItem>
-                <MenuItem value="Venda">Venda</MenuItem>
-              </Select>
-            </FormControl>
-
-            <TextField
-              label="Quantidade"
-              type="number"
-              value={quantity}
-              onChange={(e) => setQuantity(parseFloat(e.target.value))}
-              error={touched && quantity <= 0}
-              helperText={touched && quantity <= 0 ? 'Quantidade deve ser maior que zero' : ''}
-              fullWidth
-            />
-
-            <TextField
-              label={currency === 'USD' ? 'Preço (USD)' : 'Preço (R$)'}
-              type="number"
-              value={price}
-              onChange={(e) => setPrice(parseFloat(e.target.value))}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {priceLoading && <CircularProgress size={18} />}
-                  </InputAdornment>
-                ),
-              }}
-              error={touched && price <= 0}
-              helperText={touched && price <= 0 ? 'Preço deve ser maior que zero' : ''}
-              fullWidth
-            />
-
-            <FormControl fullWidth>
-              <InputLabel>Moeda</InputLabel>
-              <Select
-                value={currency}
-                label="Moeda"
-                onChange={(e) => setCurrency(e.target.value as 'BRL' | 'USD')}
-              >
-                <MenuItem value="BRL">BRL</MenuItem>
-                <MenuItem value="USD">USD</MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth error={touched && brokerId === ''}>
-              <InputLabel>Corretora</InputLabel>
-              <Select
-                value={brokerId}
-                label="Corretora"
-                onChange={(e) => setBrokerId(Number(e.target.value))}
-              >
-                {brokers.map((broker) => (
-                  <MenuItem key={broker.id} value={broker.id}>
-                    {broker.name}
-                  </MenuItem>
-                ))}
-              </Select>
-              {touched && brokerId === '' && (
-                <Typography variant="caption" color="error">
-                  Selecione uma corretora
-                </Typography>
-              )}
-            </FormControl>
-          </Stack>
-
-          <Box mt={2}>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleSubmit}
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
-            >
-              {isEdit ? 'Atualizar' : 'Cadastrar'}
-            </Button>
-          </Box>
-        </Box>
-      </Drawer>
-
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>Confirmar Exclusão</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Tem certeza que deseja excluir esta operação? Essa ação não poderá ser desfeita.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>
-          <Button color="error" onClick={handleDelete} autoFocus>
-            Excluir
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={5000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      <AppFormDrawer
+        open={open}
+        onClose={onClose}
+        title={isEdit ? 'Editar Negociação' : 'Nova Negociação'}
+        width="md"
+        gap="lg"
+        onDelete={isEdit ? () => setConfirmOpen(true) : undefined}
+        deleteLabel="Excluir negociação"
+        submitLabel={isEdit ? 'Atualizar' : 'Cadastrar'}
+        onSubmit={handleSubmit}
+        submitting={loading}
       >
-        <Alert severity="error" onClose={() => setSnackbarOpen(false)}>
-          {error}
-        </Alert>
-      </Snackbar>
+        {isEdit ? (
+          <AppTextField label="Ativo" value={trade?.ticker ?? ''} onChange={() => undefined} readOnly />
+        ) : (
+          <AssetSelector
+            value={selectedAsset?.id ?? null}
+            onChange={setSelectedAsset}
+            initialAsset={initialAsset}
+          />
+        )}
+
+        <AppSelect
+          label="Carteira"
+          size="full"
+          density="comfortable"
+          error={touched && portfolioId === ''}
+          options={portfolios.map((p) => ({ value: String(p.id), label: p.name }))}
+          value={portfolioId === '' ? '' : String(portfolioId)}
+          onChange={(value) => setPortfolioId(Number(value))}
+        />
+
+        <AppDateField label="Data" value={date} onChange={setDate} />
+
+        <AppSelect
+          label="Tipo"
+          size="full"
+          density="comfortable"
+          options={[
+            { value: 'Compra', label: 'Compra' },
+            { value: 'Venda', label: 'Venda' },
+          ]}
+          value={type}
+          onChange={(value) => setType(value as 'Compra' | 'Venda')}
+        />
+
+        <AppNumberField
+          label="Quantidade"
+          size="full"
+          density="comfortable"
+          value={quantity}
+          onChange={setQuantity}
+          error={touched && quantity <= 0}
+          helperText={touched && quantity <= 0 ? 'Quantidade deve ser maior que zero' : ''}
+        />
+
+        <AppNumberField
+          label={currency === 'USD' ? 'Preço (USD)' : 'Preço (R$)'}
+          size="full"
+          density="comfortable"
+          value={price}
+          onChange={setPrice}
+          busy={priceLoading}
+          error={touched && price <= 0}
+          helperText={touched && price <= 0 ? 'Preço deve ser maior que zero' : ''}
+        />
+
+        <AppSelect
+          label="Moeda"
+          size="full"
+          density="comfortable"
+          options={[
+            { value: 'BRL', label: 'BRL' },
+            { value: 'USD', label: 'USD' },
+          ]}
+          value={currency}
+          onChange={(value) => setCurrency(value as 'BRL' | 'USD')}
+        />
+
+        <AppSelect
+          label="Corretora"
+          size="full"
+          density="comfortable"
+          error={touched && brokerId === ''}
+          helperText={touched && brokerId === '' ? 'Selecione uma corretora' : ''}
+          options={brokers.map((broker) => ({ value: String(broker.id), label: broker.name }))}
+          value={brokerId === '' ? '' : String(brokerId)}
+          onChange={(value) => setBrokerId(Number(value))}
+        />
+      </AppFormDrawer>
+
+      <AppConfirmDialog
+        open={confirmOpen}
+        title="Confirmar Exclusão"
+        confirmLabel="Excluir"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmOpen(false)}
+      >
+        Tem certeza que deseja excluir esta operação? Essa ação não poderá ser desfeita.
+      </AppConfirmDialog>
+
+      <AppSnackbar
+        open={snackbarOpen}
+        message={error ?? ''}
+        severity="error"
+        onClose={() => setSnackbarOpen(false)}
+      />
     </>
   )
 }

@@ -39,6 +39,8 @@ export interface AppSelectProps {
    *  Padrão: `compact`. */
   density?: 'compact' | 'comfortable'
   error?: boolean
+  /** Mensagem sob o campo. Com `error`, é o motivo da recusa. */
+  helperText?: string
 }
 
 const WIDTH = { sm: 180, md: 260, full: '100%' } as const
@@ -52,6 +54,7 @@ export default function AppSelect({
   actions,
   density = 'compact',
   error = false,
+  helperText,
 }: AppSelectProps) {
   return (
     <TextField
@@ -59,6 +62,7 @@ export default function AppSelect({
       size={density === 'compact' ? 'small' : 'medium'}
       label={label}
       error={error}
+      helperText={helperText}
       value={value}
       /* Clicar numa ação também dispara o `onChange` do Select, com o
          `value` vazio do `<MenuItem>` que a desenha — e o campo ficaria em
