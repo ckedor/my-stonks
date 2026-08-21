@@ -24,8 +24,6 @@
     "src/components/portfolio-asset/PortfolioAssetChart.tsx",
     "src/components/portfolio-asset/PortfolioAssetPatrimonyChart.tsx",
     "src/components/portfolio-asset/chart.ts",
-    "src/layouts/MainLayout.tsx",
-    "src/layouts/MainTopbar.tsx",
     "src/pages/admin/architecture/ArchitecturePage.test.tsx",
     "src/pages/admin/architecture/ArchitecturePage.tsx",
     "src/pages/admin/architecture/nodes/ArchitectureNode.tsx",

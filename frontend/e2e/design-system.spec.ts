@@ -14,7 +14,7 @@ test.use({ viewport: { width: 1440, height: 4200 } })
 test('design system — componentes e paleta', async ({ page }) => {
   await page.goto('/admin/design-system')
 
-  await expect(page.getByRole('heading', { name: 'Design System' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Design System', exact: true })).toBeVisible()
   await expectNothingClipped(page)
 
   await expect(page).toHaveScreenshot('design-system-general.png', { fullPage: true })

@@ -21,8 +21,17 @@ export { default as AppShell } from './AppShell'
 export type { AppShellProps } from './AppShell'
 export { default as AppSidebar, SIDEBAR_WIDTH } from './AppSidebar'
 export type { AppSidebarItem, AppSidebarProps } from './AppSidebar'
-export { default as AppTopbar } from './AppTopbar'
+export { default as AppTopbar, CONTENT_MAX_WIDTH } from './AppTopbar'
 export type { AppTopbarProps, AppTopbarSection } from './AppTopbar'
+export { default as AppPageShell } from './AppPageShell'
+export type { AppPageShellProps } from './AppPageShell'
+export { default as AppNavDrawer } from './AppNavDrawer'
+export type {
+  AppNavDrawerGroup,
+  AppNavDrawerItem,
+  AppNavDrawerProps,
+  AppNavDrawerSection,
+} from './AppNavDrawer'
 export type { AppCardProps } from './AppCard'
 
 /* ── Controles e conteúdo ───────────────────── */
@@ -33,6 +42,10 @@ export { default as AppIconButton } from './AppIconButton'
 export type { AppIconButtonProps } from './AppIconButton'
 export { default as AppMenu } from './AppMenu'
 export type { AppMenuOption, AppMenuProps } from './AppMenu'
+export { default as AppMenuButton } from './AppMenuButton'
+export type { AppMenuButtonProps } from './AppMenuButton'
+export { default as AppMegaMenu } from './AppMegaMenu'
+export type { AppMegaMenuColumn, AppMegaMenuItem, AppMegaMenuProps } from './AppMegaMenu'
 export type { AppChipProps } from './AppChip'
 export { default as AppAlert } from './AppAlert'
 export type { AppAlertProps } from './AppAlert'
@@ -61,7 +74,12 @@ export type { AppInlineToggleOption, AppInlineToggleProps } from './AppInlineTog
 export { default as AppNumberField } from './AppNumberField'
 export type { AppNumberFieldProps } from './AppNumberField'
 export { default as AppSelect } from './AppSelect'
-export type { AppSelectOption, AppSelectProps } from './AppSelect'
+export type { AppSelectAction, AppSelectOption, AppSelectProps } from './AppSelect'
+export { default as AppSegmentedToggle } from './AppSegmentedToggle'
+export type {
+  AppSegmentedToggleOption,
+  AppSegmentedToggleProps,
+} from './AppSegmentedToggle'
 export { default as AppSwitch } from './AppSwitch'
 export type { AppSwitchProps } from './AppSwitch'
 export { default as AppSearchField } from './AppSearchField'
@@ -89,6 +107,7 @@ export type { TableColumn, TableRowData } from './app-table'
 export { default as BackButton } from './BackButton'
 export { default as InformationCard } from './infomation-card'
 export { default as LoadingSpinner } from './LoadingSpinner'
+export type { LoadingSpinnerProps } from './LoadingSpinner'
 export { default as MarkdownText } from './MarkdownText'
 export { default as MiniDonut } from './MiniDonut'
 export { default as PageHeader } from './PageHeader'

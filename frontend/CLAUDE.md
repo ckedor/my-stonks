@@ -70,7 +70,7 @@ npm run e2e       # regressão visual (Playwright)
 ```
 
 Todos rodam no `pre-commit` — os quatro primeiros a cada commit, `build` e
-`e2e` no push. ESLint não reporta erros; as 11 warnings restantes são
+`e2e` no push. ESLint não reporta erros; as 12 warnings restantes são
 `react-hooks/exhaustive-deps` e ficam de propósito: mexer no array de
 dependências sem ler o efeito é como se cria loop de render.
 
@@ -107,6 +107,15 @@ sem cobrir nada:
 
 O browser vem de `npx playwright install chromium`. Em ambiente onde ele é
 provisionado por fora, `PLAYWRIGHT_CHROMIUM_PATH` aponta para o binário.
+
+Precisa ser a build que o `@playwright/test` do projeto pede, e não outra
+qualquer: build diferente de Chromium desenha texto com métrica diferente, e
+a comparação sai com ~2% dos pixels vermelhos em toda tela que tenha letra —
+sem que nada no código tenha mudado. O sintoma é característico: as caixas
+casam, só os glifos aparecem duplicados e deslocados. Nesse caso os
+snapshots versionados não valem nada ali, e regenerá-los quebra a
+comparação na máquina de quem os gerou. O caminho é comparar antes/depois
+dentro do mesmo ambiente e deixar a linha de base como está.
 
 ### Ao migrar uma tela para o design system
 
