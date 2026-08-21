@@ -179,3 +179,79 @@ test('market/asset — cabeçalho com posição', async ({ page, mockApi }) => {
 
   await expect(page).toHaveScreenshot('panel-asset-header-position.png', { clip: FAIXA_DO_CABECALHO })
 })
+
+/* ── Ficha do ativo na carteira ─────────────────
+
+   Dois recortes: a faixa de identidade (cabeçalho, posição, métricas e as
+   abas) e a aba de trades. Os gráficos das outras abas são canvas e são
+   outra migração. */
+
+const ATIVO_DETALHE = {
+  id: 5,
+  name: 'Petrobras PN',
+  ticker: 'PETR4',
+  asset_type_id: 1,
+  asset_type: { id: 1, name: 'Ação', short_name: 'AÇÃO', asset_class: { id: 2, name: 'Renda Variável' } },
+  quantity: 300,
+  price: 46,
+  average_price: 32.4,
+  value: 13800,
+  acc_return: 0.4198,
+  twelve_months_return: 0.1903,
+  cagr: 0.1832,
+}
+
+const TRADES = [
+  {
+    id: 1, asset_id: 5, date: '2025-11-04', ticker: 'PETR4', type: 'Compra',
+    quantity: 100, price: 30.5, value: 3050, average_price: 30.5, broker: 'Rico', broker_id: 1,
+    realized_profit: 0, acc_quantity: 100, position: 3050, profit_pct: 0,
+    portfolio_id: 1, original_price: 30.5, currency: 'BRL',
+  },
+  {
+    id: 2, asset_id: 5, date: '2026-01-12', ticker: 'PETR4', type: 'Compra',
+    quantity: 250, price: 33.2, value: 8300, average_price: 32.43, broker: 'Rico', broker_id: 1,
+    realized_profit: 0, acc_quantity: 350, position: 11350, profit_pct: 0,
+    portfolio_id: 1, original_price: 33.2, currency: 'BRL',
+  },
+  {
+    id: 3, asset_id: 5, date: '2026-02-20', ticker: 'PETR4', type: 'Venda',
+    quantity: -50, price: 44.9, value: -2245, average_price: 32.43, broker: 'Rico', broker_id: 1,
+    realized_profit: 623.5, acc_quantity: 300, position: 9727, profit_pct: 38.45,
+    portfolio_id: 1, original_price: 44.9, currency: 'BRL',
+  },
+]
+
+async function abrirFichaDoAtivo(page: import('@playwright/test').Page, mockApi: (path: string, body: unknown) => Promise<void>) {
+  await page.clock.setFixedTime(HOJE)
+  await mockApi('/portfolio', PORTFOLIOS)
+  await mockApi('/portfolio/position/1', [POSICAO])
+  await mockApi('/portfolio/position/1/asset/5/details', ATIVO_DETALHE)
+  await mockApi('/portfolio/position/1/asset/5/analysis', ANALYSIS)
+  await mockApi('/portfolio/position/1/asset/5/returns', { PETR4: RETORNOS_DO_ATIVO })
+  await mockApi('/portfolio/position/1/patrimony_evolution', [])
+  await mockApi('/portfolio/dividend', [])
+  await mockApi('/portfolio/transaction', TRADES)
+  await page.goto('/portfolio/asset/5')
+}
+
+const FAIXA_DA_FICHA = { x: 0, y: 60, width: 1440, height: 400 }
+
+test('portfolio/asset — identidade e métricas', async ({ page, mockApi }) => {
+  await abrirFichaDoAtivo(page, mockApi)
+
+  await expect(page.getByText('Posição')).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Trades' })).toBeVisible()
+
+  await expect(page).toHaveScreenshot('panel-asset-detail.png', { clip: FAIXA_DA_FICHA })
+})
+
+test('portfolio/asset — aba de trades', async ({ page, mockApi }) => {
+  await abrirFichaDoAtivo(page, mockApi)
+
+  await page.getByRole('tab', { name: 'Trades' }).click()
+  await expect(page.getByRole('heading', { name: 'Compras / Vendas' })).toBeVisible()
+  await expect(page.getByText('Lucro Realizado')).toBeVisible()
+
+  await expect(page).toHaveScreenshot('panel-trades.png')
+})
