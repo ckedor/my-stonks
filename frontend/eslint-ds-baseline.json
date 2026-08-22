@@ -4,7 +4,6 @@
     "src/components/DividendsCategoryChart.tsx",
     "src/components/PortfolioReturnsChart.tsx",
     "src/components/charts/CandleChart.tsx",
-    "src/components/portfolio-asset/PortfolioAssetChart.tsx",
     "src/pages/admin/architecture/ArchitecturePage.test.tsx",
     "src/pages/admin/architecture/ArchitecturePage.tsx",
     "src/pages/admin/architecture/nodes/ArchitectureNode.tsx",

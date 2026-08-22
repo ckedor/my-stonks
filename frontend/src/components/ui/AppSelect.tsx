@@ -40,6 +40,11 @@ export interface AppSelectProps {
    *  para o campo não ficar mais baixo que o vizinho na mesma linha.
    *  Padrão: `compact`. */
   density?: 'compact' | 'comfortable'
+  /** `inline` tira a moldura e o sublinhado: o campo passa a se ler como
+   *  parte de uma frase — "vs CDI" —, o que é o que serve na barra de um
+   *  gráfico, onde a caixa de um campo pesa mais que o desenho.
+   *  Padrão: `field`. */
+  variant?: 'field' | 'inline'
   error?: boolean
   /** Mensagem sob o campo. Com `error`, é o motivo da recusa. */
   helperText?: string
@@ -55,12 +60,14 @@ export default function AppSelect({
   size = 'sm',
   actions,
   density = 'compact',
+  variant = 'field',
   error = false,
   helperText,
 }: AppSelectProps) {
   return (
     <TextField
       select
+      variant={variant === 'inline' ? 'standard' : 'outlined'}
       size={density === 'compact' ? 'small' : 'medium'}
       label={label}
       error={error}
@@ -79,7 +86,17 @@ export default function AppSelect({
          vizinho para a linha de baixo — que é justamente o empilhamento que
          a barra existe para não ter. `full` é a exceção, para quando o
          container é uma coluna e a largura dele é que manda. */
-      sx={{ width: WIDTH[size], flexShrink: 0 }}
+      sx={{
+        width: WIDTH[size],
+        flexShrink: 0,
+        ...(variant === 'inline'
+          ? {
+              '& .MuiInput-root::before, & .MuiInput-root::after': { display: 'none' },
+              '& .MuiSelect-select': { py: 0, pl: 0, fontSize: 13, fontWeight: 600, minHeight: 0 },
+              '& .MuiSelect-icon': { right: 0, fontSize: 18, color: 'text.secondary' },
+            }
+          : null),
+      }}
       /* A lista abre sem travar a rolagem da página por baixo: travar faz a
          barra de rolagem sumir e tudo saltar alguns pixels para o lado. */
       slotProps={{
