@@ -1,5 +1,5 @@
 import { Skeleton } from '@mui/material'
-import { radius } from '@/theme/tokens'
+import { useAppTheme } from './useAppTheme'
 
 /* Retângulo cinza no lugar do que ainda não chegou.
  *
@@ -16,12 +16,13 @@ export interface AppSkeletonProps {
 }
 
 export default function AppSkeleton({ width, height, shape = 'rounded' }: AppSkeletonProps) {
+  const theme = useAppTheme()
   return (
     <Skeleton
       variant={shape === 'text' ? 'text' : 'rounded'}
       width={width ?? '100%'}
       height={height}
-      sx={shape === 'pill' ? { borderRadius: `${radius.pill}px` } : undefined}
+      sx={shape === 'pill' ? { borderRadius: `${theme.radius.pill}px` } : undefined}
     />
   )
 }

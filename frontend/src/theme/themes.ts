@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { fontFamily, radius, space } from './tokens';
+import { fontFamily, radius, space, type RadiusScale } from './tokens';
 
 /* ──────────────────────────────────────────────
    Module augmentation (single source of truth)
@@ -42,6 +42,21 @@ export interface ThemeDefinition {
   preview: ThemePreview
   theme: Theme
 }
+
+/* ──────────────────────────────────────────────
+   Forma e tipografia — a parte do tema que não é cor
+   ──────────────────────────────────────────────
+
+   Existe porque tema não é só paleta: o Pixel Art precisa de raio zero e de
+   fonte bitmap, e nenhum dos dois cabe em `ThemePaletteConfig`. Quem não
+   passa nada continua com os valores de `tokens.ts`, que são os do tema
+   padrão — por isso a introdução deste tipo não muda nenhuma tela. */
+export interface ThemeShapeConfig {
+  radius: RadiusScale
+  fontFamily: string
+}
+
+export const defaultShape: ThemeShapeConfig = { radius, fontFamily }
 
 /** Raw palette values used to create/edit custom themes */
 export interface ThemePaletteConfig {
@@ -89,7 +104,7 @@ const toggleComponents = {
   },
 }
 
-const lightComponents = {
+const lightComponents = (shape: ThemeShapeConfig) => ({
   MuiAppBar: {
     styleOverrides: {
       root: {
@@ -111,7 +126,7 @@ const lightComponents = {
   MuiButton: {
     styleOverrides: {
       root: {
-        borderRadius: radius.lg,
+        borderRadius: shape.radius.lg,
         textTransform: 'none' as const,
       },
       containedPrimary: {
@@ -122,9 +137,9 @@ const lightComponents = {
   },
   ...toggleComponents,
   ...overlayComponents,
-}
+})
 
-const darkComponents = {
+const darkComponents = (shape: ThemeShapeConfig) => ({
   MuiAppBar: {
     styleOverrides: {
       root: {
@@ -145,23 +160,23 @@ const darkComponents = {
   MuiButton: {
     styleOverrides: {
       root: {
-        borderRadius: radius.lg,
+        borderRadius: shape.radius.lg,
         textTransform: 'none' as const,
       },
     },
   },
   ...toggleComponents,
   ...overlayComponents,
-}
+})
 
-const baseTypography = {
-  fontFamily,
+const baseTypography = (shape: ThemeShapeConfig) => ({
+  fontFamily: shape.fontFamily,
   h5: { fontWeight: 600, letterSpacing: '-0.01em' },
   h6: { fontWeight: 600, letterSpacing: '-0.01em' },
   subtitle2: { fontWeight: 600, letterSpacing: '0.02em' },
   body1: { lineHeight: 1.6 },
   body2: { lineHeight: 1.5 },
-}
+})
 
 /* ──────────────────────────────────────────────
    Theme factory — builds a MUI Theme from config
@@ -170,7 +185,10 @@ const baseTypography = {
    Todo tema do app passa por aqui, inclusive os customizados do usuário.
    É o único lugar que injeta `radius` e `space`, então nenhum tema pode
    existir sem os tokens do design system. */
-export function buildMuiTheme(config: ThemePaletteConfig): Theme {
+export function buildMuiTheme(
+  config: ThemePaletteConfig,
+  shape: ThemeShapeConfig = defaultShape,
+): Theme {
   const isLight = config.mode === 'light'
   return createTheme({
     palette: {
@@ -190,9 +208,9 @@ export function buildMuiTheme(config: ThemePaletteConfig): Theme {
       divider: config.divider,
       chart: config.chart,
     },
-    components: isLight ? lightComponents : darkComponents,
-    typography: baseTypography,
-    radius,
+    components: isLight ? lightComponents(shape) : darkComponents(shape),
+    typography: baseTypography(shape),
+    radius: shape.radius,
     space,
   })
 }

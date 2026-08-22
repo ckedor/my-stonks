@@ -1,5 +1,5 @@
 import { LinearProgress } from '@mui/material'
-import { radius } from '@/theme/tokens'
+import { useAppTheme } from './useAppTheme'
 
 /* Barra de progresso horizontal.
  *
@@ -16,12 +16,13 @@ export interface AppProgressBarProps {
 }
 
 export default function AppProgressBar({ value, tone = 'primary' }: AppProgressBarProps) {
+  const theme = useAppTheme()
   return (
     <LinearProgress
       variant={value === undefined ? 'indeterminate' : 'determinate'}
       value={value}
       color={tone === 'danger' ? 'error' : 'primary'}
-      sx={{ borderRadius: `${radius.sm}px` }}
+      sx={{ borderRadius: `${theme.radius.sm}px` }}
     />
   )
 }

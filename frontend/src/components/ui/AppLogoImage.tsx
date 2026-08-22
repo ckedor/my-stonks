@@ -1,6 +1,6 @@
 import { Box } from '@mui/material'
 import { useState } from 'react'
-import { radius } from '@/theme/tokens'
+import { useAppTheme } from './useAppTheme'
 
 /* Logotipo pequeno ao lado de um nome.
  *
@@ -23,6 +23,7 @@ export interface AppLogoImageProps {
 }
 
 export default function AppLogoImage({ src, alt = '' }: AppLogoImageProps) {
+  const theme = useAppTheme()
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
 
   if (!src || failedSrc === src) return null
@@ -33,7 +34,7 @@ export default function AppLogoImage({ src, alt = '' }: AppLogoImageProps) {
       src={src}
       alt={alt}
       onError={() => setFailedSrc(src)}
-      sx={{ width: SIZE, height: SIZE, borderRadius: `${radius.sm}px`, objectFit: 'contain' }}
+      sx={{ width: SIZE, height: SIZE, borderRadius: `${theme.radius.sm}px`, objectFit: 'contain' }}
     />
   )
 }

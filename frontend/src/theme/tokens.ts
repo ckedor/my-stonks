@@ -26,6 +26,9 @@
 export const fontFamily =
   `'Hanken Grotesk Variable', 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif`
 
+/* A escala é um *valor de tema*, não uma constante global: o tema Pixel Art
+   zera todos os raios. Estes são os valores do tema padrão — quem quiser
+   outros passa a própria escala para `buildMuiTheme`. */
 export const radius = {
   /** Chips, inputs e elementos pequenos. */
   sm: 6,
@@ -38,6 +41,9 @@ export const radius = {
 } as const
 
 export type RadiusToken = keyof typeof radius
+
+/** O formato da escala, para um tema declarar a sua. */
+export type RadiusScale = Record<RadiusToken, number>
 
 /** Espaçamentos, em unidades de `theme.spacing` (1 = 8px). */
 export const space = {
@@ -60,11 +66,11 @@ export type SpaceToken = keyof typeof space
    ────────────────────────────────────────────── */
 declare module '@mui/material/styles' {
   interface Theme {
-    radius: typeof radius
+    radius: RadiusScale
     space: typeof space
   }
   interface ThemeOptions {
-    radius?: typeof radius
+    radius?: RadiusScale
     space?: typeof space
   }
 }

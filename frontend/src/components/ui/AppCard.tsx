@@ -1,5 +1,6 @@
 import { Box, BoxProps } from '@mui/material'
-import { radius, space, type SpaceToken } from '@/theme/tokens'
+import { space, type SpaceToken } from '@/theme/tokens'
+import { useAppTheme } from './useAppTheme'
 
 /* ──────────────────────────────────────────────
    AppCard — superfície padrão do app
@@ -47,13 +48,14 @@ export default function AppCard({
   ...props
 }: AppCardProps) {
   const resolvedPadding = padding ?? (noPadding ? 'none' : 'md')
+  const theme = useAppTheme()
 
   return (
     <Box
       sx={{
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: `${radius.md}px`,
+        borderRadius: `${theme.radius.md}px`,
         p: space[resolvedPadding],
         backgroundColor: 'background.paper',
         ...(minWidth ? { minWidth } : null),

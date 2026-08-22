@@ -1,8 +1,9 @@
 import type { FIIDividend } from '@/api/market'
-import { createTheme, ThemeProvider } from '@mui/material'
+import { ThemeProvider } from '@mui/material'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
+import { buildMuiTheme, defaultLightPalette } from '@/theme/themes'
 import FIIDividendsCard from './FIIDividendsCard'
 
 const payment = (
@@ -11,9 +12,11 @@ const payment = (
   event_type: string | null = 'RENDIMENTO',
 ): FIIDividend => ({ payment_date, ex_date: null, value_per_share, event_type })
 
+/* O tema tem que sair de `buildMuiTheme`: `createTheme()` puro não carrega
+   `radius`, que agora é valor de tema, e o `AppCard` lá dentro quebra. */
 const renderCard = (dividends: FIIDividend[]) =>
   render(
-    <ThemeProvider theme={createTheme()}>
+    <ThemeProvider theme={buildMuiTheme(defaultLightPalette)}>
       <FIIDividendsCard dividends={dividends} />
     </ThemeProvider>,
   )

@@ -1,6 +1,7 @@
 import { Box } from '@mui/material'
 import type { ReactNode } from 'react'
-import { radius, space } from '@/theme/tokens'
+import { space } from '@/theme/tokens'
+import { useAppTheme } from './useAppTheme'
 
 /* Balão que aparece sobre o conteúdo, na posição que quem chama calcula.
  *
@@ -18,6 +19,7 @@ export interface AppFloatingCardProps {
 }
 
 export default function AppFloatingCard({ left, top, width, children }: AppFloatingCardProps) {
+  const theme = useAppTheme()
   return (
     <Box
       sx={{
@@ -28,7 +30,7 @@ export default function AppFloatingCard({ left, top, width, children }: AppFloat
         pointerEvents: 'none',
         zIndex: 3,
         p: space.sm,
-        borderRadius: `${radius.sm}px`,
+        borderRadius: `${theme.radius.sm}px`,
         border: '1px solid',
         borderColor: 'divider',
         bgcolor: 'background.paper',
