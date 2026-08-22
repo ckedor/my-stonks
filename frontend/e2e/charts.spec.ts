@@ -142,3 +142,44 @@ test('portfolio/proventos', async ({ page, mockApi }) => {
 
   await expect(page).toHaveScreenshot('chart-dividends.png')
 })
+
+/* Retorno acumulado mês a mês, dois anos e meio, em fração — é assim que a
+   API entrega e o gráfico lê. A carteira e uma categoria, que é o mínimo
+   para o gráfico principal ter o que sobrepor e para o heatmap ter linhas
+   de anos diferentes. */
+const RETORNO_MENSAL_PCT = [
+  0, 1.8, 3.1, 2.4, 4.9, 6.2, 5.5, 7.8, 9.1, 8.3, 10.7, 12.4,
+  13.1, 11.9, 14.6, 16.2, 15.4, 18.1, 19.8, 21.3, 20.5, 23.2, 25.1, 26.8,
+  27.9, 29.4, 31.1,
+]
+
+function serieDeRetorno(escala: number) {
+  return RETORNO_MENSAL_PCT.map((value, i) => ({
+    date: new Date(Date.UTC(2024, i, 1)).toISOString().slice(0, 10),
+    acc_return: Number(((value / 100) * escala).toFixed(4)),
+    cagr: Number((0.118 * escala).toFixed(4)),
+  }))
+}
+
+test('portfolio/rentabilidade', async ({ page, mockApi }) => {
+  await page.clock.setFixedTime(HOJE)
+  await mockApi('/portfolio', PORTFOLIOS)
+  await mockApi('/portfolio/position/1/returns', serieDeRetorno(1))
+  await mockApi(
+    '/portfolio/position/1/category/returns',
+    serieDeRetorno(0.7).map((entry) => ({ ...entry, category: 'Renda Fixa' })),
+  )
+  await mockApi('/market_data/series/time_series', {
+    CDI: RETORNO_MENSAL_PCT.map((value, i) => ({
+      date: new Date(Date.UTC(2024, i, 1)).toISOString().slice(0, 10),
+      value: Number(((value / 100) * 0.45).toFixed(4)),
+    })),
+  })
+
+  await page.goto('/portfolio/returns')
+
+  await expect(page.getByRole('heading', { name: 'Rentabilidade Carteira' })).toBeVisible()
+  await expectNothingClipped(page)
+
+  await expect(page).toHaveScreenshot('chart-returns.png')
+})
