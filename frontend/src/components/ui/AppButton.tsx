@@ -1,4 +1,4 @@
-import { Button } from '@mui/material'
+import { Button, CircularProgress } from '@mui/material'
 import type { ReactNode } from 'react'
 
 /* Botão do app.
@@ -36,11 +36,15 @@ export interface AppButtonProps {
   tone?: Tone
   /** Quanto peso visual ela carrega. Padrão: `solid`. */
   emphasis?: Emphasis
-  size?: 'sm' | 'md'
+  /** `lg` é a ação única de uma tela — o botão de entrar. Padrão: `md`. */
+  size?: 'sm' | 'md' | 'lg'
   /** Ícone à esquerda do rótulo. */
   icon?: ReactNode
   onClick?: () => void
   disabled?: boolean
+  /** Troca o rótulo por um spinner e recusa cliques enquanto a ação corre.
+   *  Sem isso a tela de login enviava duas vezes. */
+  loading?: boolean
   type?: 'button' | 'submit'
   /** Ocupa a largura do container — a ação que fecha um formulário em
    *  painel, onde a coluna inteira é o alvo de clique. */
@@ -55,6 +59,7 @@ export default function AppButton({
   icon,
   onClick,
   disabled,
+  loading = false,
   type = 'button',
   fullWidth = false,
 }: AppButtonProps) {
@@ -62,14 +67,15 @@ export default function AppButton({
     <Button
       variant={VARIANT[emphasis]}
       color={COLOR[tone]}
-      size={size === 'sm' ? 'small' : 'medium'}
+      size={size === 'sm' ? 'small' : size === 'lg' ? 'large' : 'medium'}
+      sx={size === 'lg' ? { py: 1.5, fontWeight: 600, fontSize: '1.05rem' } : undefined}
       startIcon={icon}
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || loading}
       type={type}
       fullWidth={fullWidth}
     >
-      {children}
+      {loading ? <CircularProgress size={24} color="inherit" /> : children}
     </Button>
   )
 }

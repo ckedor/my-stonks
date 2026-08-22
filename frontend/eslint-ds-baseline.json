@@ -7,7 +7,6 @@
     "src/pages/admin/design-system/ChartsTab.tsx",
     "src/pages/admin/design-system/GeneralTab.tsx",
     "src/pages/admin/design-system/page.tsx",
-    "src/pages/login/index.tsx",
     "src/pages/market/asset/AssetQuoteCard.tsx",
     "src/pages/market/asset/MarketAssetSkeleton.tsx",
     "src/pages/market/asset/page.tsx",

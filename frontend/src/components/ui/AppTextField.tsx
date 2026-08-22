@@ -29,6 +29,10 @@ export interface AppTextFieldProps {
   helperText?: string
   /** Conteúdo colado à direita, dentro da moldura — um spinner, uma unidade. */
   endAdornment?: ReactNode
+  /** Exemplo do que se espera, visível enquanto o campo está vazio. */
+  placeholder?: string
+  /** Disparado no Enter, para o formulário que se envia pelo teclado. */
+  onSubmit?: () => void
 }
 
 export default function AppTextField({
@@ -41,6 +45,8 @@ export default function AppTextField({
   error = false,
   helperText,
   endAdornment,
+  placeholder,
+  onSubmit,
 }: AppTextFieldProps) {
   return (
     <TextField
@@ -49,7 +55,11 @@ export default function AppTextField({
       type={type}
       size={density === 'compact' ? 'small' : 'medium'}
       value={value}
+      placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') onSubmit?.()
+      }}
       error={error}
       helperText={helperText}
       slotProps={{ input: { readOnly, endAdornment } }}

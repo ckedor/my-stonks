@@ -26,8 +26,9 @@ export interface AppIconButtonProps {
   disabled?: boolean
   /** Mostra `label` como tooltip no hover. */
   tooltip?: boolean
-  /** Compensa o padding do ícone quando ele abre uma barra. */
-  edge?: 'start' | false
+  /** Compensa o padding do ícone nas bordas: `start` quando ele abre uma
+   *  barra, `end` quando fica colado na moldura de um campo. */
+  edge?: 'start' | 'end' | false
   /** Desenha a moldura, para o botão se ler como botão ao lado de outros.
    *  Sem ela, um ícone solto na mesma linha de dois botões parece
    *  decoração. */

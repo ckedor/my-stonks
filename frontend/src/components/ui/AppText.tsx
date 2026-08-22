@@ -12,10 +12,20 @@ import type { ReactNode } from 'react'
  * (Escrevi este componente uma vez antes e apaguei: na época nenhuma tela
  * precisava dele.) */
 
-type Variant = 'pageHeading' | 'body' | 'bodySmall' | 'caption'
+type Variant = 'display' | 'pageHeading' | 'body' | 'bodySmall' | 'caption'
 type Tone = 'default' | 'secondary' | 'primary' | 'success' | 'caution' | 'danger'
 
-const VARIANT: Record<Variant, 'h4' | 'body1' | 'body2' | 'caption'> = {
+/* Os títulos têm peso próprio: um `display` fino não é título, e deixar
+ * isso a cargo de quem chama é como reaparecem cinco pesos diferentes. */
+const VARIANT_WEIGHT: Partial<Record<Variant, number | 'bold'>> = {
+  display: 700,
+  pageHeading: 'bold',
+}
+
+const VARIANT: Record<Variant, 'h3' | 'h4' | 'body1' | 'body2' | 'caption'> = {
+  /** O maior de todos: a frase que recebe quem chega, numa tela que só tem
+   *  ela — a de entrada. */
+  display: 'h3',
   /** O nome da coisa que a tela é sobre — o ticker de um ativo. Maior que
    *  o `PageTitle` de propósito: ali o título nomeia a tela, aqui nomeia o
    *  assunto dela. */
@@ -70,7 +80,7 @@ export default function AppText({
   const common = {
     variant: VARIANT[variant],
     color: tint ?? TONE[tone],
-    fontWeight: weight === 'strong' ? 600 : variant === 'pageHeading' ? 'bold' : undefined,
+    fontWeight: VARIANT_WEIGHT[variant] ?? (weight === 'strong' ? 600 : undefined),
     whiteSpace: noWrap ? ('nowrap' as const) : undefined,
   }
 
