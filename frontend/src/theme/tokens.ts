@@ -48,6 +48,9 @@ export const space = {
   lg: 3,
   /** Separa blocos que são assuntos diferentes na mesma faixa. */
   xl: 4,
+  /** O maior da escala: alinha uma coluna lateral com o conteúdo de um
+   *  desenho que reserva uma faixa no próprio topo. */
+  xxl: 5,
 } as const
 
 export type SpaceToken = keyof typeof space

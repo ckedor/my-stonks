@@ -75,6 +75,20 @@ const overlayComponents = {
   MuiMenu: { defaultProps: { disableScrollLock: true } },
 }
 
+/* O `MuiButton` já desliga o CAIXA ALTA do MUI, mas o `ToggleButton` é um
+   componente à parte e ficou de fora: "RENT. ACUMULADA" ao lado de "Nova
+   Operação" na mesma tela. Um rótulo é escrito uma vez e lido do mesmo
+   jeito em qualquer botão. */
+const toggleComponents = {
+  MuiToggleButton: {
+    styleOverrides: {
+      root: {
+        textTransform: 'none' as const,
+      },
+    },
+  },
+}
+
 const lightComponents = {
   MuiAppBar: {
     styleOverrides: {
@@ -106,6 +120,7 @@ const lightComponents = {
       },
     },
   },
+  ...toggleComponents,
   ...overlayComponents,
 }
 
@@ -135,6 +150,7 @@ const darkComponents = {
       },
     },
   },
+  ...toggleComponents,
   ...overlayComponents,
 }
 

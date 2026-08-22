@@ -100,15 +100,25 @@ export interface AppStackItemProps {
   grow?: number
   /** Piso em px, para a fatia não sumir quando a linha aperta. */
   minWidth?: number
+  /** Largura fixa em px: a coluna lateral que não cresce nem encolhe com o
+   *  conteúdo. Abaixo de `md` ela ocupa a linha inteira — a essa altura a
+   *  linha já virou coluna, e a largura fixa só apertaria o conteúdo. */
+  width?: number
+  /** Empurra o filho para baixo, para alinhá-lo com o conteúdo de um
+   *  vizinho que reserva uma faixa no próprio topo. */
+  offsetTop?: SpaceToken
 }
 
-const ITEM_STYLE_PROPS = new Set(['grow', 'minWidth'])
+const ITEM_STYLE_PROPS = new Set(['grow', 'minWidth', 'width', 'offsetTop'])
 
 export const AppStackItem = styled('div', {
   shouldForwardProp: (prop) => !ITEM_STYLE_PROPS.has(prop as string),
-})<AppStackItemProps>(({ grow = 1, minWidth }) => ({
-  flex: grow,
+})<AppStackItemProps>(({ theme, grow = 1, minWidth, width, offsetTop }) => ({
+  ...(width
+    ? { flex: '0 0 auto', width, [theme.breakpoints.down('md')]: { width: '100%' } }
+    : { flex: grow }),
   minWidth: minWidth ?? 0,
+  ...(offsetTop ? { marginTop: theme.spacing(space[offsetTop]) } : null),
 }))
 
 export default AppStack

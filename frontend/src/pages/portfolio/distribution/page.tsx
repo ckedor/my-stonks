@@ -1,20 +1,29 @@
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+  AppStack,
+  AppStackItem,
+  AppToggleGroup,
+  LoadingSpinner,
+  PageTitle,
+  type AppToggleGroupOption,
+} from '@/components/ui'
 import { POSITION_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
 import api from '@/lib/api'
 import PerformanceBarChart, { type DistributionMetric } from '@/pages/portfolio/asset/PerformanceBarChart'
 import PortfolioHeatMap from '@/pages/portfolio/asset/PortfolioHeatMap'
 import { usePortfolioStore } from '@/stores/portfolio'
-import { Box, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-const METRIC_OPTIONS: { value: DistributionMetric; label: string }[] = [
+const METRIC_OPTIONS: AppToggleGroupOption<DistributionMetric>[] = [
   { value: 'twelve_months_return', label: 'Rent. 12M' },
   { value: 'acc_return', label: 'Rent. Acumulada' },
   { value: 'cagr', label: 'CAGR' },
   { value: 'profit', label: 'Lucro' },
 ]
+
+/** Largura da coluna de barras ao lado do mapa. */
+const BAR_COLUMN_WIDTH = 360
 
 export default function DistributionPage() {
   const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
@@ -39,43 +48,39 @@ export default function DistributionPage() {
   }, [navigate])
 
   return (
-    <Box pt={2}>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>Distribuição</Typography>
-        <ToggleButtonGroup
+    <AppStack gap="md">
+      <AppStack direction="row" align="center" justify="between">
+        <PageTitle>Distribuição</PageTitle>
+        <AppToggleGroup
+          label="Métrica"
+          options={METRIC_OPTIONS}
           value={metric}
-          exclusive
-          onChange={(_, v) => v && setMetric(v)}
-          size="small"
-        >
-          {METRIC_OPTIONS.map(opt => (
-            <ToggleButton key={opt.value} value={opt.value} sx={{ textTransform: 'none', px: 2 }}>
-              {opt.label}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
-      </Box>
+          onChange={setMetric}
+        />
+      </AppStack>
 
       {loading ? (
         <LoadingSpinner />
       ) : (
-        <Box display="flex" gap={2} flexDirection={{ xs: 'column', lg: 'row' }}>
-          <Box flex="1 1 0" minWidth={0}>
+        <AppStack direction="row" gap="md" collapseBelow="md">
+          <AppStackItem>
             <PortfolioHeatMap
               positions={positions ?? []}
               metric={metric}
               onAssetSelect={handleAssetSelect}
             />
-          </Box>
-          <Box mt={5} width={{ xs: '100%', lg: 360 }} flexShrink={0} minWidth={0}>
+          </AppStackItem>
+          {/* Empurrada para baixo para começar na mesma linha do primeiro
+              bloco do mapa, que reserva o topo para o nome da categoria. */}
+          <AppStackItem width={BAR_COLUMN_WIDTH} offsetTop="xxl">
             <PerformanceBarChart
               positions={positions ?? []}
               metric={metric}
               onAssetSelect={handleAssetSelect}
             />
-          </Box>
-        </Box>
+          </AppStackItem>
+        </AppStack>
       )}
-    </Box>
+    </AppStack>
   )
 }
