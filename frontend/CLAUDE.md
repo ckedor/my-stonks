@@ -48,6 +48,12 @@ Grow the design system on demand: a prop is added when a screen already
 needs it, never in anticipation. Shape and spacing values come from
 `src/theme/tokens.ts`.
 
+Fonte é valor de tema, não constante global: as pilhas ficam em `fontStacks`
+(`src/theme/tokens.ts`) e cada tema escolhe a do corpo e a dos títulos em
+`ThemeShapeConfig`. Nenhum componente escreve nome de fonte. Toda pilha de
+`fontStacks` precisa do `@fontsource-variable/*` correspondente importado em
+`src/main.tsx` — sem o import ela cai no fallback em silêncio.
+
 ### The migration ratchet
 
 `eslint-ds-baseline.json` lists the files still allowed to break these

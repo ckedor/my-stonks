@@ -26,6 +26,23 @@
 export const fontFamily =
   `'Hanken Grotesk Variable', 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif`
 
+/** As outras pilhas, pelo mesmo motivo: um tema escolhe uma delas em
+ *  `ThemeShapeConfig` e nenhuma outra parte do app escreve nome de fonte.
+ *
+ *  Cada uma corresponde a um pacote `@fontsource-variable/*` importado em
+ *  `src/main.tsx` — sem o import, a pilha cai silenciosamente no fallback,
+ *  que é exatamente o tipo de erro que só aparece na tela. */
+export const fontStacks = {
+  /** A do app: rótulo, tabela, botão. */
+  grotesk: fontFamily,
+  /** Serifa de texto, alto contraste — títulos dos temas Sépia. */
+  sourceSerif: `'Source Serif 4 Variable', 'Source Serif 4', Georgia, serif`,
+  /** Serifa de leitura, olho maior — títulos dos temas “Claude”. */
+  newsreader: `'Newsreader Variable', Newsreader, Georgia, serif`,
+  /** Grotesca geométrica que acompanha a Newsreader no corpo. */
+  figtree: `'Figtree Variable', Figtree, 'Helvetica Neue', Arial, sans-serif`,
+} as const
+
 /* A escala é um *valor de tema*, não uma constante global: o tema Pixel Art
    zera todos os raios. Estes são os valores do tema padrão — quem quiser
    outros passa a própria escala para `buildMuiTheme`. */
