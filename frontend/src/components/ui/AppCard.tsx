@@ -27,6 +27,12 @@ export interface AppCardProps extends Omit<BoxProps, 'padding'> {
   /** Levanta a superfície com sombra, para o que flutua sobre o conteúdo —
    *  o balão de um gráfico. */
   raised?: boolean
+  /** Card que leva a algum lugar: cursor de mão e realce ao passar o mouse.
+   *  O clique continua vindo do `onClick`. */
+  interactive?: boolean
+  /** Cor da borda no hover de um card `interactive` — a do assunto que ele
+   *  mostra, como a da categoria do ativo. Sem ela o realce é só o fundo. */
+  accentColor?: string
 }
 
 export default function AppCard({
@@ -36,6 +42,8 @@ export default function AppCard({
   noPadding = false,
   minWidth,
   raised = false,
+  interactive = false,
+  accentColor,
   ...props
 }: AppCardProps) {
   const resolvedPadding = padding ?? (noPadding ? 'none' : 'md')
@@ -50,6 +58,16 @@ export default function AppCard({
         backgroundColor: 'background.paper',
         ...(minWidth ? { minWidth } : null),
         ...(raised ? { boxShadow: 3 } : null),
+        ...(interactive
+          ? {
+              cursor: 'pointer',
+              transition: 'background-color 0.15s, border-color 0.15s',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+                ...(accentColor ? { borderColor: accentColor } : null),
+              },
+            }
+          : null),
         ...sx,
       }}
       {...props}

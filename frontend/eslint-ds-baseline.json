@@ -19,7 +19,6 @@
     "src/pages/market/ativos/FavoriteAssets.tsx",
     "src/pages/market/ativos/page.tsx",
     "src/pages/market/overview/page.tsx",
-    "src/pages/portfolio/asset/AssetCard.tsx",
     "src/pages/portfolio/asset/AssetList.tsx",
     "src/pages/portfolio/asset/AssetListSkeleton.tsx",
     "src/pages/portfolio/asset/[id]/page.tsx",

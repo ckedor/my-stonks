@@ -31,7 +31,7 @@ import { Dayjs } from 'dayjs'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MiniDonut from '@/components/ui/MiniDonut'
-import AssetCard from './AssetCard'
+import AssetCard from '@/components/portfolio-asset/AssetCard'
 
 interface Position {
   ticker: string
@@ -97,10 +97,18 @@ export default function AssetList({ positions, groupBy = 'category', onGroupByCh
   const negativeColor = theme.palette.error.main
   const positiveColor = theme.palette.success.main
 
-  const categoryColorMap = useMemo(() => {
-    const map: Record<string, string> = {}
-    for (const cat of userCategories) map[cat.name] = cat.color
-    return map
+  /* Cor e id por nome de categoria. O id existe porque o cabeçalho do grupo
+     leva para a página da categoria — é onde a pessoa já está olhando para o
+     nome dela. Só agrupando por categoria: nos outros agrupamentos o título é
+     um tipo ou uma corretora, que não têm página. */
+  const { categoryColorMap, categoryIdMap } = useMemo(() => {
+    const colors: Record<string, string> = {}
+    const ids: Record<string, number> = {}
+    for (const cat of userCategories) {
+      colors[cat.name] = cat.color
+      ids[cat.name] = cat.id
+    }
+    return { categoryColorMap: colors, categoryIdMap: ids }
   }, [userCategories])
 
   const totalPortfolioValue = useMemo(
@@ -238,9 +246,25 @@ export default function AssetList({ positions, groupBy = 'category', onGroupByCh
                 }}
               >
                 <Box sx={{ width: 6, height: 20, borderRadius: 1, bgcolor: catColor, flexShrink: 0 }} />
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase', flex: 1 }}>
-                  {category}
-                </Typography>
+                {groupBy === 'category' && categoryIdMap[category] != null ? (
+                  <Typography
+                    variant="subtitle2"
+                    onClick={() => navigate(`/portfolio/category/${categoryIdMap[category]}`)}
+                    sx={{
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      flex: 1,
+                      cursor: 'pointer',
+                      '&:hover': { textDecoration: 'underline' },
+                    }}
+                  >
+                    {category}
+                  </Typography>
+                ) : (
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase', flex: 1 }}>
+                    {category}
+                  </Typography>
+                )}
                 <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                   {formatCurrency(groupTotal)}
                 </Typography>

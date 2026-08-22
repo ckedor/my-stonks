@@ -12,7 +12,7 @@ import type { ReactNode } from 'react'
  * (Escrevi este componente uma vez antes e apaguei: na época nenhuma tela
  * precisava dele.) */
 
-type Variant = 'display' | 'pageHeading' | 'body' | 'bodySmall' | 'caption'
+type Variant = 'display' | 'pageHeading' | 'cardValue' | 'body' | 'bodySmall' | 'caption'
 type Tone = 'default' | 'secondary' | 'primary' | 'success' | 'caution' | 'danger'
 
 /* Os títulos têm peso próprio: um `display` fino não é título, e deixar
@@ -20,9 +20,10 @@ type Tone = 'default' | 'secondary' | 'primary' | 'success' | 'caution' | 'dange
 const VARIANT_WEIGHT: Partial<Record<Variant, number | 'bold'>> = {
   display: 700,
   pageHeading: 'bold',
+  cardValue: 700,
 }
 
-const VARIANT: Record<Variant, 'h3' | 'h4' | 'body1' | 'body2' | 'caption'> = {
+const VARIANT: Record<Variant, 'h3' | 'h4' | 'h6' | 'body1' | 'body2' | 'caption'> = {
   /** O maior de todos: a frase que recebe quem chega, numa tela que só tem
    *  ela — a de entrada. */
   display: 'h3',
@@ -30,6 +31,10 @@ const VARIANT: Record<Variant, 'h3' | 'h4' | 'body1' | 'body2' | 'caption'> = {
    *  o `PageTitle` de propósito: ali o título nomeia a tela, aqui nomeia o
    *  assunto dela. */
   pageHeading: 'h4',
+  /** O número que um card existe para mostrar — o valor da posição num card
+   *  de ativo. Menor que o `pageHeading`: o card é um item de uma grade, e
+   *  não o assunto da tela. */
+  cardValue: 'h6',
   body: 'body1',
   bodySmall: 'body2',
   caption: 'caption',

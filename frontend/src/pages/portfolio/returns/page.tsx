@@ -10,9 +10,9 @@ import {
 } from '@/components/ui'
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useEffect, useMemo, useState } from 'react'
-import PortfolioMonthlyHeatmap from './PortfolioMonthlyHeatmap'
-import PortfolioMonthlyReturnsChart from './PortfolioMonthlyReturnsChart'
-import PortfolioRolling12mChart from './PortfolioRolling12mChart'
+import PortfolioMonthlyHeatmap from '@/components/PortfolioMonthlyHeatmap'
+import PortfolioMonthlyReturnsChart from '@/components/PortfolioMonthlyReturnsChart'
+import PortfolioRolling12mChart from '@/components/PortfolioRolling12mChart'
 
 interface SeriesPoint {
   date: string

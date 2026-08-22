@@ -23,6 +23,7 @@ import MarketAtivosPage from "./pages/market/ativos/page";
 import MarketOverviewPage from "./pages/market/overview/page";
 import PortfolioAssetsPage from "./pages/portfolio/asset";
 import PortfolioAssetPage from "./pages/portfolio/asset/[id]/page";
+import PortfolioCategoryPage from "./pages/portfolio/category/[id]/page";
 import DistributionPage from "./pages/portfolio/distribution/page";
 import PortfolioDividendsPage from "./pages/portfolio/dividends/page";
 import PortfolioOverviewPage from "./pages/portfolio/overview";
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
       { path: "portfolio/overview", element: <PortfolioOverviewPage /> },
       { path: "portfolio/asset", element: <PortfolioAssetsPage /> },
       { path: "portfolio/asset/:id", element: <PortfolioAssetPage /> },
+      { path: "portfolio/category/:id", element: <PortfolioCategoryPage /> },
       { path: "portfolio/distribution", element: <DistributionPage /> },
       { path: "portfolio/dividends", element: <PortfolioDividendsPage /> },
       { path: "portfolio/returns", element: <PortfolioReturnsPage /> },

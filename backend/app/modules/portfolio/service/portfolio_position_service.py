@@ -399,7 +399,4 @@ class PortfolioPositionService:
                 start_date, benchmark_id
             )
 
-        result = calculate_returns_analysis(returns_series, benchmarks)
-        return result
-        result = calculate_returns_analysis(returns_series, benchmarks)
-        return result
+        return calculate_returns_analysis(returns_series, benchmarks)

@@ -135,3 +135,99 @@ test('portfolio/rebalanceamento', async ({ page, mockApi }) => {
 
   await expect(page).toHaveScreenshot('page-rebalancing.png')
 })
+
+test('portfolio/categoria', async ({ page, mockApi }) => {
+  await page.clock.setFixedTime(HOJE)
+  await mockApi('/portfolio', PORTFOLIOS)
+  await mockApi('/portfolio/position/1', POSICOES)
+  await mockApi('/portfolio/position/1/returns', [
+    { date: '2025-03-17', daily_return: 0, acc_return: 0, cagr: null },
+    { date: '2026-03-17', daily_return: 0.002, acc_return: 0.21, cagr: 0.21 },
+  ])
+  await mockApi('/portfolio/position/1/category/returns', [
+    {
+      date: '2025-03-17', custom_category_id: 10, category: 'Ações',
+      daily_return: 0, acc_return: 0, cagr: null,
+    },
+    {
+      date: '2025-09-17', custom_category_id: 10, category: 'Ações',
+      daily_return: 0.003, acc_return: 0.16, cagr: 0.33,
+    },
+    {
+      date: '2026-03-17', custom_category_id: 10, category: 'Ações',
+      daily_return: 0.001, acc_return: 0.28, cagr: 0.28,
+    },
+    {
+      date: '2025-03-17', custom_category_id: 11, category: 'FIIs',
+      daily_return: 0, acc_return: 0, cagr: null,
+    },
+    {
+      date: '2026-03-17', custom_category_id: 11, category: 'FIIs',
+      daily_return: -0.001, acc_return: -0.04, cagr: -0.04,
+    },
+  ])
+  await mockApi('/portfolio/position/1/patrimony_evolution', [
+    { date: '2025-03-17', portfolio: 24000, aported: 24000, 'Ações': 14000, FIIs: 10000 },
+    { date: '2026-03-17', portfolio: 31790, aported: 300, 'Ações': 18677, FIIs: 13113 },
+  ])
+  await mockApi('/portfolio/dividend', [])
+  await mockApi('/portfolio/transaction', [])
+  await mockApi('/market_data/series/time_series', {
+    CDI: [
+      { date: '2025-03-17', value: 0 },
+      { date: '2026-03-17', value: 0.12 },
+    ],
+  })
+  /* Uma requisição por ativo, que é o que alimenta o mini gráfico do card. */
+  for (const [assetId, ticker] of [[1, 'PETR4'], [3, 'BOVA11']] as const) {
+    await mockApi(`/portfolio/position/1/asset/${assetId}/returns`, [
+      { date: '2025-03-17', [ticker]: 0 },
+      { date: '2025-09-17', [ticker]: 0.09 },
+      { date: '2026-03-17', [ticker]: 0.18 },
+    ])
+  }
+
+  await page.goto('/portfolio/category/10')
+
+  await expect(page.getByRole('heading', { name: 'Ações' })).toBeVisible()
+  await expect(page.getByText('PETR4')).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Risco' })).toBeVisible()
+  await expectNothingClipped(page)
+
+  await expect(page).toHaveScreenshot('page-category.png')
+
+  /* As outras abas só precisam provar que renderizam com o recorte da
+     categoria: o visual delas já é o das telas da carteira, que têm snapshot
+     próprio. A análise de risco é a única busca desta tela, e é a aba que a
+     dispara. */
+  await mockApi('/portfolio/position/1/category/10/analysis', {
+    start_date: '2025-03-17',
+    performance_metrics: {
+      cagr: 0.28,
+      benchmarks_metrics: { CDI: { cagr: 0.12, alpha: 0.16, beta: 0.4, correlation: 0.1 } },
+    },
+    risk_metrics: {
+      annualized_vol: 0.18, sharpe_ratio: 0.9, semideviation: 0.12,
+      skewness: -0.2, kurtosis: 3.1, var_95: -0.02, cvar_95: -0.03,
+      drawdown: {
+        series: [
+          { date: '2025-03-17', drawdown: 0 },
+          { date: '2025-09-17', drawdown: -0.07 },
+          { date: '2026-03-17', drawdown: -0.01 },
+        ],
+        stats: {
+          max_drawdown: -0.07, max_drawdown_date: '2025-09-17',
+          peak_date_before_max_dd: '2025-06-10', recovery_date: '2025-10-27',
+          recovery_days: 40, max_drawdown_duration_days: 132,
+        },
+      },
+    },
+    rolling_cagr: [],
+  })
+
+  await page.getByRole('tab', { name: 'Risco' }).click()
+  await expect(page.getByText('Volatilidade anual')).toBeVisible()
+
+  await page.getByRole('tab', { name: 'Proventos' }).click()
+  await expect(page.getByText('Nenhum provento recebido nesta categoria.')).toBeVisible()
+})
