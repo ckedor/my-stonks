@@ -238,6 +238,23 @@ const PROVENTOS = [
   { id: 5, asset_id: 5, date: '2026-02-13', ticker: 'PETR4', amount: 165.9, category: 'Ações', portfolio_id: 1 },
 ]
 
+/* Duas séries de benchmark: é o que faz aparecer o "vs CDI" na barra do
+   gráfico principal, e a frase de excesso que sai dele. */
+const SERIES_DE_BENCHMARK = {
+  CDI: [
+    { date: '2025-04-15', value: 0 },
+    { date: '2025-08-15', value: 0.041 },
+    { date: '2025-12-15', value: 0.079 },
+    { date: '2026-03-17', value: 0.108 },
+  ],
+  IBOV: [
+    { date: '2025-04-15', value: 0 },
+    { date: '2025-08-15', value: 0.062 },
+    { date: '2025-12-15', value: 0.031 },
+    { date: '2026-03-17', value: 0.084 },
+  ],
+}
+
 async function abrirFichaDoAtivo(page: import('@playwright/test').Page, mockApi: (path: string, body: unknown) => Promise<void>) {
   await page.clock.setFixedTime(HOJE)
   await mockApi('/portfolio', PORTFOLIOS)
@@ -247,6 +264,7 @@ async function abrirFichaDoAtivo(page: import('@playwright/test').Page, mockApi:
   await mockApi('/portfolio/position/1/asset/5/returns', { PETR4: RETORNOS_DO_ATIVO })
   await mockApi('/portfolio/position/1/patrimony_evolution', [])
   await mockApi('/portfolio/dividend', PROVENTOS)
+  await mockApi('/market_data/series/time_series', SERIES_DE_BENCHMARK)
   await mockApi('/portfolio/transaction', TRADES)
   await page.goto('/portfolio/asset/5')
 }
