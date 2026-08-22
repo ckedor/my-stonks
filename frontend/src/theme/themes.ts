@@ -357,6 +357,39 @@ export const lightThemes: ThemeDefinition[] = [
    DARK THEMES
    ══════════════════════════════════════════════ */
 
+/* A paleta nasceu de um estudo de sprites em pixel art, e o que veio de lá
+   não é só a cor: é a regra de que tudo aqui é marrom de terra ou metal.
+   `error` foi o único valor que precisou sair do estudo — o #D1594F original
+   dá 3.85:1 sobre o paper, e retorno negativo é texto pequeno. O #DC6A5C
+   passa dos 4.5:1 sem sair do terracota.
+
+   `topbar.activeText` também foge do #FFFFFF dos outros temas: o item ativo
+   tem fundo #D4A76A, claro, então branco sobre ele daria 1.9:1. O texto do
+   item ativo aqui é o próprio fundo da página. */
+const pixelArtPalette: ThemePaletteConfig = {
+  mode: 'dark',
+  background: { default: '#221A15', paper: '#2C231D' },
+  text: { primary: '#EEE3D7', secondary: '#B9A794' },
+  primary: '#D4A76A',
+  secondary: '#E0B84A',
+  error: '#DC6A5C',
+  warning: '#E0B84A',
+  success: '#7BBE71',
+  info: '#78A6C8',
+  golden: '#E0B84A',
+  dark: '#12100E',
+  sidebar: '#1A1410',
+  topbar: { background: '#1A1410', text: '#EEE3D7', activeText: '#221A15', activeBg: '#D4A76A' },
+  divider: 'rgba(238,227,215,0.12)',
+  chart: {
+    grid: 'rgba(238,227,215,0.10)',
+    label: '#EEE3D7',
+    /* Mesma regra do `Principal`: nenhuma repete `primary` nem `secondary`,
+       que no gráfico de rentabilidade já estão presos a Carteira e CDI. */
+    colors: ['#78A6C8', '#7BBE71', '#DC6A5C', '#B9A794', '#A0724E', '#8FA98C', '#C9A227', '#9C6B5A'],
+  },
+}
+
 export const darkThemes: ThemeDefinition[] = [
   /* ── 1. Principal ─────────────────────────── */
   {
@@ -366,6 +399,24 @@ export const darkThemes: ThemeDefinition[] = [
     description: 'Escuro neutro no estilo do VS Code Dark',
     preview: buildPreview(defaultDarkPalette),
     theme: buildMuiTheme(defaultDarkPalette),
+  },
+
+  /* ── 2. Pixel Art ─────────────────────────── */
+  {
+    id: 'pixel-art',
+    name: 'Pixel Art',
+    mode: 'dark',
+    description: 'Marrom de caverna com ouro e verde de sprite',
+    preview: {
+      background: '#221A15',
+      paper: '#2C231D',
+      primary: '#D4A76A',
+      accent: '#E0B84A',
+      topbar: '#1A1410',
+      sidebar: '#1A1410',
+      text: '#EEE3D7',
+    },
+    theme: buildMuiTheme(pixelArtPalette),
   },
 ]
 
