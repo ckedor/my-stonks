@@ -105,3 +105,40 @@ test('market/asset — gráfico de cotação', async ({ page, mockApi }) => {
 
   await expect(page).toHaveScreenshot('chart-candle.png')
 })
+
+/* Proventos de dois anos e três categorias: é o que o gráfico por
+   categoria compara e o que enche os filtros da tela. */
+const PROVENTOS = [
+  { id: 1, asset_id: 1, date: '2025-02-14', ticker: 'PETR4', amount: 120.5, category: 'Ações', portfolio_id: 1 },
+  { id: 2, asset_id: 2, date: '2025-03-20', ticker: 'HGLG11', amount: 88.3, category: 'FIIs', portfolio_id: 1 },
+  { id: 3, asset_id: 1, date: '2025-05-14', ticker: 'PETR4', amount: 98.2, category: 'Ações', portfolio_id: 1 },
+  { id: 4, asset_id: 3, date: '2025-06-30', ticker: 'CDB XP', amount: 210.0, category: 'Renda Fixa', portfolio_id: 1 },
+  { id: 5, asset_id: 2, date: '2025-08-20', ticker: 'HGLG11', amount: 91.7, category: 'FIIs', portfolio_id: 1 },
+  { id: 6, asset_id: 1, date: '2025-11-14', ticker: 'PETR4', amount: 76.4, category: 'Ações', portfolio_id: 1 },
+  { id: 7, asset_id: 2, date: '2026-01-20', ticker: 'HGLG11', amount: 95.1, category: 'FIIs', portfolio_id: 1 },
+  { id: 8, asset_id: 1, date: '2026-02-13', ticker: 'PETR4', amount: 165.9, category: 'Ações', portfolio_id: 1 },
+]
+
+test('portfolio/proventos', async ({ page, mockApi }) => {
+  await page.clock.setFixedTime(HOJE)
+  await mockApi('/portfolio', [
+    {
+      id: 1,
+      name: 'Principal',
+      user_id: 1,
+      custom_categories: [
+        { id: 10, name: 'Ações', color: '#1976d2', benchmark_id: null },
+        { id: 11, name: 'FIIs', color: '#2e7d32', benchmark_id: null },
+        { id: 12, name: 'Renda Fixa', color: '#ed6c02', benchmark_id: 3 },
+      ],
+    },
+  ])
+  await mockApi('/portfolio/dividend', PROVENTOS)
+
+  await page.goto('/portfolio/dividends')
+
+  await expect(page.getByText('HGLG11').first()).toBeVisible()
+  await expectNothingClipped(page)
+
+  await expect(page).toHaveScreenshot('chart-dividends.png')
+})
