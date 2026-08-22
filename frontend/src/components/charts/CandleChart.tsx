@@ -3,19 +3,17 @@ import CandlestickChartIcon from '@mui/icons-material/CandlestickChart'
 import ShowChartIcon from '@mui/icons-material/ShowChart'
 import StraightenIcon from '@mui/icons-material/Straighten'
 import {
-    alpha,
-    Box,
-    Divider,
-    MenuItem,
-    Select,
-    Stack,
-    Switch,
-    ToggleButton,
-    ToggleButtonGroup,
-    Tooltip,
-    Typography,
-    useTheme,
-} from '@mui/material'
+    AppChartArea,
+    AppDivider,
+    AppSelect,
+    AppStack,
+    AppSwitch,
+    AppText,
+    AppToggleButton,
+    AppToggleGroup,
+    useAppTheme,
+    withOpacity,
+} from '@/components/ui'
 import dayjs from 'dayjs'
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
 import {
@@ -161,7 +159,7 @@ export default function CandleChart({
 }: CandleChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
-  const theme = useTheme()
+  const theme = useAppTheme()
 
   const restored = useRef(readChartState(persistKey)).current
 
@@ -419,8 +417,8 @@ export default function CandleChart({
               time: d.time as Time,
               value: d.volume!,
               color: up
-                ? alpha(theme.palette.success.main, 0.3)
-                : alpha(theme.palette.error.main, 0.3),
+                ? withOpacity(theme.palette.success.main, 0.3)
+                : withOpacity(theme.palette.error.main, 0.3),
             }
           }),
       )
@@ -519,185 +517,140 @@ export default function CandleChart({
     persistKey,
   ])
 
-  const toggle = (label: string, checked: boolean, onChange: (v: boolean) => void, hint?: string) => {
-    const control = (
-      <Stack direction="row" spacing={0.5} alignItems="center">
-        <Typography variant="body2" color="text.secondary">
-          {label}
-        </Typography>
-        <Switch size="small" checked={checked} onChange={(_, v) => onChange(v)} />
-      </Stack>
-    )
-    return hint ? <Tooltip title={hint}>{control}</Tooltip> : control
-  }
+  const toggle = (label: string, checked: boolean, onChange: (v: boolean) => void, hint?: string) => (
+    <AppSwitch label={label} checked={checked} onChange={onChange} hint={hint} />
+  )
 
   return (
-    <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        flexWrap="wrap"
-        rowGap={1}
-        sx={{ mb: 1 }}
-      >
-        <Stack direction="row" spacing={2} alignItems="baseline">
-          {performance && (
-            <>
-              <Stack direction="row" spacing={0.75} alignItems="baseline">
-                <Typography variant="body2" color="text.secondary">
-                  Período ({formatSpan(performance.days)})
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: 600,
-                    color: performance.totalReturn >= 0 ? 'success.main' : 'error.main',
-                  }}
-                >
-                  {percent(performance.totalReturn)}
-                </Typography>
-              </Stack>
-              {performance.cagr != null && (
-                <Stack direction="row" spacing={0.75} alignItems="baseline">
-                  <Typography variant="body2" color="text.secondary">
-                    CAGR
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      color: performance.cagr >= 0 ? 'success.main' : 'error.main',
-                    }}
+    <AppChartArea
+      plotRef={containerRef}
+      toolbar={
+        <AppStack direction="row" justify="between" align="center" gap="sm" wrap>
+          <AppStack direction="row" gap="md" align="baseline">
+            {performance && (
+              <>
+                <AppStack direction="row" gap="xs" align="baseline">
+                  <AppText variant="bodySmall" tone="secondary">
+                    Período ({formatSpan(performance.days)})
+                  </AppText>
+                  <AppText
+                    variant="bodySmall"
+                    weight="strong"
+                    tone={performance.totalReturn >= 0 ? 'success' : 'danger'}
                   >
-                    {percent(performance.cagr)}
-                  </Typography>
-                </Stack>
-              )}
-            </>
-          )}
-        </Stack>
-
-        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" rowGap={1}>
-          {showVolumeToggle && toggle('Vol', volumeEnabled, setVolumeEnabled)}
-          {showMovingAverageToggle &&
-            movingAverageAvailable &&
-            toggle(
-              `MM${movingAveragePeriod}`,
-              movingAverageEnabled,
-              setMovingAverageEnabled,
-              `Média móvel de ${MOVING_AVERAGE_DAYS} dias (${movingAveragePeriod} períodos)`,
+                    {percent(performance.totalReturn)}
+                  </AppText>
+                </AppStack>
+                {performance.cagr != null && (
+                  <AppStack direction="row" gap="xs" align="baseline">
+                    <AppText variant="bodySmall" tone="secondary">
+                      CAGR
+                    </AppText>
+                    <AppText
+                      variant="bodySmall"
+                      weight="strong"
+                      tone={performance.cagr >= 0 ? 'success' : 'danger'}
+                    >
+                      {percent(performance.cagr)}
+                    </AppText>
+                  </AppStack>
+                )}
+              </>
             )}
-          {/* Tools act *on* the chart rather than changing what it plots, so
-              they read as a pressable instrument and sit apart from the
-              switches and selectors that change the view itself. */}
-          {showMeasureToggle && (
-            <>
-              <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
-              <Tooltip title="Régua: clique em duas velas para medir a variação entre elas. Esc para sair.">
-                <ToggleButton
-                  size="small"
-                  value="measure"
-                  selected={measureEnabled}
-                  onChange={() => setMeasureEnabled((on) => !on)}
-                  sx={{ px: 1, py: 0.25, gap: 0.5 }}
-                >
-                  <StraightenIcon fontSize="small" />
-                  <Typography variant="body2" sx={{ lineHeight: 1.4, fontSize: 12 }}>
-                    Régua
-                  </Typography>
-                </ToggleButton>
-              </Tooltip>
-              <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
-            </>
-          )}
+          </AppStack>
 
-          {showPriceScaleModeToggle && (
-            <ToggleButtonGroup
-              size="small"
-              exclusive
-              value={priceScaleMode}
-              onChange={(_, value) => value && setPriceScaleMode(value as PriceScaleModeKey)}
-            >
-              {PRICE_SCALE_MODE_OPTIONS.map((option) => (
-                <ToggleButton key={option.value} value={option.value} sx={{ px: 1, py: 0.25 }}>
-                  <Tooltip title={option.hint}>
-                    <Typography variant="body2" sx={{ lineHeight: 1.4, fontSize: 12 }}>
-                      {option.label}
-                    </Typography>
-                  </Tooltip>
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-          )}
+          <AppStack direction="row" gap="md" align="center" wrap>
+            {showVolumeToggle && toggle('Vol', volumeEnabled, setVolumeEnabled)}
+            {showMovingAverageToggle &&
+              movingAverageAvailable &&
+              toggle(
+                `MM${movingAveragePeriod}`,
+                movingAverageEnabled,
+                setMovingAverageEnabled,
+                `Média móvel de ${MOVING_AVERAGE_DAYS} dias (${movingAveragePeriod} períodos)`,
+              )}
+            {/* A ferramenta age *sobre* o gráfico em vez de mudar o que ele
+                plota, então se lê como instrumento e fica separada dos
+                interruptores e seletores que mudam a própria vista. */}
+            {showMeasureToggle && (
+              <>
+                <AppDivider orientation="vertical" />
+                <AppToggleButton
+                  label="Régua"
+                  icon={<StraightenIcon fontSize="small" />}
+                  hint="Régua: clique em duas velas para medir a variação entre elas. Esc para sair."
+                  pressed={measureEnabled}
+                  onChange={setMeasureEnabled}
+                />
+                <AppDivider orientation="vertical" />
+              </>
+            )}
 
-          {showPriceSeriesToggle && hasAdjustedSeries && (
-            <ToggleButtonGroup
-              size="small"
-              exclusive
-              value={priceSeries}
-              onChange={(_, value) => value && setPriceSeries(value as CandlePriceSeries)}
-            >
-              {PRICE_SERIES_OPTIONS.map((option) => (
-                <ToggleButton key={option.value} value={option.value} sx={{ px: 1, py: 0.25 }}>
-                  <Tooltip title={option.hint}>
-                    <Typography variant="body2" sx={{ lineHeight: 1.4, fontSize: 12 }}>
-                      {option.label}
-                    </Typography>
-                  </Tooltip>
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-          )}
+            {showPriceScaleModeToggle && (
+              <AppToggleGroup
+                label="Escala de preço"
+                options={PRICE_SCALE_MODE_OPTIONS}
+                value={priceScaleMode}
+                onChange={setPriceScaleMode}
+              />
+            )}
 
-          {showTypeToggle && (
-            <ToggleButtonGroup
-              size="small"
-              exclusive
-              value={effectiveType}
-              onChange={(_, value) => value && setChartType(value as CandleChartType)}
-            >
-              <ToggleButton value="candlestick" disabled={adjusted} sx={{ px: 1, py: 0.25 }}>
-                <Tooltip
-                  title={
-                    adjusted
+            {showPriceSeriesToggle && hasAdjustedSeries && (
+              <AppToggleGroup
+                label="Série de preço"
+                options={PRICE_SERIES_OPTIONS}
+                value={priceSeries}
+                onChange={setPriceSeries}
+              />
+            )}
+
+            {showTypeToggle && (
+              <AppToggleGroup
+                label="Tipo de gráfico"
+                value={effectiveType}
+                onChange={setChartType}
+                options={[
+                  {
+                    value: 'candlestick',
+                    label: 'Velas',
+                    icon: <CandlestickChartIcon fontSize="small" />,
+                    disabled: adjusted,
+                    hint: adjusted
                       ? 'A série ajustada é um preço reconstruído por dia, sem máxima e mínima negociadas'
-                      : 'Velas'
-                  }
-                >
-                  <CandlestickChartIcon fontSize="small" />
-                </Tooltip>
-              </ToggleButton>
-              <ToggleButton value="line" sx={{ px: 1, py: 0.25 }}>
-                <Tooltip title="Linha">
-                  <ShowChartIcon fontSize="small" />
-                </Tooltip>
-              </ToggleButton>
-            </ToggleButtonGroup>
-          )}
+                      : 'Velas',
+                  },
+                  {
+                    value: 'line',
+                    label: 'Linha',
+                    icon: <ShowChartIcon fontSize="small" />,
+                    hint: 'Linha',
+                  },
+                ]}
+              />
+            )}
 
-          {showTimeframeSelector && (
-            <Select
-              size="small"
-              value={timeframe}
-              onChange={(e) => setTimeframe(e.target.value as CandleTimeframe)}
-              renderValue={(v) => (v === 'day' ? 'D' : v === 'week' ? 'S' : 'M')}
-              sx={{ minWidth: 0, '.MuiSelect-select': { py: 0.5, px: 1, fontSize: 13 } }}
-            >
-              <MenuItem value="day">Diário</MenuItem>
-              <MenuItem value="week">Semanal</MenuItem>
-              <MenuItem value="month">Mensal</MenuItem>
-            </Select>
-          )}
-          <DateRangeMenu
-            show={showRangePicker}
-            range={range}
-            options={effectiveRangeOptions}
-            onChange={setRange}
-          />
-        </Stack>
-      </Stack>
-      <div ref={containerRef} style={{ width: '100%' }} />
-    </Box>
+            {showTimeframeSelector && (
+              <AppSelect
+                size="auto"
+                options={[
+                  { value: 'day', label: 'Diário', shortLabel: 'D' },
+                  { value: 'week', label: 'Semanal', shortLabel: 'S' },
+                  { value: 'month', label: 'Mensal', shortLabel: 'M' },
+                ]}
+                value={timeframe}
+                onChange={(value) => setTimeframe(value as CandleTimeframe)}
+              />
+            )}
+
+            <DateRangeMenu
+              show={showRangePicker}
+              range={range}
+              options={effectiveRangeOptions}
+              onChange={setRange}
+            />
+          </AppStack>
+        </AppStack>
+      }
+    />
   )
 }

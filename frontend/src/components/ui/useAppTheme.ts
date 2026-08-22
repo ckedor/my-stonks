@@ -22,4 +22,10 @@ export const useAppTheme = useTheme
    ficar banido nas camadas de fora. */
 export const useViewportMatches = useMediaQuery
 
+/* Mesma categoria: transparentar uma cor do tema é operar sobre o *valor*
+   do token, não escrever estilo. O gráfico que pinta a área sob a linha com
+   30% do verde de sucesso está derivando um dado de cor, e reexportar aqui
+   é o que deixa `@mui/material` banido lá fora. */
+export { alpha as withOpacity } from '@mui/material/styles'
+
 export type { Theme as AppTheme } from '@mui/material/styles'

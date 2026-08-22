@@ -18,6 +18,9 @@ export interface AppSelectAction {
 export interface AppSelectOption {
   value: string
   label: string
+  /** Mostrado no campo fechado, quando o rótulo da lista não caberia lá —
+   *  "D" no canto de um gráfico para o "Diário" da lista. */
+  shortLabel?: string
 }
 
 export interface AppSelectProps {
@@ -107,6 +110,14 @@ export default function AppSelect({
              campo em branco justamente no caso em que a pessoa escolheu
              alguma coisa. */
           displayEmpty: options.some((option) => option.value === ''),
+          ...(options.some((option) => option.shortLabel)
+            ? {
+                renderValue: (selected: unknown) => {
+                  const option = options.find((item) => item.value === selected)
+                  return option?.shortLabel ?? option?.label ?? ''
+                },
+              }
+            : null),
         },
       }}
     >

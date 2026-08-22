@@ -1,4 +1,6 @@
 import { ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import type { ReactNode } from 'react'
+import AppTooltip from './AppTooltip'
 
 /* Escolha exclusiva entre poucos modos, em botões colados.
  *
@@ -13,8 +15,15 @@ import { ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
  * Um gráfico sem modo não tem o que mostrar. */
 
 export interface AppToggleGroupOption<T extends string> {
+  /** Vira o nome acessível mesmo quando só o ícone aparece. */
   label: string
   value: T
+  /** No lugar do rótulo. O rótulo continua sendo o nome acessível. */
+  icon?: ReactNode
+  /** O que a opção faz, em uma frase, para o rótulo que é abreviação. */
+  hint?: string
+  /** Motivo para não poder ser escolhida agora. */
+  disabled?: boolean
 }
 
 export interface AppToggleGroupProps<T extends string> {
@@ -39,13 +48,25 @@ export default function AppToggleGroup<T extends string>({
       value={value}
       onChange={(_, next: T | null) => next && onChange(next)}
     >
-      {options.map((option) => (
-        <ToggleButton key={option.value} value={option.value} sx={{ px: 1, py: 0.25 }}>
+      {options.map((option) => {
+        const content = option.icon ?? (
           <Typography variant="body2" sx={{ lineHeight: 1.4, fontSize: 12 }}>
             {option.label}
           </Typography>
-        </ToggleButton>
-      ))}
+        )
+
+        return (
+          <ToggleButton
+            key={option.value}
+            value={option.value}
+            aria-label={option.label}
+            disabled={option.disabled}
+            sx={{ px: 1, py: 0.25 }}
+          >
+            {option.hint ? <AppTooltip title={option.hint}>{content}</AppTooltip> : content}
+          </ToggleButton>
+        )
+      })}
     </ToggleButtonGroup>
   )
 }
