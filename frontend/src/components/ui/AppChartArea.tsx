@@ -2,6 +2,7 @@ import { Box } from '@mui/material'
 import { space } from '@/theme/tokens'
 import type { ReactNode, Ref } from 'react'
 import AppText from './AppText'
+import LoadingSpinner from './LoadingSpinner'
 
 /* Moldura de gráfico: controles em cima, desenho embaixo, altura conhecida.
  *
@@ -29,6 +30,8 @@ export interface AppChartAreaProps {
   sizing?: 'chart' | 'frame'
   /** Controles acima do desenho — título, período, agrupamento. */
   toolbar?: ReactNode
+  /** Reserva a altura e mostra que o dado está a caminho. */
+  loading?: boolean
   /** Mostrado, centrado, quando não há o que desenhar. */
   emptyMessage?: string
   /** Texto curto no canto superior esquerdo do desenho — o ano que o eixo
@@ -45,16 +48,17 @@ export default function AppChartArea({
   height,
   sizing = 'chart',
   toolbar,
+  loading = false,
   emptyMessage,
   note,
   plotRef,
   overlay,
   children,
 }: AppChartAreaProps) {
-  if (emptyMessage) {
+  if (loading || emptyMessage) {
     return (
       <Box sx={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <AppText tone="secondary">{emptyMessage}</AppText>
+        {loading ? <LoadingSpinner variant="inline" /> : <AppText tone="secondary">{emptyMessage}</AppText>}
       </Box>
     )
   }

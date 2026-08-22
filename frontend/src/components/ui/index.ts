@@ -63,6 +63,11 @@ export type { AppChipProps } from './AppChip'
 export { default as AppAlert } from './AppAlert'
 export type { AppAlertProps } from './AppAlert'
 export { default as AppAutocomplete } from './AppAutocomplete'
+export { default as AppMultiAutocomplete } from './AppMultiAutocomplete'
+export type {
+  AppMultiAutocompleteOption,
+  AppMultiAutocompleteProps,
+} from './AppMultiAutocomplete'
 export type { AppAutocompleteAction, AppAutocompleteProps } from './AppAutocomplete'
 export { default as AppConfirmDialog } from './AppConfirmDialog'
 export type { AppConfirmDialogProps } from './AppConfirmDialog'
