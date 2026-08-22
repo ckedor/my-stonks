@@ -12,10 +12,24 @@ import type { ReactNode } from 'react'
  * (Escrevi este componente uma vez antes e apaguei: na época nenhuma tela
  * precisava dele.) */
 
-type Variant = 'body' | 'bodySmall' | 'caption'
-type Tone = 'default' | 'secondary' | 'danger'
+type Variant = 'display' | 'pageHeading' | 'body' | 'bodySmall' | 'caption'
+type Tone = 'default' | 'secondary' | 'primary' | 'success' | 'caution' | 'danger'
 
-const VARIANT: Record<Variant, 'body1' | 'body2' | 'caption'> = {
+/* Os títulos têm peso próprio: um `display` fino não é título, e deixar
+ * isso a cargo de quem chama é como reaparecem cinco pesos diferentes. */
+const VARIANT_WEIGHT: Partial<Record<Variant, number | 'bold'>> = {
+  display: 700,
+  pageHeading: 'bold',
+}
+
+const VARIANT: Record<Variant, 'h3' | 'h4' | 'body1' | 'body2' | 'caption'> = {
+  /** O maior de todos: a frase que recebe quem chega, numa tela que só tem
+   *  ela — a de entrada. */
+  display: 'h3',
+  /** O nome da coisa que a tela é sobre — o ticker de um ativo. Maior que
+   *  o `PageTitle` de propósito: ali o título nomeia a tela, aqui nomeia o
+   *  assunto dela. */
+  pageHeading: 'h4',
   body: 'body1',
   bodySmall: 'body2',
   caption: 'caption',
@@ -24,6 +38,9 @@ const VARIANT: Record<Variant, 'body1' | 'body2' | 'caption'> = {
 const TONE: Record<Tone, string | undefined> = {
   default: undefined,
   secondary: 'text.secondary',
+  primary: 'primary.main',
+  success: 'success.main',
+  caution: 'warning.main',
   danger: 'error.main',
 }
 
@@ -31,11 +48,24 @@ export interface AppTextProps {
   children: ReactNode
   /** Padrão: `body`. */
   variant?: Variant
-  /** Padrão: `default`. */
+  /** `success`, `caution` e `danger` são os três degraus de um número que
+   *  se lê pelo sinal — um retorno, uma perda, uma métrica de risco.
+   *  Padrão: `default`. */
   tone?: Tone
   /** `strong` destaca a linha principal de uma célula com duas linhas.
    *  Padrão: `regular`. */
   weight?: 'regular' | 'strong'
+  /** Impede a quebra de linha — para o número que não pode virar duas
+   *  linhas quando a coluna aperta. */
+  noWrap?: boolean
+  /** Cor vinda do dado — a da série que esta linha explica. Ignora o
+   *  `tone`: quando a cor é a identidade daquilo, um tom semântico por cima
+   *  só confunde. */
+  tint?: string
+  /** Renderiza como `span`, para o trecho destacado dentro de uma frase.
+   *  Sem isto o texto vira um parágrafo dentro de outro, que o navegador
+   *  desfaz quebrando a linha no meio. */
+  inline?: boolean
 }
 
 export default function AppText({
@@ -43,14 +73,22 @@ export default function AppText({
   variant = 'body',
   tone = 'default',
   weight = 'regular',
+  noWrap = false,
+  inline = false,
+  tint,
 }: AppTextProps) {
-  return (
-    <Typography
-      variant={VARIANT[variant]}
-      color={TONE[tone]}
-      fontWeight={weight === 'strong' ? 600 : undefined}
-    >
+  const common = {
+    variant: VARIANT[variant],
+    color: tint ?? TONE[tone],
+    fontWeight: VARIANT_WEIGHT[variant] ?? (weight === 'strong' ? 600 : undefined),
+    whiteSpace: noWrap ? ('nowrap' as const) : undefined,
+  }
+
+  return inline ? (
+    <Typography component="span" {...common}>
       {children}
     </Typography>
+  ) : (
+    <Typography {...common}>{children}</Typography>
   )
 }

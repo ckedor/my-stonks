@@ -8,7 +8,7 @@ import {
 import { defaultRangeOptionsFromOldest } from '@/components/charts/app-bar-chart/helpers'
 import DateRangeMenu from '@/components/charts/shared/DateRangeMenu'
 import { getDateFromRange, toISODate, type DateRangeKey } from '@/lib/utils/date'
-import { Box, Stack, useTheme } from '@mui/material'
+import { AppChartArea, AppStack, useAppTheme } from '@/components/ui'
 import {
     AreaSeries,
     createChart,
@@ -43,7 +43,7 @@ export default function PortfolioAssetPatrimonyChart({
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
-  const theme = useTheme()
+  const theme = useAppTheme()
 
   const restored = useRef(readChartState(persistKey)).current
   const [range, setRange] = useState<DateRangeKey>(restored.range ?? 'max')
@@ -146,11 +146,13 @@ export default function PortfolioAssetPatrimonyChart({
   }, [visible, height, currencySymbol, theme, persistKey])
 
   return (
-    <Box>
-      <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1.5 }}>
-        <DateRangeMenu show range={range} options={rangeOptions} onChange={setRange} />
-      </Stack>
-      <Box ref={containerRef} sx={{ width: '100%' }} />
-    </Box>
+    <AppChartArea
+      plotRef={containerRef}
+      toolbar={
+        <AppStack direction="row" justify="end">
+          <DateRangeMenu show range={range} options={rangeOptions} onChange={setRange} />
+        </AppStack>
+      }
+    />
   )
 }

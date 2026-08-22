@@ -1,5 +1,3 @@
-
-// components/CategoryForm.tsx
 import { syncPortfolios, syncReturns } from '@/actions/portfolio'
 import { CATEGORY_ROUTES, MARKET_DATA_SERIES_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
@@ -7,30 +5,19 @@ import { usePortfolioStore } from '@/stores/portfolio'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    Drawer,
-    IconButton,
-    MenuItem,
-    Select,
-    Snackbar,
-    Stack,
-    TextField,
-    Typography,
-} from '@mui/material'
+  AppButton,
+  AppColorField,
+  AppConfirmDialog,
+  AppFormDrawer,
+  AppIconButton,
+  AppSelect,
+  AppSnackbar,
+  AppStack,
+  AppStackItem,
+  AppTextField,
+} from '@/components/ui'
 import { useEffect, useMemo, useState } from 'react'
-
-interface BenchmarkOption {
-  id: number
-  short_name: string
-}
+import { NO_BENCHMARK, benchmarkOptions, type BenchmarkOption } from './benchmark-options'
 
 interface Category {
   id?: number | null
@@ -144,111 +131,80 @@ export default function CategoryForm({ open, onClose, onSave }: CategoryFormProp
 
   return (
     <>
-      <Drawer anchor="right" open={open} onClose={onClose}>
-        <Box p={3} width={600} display="flex" flexDirection="column" height="100%">
-          <Typography variant="h6" mb={2}>
-            Editar Categorias - Carteira: {selectedPortfolio?.name}
-          </Typography>
+      <AppFormDrawer
+        open={open}
+        onClose={onClose}
+        title={`Editar Categorias - Carteira: ${selectedPortfolio?.name ?? ''}`}
+        width="lg"
+        submitLabel="Salvar Alterações"
+        onSubmit={handleSave}
+        submitting={loading}
+      >
+        {categories.map((cat, index) => (
+          <AppStack key={index} direction="row" gap="md" align="center">
+            <AppStackItem grow={2}>
+              <AppTextField
+                value={cat.name}
+                onChange={(value) => handleChange(index, 'name', value)}
+              />
+            </AppStackItem>
 
-          <Stack spacing={2} flex={1} overflow="auto">
-            {categories.map((cat, index) => (
-              <Box key={index} display="flex" alignItems="center" gap={2}>
-                <TextField
-                  sx={{ flex: 2 }}
-                  value={cat.name}
-                  onChange={(e) => handleChange(index, 'name', e.target.value)}
-                />
+            <AppStackItem grow={1.5} minWidth={150}>
+              <AppSelect
+                size="full"
+                density="comfortable"
+                options={benchmarkOptions(benchmarks)}
+                value={cat.benchmark_id == null ? NO_BENCHMARK : String(cat.benchmark_id)}
+                onChange={(value) =>
+                  handleChange(index, 'benchmark_id', value === NO_BENCHMARK ? null : Number(value))
+                }
+              />
+            </AppStackItem>
 
-                <Select
-                  value={cat.benchmark_id ?? ''}
-                  onChange={(e) =>
-                    handleChange(
-                      index,
-                      'benchmark_id',
-                      !e.target.value ? null : Number(e.target.value)
-                    )
-                  }
-                  displayEmpty
-                  sx={{ flex: 1.5, minWidth: 150 }}
-                >
-                  <MenuItem value="">Sem Benchmark</MenuItem>
-                  {benchmarks.map((b) => (
-                    <MenuItem key={b.id} value={b.id}>
-                      {b.short_name}
-                    </MenuItem>
-                  ))}
-                </Select>
+            <AppStack direction="row" gap="sm" align="center">
+              <AppColorField
+                label={`Cor da categoria ${cat.name}`}
+                value={cat.color}
+                onChange={(value) => handleChange(index, 'color', value)}
+              />
+              <AppIconButton
+                label={`Excluir categoria ${cat.name}`}
+                onClick={() => setConfirmDelete(index)}
+              >
+                <DeleteIcon />
+              </AppIconButton>
+            </AppStack>
+          </AppStack>
+        ))}
 
-                <Box display="flex" alignItems="center" gap={1}>
-                  <input
-                    type="color"
-                    value={cat.color}
-                    onChange={(e) => handleChange(index, 'color', e.target.value)}
-                    style={{ width: 36, height: 36, border: 'none', cursor: 'pointer' }}
-                  />
-                  <IconButton onClick={() => setConfirmDelete(index)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              </Box>
-            ))}
-            <Box mt={2}>
-              <Button fullWidth variant="outlined" startIcon={<AddIcon />} onClick={handleAdd}>
-                Adicionar Categoria
-              </Button>
-            </Box>
-          </Stack>
+        <AppButton emphasis="outline" fullWidth icon={<AddIcon />} onClick={handleAdd}>
+          Adicionar Categoria
+        </AppButton>
+      </AppFormDrawer>
 
-          <Box mt={2}>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleSave}
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
-            >
-              Salvar Alterações
-            </Button>
-          </Box>
-        </Box>
-      </Drawer>
+      <AppConfirmDialog
+        open={confirmDelete !== null}
+        title="Confirmar Exclusão"
+        confirmLabel="Excluir"
+        onConfirm={() => handleDelete(confirmDelete!)}
+        onCancel={() => setConfirmDelete(null)}
+      >
+        Tem certeza que deseja excluir esta categoria? Essa ação não poderá ser desfeita.
+      </AppConfirmDialog>
 
-      <Dialog open={confirmDelete !== null} onClose={() => setConfirmDelete(null)}>
-        <DialogTitle>Confirmar Exclusão</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Tem certeza que deseja excluir esta categoria? Essa ação não poderá ser desfeita.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDelete(null)}>Cancelar</Button>
-          <Button color="error" onClick={() => handleDelete(confirmDelete!)} autoFocus>
-            Excluir
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar
+      <AppSnackbar
         open={snackbarOpen}
-        autoHideDuration={5000}
+        message={error ?? ''}
+        severity="error"
         onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity="error" onClose={() => setSnackbarOpen(false)}>
-          {error}
-        </Alert>
-      </Snackbar>
+      />
 
-      <Snackbar
+      <AppSnackbar
         open={successOpen}
-        autoHideDuration={4000}
+        message="Categorias salvas com sucesso!"
+        severity="success"
         onClose={() => setSuccessOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity="success" onClose={() => setSuccessOpen(false)}>
-          Categorias salvas com sucesso!
-        </Alert>
-      </Snackbar>
+      />
     </>
   )
 }

@@ -1,9 +1,14 @@
 // src/pages/PortfolioReturnsPage.tsx
 import PortfolioReturnsChart from '@/components/PortfolioReturnsChart'
-import AppCard from '@/components/ui/AppCard'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+  AppCard,
+  AppGrid,
+  AppGridItem,
+  AppStack,
+  LoadingSpinner,
+  PageTitle,
+} from '@/components/ui'
 import { useReturnsStore } from '@/stores/portfolio/returns'
-import { Box, Grid, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import PortfolioMonthlyHeatmap from './PortfolioMonthlyHeatmap'
 import PortfolioMonthlyReturnsChart from './PortfolioMonthlyReturnsChart'
@@ -38,12 +43,13 @@ export default function PortfolioReturnsPage() {
   }
 
   return (
-    <Box sx={{ p: 1, pt: 2 }}>
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>Rentabilidade Carteira</Typography>
-      <Grid container spacing={2}>
-        {/* Performance metrics row */}
-        {/* Linha 1 - Gráfico principal full width */}
-        <Grid size={12}>
+    <AppStack gap="md">
+      <PageTitle>Rentabilidade Carteira</PageTitle>
+
+      <AppGrid cols={{ xs: 1, md: 2 }} gap="md">
+        {/* O gráfico principal e o mapa mensal ocupam a linha inteira; os
+            dois menores dividem a última. */}
+        <AppGridItem span={{ xs: 1, md: 2 }}>
           <AppCard>
             <PortfolioReturnsChart
               size={520}
@@ -54,37 +60,26 @@ export default function PortfolioReturnsPage() {
               persistKey="portfolio-returns"
             />
           </AppCard>
-        </Grid>
+        </AppGridItem>
 
-        {/* Linha 2 - Heatmap full width */}
-        <Grid size={12}>
+        <AppGridItem span={{ xs: 1, md: 2 }}>
           <AppCard>
-            <PortfolioMonthlyHeatmap 
-              data={portfolioData} 
-            />
+            <PortfolioMonthlyHeatmap data={portfolioData} />
           </AppCard>
-        </Grid>
+        </AppGridItem>
 
-        {/* Linha 3 - 2 gráficos lado a lado */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        <AppGridItem>
           <AppCard>
-            <PortfolioMonthlyReturnsChart
-              height={300}
-              defaultRange={range}
-              data={portfolioData}
-            />
+            <PortfolioMonthlyReturnsChart height={300} defaultRange={range} data={portfolioData} />
           </AppCard>
-        </Grid>
+        </AppGridItem>
 
-        <Grid size={{ xs: 12, md: 6 }}>
+        <AppGridItem>
           <AppCard>
-            <PortfolioRolling12mChart
-              height={300}
-              data={portfolioData}
-            />
+            <PortfolioRolling12mChart height={300} data={portfolioData} />
           </AppCard>
-        </Grid>
-      </Grid>
-    </Box>
+        </AppGridItem>
+      </AppGrid>
+    </AppStack>
   )
 }

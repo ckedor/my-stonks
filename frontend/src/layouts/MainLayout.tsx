@@ -1,10 +1,10 @@
 import { syncAnalysis, syncDividends, syncPatrimony, syncPortfolioData, syncPortfolios, syncPositions, syncReturns } from '@/actions/portfolio'
 import GlobalTradeForm from '@/components/GlobalTradeForm'
+import { AppPageShell } from '@/components/ui'
 import { useAuthStore } from '@/stores/auth'
 import { useCurrencyStore } from '@/stores/currency'
 import { usePortfolioStore } from '@/stores/portfolio'
 
-import { Box } from '@mui/material'
 import { useEffect, useRef } from 'react'
 import { Outlet } from 'react-router-dom'
 import MainTopbar from './MainTopbar'
@@ -56,12 +56,14 @@ export default function MainLayout() {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <MainTopbar />
-      <Box px={4} py={2} sx={{ flexGrow: 1, maxWidth: 1600, width: '100%', mx: 'auto' }}>
+    <>
+      <AppPageShell topbar={<MainTopbar />}>
         <Outlet />
-      </Box>
+      </AppPageShell>
+
+      {/* Fora da moldura porque é um diálogo: renderiza em portal e não
+          ocupa lugar no fluxo. */}
       <GlobalTradeForm />
-    </Box>
+    </>
   )
 }

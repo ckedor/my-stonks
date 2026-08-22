@@ -27,16 +27,15 @@ import { usePositionsStore } from '@/stores/portfolio/positions'
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useTradesStore } from '@/stores/portfolio/trades'
 import {
-    Autocomplete,
-    Box,
-    Chip,
-    CircularProgress,
-    Divider,
-    Stack,
-    TextField,
-    Typography,
-    useTheme,
-} from '@mui/material'
+    AppChartArea,
+    AppDivider,
+    AppFloatingCard,
+    AppMultiAutocomplete,
+    AppStack,
+    AppStackItem,
+    AppText,
+    useAppTheme,
+} from '@/components/ui'
 import {
     createChart,
     createSeriesMarkers,
@@ -88,14 +87,10 @@ function SignedPercent({ value, positive }: { value: number; positive?: boolean 
   const isPositive = positive ?? value >= 0
 
   return (
-    <Typography
-      component="span"
-      variant="body2"
-      sx={{ fontWeight: 600, color: isPositive ? 'success.main' : 'error.main' }}
-    >
+    <AppText variant="bodySmall" weight="strong" tone={isPositive ? 'success' : 'danger'} inline>
       {positive === undefined && value >= 0 ? '+' : ''}
       {value.toFixed(2).replace('.', ',')}%
-    </Typography>
+    </AppText>
   )
 }
 
@@ -120,7 +115,7 @@ export default function PortfolioReturnsChart({
 
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
-  const theme = useTheme()
+  const theme = useAppTheme()
 
   const restored = useRef(readChartState(persistKey)).current
   const [range, setRange] = useState<DateRangeKey>(
@@ -413,154 +408,87 @@ export default function PortfolioReturnsChart({
   ])
 
   return (
-    <Box>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={2}
-        justifyContent="space-between"
-        alignItems={{ xs: 'stretch', md: 'center' }}
-        sx={{ mb: 1.5 }}
-      >
-        {/* Um seletor só, com busca e agrupamento, no lugar de três menus de
-            caixinhas: com trinta ativos na carteira, procurar um deles em uma
-            lista sem busca é o gargalo — e as três listas separadas escondiam
-            que tudo ali vira uma curva no mesmo gráfico. */}
-        <Autocomplete
-          multiple
-          size="small"
-          disableCloseOnSelect
-          options={options}
-          groupBy={(option) => option.group}
-          getOptionLabel={(option) => option.label}
-          isOptionEqualToValue={(option, value) => option.id === value.id}
-          value={selected}
-          onChange={(_, next) => {
-            setSelectedIds(next.map((option) => option.id))
-            const added = next.find((option) => !selectedIds.includes(option.id))
-            if (added) onCurveChange?.({ kind: added.kind, key: added.key })
-          }}
-          renderTags={(value, getTagProps) =>
-            value.map((option, index) => {
-              const { key, ...tagProps } = getTagProps({ index })
-              return (
-                <Chip
-                  key={key}
-                  {...tagProps}
-                  size="small"
-                  label={option.label}
-                  sx={{
-                    fontWeight: 600,
-                    // A cor da curva no próprio marcador: é o que dispensa uma
-                    // legenda separada embaixo do gráfico.
-                    borderLeft: '3px solid',
-                    borderLeftColor: colorOf(option, index),
-                    borderRadius: 1,
-                  }}
-                />
-              )
-            })
-          }
-          renderInput={(params) => (
-            <TextField {...params} placeholder={selected.length ? '' : 'Adicionar série'} />
+    <AppChartArea
+      plotRef={containerRef}
+      loading={loading}
+      height={loading ? size : undefined}
+      overlay={
+        hoveredFlow && (
+          <FlowTooltip
+            hovered={hoveredFlow}
+            formatCurrency={formatCurrency}
+            containerWidth={containerRef.current?.clientWidth ?? 0}
+          />
+        )
+      }
+      toolbar={
+        <AppStack direction="row" gap="md" justify="between" align="center" collapseBelow="md">
+          {/* Um seletor só, com busca e agrupamento, no lugar de três menus de
+              caixinhas: com trinta ativos na carteira, procurar um deles em uma
+              lista sem busca é o gargalo — e as três listas separadas escondiam
+              que tudo ali vira uma curva no mesmo gráfico. */}
+          <AppMultiAutocomplete
+            options={options}
+            value={selected}
+            placeholder="Adicionar série"
+            tintOf={(option, index) => colorOf(option, index)}
+            onChange={(next) => {
+              setSelectedIds(next.map((option) => option.id))
+              const added = next.find((option) => !selectedIds.includes(option.id))
+              if (added) onCurveChange?.({ kind: added.kind, key: added.key })
+            }}
+          />
+
+          {/* Sem operação para marcar — um benchmark sozinho, uma categoria sem
+              posição — o controle não teria o que ligar. */}
+          {weekFlows.length > 0 && (
+            <AppStack direction="row" gap="sm" align="center">
+              <AppDivider orientation="vertical" />
+              <ToolbarSwitch label="Trades" checked={showTrades} onChange={setShowTrades} />
+            </AppStack>
           )}
-          // Os três grupos lado a lado, e não empilhados: são listas curtas de
-          // naturezas diferentes, e em coluna única a de ativos empurra as
-          // outras duas para fora da tela.
-          renderGroup={(params) => (
-            <Box
-              component="li"
-              key={params.key}
-              sx={{ flex: '1 1 0', minWidth: 150, px: 0.5, '&:not(:last-of-type)': { borderRight: '1px solid', borderRightColor: 'divider' } }}
-            >
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{
-                  display: 'block',
-                  px: 1.5,
-                  py: 0.75,
-                  fontWeight: 700,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {params.group}
-              </Typography>
-              <Box component="ul" sx={{ p: 0, m: 0, maxHeight: 280, overflowY: 'auto' }}>
-                {params.children}
-              </Box>
-            </Box>
+
+          {/* A leitura da janela, no mesmo lugar e no mesmo registro do gráfico
+              do ativo em carteira: o que o período rendeu, a que ritmo ao ano, e
+              quanto disso passou do benchmark. */}
+          {/* Ocupa o espaço livre da barra: é o que mantém o seletor de
+              período colado à direita e a leitura logo depois dos controles,
+              em vez de os três se espalharem pela linha. */}
+          {reading && (
+            <AppStackItem grow={1}>
+              <AppText variant="bodySmall" tone="secondary">
+              Período ({formatSpan(reading.performance.days)}){' '}
+              <SignedPercent value={reading.performance.totalReturn * 100} />
+              {reading.performance.cagr != null && (
+                <>
+                  {' · CAGR '}
+                  <SignedPercent value={reading.performance.cagr * 100} />
+                </>
+              )}
+                {reading.excess.map((entry) => (
+                  <AppText key={entry.name} variant="bodySmall" tone="secondary" inline>
+                    {' · '}
+                    <SignedPercent value={Math.abs(entry.value)} positive={entry.value >= 0} />
+                    {entry.value >= 0 ? ' acima do ' : ' abaixo do '}
+                    {entry.name}
+                  </AppText>
+                ))}
+              </AppText>
+            </AppStackItem>
           )}
-          slotProps={{
-            listbox: { sx: { display: 'flex', alignItems: 'flex-start', maxHeight: 340, py: 0.5 } },
-            // O menu é mais largo que o campo: são três colunas, e o campo ficou
-            // estreito de propósito.
-            popper: { style: { width: 'auto', minWidth: 480 }, placement: 'bottom-start' },
-          }}
-          sx={{ width: { xs: '100%', md: 380 } }}
-        />
 
-        {/* Sem operação para marcar — um benchmark sozinho, uma categoria sem
-            posição — o controle não teria o que ligar. */}
-        {weekFlows.length > 0 && (
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
-            <ToolbarSwitch label="Trades" checked={showTrades} onChange={setShowTrades} />
-          </Stack>
-        )}
-
-        {/* A leitura da janela, no mesmo lugar e no mesmo registro do gráfico
-            do ativo em carteira: o que o período rendeu, a que ritmo ao ano, e
-            quanto disso passou do benchmark. */}
-        {reading && (
-          <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
-            Período ({formatSpan(reading.performance.days)}){' '}
-            <SignedPercent value={reading.performance.totalReturn * 100} />
-            {reading.performance.cagr != null && (
-              <>
-                {' · CAGR '}
-                <SignedPercent value={reading.performance.cagr * 100} />
-              </>
-            )}
-            {reading.excess.map((entry) => (
-              <Box component="span" key={entry.name}>
-                {' · '}
-                <SignedPercent value={Math.abs(entry.value)} positive={entry.value >= 0} />
-                {entry.value >= 0 ? ' acima do ' : ' abaixo do '}
-                {entry.name}
-              </Box>
-            ))}
-          </Typography>
-        )}
-
-        <DateRangeMenu
-          show
-          range={range}
-          options={rangeOptions}
-          onChange={(next) => {
-            setRange(next)
-            onRangeChange?.(next)
-          }}
-        />
-      </Stack>
-
-      {loading ? (
-        <Box height={size} display="flex" justifyContent="center" alignItems="center">
-          <CircularProgress size={48} thickness={4} />
-        </Box>
-      ) : (
-        <Box sx={{ position: 'relative' }}>
-          <Box ref={containerRef} sx={{ width: '100%' }} />
-          {hoveredFlow && (
-            <FlowTooltip
-              hovered={hoveredFlow}
-              formatCurrency={formatCurrency}
-              containerWidth={containerRef.current?.clientWidth ?? 0}
-            />
-          )}
-        </Box>
-      )}
-    </Box>
+          <DateRangeMenu
+            show
+            range={range}
+            options={rangeOptions}
+            onChange={(next) => {
+              setRange(next)
+              onRangeChange?.(next)
+            }}
+          />
+        </AppStack>
+      }
+    />
   )
 }
 
@@ -590,39 +518,21 @@ function FlowTooltip({
   const left = x + width + 16 > containerWidth ? x - width - 12 : x + 12
 
   return (
-    <Box
-      sx={{
-        position: 'absolute',
-        left,
-        top: Math.max(y - 8, 0),
-        width,
-        pointerEvents: 'none',
-        zIndex: 3,
-        p: 1,
-        borderRadius: 1,
-        border: '1px solid',
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
-        boxShadow: 3,
-      }}
-    >
-      <Typography variant="caption" color="text.secondary" display="block">
+    <AppFloatingCard left={left} top={Math.max(y - 8, 0)} width={width}>
+      <AppText variant="caption" tone="secondary">
         {formatWeek(flow.from)}
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{ fontWeight: 700, color: isBuy ? 'success.main' : 'error.main' }}
-      >
+      </AppText>
+      <AppText variant="bodySmall" weight="strong" tone={isBuy ? 'success' : 'danger'}>
         {isBuy ? 'Compras' : 'Vendas'} de {formatCurrency(Math.abs(flow.net))}
-      </Typography>
+      </AppText>
       {bothSides && (
-        <Typography variant="body2" color="text.secondary">
+        <AppText variant="bodySmall" tone="secondary">
           {formatCurrency(flow.bought)} comprados · {formatCurrency(flow.sold)} vendidos
-        </Typography>
+        </AppText>
       )}
-      <Typography variant="caption" color="text.secondary">
+      <AppText variant="caption" tone="secondary">
         {flow.count} {flow.count === 1 ? 'operação' : 'operações'}
-      </Typography>
-    </Box>
+      </AppText>
+    </AppFloatingCard>
   )
 }

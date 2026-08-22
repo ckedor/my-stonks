@@ -14,16 +14,15 @@ import { ReturnsEntry } from '@/types'
 import { baseChartOptions } from './chart'
 import dayjs from 'dayjs'
 import {
-    Box,
-    Divider,
-    MenuItem,
-    Select,
-    Stack,
-    ToggleButton,
-    ToggleButtonGroup,
-    Typography,
-    useTheme,
-} from '@mui/material'
+    AppChartArea,
+    AppDivider,
+    AppFloatingCard,
+    AppSelect,
+    AppStack,
+    AppText,
+    AppToggleGroup,
+    useAppTheme,
+} from '@/components/ui'
 import {
     createChart,
     createSeriesMarkers,
@@ -113,7 +112,7 @@ export default function PortfolioAssetChart({
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
-  const theme = useTheme()
+  const theme = useAppTheme()
 
   const restored = useRef(readChartState(persistKey)).current
 
@@ -487,150 +486,114 @@ export default function PortfolioAssetChart({
   ])
 
   return (
-    <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        flexWrap="wrap"
-        rowGap={1}
-        sx={{ mb: 1.5 }}
-      >
-        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" rowGap={1}>
-          <ToggleButtonGroup
-            size="small"
-            exclusive
-            value={mode}
-            onChange={(_, next: AssetChartMode | null) => next && setMode(next)}
-          >
-            {modes.map((option) => (
-              <ToggleButton key={option.value} value={option.value} sx={{ px: 1, py: 0.25 }}>
-                <Typography variant="body2" sx={{ lineHeight: 1.4, fontSize: 12 }}>
-                  {option.label}
-                </Typography>
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
-
-          <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
-
-          <ToolbarSwitch label="Trades" checked={showTrades} onChange={setShowTrades} />
-          {mode === 'preco' && (
-            <>
-              <ToolbarSwitch label="Quantidade" checked={showQuantity} onChange={setShowQuantity} />
-              <ToolbarSwitch
-                label="Preço médio"
-                checked={showAveragePrice}
-                onChange={setShowAveragePrice}
-              />
-            </>
-          )}
-          {/* Lido como frase — "vs CDI" — em vez de como campo de formulário: a
-              caixa e o sublinhado de um Select pesavam mais que o gráfico. */}
-          {mode === 'rentabilidade' && benchmarkNames.length > 0 && (
-            <Stack direction="row" spacing={0.75} alignItems="center">
-              <Typography variant="body2" color="text.secondary">
-                vs
-              </Typography>
-              <Select
-                value={activeBenchmark ?? ''}
-                onChange={(e) => setBenchmark(e.target.value)}
-                variant="standard"
-                disableUnderline
-                sx={{
-                  '& .MuiSelect-select': {
-                    py: 0,
-                    pl: 0,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    minHeight: 0,
-                  },
-                  '& .MuiSelect-icon': { right: 0, fontSize: 18, color: 'text.secondary' },
-                }}
-              >
-                {benchmarkNames.map((name) => (
-                  <MenuItem key={name} value={name}>
-                    <Typography variant="body2">{name}</Typography>
-                  </MenuItem>
-                ))}
-              </Select>
-            </Stack>
-          )}
-
-          {/* A leitura do que está desenhado, no mesmo lugar nos dois modos.
-              O retorno do período abre a frase em ambos — no modo Preço é o da
-              cotação, no de Rentabilidade é o da posição — e o resto muda com o
-              que cada modo tem a acrescentar. */}
-          {mode === 'anualizado' && (
-            <Typography variant="body2" color="text.secondary">
-              Janela móvel de {ROLLING_WINDOW_MONTHS} meses
-              {visibleRolling.length > 0 && (
-                <>
-                  {' · hoje '}
-                  <SignedPercent value={visibleRolling.at(-1)!.value / 100} />
-                </>
-              )}
-            </Typography>
-          )}
-
-          {performance && (
-            <Typography variant="body2" color="text.secondary">
-              Período ({formatSpan(performance.days)}){' '}
-              <SignedPercent value={performance.totalReturn} />
-              {performance.cagr != null && (
-                <>
-                  {' · CAGR '}
-                  <SignedPercent value={performance.cagr} />
-                </>
-              )}
-            </Typography>
-          )}
-
-          {returnSeries?.start && (
-            <Typography variant="body2" color="text.secondary">
-              {returnSeries.totalReturn != null && (
-                <>
-                  Período ({formatSpan(returnSeries.days)}){' '}
-                  <SignedPercent value={returnSeries.totalReturn} />
-                  {' · '}
-                </>
-              )}
-              {returnSeries.excess != null && activeBenchmark && (
-                <>
-                  <Typography
-                    component="span"
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      color: returnSeries.excess >= 0 ? 'success.main' : 'error.main',
-                    }}
-                  >
-                    {Math.abs(returnSeries.excess).toFixed(2).replace('.', ',')}%
-                  </Typography>
-                  {returnSeries.excess >= 0 ? ' acima do ' : ' abaixo do '}
-                  {activeBenchmark}
-                  {' · '}
-                </>
-              )}
-              desde {formatMonth(returnSeries.start)}
-            </Typography>
-          )}
-        </Stack>
-
-        <DateRangeMenu show range={range} options={rangeOptions} onChange={setRange} />
-      </Stack>
-
-      <Box sx={{ position: 'relative' }}>
-        <Box ref={containerRef} sx={{ width: '100%' }} />
-        {hoveredTrade && (
+    <AppChartArea
+      plotRef={containerRef}
+      overlay={
+        hoveredTrade && (
           <TradeTooltip
             hovered={hoveredTrade}
             priceFormatter={priceFormatter}
             containerWidth={containerRef.current?.clientWidth ?? 0}
           />
-        )}
-      </Box>
-    </Box>
+        )
+      }
+      toolbar={
+        <AppStack direction="row" justify="between" align="center" gap="sm" wrap>
+          <AppStack direction="row" gap="md" align="center" wrap>
+            <AppToggleGroup label="O que o gráfico mostra" options={modes} value={mode} onChange={setMode} />
+
+            <AppDivider orientation="vertical" />
+
+            <ToolbarSwitch label="Trades" checked={showTrades} onChange={setShowTrades} />
+            {mode === 'preco' && (
+              <>
+                <ToolbarSwitch label="Quantidade" checked={showQuantity} onChange={setShowQuantity} />
+                <ToolbarSwitch
+                  label="Preço médio"
+                  checked={showAveragePrice}
+                  onChange={setShowAveragePrice}
+                />
+              </>
+            )}
+            {/* Lido como frase — "vs CDI" — em vez de como campo de formulário: a
+                caixa e o sublinhado de um Select pesavam mais que o gráfico. */}
+            {mode === 'rentabilidade' && benchmarkNames.length > 0 && (
+              <AppStack direction="row" gap="xs" align="center">
+                <AppText variant="bodySmall" tone="secondary">
+                  vs
+                </AppText>
+                <AppSelect
+                  size="auto"
+                  variant="inline"
+                  options={benchmarkNames.map((name) => ({ value: name, label: name }))}
+                  value={activeBenchmark ?? ''}
+                  onChange={setBenchmark}
+                />
+              </AppStack>
+            )}
+
+            {/* A leitura do que está desenhado, no mesmo lugar nos dois modos.
+                O retorno do período abre a frase em ambos — no modo Preço é o da
+                cotação, no de Rentabilidade é o da posição — e o resto muda com o
+                que cada modo tem a acrescentar. */}
+            {mode === 'anualizado' && (
+              <AppText variant="bodySmall" tone="secondary">
+                Janela móvel de {ROLLING_WINDOW_MONTHS} meses
+                {visibleRolling.length > 0 && (
+                  <>
+                    {' · hoje '}
+                    <SignedPercent value={visibleRolling.at(-1)!.value / 100} />
+                  </>
+                )}
+              </AppText>
+            )}
+
+            {performance && (
+              <AppText variant="bodySmall" tone="secondary">
+                Período ({formatSpan(performance.days)}){' '}
+                <SignedPercent value={performance.totalReturn} />
+                {performance.cagr != null && (
+                  <>
+                    {' · CAGR '}
+                    <SignedPercent value={performance.cagr} />
+                  </>
+                )}
+              </AppText>
+            )}
+
+            {returnSeries?.start && (
+              <AppText variant="bodySmall" tone="secondary">
+                {returnSeries.totalReturn != null && (
+                  <>
+                    Período ({formatSpan(returnSeries.days)}){' '}
+                    <SignedPercent value={returnSeries.totalReturn} />
+                    {' · '}
+                  </>
+                )}
+                {returnSeries.excess != null && activeBenchmark && (
+                  <>
+                    <AppText
+                      variant="bodySmall"
+                      weight="strong"
+                      tone={returnSeries.excess >= 0 ? 'success' : 'danger'}
+                      inline
+                    >
+                      {Math.abs(returnSeries.excess).toFixed(2).replace('.', ',')}%
+                    </AppText>
+                    {returnSeries.excess >= 0 ? ' acima do ' : ' abaixo do '}
+                    {activeBenchmark}
+                    {' · '}
+                  </>
+                )}
+                desde {formatMonth(returnSeries.start)}
+              </AppText>
+            )}
+          </AppStack>
+
+          <DateRangeMenu show range={range} options={rangeOptions} onChange={setRange} />
+        </AppStack>
+      }
+    />
   )
 }
 
@@ -654,33 +617,18 @@ function TradeTooltip({
   const left = x + width + 16 > containerWidth ? x - width - 12 : x + 12
 
   return (
-    <Box
-      sx={{
-        position: 'absolute',
-        left,
-        top: Math.max(y - 8, 0),
-        width,
-        pointerEvents: 'none',
-        zIndex: 3,
-        p: 1,
-        borderRadius: 1,
-        border: '1px solid',
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
-        boxShadow: 3,
-      }}
-    >
-      <Typography variant="caption" color="text.secondary" display="block">
+    <AppFloatingCard left={left} top={Math.max(y - 8, 0)} width={width}>
+      <AppText variant="caption" tone="secondary">
         {formatDate(trade.time)}
-      </Typography>
-      <Typography variant="body2" sx={{ fontWeight: 700, color: isBuy ? 'success.main' : 'error.main' }}>
+      </AppText>
+      <AppText variant="bodySmall" weight="strong" tone={isBuy ? 'success' : 'danger'}>
         {isBuy ? 'Compra' : 'Venda'} de {priceFormatter(trade.value)}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
+      </AppText>
+      <AppText variant="bodySmall" tone="secondary">
         {Math.abs(trade.quantity).toLocaleString('pt-BR', { maximumFractionDigits: 8 })} a{' '}
         {priceFormatter(trade.price)}
-      </Typography>
-    </Box>
+      </AppText>
+    </AppFloatingCard>
   )
 }
 
@@ -689,13 +637,14 @@ function SignedPercent({ value }: { value: number }) {
   const percent = value * 100
 
   return (
-    <Typography
-      component="span"
-      variant="body2"
-      sx={{ fontWeight: 600, color: percent >= 0 ? 'success.main' : 'error.main' }}
+    <AppText
+      variant="bodySmall"
+      weight="strong"
+      tone={percent >= 0 ? 'success' : 'danger'}
+      inline
     >
       {percent >= 0 ? '+' : ''}
       {percent.toFixed(2).replace('.', ',')}%
-    </Typography>
+    </AppText>
   )
 }

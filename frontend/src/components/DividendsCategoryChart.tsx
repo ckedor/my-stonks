@@ -1,6 +1,6 @@
 import { useCurrency } from '@/hooks/useCurrency'
 import { Dividend } from '@/types'
-import { Box, Divider, Paper, Typography, useTheme } from '@mui/material'
+import { AppCard, AppChartArea, AppDivider, AppStack, AppText, useAppTheme } from '@/components/ui'
 import dayjs from 'dayjs'
 import {
     Bar,
@@ -21,7 +21,7 @@ interface Props {
 }
 
 export default function DividendsCategoryChart({ dividends, categoryColors, year, size = 370 }: Props) {
-  const theme = useTheme()
+  const theme = useAppTheme()
   const { symbol, locale } = useCurrency()
 
   const currentYear = year
@@ -42,19 +42,7 @@ export default function DividendsCategoryChart({ dividends, categoryColors, year
   })
 
   if (!dividends.length) {
-    return (
-      <Box
-        position="relative"
-        height={size}
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <Typography variant="subtitle1" color="text.secondary">
-          Nenhum provento encontrado
-        </Typography>
-      </Box>
-    )
+    return <AppChartArea height={size} emptyMessage="Nenhum provento encontrado" />
   }
 
   const monthTotals = data.map((r) =>
@@ -67,36 +55,33 @@ export default function DividendsCategoryChart({ dividends, categoryColors, year
     if (!active || !payload?.length) return null
     const total = payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0)
     return (
-      <Paper sx={{ p: 1.5, boxShadow: 3 }}>
-        <Typography variant="body2" fontWeight="bold" mb={0.5}>
-          {label} / {currentYear}
-        </Typography>
-        {payload.map((p: any, i: number) => (
-          <Typography key={i} variant="body2" sx={{ color: p.fill }}>
-            {p.name}: {symbol} {p.value.toLocaleString(locale, { maximumFractionDigits: 2 })}
-          </Typography>
-        ))}
-        {payload.length > 1 && (
-          <>
-            <Divider sx={{ my: 0.5 }} />
-            <Typography variant="body2" fontWeight="bold">
-              Total: {symbol} {total.toLocaleString(locale, { maximumFractionDigits: 2 })}
-            </Typography>
-          </>
-        )}
-      </Paper>
+      <AppCard raised padding="sm">
+        <AppStack gap="xs">
+          <AppText variant="bodySmall" weight="strong">
+            {label} / {currentYear}
+          </AppText>
+          {/* A cor de cada linha é a da barra que ela explica: sem isso, com
+              três categorias empilhadas, não dá para saber qual é qual. */}
+          {payload.map((p: any, i: number) => (
+            <AppText key={i} variant="bodySmall" tint={p.fill}>
+              {p.name}: {symbol} {p.value.toLocaleString(locale, { maximumFractionDigits: 2 })}
+            </AppText>
+          ))}
+          {payload.length > 1 && (
+            <>
+              <AppDivider />
+              <AppText variant="bodySmall" weight="strong">
+                Total: {symbol} {total.toLocaleString(locale, { maximumFractionDigits: 2 })}
+              </AppText>
+            </>
+          )}
+        </AppStack>
+      </AppCard>
     )
   }
 
   return (
-    <Box position="relative" height={size}>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ position: 'absolute', top: -2, left: 56 }}
-      >
-        {currentYear}
-      </Typography>
+    <AppChartArea height={size} note={String(currentYear)}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ left: 48 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.chart.grid} />
@@ -121,6 +106,6 @@ export default function DividendsCategoryChart({ dividends, categoryColors, year
           ))}
         </BarChart>
       </ResponsiveContainer>
-    </Box>
+    </AppChartArea>
   )
 }

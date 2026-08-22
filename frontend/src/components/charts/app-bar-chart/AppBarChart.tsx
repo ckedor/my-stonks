@@ -1,7 +1,13 @@
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+    AppChartArea,
+    AppSelect,
+    AppStack,
+    LoadingSpinner,
+    SectionTitle,
+    useAppTheme,
+} from '@/components/ui'
 import { DateRangeKey, getOldestDateISO } from '@/lib/utils/date'
 import { createNumberFormatter } from '@/lib/utils/number'
-import { Box, MenuItem, Select, Stack, Typography, useTheme } from '@mui/material'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -118,7 +124,7 @@ export function AppBarChart({
   valueFormatter,
   tooltipLabelFormatter,
 }: Props) {
-  const theme = useTheme()
+  const theme = useAppTheme()
 
   const positiveColor = theme.palette.success.main
   const negativeColor = theme.palette.error.main
@@ -237,110 +243,90 @@ export function AppBarChart({
   if (loading) return <LoadingSpinner />
 
   if (!chartData.length) {
-    return (
-      <Box height={height} display="flex" alignItems="center" justifyContent="center">
-        <Typography variant="body2" color="text.secondary" sx={{ fontSize }}>
-          {emptyMessage}
-        </Typography>
-      </Box>
-    )
+    return <AppChartArea height={height} emptyMessage={emptyMessage} />
   }
 
+  const toolbar = (title || showRangePicker || showGroupBySelector) && (
+    <AppStack direction="row" justify="between" align="center" gap="md">
+      {title ? <SectionTitle>{title}</SectionTitle> : <span />}
+
+      <AppStack direction="row" gap="md" align="center">
+        {showGroupBySelector && (
+          <AppSelect
+            size="auto"
+            options={[
+              { value: 'day', label: 'Diário' },
+              { value: 'week', label: 'Semanal' },
+              { value: 'month', label: 'Mensal' },
+              { value: 'year', label: 'Anual' },
+            ]}
+            value={currentGroupBy}
+            onChange={(value) => setCurrentGroupBy(value as GroupBy)}
+          />
+        )}
+
+        <DateRangeMenu
+          show={showRangePicker}
+          range={range}
+          options={effectiveRangeOptions}
+          onChange={setRange}
+        />
+      </AppStack>
+    </AppStack>
+  )
+
   return (
-    <Box
-      sx={{
-        mt: fitContainer ? 0 : title || showRangePicker ? 2 : 0,
-        ml: 1.8,
-        mr: 1.8,
-        ...(fitContainer && {
-          height,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-        }),
-      }}
+    <AppChartArea
+      height={height}
+      sizing={fitContainer ? 'frame' : 'chart'}
+      toolbar={toolbar || undefined}
     >
-      {(title || showRangePicker || showGroupBySelector) && (
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{ mb: 1, ml: 1, mr: 1 }}
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          key={`${range}:${currentGroupBy}:${steppedDomain.join(':')}`}
+          data={chartData}
+          margin={{ left: 10 }}
         >
-          {title ? <Typography variant="h6">{title}</Typography> : <Box />}
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
 
-          <Stack direction="row" spacing={2} alignItems="center">
-            {showGroupBySelector && (
-              <Select
-                size="small"
-                value={currentGroupBy}
-                onChange={(e) => setCurrentGroupBy(e.target.value as GroupBy)}
-              >
-                <MenuItem value="day">Diário</MenuItem>
-                <MenuItem value="week">Semanal</MenuItem>
-                <MenuItem value="month">Mensal</MenuItem>
-                <MenuItem value="year">Anual</MenuItem>
-              </Select>
-            )}
+          <XAxis
+            dataKey="date"
+            stroke={labelColor}
+            tick={{ fill: labelColor, fontSize }}
+            tickFormatter={(v) => formatXAxisTick(String(v), currentGroupBy)}
+          />
 
-            <DateRangeMenu
-              show={showRangePicker}
-              range={range}
-              options={effectiveRangeOptions}
-              onChange={setRange}
-            />
-          </Stack>
-        </Stack>
-      )}
+          <YAxis
+            orientation={labelSide === 'right' ? 'right' : 'left'}
+            domain={steppedDomain}
+            ticks={yTicks}
+            stroke={labelColor}
+            tick={{ fill: labelColor, fontSize }}
+            tickFormatter={(v) => formatAxisValue(Number(v))}
+          />
 
-      <Box sx={fitContainer ? { flex: 1, minHeight: 0 } : { height }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            key={`${range}:${currentGroupBy}:${steppedDomain.join(':')}`}
-            data={chartData}
-            margin={{ left: 10 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+          <Tooltip
+            formatter={(v) => formatTooltipValue(v)}
+            contentStyle={{ fontSize }}
+            labelFormatter={tooltipLabel}
+            labelStyle={{ fontSize }}
+          />
 
-            <XAxis
-              dataKey="date"
-              stroke={labelColor}
-              tick={{ fill: labelColor, fontSize }}
-              tickFormatter={(v) => formatXAxisTick(String(v), currentGroupBy)}
-            />
+          <Bar dataKey="y" name="Valor">
+            {chartData.map((entry, index) => {
+              const fill =
+                colorMode === 'single'
+                  ? singleColor
+                  : entry.y >= 0
+                  ? positiveColor
+                  : negativeColor
 
-            <YAxis
-              orientation={labelSide === 'right' ? 'right' : 'left'}
-              domain={steppedDomain}
-              ticks={yTicks}
-              stroke={labelColor}
-              tick={{ fill: labelColor, fontSize }}
-              tickFormatter={(v) => formatAxisValue(Number(v))}
-            />
-
-            <Tooltip
-              formatter={(v) => formatTooltipValue(v)}
-              labelFormatter={tooltipLabel}
-              contentStyle={{ fontSize }}
-              labelStyle={{ fontSize }}
-            />
-
-            <Bar dataKey="y" name="Valor">
-              {chartData.map((entry, index) => {
-                const fill =
-                  colorMode === 'single'
-                    ? singleColor
-                    : entry.y >= 0
-                    ? positiveColor
-                    : negativeColor
-
-                return <Cell key={`cell-${index}`} fill={fill} />
-              })}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </Box>
-    </Box>
+              return <Cell key={`cell-${index}`} fill={fill} />
+            })}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </AppChartArea>
   )
 }
 

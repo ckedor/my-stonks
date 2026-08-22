@@ -1,5 +1,5 @@
 // src/components/PortfolioRolling12mChart.tsx
-import { Box, Typography, useTheme } from '@mui/material'
+import { AppChartArea, SectionTitle, useAppTheme } from '@/components/ui'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 import {
@@ -32,7 +32,7 @@ export default function PortfolioRolling12mChart({
   height = 260,
   data,
 }: Props) {
-  const theme = useTheme()
+  const theme = useAppTheme()
 
   const lineColor = theme.palette.primary.main
   const gridColor = theme.palette.chart?.grid ?? theme.palette.divider
@@ -142,21 +142,16 @@ export default function PortfolioRolling12mChart({
 
   if (!displayData.length || numericValues.length === 0) {
     return (
-      <Box height={height} display="flex" alignItems="center" justifyContent="center">
-        <Typography variant="body2" color="text.secondary">
-          São necessários pelo menos 12 meses de dados para exibir o retorno de 12 meses.
-        </Typography>
-      </Box>
+      <AppChartArea
+        height={height}
+        emptyMessage="São necessários pelo menos 12 meses de dados para exibir o retorno de 12 meses."
+      />
     )
   }
 
   return (
-    <Box sx={{ mt: 4, ml: 1.8, mr: 1.8 }}>
-      <Typography variant="h6" sx={{ mb: 1, ml: 1 }}>
-        Retorno 12 meses
-      </Typography>
-      <Box height={height}>
-        <ResponsiveContainer width="100%" height="100%">
+    <AppChartArea height={height} toolbar={<SectionTitle>Retorno 12 meses</SectionTitle>}>
+      <ResponsiveContainer width="100%" height="100%">
           <LineChart data={displayData} margin={{ left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
             <XAxis
@@ -204,8 +199,7 @@ export default function PortfolioRolling12mChart({
               name="Retorno 12 meses"
             />
           </LineChart>
-        </ResponsiveContainer>
-      </Box>
-    </Box>
+      </ResponsiveContainer>
+    </AppChartArea>
   )
 }

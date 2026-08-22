@@ -4,25 +4,14 @@ import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { Asset } from '@/types'
-import { Delete } from '@mui/icons-material'
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    Drawer,
-    IconButton,
-    Snackbar,
-    Stack,
-    TextField,
-    Typography,
-} from '@mui/material'
-import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+    AppConfirmDialog,
+    AppDateField,
+    AppFormDrawer,
+    AppNumberField,
+    AppSnackbar,
+    AppTextField,
+} from '@/components/ui'
 import dayjs, { Dayjs } from 'dayjs'
 import { useEffect, useState } from 'react'
 import AssetSelector from './AssetSelector'
@@ -133,98 +122,64 @@ export default function DividendForm({ open, onClose, onSave, initialAsset, divi
 
   return (
     <>
-      <Drawer anchor="right" open={open} onClose={onClose}>
-        <Box
-          p={3}
-          width={400}
-          display="flex"
-          flexDirection="column"
-          height="100%"
-          position="relative"
-        >
-          <Stack spacing={3} p={1} flex={1} overflow="auto">
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-              <Typography variant="h6">{isEdit ? 'Editar Provento' : 'Novo Provento'}</Typography>
-              {isEdit && (
-                <IconButton onClick={() => setConfirmOpen(true)}>
-                  <Delete />
-                </IconButton>
-              )}
-            </Box>
-
-            {isEdit ? (
-              <TextField
-                label="Ativo"
-                value={dividend?.ticker ?? ''}
-                InputProps={{ readOnly: true }}
-                fullWidth
-              />
-            ) : (
-              <AssetSelector
-                value={selectedAsset?.id ?? null}
-                onChange={(asset) => {
-                  setSelectedAsset(asset)
-                  setTouched(true)
-                }}
-                initialAsset={initialAsset ? { id: initialAsset.id, ticker: initialAsset.ticker, name: initialAsset.name, asset_type_id: initialAsset.asset_type_id } : undefined}
-              />
-            )}
-
-            <DatePicker label="Data" value={date} onChange={setDate} />
-
-            <TextField
-              label={`Valor do Provento (${symbol})`}
-              type="number"
-              value={amount}
-              onChange={(e) => {
-                setAmount(parseFloat(e.target.value))
-                setTouched(true)
-              }}
-              error={touched && amount <= 0}
-              helperText={touched && amount <= 0 ? 'Valor deve ser maior que zero' : ''}
-              fullWidth
-            />
-          </Stack>
-
-          <Box mt={2}>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleSubmit}
-              disabled={loading || !isValid}
-              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
-            >
-              {isEdit ? 'Atualizar' : 'Cadastrar'}
-            </Button>
-          </Box>
-        </Box>
-      </Drawer>
-
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>Confirmar Exclusão</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Tem certeza que deseja excluir este provento? Essa ação não poderá ser desfeita.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>
-          <Button color="error" onClick={handleDelete} autoFocus>
-            Excluir
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={5000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      <AppFormDrawer
+        open={open}
+        onClose={onClose}
+        title={isEdit ? 'Editar Provento' : 'Novo Provento'}
+        width="sm"
+        gap="lg"
+        onDelete={isEdit ? () => setConfirmOpen(true) : undefined}
+        deleteLabel="Excluir provento"
+        submitLabel={isEdit ? 'Atualizar' : 'Cadastrar'}
+        onSubmit={handleSubmit}
+        submitDisabled={!isValid}
+        submitting={loading}
       >
-        <Alert severity="error" onClose={() => setSnackbarOpen(false)}>
-          {error}
-        </Alert>
-      </Snackbar>
+        {isEdit ? (
+          <AppTextField label="Ativo" value={dividend?.ticker ?? ''} onChange={() => undefined} readOnly />
+        ) : (
+          <AssetSelector
+            value={selectedAsset?.id ?? null}
+            onChange={(asset) => {
+              setSelectedAsset(asset)
+              setTouched(true)
+            }}
+            initialAsset={initialAsset ? { id: initialAsset.id, ticker: initialAsset.ticker, name: initialAsset.name, asset_type_id: initialAsset.asset_type_id } : undefined}
+          />
+        )}
+
+        <AppDateField label="Data" value={date} onChange={setDate} />
+
+        <AppNumberField
+          label={`Valor do Provento (${symbol})`}
+          size="full"
+          density="comfortable"
+          value={amount}
+          onChange={(value) => {
+            setAmount(value)
+            setTouched(true)
+          }}
+          error={touched && amount <= 0}
+          helperText={touched && amount <= 0 ? 'Valor deve ser maior que zero' : ''}
+        />
+      </AppFormDrawer>
+
+      <AppConfirmDialog
+        open={confirmOpen}
+        title="Confirmar Exclusão"
+        confirmLabel="Excluir"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmOpen(false)}
+      >
+        Tem certeza que deseja excluir este provento? Essa ação não poderá ser desfeita.
+      </AppConfirmDialog>
+
+      <AppSnackbar
+        open={snackbarOpen}
+        message={error ?? ''}
+        severity="error"
+        onClose={() => setSnackbarOpen(false)}
+      />
     </>
   )
 }

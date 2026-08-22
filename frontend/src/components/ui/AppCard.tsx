@@ -21,6 +21,12 @@ export interface AppCardProps extends Omit<BoxProps, 'padding'> {
   padding?: SpaceToken
   /** @deprecated Use `padding="none"`. */
   noPadding?: boolean
+  /** Piso de largura, em px — o card que não pode espremer o que mostra
+   *  quando divide a linha com um vizinho elástico. */
+  minWidth?: number
+  /** Levanta a superfície com sombra, para o que flutua sobre o conteúdo —
+   *  o balão de um gráfico. */
+  raised?: boolean
 }
 
 export default function AppCard({
@@ -28,6 +34,8 @@ export default function AppCard({
   sx,
   padding,
   noPadding = false,
+  minWidth,
+  raised = false,
   ...props
 }: AppCardProps) {
   const resolvedPadding = padding ?? (noPadding ? 'none' : 'md')
@@ -40,6 +48,8 @@ export default function AppCard({
         borderRadius: `${radius.md}px`,
         p: space[resolvedPadding],
         backgroundColor: 'background.paper',
+        ...(minWidth ? { minWidth } : null),
+        ...(raised ? { boxShadow: 3 } : null),
         ...sx,
       }}
       {...props}

@@ -1,4 +1,4 @@
-import type { Theme } from '@mui/material'
+import type { AppTheme } from '@/components/ui'
 import { ColorType, type DeepPartial, type ChartOptions } from 'lightweight-charts'
 
 /** A biblioteca trava o espaçamento entre pontos em 0,5px, o que faz uma série
@@ -11,7 +11,7 @@ export const MIN_BAR_SPACING = 0.02
  *
  *  Em um lugar só porque um gráfico que destoa dos outros na mesma página não é
  *  uma escolha de design, é um esquecimento. */
-export function baseChartOptions(theme: Theme, height: number): DeepPartial<ChartOptions> {
+export function baseChartOptions(theme: AppTheme, height: number): DeepPartial<ChartOptions> {
   return {
     height,
     layout: {

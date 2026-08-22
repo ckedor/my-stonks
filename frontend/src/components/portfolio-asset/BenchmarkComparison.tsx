@@ -1,8 +1,12 @@
+import { AppSimpleTable, AppText, type AppSimpleTableColumn } from '@/components/ui'
 import { BenchmarkMetrics } from '@/types'
-import { Box, Tooltip, Typography } from '@mui/material'
 
 interface Props {
   metrics: Record<string, BenchmarkMetrics>
+}
+
+interface BenchmarkRow extends BenchmarkMetrics {
+  name: string
 }
 
 const COLUMNS: { key: keyof BenchmarkMetrics; label: string; hint: string }[] = [
@@ -39,7 +43,10 @@ const COLUMNS: { key: keyof BenchmarkMetrics; label: string; hint: string }[] = 
  *  isso se compara ao mercado", que é a mesma pergunta do gráfico logo acima —
  *  ali eles aprofundam o "X% acima do CDI" que a barra do gráfico resume. */
 export default function BenchmarkComparison({ metrics }: Props) {
-  const rows = Object.entries(metrics)
+  const rows: BenchmarkRow[] = Object.entries(metrics).map(([name, values]) => ({
+    name,
+    ...values,
+  }))
   if (!rows.length) return null
 
   const format = (key: keyof BenchmarkMetrics, value: number) => {
@@ -47,56 +54,31 @@ export default function BenchmarkComparison({ metrics }: Props) {
     return `${value >= 0 ? '+' : ''}${value.toFixed(2).replace('.', ',')}%`
   }
 
-  const colorOf = (key: keyof BenchmarkMetrics, value: number) => {
-    if (key !== 'alpha') return 'text.primary'
-    return value >= 0 ? 'success.main' : 'error.main'
-  }
+  // Só o alfa se lê pelo sinal: ele é o que a posição fez *acima* do
+  // benchmark. Um beta negativo é uma informação, não uma má notícia.
+  const toneOf = (key: keyof BenchmarkMetrics, value: number) =>
+    key !== 'alpha' ? 'default' : value >= 0 ? 'success' : 'danger'
 
-  return (
-    <Box sx={{ overflowX: 'auto' }}>
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: `minmax(88px, 1fr) repeat(${COLUMNS.length}, minmax(84px, 1fr))`,
-          columnGap: 2,
-          rowGap: 1.25,
-          minWidth: 420,
-        }}
-      >
-        <Box />
-        {COLUMNS.map((column) => (
-          <Tooltip key={column.key} title={column.hint}>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ textAlign: 'right', cursor: 'help', justifySelf: 'end' }}
-            >
-              {column.label}
-            </Typography>
-          </Tooltip>
-        ))}
+  const columns: AppSimpleTableColumn<BenchmarkRow>[] = [
+    {
+      label: 'Benchmark',
+      render: (row) => (
+        <AppText variant="bodySmall" weight="strong" inline>
+          {row.name}
+        </AppText>
+      ),
+    },
+    ...COLUMNS.map<AppSimpleTableColumn<BenchmarkRow>>((column) => ({
+      label: column.label,
+      hint: column.hint,
+      align: 'right',
+      render: (row) => (
+        <AppText variant="bodySmall" weight="strong" tone={toneOf(column.key, row[column.key])} inline>
+          {format(column.key, row[column.key])}
+        </AppText>
+      ),
+    })),
+  ]
 
-        {rows.map(([name, benchmark]) => (
-          <Box key={name} sx={{ display: 'contents' }}>
-            <Typography variant="body2" sx={{ fontWeight: 700 }}>
-              {name}
-            </Typography>
-            {COLUMNS.map((column) => (
-              <Typography
-                key={column.key}
-                variant="body2"
-                sx={{
-                  textAlign: 'right',
-                  fontWeight: 600,
-                  color: colorOf(column.key, benchmark[column.key]),
-                }}
-              >
-                {format(column.key, benchmark[column.key])}
-              </Typography>
-            ))}
-          </Box>
-        ))}
-      </Box>
-    </Box>
-  )
+  return <AppSimpleTable rows={rows} columns={columns} getRowKey={(row) => row.name} />
 }

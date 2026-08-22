@@ -1,8 +1,16 @@
 import { syncPositions } from '@/actions/portfolio'
 import { formatSpan } from '@/components/charts/candle/helpers'
-import AppCard from '@/components/ui/AppCard'
-import MiniDonut from '@/components/ui/MiniDonut'
-import Sparkline from '@/components/ui/Sparkline'
+import {
+  AppButton,
+  AppCard,
+  AppIconLink,
+  AppSkeleton,
+  AppStack,
+  AppText,
+  MiniDonut,
+  Sparkline,
+  useAppTheme,
+} from '@/components/ui'
 import { useAssetReturnWindow } from '@/hooks/useAssetReturnWindow'
 import { useCurrency } from '@/hooks/useCurrency'
 import { usePortfolioStore } from '@/stores/portfolio'
@@ -10,9 +18,7 @@ import { usePositionsStore } from '@/stores/portfolio/positions'
 import { useTradeFormStore } from '@/stores/trade-form'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
-import { Box, Button, Link as MuiLink, Skeleton, Stack, Typography, useTheme } from '@mui/material'
 import { useEffect, useMemo } from 'react'
-import { Link } from 'react-router-dom'
 
 interface Props {
   assetId: number
@@ -24,6 +30,9 @@ interface Props {
 /** Meses da janela do mini gráfico, igual à da listagem da carteira. */
 const WINDOW_MONTHS = 12
 
+const SPARKLINE_WIDTH = 160
+const SPARKLINE_HEIGHT = 28
+
 /** O que este ativo é na carteira de quem está olhando, na página de mercado.
  *
  *  A pergunta que se faz ao abrir a página de um ativo que já se tem é sempre a
@@ -34,7 +43,7 @@ const WINDOW_MONTHS = 12
 export default function AssetPositionCard({ assetId, ticker, name, assetTypeId }: Props) {
   const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
   const positions = usePositionsStore((s) => s.positions)
-  const theme = useTheme()
+  const theme = useAppTheme()
   const { currency, format: formatCurrency } = useCurrency()
   const { openTradeForm } = useTradeFormStore()
 
@@ -66,19 +75,19 @@ export default function AssetPositionCard({ assetId, ticker, name, assetTypeId }
 
   if (!position) {
     return (
-      <AppCard sx={{ minWidth: 200 }}>
-        <Typography variant="body2" color="text.secondary">
-          Você não tem {ticker}
-        </Typography>
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<AddShoppingCartIcon />}
-          onClick={() => openTradeForm({ id: assetId, ticker, name, asset_type_id: assetTypeId })}
-          sx={{ textTransform: 'none', mt: 1.25 }}
-        >
-          Comprar
-        </Button>
+      <AppCard minWidth={200}>
+        <AppStack gap="sm" align="start">
+          <AppText variant="bodySmall" tone="secondary">
+            Você não tem {ticker}
+          </AppText>
+          <AppButton
+            size="sm"
+            icon={<AddShoppingCartIcon />}
+            onClick={() => openTradeForm({ id: assetId, ticker, name, asset_type_id: assetTypeId })}
+          >
+            Comprar
+          </AppButton>
+        </AppStack>
       </AppCard>
     )
   }
@@ -88,61 +97,53 @@ export default function AssetPositionCard({ assetId, ticker, name, assetTypeId }
       ? theme.palette.success.main
       : theme.palette.error.main
   const cagr = position.cagr != null ? position.cagr * 100 : null
+  const periodTone = period == null || period.totalReturn >= 0 ? 'success' : 'danger'
 
   return (
-    <AppCard sx={{ minWidth: 220 }}>
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
-        <Stack direction="row" alignItems="center" spacing={0.5}>
-          <Typography variant="body2" color="text.secondary">
-            Na carteira
-          </Typography>
-          <MuiLink
-            component={Link}
-            to={`/portfolio/asset/${assetId}`}
-            color="text.secondary"
-            aria-label="Ver posição na carteira"
-            sx={{ display: 'inline-flex', '&:hover': { color: 'text.primary' } }}
-          >
-            <OpenInNewIcon sx={{ fontSize: 14 }} />
-          </MuiLink>
-        </Stack>
-        <MiniDonut value={weight} color={theme.palette.primary.main} size={30} />
-      </Stack>
+    <AppCard minWidth={220}>
+      <AppStack gap="xs">
+        <AppStack direction="row" align="start" justify="between" gap="sm">
+          <AppStack direction="row" align="center" gap="xs">
+            <AppText variant="bodySmall" tone="secondary">
+              Na carteira
+            </AppText>
+            <AppIconLink to={`/portfolio/asset/${assetId}`} label="Ver posição na carteira">
+              <OpenInNewIcon fontSize="inherit" />
+            </AppIconLink>
+          </AppStack>
+          <MiniDonut value={weight} color={theme.palette.primary.main} size={30} />
+        </AppStack>
 
-      <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.3, mt: 0.5 }}>
-        {formatCurrency(Math.round(position.value)).replace(/,\d{2}$/, '')}
-      </Typography>
+        <AppText variant="body" weight="strong">
+          {formatCurrency(Math.round(position.value)).replace(/,\d{2}$/, '')}
+        </AppText>
 
-      <Box sx={{ mt: 1, height: 28 }}>
         {values ? (
-          <Sparkline values={values} color={color} width={160} height={28} />
+          <Sparkline values={values} color={color} width={SPARKLINE_WIDTH} height={SPARKLINE_HEIGHT} />
         ) : (
-          <Skeleton variant="rounded" width="100%" height={28} />
+          <AppSkeleton height={SPARKLINE_HEIGHT} />
         )}
-      </Box>
 
-      <Stack direction="row" alignItems="baseline" justifyContent="space-between" spacing={1} sx={{ mt: 0.5 }}>
-        <Stack direction="row" alignItems="baseline" spacing={0.5} minWidth={0}>
-          <Typography variant="caption" color="text.secondary" noWrap>
-            {period ? formatSpan(period.days) : `${WINDOW_MONTHS}m`}
-          </Typography>
-          <Typography variant="caption" sx={{ fontWeight: 700, color }}>
-            {period
-              ? `${period.totalReturn >= 0 ? '+' : ''}${period.totalReturn.toFixed(2).replace('.', ',')}%`
-              : '—'}
-          </Typography>
-        </Stack>
+        <AppStack direction="row" align="baseline" justify="between" gap="sm">
+          <AppStack direction="row" align="baseline" gap="xs">
+            <AppText variant="caption" tone="secondary" noWrap>
+              {period ? formatSpan(period.days) : `${WINDOW_MONTHS}m`}
+            </AppText>
+            <AppText variant="caption" weight="strong" tone={periodTone}>
+              {period
+                ? `${period.totalReturn >= 0 ? '+' : ''}${period.totalReturn.toFixed(2).replace('.', ',')}%`
+                : '—'}
+            </AppText>
+          </AppStack>
 
-        {cagr != null && (
-          <Typography
-            variant="caption"
-            sx={{ fontWeight: 700, color: cagr >= 0 ? 'success.main' : 'error.main' }}
-          >
-            {cagr >= 0 ? '+' : ''}
-            {cagr.toFixed(2).replace('.', ',')}% a.a.
-          </Typography>
-        )}
-      </Stack>
+          {cagr != null && (
+            <AppText variant="caption" weight="strong" tone={cagr >= 0 ? 'success' : 'danger'}>
+              {cagr >= 0 ? '+' : ''}
+              {cagr.toFixed(2).replace('.', ',')}% a.a.
+            </AppText>
+          )}
+        </AppStack>
+      </AppStack>
     </AppCard>
   )
 }
