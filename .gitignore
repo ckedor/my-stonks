@@ -6,4 +6,4 @@
 
 # Scratch / noodling
 backend/app/domain/finance/noodling/
-backend/app/domain/finance/main.py
+backend/app/domain/finance/main.pytest-results/
