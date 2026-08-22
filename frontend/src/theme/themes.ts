@@ -214,76 +214,73 @@ export function buildPreview(config: ThemePaletteConfig): ThemePreview {
    Default palette configs (base for custom themes)
    ══════════════════════════════════════════════ */
 
+/* O claro nasceu com `background.default` branco, igual ao `paper`: card e
+   página encostavam sem nenhuma borda entre eles e a tela virava uma folha
+   só. O fundo aqui é off-white — é o que separa o card da página — e quente
+   de propósito, porque o cinza de interface puxa para o azul por padrão
+   (#F3F4F6) e o azul já é a régua do `Grafite Neutro`, ao lado.
+   O resto dos neutros é quente pelo mesmo motivo: fundo quente com header
+   azulado brigam, e a identidade se perde na emenda. */
 export const defaultLightPalette: ThemePaletteConfig = {
   mode: 'light',
-  background: { default: '#ffffff', paper: '#FFFFFF' },
-  text: { primary: '#1A1D23', secondary: '#6B7280' },
-  primary: '#7C5832',
-  secondary: '#B8860B',
+  background: { default: '#FAF8F4', paper: '#FFFFFF' },
+  text: { primary: '#1C1917', secondary: '#78716C' },
+  primary: '#44403C',
+  secondary: '#B45309',
   error: '#DC2626',
   warning: '#D97706',
-  success: '#059669',
-  info: '#2563EB',
-  golden: '#B8860B',
-  dark: '#1A1D23',
-  sidebar: '#F1F2F5',
-  topbar: { background: '#ffffff', text: '#1A1D23', activeText: '#FFFFFF', activeBg: '#7C5832' },
-  divider: 'rgba(0, 0, 0, 0.08)',
+  success: '#10B981',
+  info: '#3B82F6',
+  golden: '#F59E0B',
+  dark: '#1C1917',
+  sidebar: '#403B36',
+  topbar: { background: '#403B36', text: '#EFEBE7', activeText: '#FFFFFF', activeBg: '#5A534D' },
+  divider: 'rgba(28,25,23,0.10)',
   chart: {
-    grid: 'rgba(0, 0, 0, 0.08)',
-    label: '#1A1D23',
-    colors: ['#A67C52', '#C4956A', '#7A9B76', '#6E8FAD', '#D4A574', '#8E8E8E', '#B8926A', '#9C7C6C'],
+    grid: 'rgba(28,25,23,0.10)',
+    label: '#1C1917',
+    /* Série herdada de um tema de fundo escuro, então duas cores tiveram de
+       trocar de lado ao vir para o papel branco: a terceira era #FFF5E1
+       (creme, 1.08:1 — invisível) e a última era #FFD700 (ouro, 1.4:1). Cada
+       uma virou o oposto do papel que cumpria lá: o neutro claro sobre fundo
+       escuro vira o neutro escuro sobre fundo claro, e o ouro claro vira
+       ouro velho (3.9:1). */
+    colors: ['#D2A679', '#D15F57', '#7A5C43', '#A3C1AD', '#AB4E52', '#a3c1bd', '#9CAFB7', '#B8860B'],
   },
 }
 
+/* Escuro no estilo do VS Code Dark: `#1E1E1E` do editor como fundo,
+   `#252526` das laterais como card e `#333333` da activity bar no header.
+   As cores de série saem da sintaxe do mesmo tema, o que já garante que
+   foram desenhadas para conviver sobre `#1E1E1E`. */
 export const defaultDarkPalette: ThemePaletteConfig = {
   mode: 'dark',
-  background: { default: '#303030', paper: '#3e3e3e' },
-  text: { primary: '#bebfc2', secondary: '#B0B4BA' },
-  primary: '#e1cfca',
-  secondary: '#d1705f',
-  error: '#ec786b',
-  warning: '#eeb227',
-  success: '#61a964',
-  info: '#5c9bd1',
-  golden: '#eeb227',
-  dark: '#3b2f2f',
-  sidebar: '#3e3e3e',
-  topbar: { background: '#3e3e3e', text: '#bebfc2', activeText: '#FFFFFF', activeBg: '#e1cfca33' },
-  divider: 'rgba(255,255,255,0.08)',
+  background: { default: '#1E1E1E', paper: '#252526' },
+  text: { primary: '#CCCCCC', secondary: '#9D9D9D' },
+  primary: '#3794FF',
+  secondary: '#4EC9B0',
+  error: '#F14C4C',
+  warning: '#CCA700',
+  success: '#89D185',
+  info: '#75BEFF',
+  golden: '#DCDCAA',
+  dark: '#1E1E1E',
+  sidebar: '#252526',
+  topbar: { background: '#333333', text: '#CCCCCC', activeText: '#FFFFFF', activeBg: '#37373D' },
+  divider: '#3C3C3C',
   chart: {
-    grid: '#645959',
-    label: '#bebfc2',
-    colors: ['#D2A679', '#D15F57', '#FFF5E1', '#A3C1AD', '#AB4E52', '#a3c1bd', '#9CAFB7', '#FFD700'],
+    grid: 'rgba(255,255,255,0.08)',
+    label: '#CCCCCC',
+    /* Nenhuma repete `primary` nem `secondary`: no gráfico de rentabilidade
+       essas duas já estão em uso fixo (Carteira e CDI) e o resto das séries
+       vem daqui por índice. */
+    colors: ['#CE9178', '#DCDCAA', '#C586C0', '#9CDCFE', '#B5CEA8', '#D16969', '#4FC1FF', '#569CD6'],
   },
 }
 
-/* ══════════════════════════════════════════════
-   LIGHT THEMES
-   ══════════════════════════════════════════════ */
-
-const cafeCorporatePalette: ThemePaletteConfig = {
-  mode: 'light',
-  background: { default: '#F5F0EB', paper: '#FFFFFF' },
-  text: { primary: '#2C1810', secondary: '#6B5B4F' },
-  primary: '#6F4E37',
-  secondary: '#D4A76A',
-  error: '#C0392B',
-  warning: '#D4A76A',
-  success: '#5B8C5A',
-  info: '#5B7FA5',
-  golden: '#D4A76A',
-  dark: '#2C1810',
-  sidebar: '#3C2A1E',
-  topbar: { background: '#3C2A1E', text: '#F5EDE6', activeText: '#FFFFFF', activeBg: '#6F4E37' },
-  divider: 'rgba(44,24,16,0.10)',
-  chart: {
-    grid: 'rgba(44,24,16,0.10)',
-    label: '#2C1810',
-    colors: ['#C47035', '#4A90A4', '#D4A04A', '#6BAF7B', '#C75B5B', '#8B7DB8', '#D18E6E', '#5B8C9A'],
-  },
-}
-
+/* O azul-acinzentado que era o `Grafite Neutro`, mantido ao lado do
+   `Principal`: mesma estrutura (papel branco, header escuro), régua de
+   neutros fria em vez de quente. */
 const slateNeutralPalette: ThemePaletteConfig = {
   mode: 'light',
   background: { default: '#F3F4F6', paper: '#FFFFFF' },
@@ -302,102 +299,57 @@ const slateNeutralPalette: ThemePaletteConfig = {
   chart: {
     grid: 'rgba(17,24,39,0.10)',
     label: '#111827',
-    /* Série do `defaultDarkPalette`, que nasceu para o fundo #303030. A
-       terceira era #FFF5E1 — creme, 1.08:1 sobre o branco do paper, ou seja
-       invisível. No lugar dela vai o oposto do papel que ela cumpria lá: era
-       o neutro claro sobre fundo escuro, aqui é o neutro escuro sobre fundo
-       claro (6.1:1), e a luminosidade separa ela de todas as outras. */
-    colors: ['#D2A679', '#D15F57', '#7A5C43', '#A3C1AD', '#AB4E52', '#a3c1bd', '#9CAFB7', '#FFD700'],
+    /* Série do escuro antigo, que nasceu para o fundo #303030. A terceira era
+       #FFF5E1 — creme, 1.08:1 sobre o branco do paper, ou seja invisível. No
+       lugar dela vai o oposto do papel que ela cumpria lá: era o neutro claro
+       sobre fundo escuro, aqui é o neutro escuro sobre fundo claro (6.1:1), e
+       a luminosidade separa ela de todas as outras. A última, #FFD700, saiu
+       pelo mesmo motivo (1.4:1) e virou ouro velho. */
+    colors: ['#D2A679', '#D15F57', '#7A5C43', '#A3C1AD', '#AB4E52', '#a3c1bd', '#9CAFB7', '#B8860B'],
   },
 }
 
-const executiveGreenPalette: ThemePaletteConfig = {
-  mode: 'light',
-  background: { default: '#F2F5F3', paper: '#FFFFFF' },
-  text: { primary: '#14332A', secondary: '#4A6356' },
-  primary: '#1A4D3E',
-  secondary: '#2E8B6D',
-  error: '#C94040',
-  warning: '#D4A849',
-  success: '#2E8B6D',
-  info: '#4895EF',
-  golden: '#D4A849',
-  dark: '#14332A',
-  sidebar: '#14332A',
-  topbar: { background: '#14332A', text: '#E8F0EC', activeText: '#FFFFFF', activeBg: '#1B5E45' },
-  divider: 'rgba(20,51,42,0.10)',
-  chart: {
-    grid: 'rgba(20,51,42,0.10)',
-    label: '#14332A',
-    colors: ['#2E8B6D', '#D4A849', '#5B8DD6', '#D16060', '#8B6FB8', '#3DB5A0', '#E09050', '#7CA0B0'],
-  },
-}
+/* ══════════════════════════════════════════════
+   LIGHT THEMES
+   ══════════════════════════════════════════════ */
 
 export const lightThemes: ThemeDefinition[] = [
   /* ── 1. Principal ─────────────────────────── */
+  /* O preview não sai de `buildPreview`: ele mostra o texto do topbar (claro
+     sobre o header escuro), não o `text.primary` da página. */
   {
     id: 'principal-light',
     name: 'Principal',
     mode: 'light',
-    description: 'Tema padrão claro com tons quentes e elegantes',
-    preview: buildPreview(defaultLightPalette),
+    description: 'Off-white quente com header grafite, sóbrio e sem azul',
+    preview: {
+      background: '#FAF8F4',
+      paper: '#FFFFFF',
+      primary: '#44403C',
+      accent: '#B45309',
+      topbar: '#403B36',
+      sidebar: '#403B36',
+      text: '#EFEBE7',
+    },
     theme: buildMuiTheme(defaultLightPalette),
   },
 
-  /* ── 2. Café Corporate ────────────────────── */
-  /* O preview não sai de buildPreview: ele mostra o texto do topbar
-     (claro sobre o header escuro), não o text.primary da página. */
-  {
-    id: 'cafe-corporate',
-    name: 'Café Corporate',
-    mode: 'light',
-    description: 'Marrom quente com header escuro, inspirado em café',
-    preview: {
-      background: '#F5F0EB',
-      paper: '#FFFFFF',
-      primary: '#6F4E37',
-      accent: '#D4A76A',
-      topbar: '#3C2A1E',
-      sidebar: '#3C2A1E',
-      text: '#FFFAF5',
-    },
-    theme: buildMuiTheme(cafeCorporatePalette),
-  },
-
-  /* ── 3. Grafite Neutro ────────────────────── */
+  /* ── 2. Grafite Neutro ────────────────────── */
   {
     id: 'slate-neutral',
     name: 'Grafite Neutro',
     mode: 'light',
-    description: 'Header cinza escuro, clean e versátil',
+    description: 'Header cinza escuro azulado, clean e versátil',
     preview: {
       background: '#F3F4F6',
       paper: '#FFFFFF',
       primary: '#374151',
       accent: '#6366F1',
-      topbar: '#1F2937',
+      topbar: '#2b3848',
       sidebar: '#1F2937',
       text: '#F3F4F6',
     },
     theme: buildMuiTheme(slateNeutralPalette),
-  },
-
-  /* ── 4. Verde Executivo ───────────────────── */
-  {
-    id: 'executive-green',
-    name: 'Verde Executivo',
-    mode: 'light',
-    description: 'Header verde escuro, elegante para finanças',
-    preview: {
-      background: '#F2F5F3',
-      paper: '#FFFFFF',
-      primary: '#1A4D3E',
-      accent: '#D4A849',
-      topbar: '#14332A',
-      sidebar: '#14332A',
-      text: '#E8F0EC',
-    },
-    theme: buildMuiTheme(executiveGreenPalette),
   },
 ]
 
@@ -405,135 +357,15 @@ export const lightThemes: ThemeDefinition[] = [
    DARK THEMES
    ══════════════════════════════════════════════ */
 
-const obsidianPalette: ThemePaletteConfig = {
-  mode: 'dark',
-  background: { default: '#101010', paper: '#1A1A1A' },
-  text: { primary: '#E4E4E7', secondary: '#A1A1AA' },
-  primary: '#FAFAFA',
-  secondary: '#A78BFA',
-  error: '#EF4444',
-  warning: '#FBBF24',
-  success: '#22C55E',
-  info: '#60A5FA',
-  golden: '#F59E0B',
-  dark: '#0A0A0A',
-  sidebar: '#1A1A1A',
-  topbar: { background: '#1A1A1A', text: '#E4E4E7', activeText: '#FFFFFF', activeBg: '#333333' },
-  divider: 'rgba(255,255,255,0.08)',
-  chart: {
-    grid: 'rgba(255,255,255,0.10)',
-    label: '#E4E4E7',
-    colors: ['#A78BFA', '#34D399', '#FBBF24', '#F472B6', '#60A5FA', '#FB923C', '#22D3EE', '#C084FC'],
-  },
-}
-
-const steelSmokePalette: ThemePaletteConfig = {
-  mode: 'dark',
-  background: { default: '#18181B', paper: '#27272A' },
-  text: { primary: '#E4E4E7', secondary: '#A1A1AA' },
-  primary: '#E4E4E7',
-  secondary: '#71717A',
-  error: '#EF4444',
-  warning: '#F59E0B',
-  success: '#22C55E',
-  info: '#3B82F6',
-  golden: '#F59E0B',
-  dark: '#09090B',
-  sidebar: '#27272A',
-  topbar: { background: '#27272A', text: '#E4E4E7', activeText: '#FFFFFF', activeBg: '#3F3F46' },
-  divider: 'rgba(255,255,255,0.08)',
-  chart: {
-    grid: 'rgba(161,161,170,0.12)',
-    label: '#E4E4E7',
-    colors: ['#F59E0B', '#3B82F6', '#22C55E', '#EF4444', '#A78BFA', '#EC4899', '#06B6D4', '#FB923C'],
-  },
-}
-
-const cafeNoirPalette: ThemePaletteConfig = {
-  mode: 'dark',
-  background: { default: '#1A1210', paper: '#261C18' },
-  text: { primary: '#F5E6D3', secondary: '#C4A882' },
-  primary: '#D4A76A',
-  secondary: '#A0724E',
-  error: '#E57373',
-  warning: '#E8A838',
-  success: '#81C784',
-  info: '#64B5F6',
-  golden: '#E8A838',
-  dark: '#100C0A',
-  sidebar: '#261C18',
-  topbar: { background: '#261C18', text: '#F5E6D3', activeText: '#FFFFFF', activeBg: '#3B2E27' },
-  divider: 'rgba(255,255,255,0.08)',
-  chart: {
-    grid: 'rgba(196,168,130,0.12)',
-    label: '#F5E6D3',
-    colors: ['#D4A76A', '#81C784', '#E57373', '#64B5F6', '#CE93D8', '#FFB74D', '#4DB6AC', '#E8A838'],
-  },
-}
-
 export const darkThemes: ThemeDefinition[] = [
   /* ── 1. Principal ─────────────────────────── */
   {
     id: 'principal-dark',
     name: 'Principal',
     mode: 'dark',
-    description: 'Tema padrão escuro com tons quentes e acolhedores',
+    description: 'Escuro neutro no estilo do VS Code Dark',
     preview: buildPreview(defaultDarkPalette),
     theme: buildMuiTheme(defaultDarkPalette),
-  },
-
-  /* ── 2. Obsidiana ─────────────────────────── */
-  {
-    id: 'obsidian',
-    name: 'Obsidiana',
-    mode: 'dark',
-    description: 'Preto profundo com visual premium',
-    preview: {
-      background: '#101010',
-      paper: '#1A1A1A',
-      primary: '#FAFAFA',
-      accent: '#A78BFA',
-      topbar: '#1A1A1A',
-      sidebar: '#1A1A1A',
-      text: '#E4E4E7',
-    },
-    theme: buildMuiTheme(obsidianPalette),
-  },
-
-  /* ── 3. Aço Fumê ──────────────────────────── */
-  {
-    id: 'steel-smoke',
-    name: 'Aço Fumê',
-    mode: 'dark',
-    description: 'Cinza profundo, industrial e sóbrio',
-    preview: {
-      background: '#18181B',
-      paper: '#27272A',
-      primary: '#E4E4E7',
-      accent: '#F59E0B',
-      topbar: '#27272A',
-      sidebar: '#27272A',
-      text: '#E4E4E7',
-    },
-    theme: buildMuiTheme(steelSmokePalette),
-  },
-
-  /* ── 4. Café Noir ─────────────────────────── */
-  {
-    id: 'cafe-noir',
-    name: 'Café Noir',
-    mode: 'dark',
-    description: 'Marrom escuro profundo, acolhedor e quente',
-    preview: {
-      background: '#1A1210',
-      paper: '#261C18',
-      primary: '#D4A76A',
-      accent: '#E8A838',
-      topbar: '#261C18',
-      sidebar: '#261C18',
-      text: '#F5E6D3',
-    },
-    theme: buildMuiTheme(cafeNoirPalette),
   },
 ]
 
