@@ -39,7 +39,6 @@
     "src/pages/portfolio/tax-income/DarfSummaryTable.tsx",
     "src/pages/portfolio/tax-income/FIITaxIncome.tsx",
     "src/pages/portfolio/tax-income/page.tsx",
-    "src/pages/portfolio/trades/page.tsx",
     "src/pages/portfolio/user-configurations/IntegrationsTab.tsx",
     "src/pages/portfolio/user-configurations/ThemeTab.tsx",
     "src/pages/portfolio/user-configurations/page.tsx",

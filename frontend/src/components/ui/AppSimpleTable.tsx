@@ -26,6 +26,11 @@ import AppTooltip from './AppTooltip'
 
 const CLAMPED_WIDTH = 320
 
+/** Deixa a tabela ocupar a tela sem encostar no rodapé dela. */
+const VIEWPORT_MAX_HEIGHT = '80vh'
+
+const SURFACE = { paper: 'background.paper', sunken: 'background.default' } as const
+
 export interface AppSimpleTableColumn<Row> {
   label: string
   /** O que a coluna responde, em uma frase, para o cabeçalho que é jargão.
@@ -53,9 +58,16 @@ export interface AppSimpleTableProps<Row> {
   isRowSelected?: (row: Row) => boolean
   /** Mostrado no lugar das linhas quando não há nenhuma. */
   emptyMessage?: string
-  /** Altura máxima em px: passando dela, o corpo rola e o cabeçalho fica
-   *  parado. Sem isso uma tabela longa empurra o resto da tela para baixo. */
-  maxHeight?: number
+  /** Altura máxima: passando dela, o corpo rola e o cabeçalho fica parado.
+   *  Sem isso uma tabela longa empurra o resto da tela para baixo. Um
+   *  número é px; `viewport` é 80% da altura da janela, para a tabela que é
+   *  o conteúdo principal da tela e deve caber nela inteira. */
+  maxHeight?: number | 'viewport'
+  /** Separa pelo fundo linhas de naturezas diferentes na mesma tabela —
+   *  compras e vendas. `paper` é a superfície onde a tabela está, `sunken`
+   *  é o fundo da página, um degrau abaixo. Sem isso a distinção fica só na
+   *  coluna que a nomeia, e a tabela vira um bloco só. */
+  getRowSurface?: (row: Row) => 'paper' | 'sunken'
 }
 
 export default function AppSimpleTable<Row>({
@@ -67,13 +79,16 @@ export default function AppSimpleTable<Row>({
   isRowSelected,
   emptyMessage,
   maxHeight,
+  getRowSurface,
 }: AppSimpleTableProps<Row>) {
+  const height = maxHeight === 'viewport' ? VIEWPORT_MAX_HEIGHT : maxHeight
+
   return (
     <TableContainer
       component={surface === 'outlined' ? Paper : 'div'}
-      sx={{ overflowX: 'auto', ...(maxHeight ? { maxHeight, overflowY: 'auto' } : null) }}
+      sx={{ overflowX: 'auto', ...(height ? { maxHeight: height, overflowY: 'auto' } : null) }}
     >
-      <Table size="small" stickyHeader={Boolean(maxHeight)}>
+      <Table size="small" stickyHeader={Boolean(height)}>
         <TableHead>
           <TableRow>
             {columns.map((column) => (
@@ -109,7 +124,10 @@ export default function AppSimpleTable<Row>({
                 hover
                 selected={isRowSelected?.(row) ?? false}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
-                sx={onRowClick ? { cursor: 'pointer' } : undefined}
+                sx={{
+                  ...(onRowClick ? { cursor: 'pointer' } : null),
+                  ...(getRowSurface ? { backgroundColor: SURFACE[getRowSurface(row)] } : null),
+                }}
               >
                 {columns.map((column) => (
                   <TableCell

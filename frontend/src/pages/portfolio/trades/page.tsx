@@ -1,43 +1,43 @@
-
 import { syncTrades } from '@/actions/portfolio'
 import TradeForm from '@/components/TradeForm'
-import AppCard from '@/components/ui/AppCard'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+  AppButton,
+  AppCard,
+  AppDayField,
+  AppSearchField,
+  AppSelect,
+  AppSimpleTable,
+  AppStack,
+  AppText,
+  LoadingSpinner,
+  PageTitle,
+  type AppSimpleTableColumn,
+} from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { useTradesStore } from '@/stores/portfolio/trades'
 import type { Trade } from '@/types'
-import {
-    Box,
-    Button,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    SelectChangeEvent,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    TextField,
-    Typography,
-    useTheme,
-} from '@mui/material'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
+
+type TradeType = 'Compra' | 'Venda' | 'Todos'
+
+const TYPE_OPTIONS = [
+  { value: 'Todos', label: 'Todos' },
+  { value: 'Compra', label: 'Compra' },
+  { value: 'Venda', label: 'Venda' },
+]
+
+const decimal = (value: number) => value.toLocaleString('pt-BR', { maximumFractionDigits: 8 })
 
 export default function PortfolioTransactionsPage() {
   const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
 
-  const theme = useTheme()
   const { format: formatCurrency } = useCurrency()
 
   const trades = useTradesStore(s => s.trades)
-  const tradesLoading = useTradesStore(s => s.loading) && trades.length === 0
+  const loading = useTradesStore(s => s.loading) && trades.length === 0
 
-  const loading = tradesLoading
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedTrade, setSelectedTrade] = useState<Trade | undefined>()
   const [selectedAssetId, setSelectedAssetId] = useState<number | undefined>()
@@ -46,7 +46,7 @@ export default function PortfolioTransactionsPage() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [broker, setBroker] = useState('')
-  const [type, setType] = useState<'Compra' | 'Venda' | 'Todos'>('Todos')
+  const [type, setType] = useState<TradeType>('Todos')
 
   useEffect(() => {
     if (trades.length > 0) {
@@ -84,193 +84,109 @@ export default function PortfolioTransactionsPage() {
     return Array.from(new Set(trades.map((t) => t.broker))).sort()
   }, [trades])
 
-  return (
-    <Box pt={2}>
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>Trades da Carteira</Typography>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box></Box>
-        <Button variant="contained" onClick={handleNew}>
-          Nova Operação
-        </Button>
-      </Box>
+  /* Numa compra não há lucro realizado: o traço é a resposta certa, e um
+     zero ali seria lido como "vendeu no preço". */
+  const profitCell = (value: number, isBuy: boolean, render: (value: number) => string) =>
+    isBuy ? (
+      '-'
+    ) : (
+      <AppText
+        variant="bodySmall"
+        weight="strong"
+        tone={value > 0 ? 'success' : value < 0 ? 'danger' : 'secondary'}
+        inline
+      >
+        {render(value)}
+      </AppText>
+    )
 
-      <Box display="flex" flexWrap="wrap" gap={2} alignItems="flex-end">
-        <TextField
+  const columns: AppSimpleTableColumn<Trade>[] = [
+    { label: 'Data', render: (trade) => dayjs(trade.date).format('DD/MM/YYYY') },
+    { label: 'Ativo', render: (trade) => trade.ticker },
+    { label: 'Corretora', render: (trade) => trade.broker },
+    {
+      label: 'Tipo',
+      render: (trade) => (
+        <AppText
+          variant="bodySmall"
+          weight="strong"
+          tone={trade.type === 'Compra' ? 'primary' : 'success'}
+          inline
+        >
+          {trade.type}
+        </AppText>
+      ),
+    },
+    { label: 'Qtd', align: 'right', render: (trade) => decimal(trade.quantity) },
+    { label: 'Qtd Acum.', align: 'right', render: (trade) => decimal(trade.acc_quantity) },
+    { label: 'Preço', align: 'right', render: (trade) => formatCurrency(trade.price) },
+    { label: 'Valor Total', align: 'right', render: (trade) => formatCurrency(trade.value) },
+    { label: 'Posição na Data', align: 'right', render: (trade) => formatCurrency(trade.position) },
+    { label: 'Preço Médio', align: 'right', render: (trade) => formatCurrency(trade.average_price) },
+    {
+      label: 'Lucro Realizado',
+      align: 'right',
+      render: (trade) =>
+        profitCell(trade.realized_profit, trade.type === 'Compra', formatCurrency),
+    },
+    {
+      label: '%Lucro',
+      align: 'right',
+      render: (trade) =>
+        profitCell(
+          trade.profit_pct,
+          trade.type === 'Compra',
+          (value) => `${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} %`,
+        ),
+    },
+  ]
+
+  return (
+    <AppStack gap="md">
+      <PageTitle>Trades da Carteira</PageTitle>
+
+      <AppStack direction="row" justify="end">
+        <AppButton onClick={handleNew}>Nova Operação</AppButton>
+      </AppStack>
+
+      <AppStack direction="row" gap="md" align="end" wrap>
+        <AppSearchField
           label="Buscar por ativo"
+          size="bar"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          size="small"
+          onChange={setSearch}
         />
-        <TextField
-          label="Data início"
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          size="small"
-          InputLabelProps={{ shrink: true }}
+        <AppDayField label="Data início" value={startDate} onChange={setStartDate} />
+        <AppDayField label="Data fim" value={endDate} onChange={setEndDate} />
+        <AppSelect
+          label="Corretora"
+          options={[
+            { value: '', label: 'Todas' },
+            ...brokers.map((name) => ({ value: name, label: name })),
+          ]}
+          value={broker}
+          onChange={setBroker}
         />
-        <TextField
-          label="Data fim"
-          type="date"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          size="small"
-          InputLabelProps={{ shrink: true }}
+        <AppSelect
+          label="Tipo"
+          options={TYPE_OPTIONS}
+          value={type}
+          onChange={(value) => setType(value as TradeType)}
         />
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel>Corretora</InputLabel>
-          <Select
-            value={broker}
-            onChange={(e: SelectChangeEvent) => setBroker(e.target.value)}
-            label="Corretora"
-          >
-            <MenuItem value="">Todas</MenuItem>
-            {brokers.map((b) => (
-              <MenuItem key={b} value={b}>
-                {b}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel>Tipo</InputLabel>
-          <Select
-            value={type}
-            onChange={(e: SelectChangeEvent) => setType(e.target.value as any)}
-            label="Tipo"
-          >
-            <MenuItem value="Todos">Todos</MenuItem>
-            <MenuItem value="Compra">Compra</MenuItem>
-            <MenuItem value="Venda">Venda</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+      </AppStack>
 
       {loading ? (
         <LoadingSpinner />
       ) : (
-        <AppCard noPadding sx={{ mt: 2 }}>
-        <TableContainer sx={{ maxHeight: '80vh', overflowY: 'auto' }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold' }}>Data</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Ativo</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Corretora</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Tipo</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Qtd
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Qtd Acum.
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Preço
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Valor Total
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Posição na Data
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Preço Médio
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Lucro Realizado
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  %Lucro
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredTrades.map((trade, idx) => (
-                <TableRow
-                  key={idx}
-                  onClick={() => handleEdit(trade)}
-                  sx={{
-                    cursor: 'pointer',
-                    backgroundColor:
-                      trade.type === 'Venda'
-                        ? theme.palette.background.paper
-                        : theme.palette.background.default,
-                    '&:hover': {
-                      backgroundColor:
-                        trade.type === 'Venda'
-                          ? theme.palette.action.hover
-                          : theme.palette.action.hover,
-                    },
-                  }}
-                >
-                  <TableCell>{dayjs(trade.date).format('DD/MM/YYYY')}</TableCell>
-                  <TableCell>{trade.ticker}</TableCell>
-                  <TableCell>{trade.broker}</TableCell>
-                  <TableCell
-                    sx={{
-                      textTransform: 'capitalize',
-                      color: trade.type === 'Compra' ? 'primary.main' : 'success.main',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {trade.type}
-                  </TableCell>
-                  <TableCell align="right">
-                    {trade.quantity.toLocaleString('pt-BR', { maximumFractionDigits: 8 })}
-                  </TableCell>
-                  <TableCell align="right">
-                    {trade.acc_quantity.toLocaleString('pt-BR', { maximumFractionDigits: 8 })}
-                  </TableCell>
-                  <TableCell align="right">
-                    {formatCurrency(trade.price)}
-                  </TableCell>
-                  <TableCell align="right">
-                    {formatCurrency(trade.value)}
-                  </TableCell>
-                  <TableCell align="right">
-                    {formatCurrency(trade.position)}
-                  </TableCell>
-                  <TableCell align="right">
-                    {formatCurrency(trade.average_price)}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      color:
-                        trade.realized_profit > 0
-                          ? 'success.main'
-                          : trade.realized_profit < 0
-                            ? 'error.main'
-                            : 'text.secondary',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {trade.type === 'Compra'
-                      ? '-'
-                      : formatCurrency(trade.realized_profit)}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      color:
-                        trade.profit_pct > 0
-                          ? 'success.main'
-                          : trade.profit_pct < 0
-                            ? 'error.main'
-                            : 'text.secondary',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {trade.type === 'Compra'
-                      ? '-'
-                      : trade.profit_pct.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) +
-                        ' %'}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <AppCard noPadding>
+          <AppSimpleTable
+            rows={filteredTrades}
+            columns={columns}
+            getRowKey={(trade) => trade.id}
+            onRowClick={handleEdit}
+            getRowSurface={(trade) => (trade.type === 'Venda' ? 'paper' : 'sunken')}
+            maxHeight="viewport"
+          />
         </AppCard>
       )}
 
@@ -281,6 +197,6 @@ export default function PortfolioTransactionsPage() {
         trade={selectedTrade}
         assetId={selectedAssetId}
       />
-    </Box>
+    </AppStack>
   )
 }

@@ -22,6 +22,8 @@ export type {
 } from './AppHeatmapTable'
 export type { AppGridProps, AppGridItemProps } from './AppGrid'
 export { default as AppCard } from './AppCard'
+export { default as AppDayField } from './AppDayField'
+export type { AppDayFieldProps } from './AppDayField'
 export { default as AppDivider } from './AppDivider'
 export type { AppDividerProps } from './AppDivider'
 export { default as AppShell } from './AppShell'
