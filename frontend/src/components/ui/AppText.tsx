@@ -48,6 +48,10 @@ export interface AppTextProps {
   /** Impede a quebra de linha — para o número que não pode virar duas
    *  linhas quando a coluna aperta. */
   noWrap?: boolean
+  /** Cor vinda do dado — a da série que esta linha explica. Ignora o
+   *  `tone`: quando a cor é a identidade daquilo, um tom semântico por cima
+   *  só confunde. */
+  tint?: string
   /** Renderiza como `span`, para o trecho destacado dentro de uma frase.
    *  Sem isto o texto vira um parágrafo dentro de outro, que o navegador
    *  desfaz quebrando a linha no meio. */
@@ -61,10 +65,11 @@ export default function AppText({
   weight = 'regular',
   noWrap = false,
   inline = false,
+  tint,
 }: AppTextProps) {
   const common = {
     variant: VARIANT[variant],
-    color: TONE[tone],
+    color: tint ?? TONE[tone],
     fontWeight: weight === 'strong' ? 600 : variant === 'pageHeading' ? 'bold' : undefined,
     whiteSpace: noWrap ? ('nowrap' as const) : undefined,
   }

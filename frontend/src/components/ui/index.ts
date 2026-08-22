@@ -61,6 +61,8 @@ export type { AppAutocompleteAction, AppAutocompleteProps } from './AppAutocompl
 export { default as AppConfirmDialog } from './AppConfirmDialog'
 export type { AppConfirmDialogProps } from './AppConfirmDialog'
 export { default as AppColorField } from './AppColorField'
+export { default as AppColorSwatch } from './AppColorSwatch'
+export type { AppColorSwatchProps } from './AppColorSwatch'
 export type { AppColorFieldProps } from './AppColorField'
 export { default as AppDateField } from './AppDateField'
 export type { AppDateFieldProps } from './AppDateField'

@@ -31,6 +31,9 @@ export interface AppChartAreaProps {
   toolbar?: ReactNode
   /** Mostrado, centrado, quando não há o que desenhar. */
   emptyMessage?: string
+  /** Texto curto no canto superior esquerdo do desenho — o ano que o eixo
+   *  de meses não diz. */
+  note?: string
   /** Nó onde uma biblioteca de canvas desenha. */
   plotRef?: Ref<HTMLDivElement>
   /** Posicionado por cima do desenho — um balão que segue o cursor. */
@@ -43,6 +46,7 @@ export default function AppChartArea({
   sizing = 'chart',
   toolbar,
   emptyMessage,
+  note,
   plotRef,
   overlay,
   children,
@@ -66,6 +70,13 @@ export default function AppChartArea({
       {/* O nó da biblioteca de canvas é irmão do overlay, não pai: ela
           apaga e recria o que está dentro do próprio nó, e levaria o balão
           junto a cada redesenho. */}
+      {note && (
+        <Box sx={{ position: 'absolute', top: -2, left: 56, zIndex: 1 }}>
+          <AppText variant="caption" tone="secondary">
+            {note}
+          </AppText>
+        </Box>
+      )}
       {plotRef ? <Box ref={plotRef} sx={{ width: '100%' }} /> : children}
       {overlay}
     </Box>

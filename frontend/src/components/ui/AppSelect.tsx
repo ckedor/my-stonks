@@ -103,6 +103,10 @@ export default function AppSelect({
       /* A lista abre sem travar a rolagem da página por baixo: travar faz a
          barra de rolagem sumir e tudo saltar alguns pixels para o lado. */
       slotProps={{
+        /* Com `displayEmpty`, o campo já mostra o rótulo da opção vazia, e
+           o rótulo flutuante precisa subir junto — senão os dois se
+           escrevem um por cima do outro. */
+        inputLabel: options.some((option) => option.value === '') ? { shrink: true } : undefined,
         select: {
           MenuProps: { disableScrollLock: true },
           /* Uma opção de valor vazio é uma escolha — "sem benchmark" — e não

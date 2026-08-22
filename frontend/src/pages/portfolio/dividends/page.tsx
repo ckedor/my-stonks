@@ -2,34 +2,32 @@
 import { syncDividends } from '@/actions/portfolio'
 import DividendForm from '@/components/DividendForm'
 import DividendsCategoryChart from '@/components/DividendsCategoryChart'
-import AppCard from '@/components/ui/AppCard'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+  AppAutocomplete,
+  AppButton,
+  AppCard,
+  AppChip,
+  AppColorSwatch,
+  AppDivider,
+  AppSelect,
+  AppSimpleTable,
+  AppStack,
+  AppText,
+  LoadingSpinner,
+  PageTitle,
+  useAppTheme,
+  type AppSimpleTableColumn,
+} from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
 import { getLast12MonthDividendStats } from '@/lib/utils/dividends'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { useDividendsStore } from '@/stores/portfolio/dividends'
 import type { Dividend } from '@/types'
-import {
-  Autocomplete,
-  Box,
-  Button,
-  Chip,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from '@mui/material'
 import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
+
+/** Passando disto a tabela rola por dentro, com o cabeçalho parado. */
+const TABLE_MAX_HEIGHT = 500
 
 export default function PortfolioDividendsPage() {
   const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
@@ -38,6 +36,7 @@ export default function PortfolioDividendsPage() {
   const dividends = useDividendsStore(s => s.dividends)
   const dividendsLoading = useDividendsStore(s => s.loading) && dividends.length === 0
   const { format: formatCurrency } = useCurrency()
+  const theme = useAppTheme()
 
   const loading = dividendsLoading
   const [selectedTicker, setSelectedTicker] = useState<string>('')
@@ -105,201 +104,158 @@ export default function PortfolioDividendsPage() {
     return filteredDividends.filter((d) => dayjs(d.date).year() === selectedYear)
   }, [filteredDividends, selectedYear])
 
+  const columns: AppSimpleTableColumn<Dividend>[] = [
+    { label: 'Data', render: (dividend) => dayjs(dividend.date).format('DD/MM/YYYY') },
+    {
+      label: 'Ativo',
+      render: (dividend) => (
+        <AppText variant="bodySmall" weight="strong" inline>
+          {dividend.ticker}
+        </AppText>
+      ),
+    },
+    {
+      label: 'Categoria',
+      render: (dividend) => (
+        <AppChip label={dividend.category} tint={categoryColors[dividend.category]} />
+      ),
+    },
+    {
+      label: 'Valor',
+      align: 'right',
+      render: (dividend) => (
+        <AppText
+          variant="bodySmall"
+          weight="strong"
+          tone={dividend.amount >= 0 ? 'success' : 'danger'}
+          inline
+        >
+          {dividend.amount >= 0 ? '+ ' : '- '}
+          {formatCurrency(Math.abs(dividend.amount))}
+        </AppText>
+      ),
+    },
+  ]
+
   return (
-    <Box pt={2}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>Proventos</Typography>
+    <AppStack gap="lg">
+      <PageTitle>Proventos</PageTitle>
 
       {loading ? (
         <LoadingSpinner />
       ) : (
         <>
-          {/* Summary cards */}
-          <Box display="flex" gap={2} mb={3} flexWrap="wrap">
-            <AppCard sx={{ flex: '1 1 200px', maxWidth: 280 }}>
-              <Typography variant="caption" color="text.secondary">
-                Recebidos nos últimos 12 meses
-              </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5 }}>
-                {formatCurrency(total12m)}
-              </Typography>
+          <AppStack direction="row" gap="md" wrap>
+            <AppCard minWidth={200}>
+              <AppStack gap="xs">
+                <AppText variant="caption" tone="secondary">
+                  Recebidos nos últimos 12 meses
+                </AppText>
+                <AppText variant="pageHeading">{formatCurrency(total12m)}</AppText>
+              </AppStack>
             </AppCard>
-            <AppCard sx={{ flex: '1 1 200px', maxWidth: 280 }}>
-              <Typography variant="caption" color="text.secondary">
-                Média dos últimos 12 meses
-              </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5 }}>
-                {formatCurrency(average12m)}
-              </Typography>
+            <AppCard minWidth={200}>
+              <AppStack gap="xs">
+                <AppText variant="caption" tone="secondary">
+                  Média dos últimos 12 meses
+                </AppText>
+                <AppText variant="pageHeading">{formatCurrency(average12m)}</AppText>
+              </AppStack>
             </AppCard>
-            <AppCard sx={{ flex: '1 1 200px', maxWidth: 280 }}>
-              <Typography variant="caption" color="text.secondary">
-                Total em {selectedYear}
-              </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5 }}>
-                {formatCurrency(totalYear)}
-              </Typography>
+            <AppCard minWidth={200}>
+              <AppStack gap="xs">
+                <AppText variant="caption" tone="secondary">
+                  Total em {selectedYear}
+                </AppText>
+                <AppText variant="pageHeading">{formatCurrency(totalYear)}</AppText>
+              </AppStack>
             </AppCard>
-          </Box>
+          </AppStack>
 
-          {/* Filters */}
-          <Box display="flex" gap={2} mb={3} alignItems="center" flexWrap="wrap">
-            <Autocomplete
+          <AppStack direction="row" gap="md" align="center" wrap>
+            <AppAutocomplete
+              label="Ativo"
+              size="sm"
               options={tickers}
               value={selectedTicker || null}
-              onChange={(_, newValue) => setSelectedTicker(newValue || '')}
-              renderInput={(params) => <TextField {...params} label="Ativo" size="small" />}
-              sx={{ minWidth: 200, flex: '0 1 240px' }}
+              onChange={(value) => setSelectedTicker(value ?? '')}
+              getOptionLabel={(ticker) => ticker}
+              isOptionEqualToValue={(option, value) => option === value}
             />
 
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>Categoria</InputLabel>
-              <Select
-                value={selectedCategory}
-                label="Categoria"
-                onChange={(e: SelectChangeEvent) => setSelectedCategory(e.target.value)}
-              >
-                <MenuItem value="">Todas</MenuItem>
-                {categories.map((cat) => (
-                  <MenuItem key={cat} value={cat}>
-                    {cat}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <AppSelect
+              label="Categoria"
+              options={[
+                { value: '', label: 'Todas' },
+                ...categories.map((category) => ({ value: category, label: category })),
+              ]}
+              value={selectedCategory}
+              onChange={setSelectedCategory}
+            />
 
-            <FormControl size="small" sx={{ minWidth: 90 }}>
-              <InputLabel>Ano</InputLabel>
-              <Select
-                value={String(selectedYear)}
-                label="Ano"
-                onChange={(e: SelectChangeEvent) => setSelectedYear(Number(e.target.value))}
-              >
-                {years.map((y) => (
-                  <MenuItem key={y} value={String(y)}>
-                    {y}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <AppSelect
+              label="Ano"
+              size="auto"
+              options={years.map((year) => ({ value: String(year), label: String(year) }))}
+              value={String(selectedYear)}
+              onChange={(value) => setSelectedYear(Number(value))}
+            />
 
-            <Button
-              variant="contained"
-              size="small"
+            <AppButton
+              size="sm"
               onClick={() => {
                 setSelectedDividend(null)
                 setFormOpen(true)
               }}
-              sx={{ textTransform: 'none', px: 3 }}
             >
               + Novo
-            </Button>
-          </Box>
+            </AppButton>
+          </AppStack>
 
-          {/* Chart */}
-          <AppCard sx={{ mb: 3, p: 0 }}>
-            <Box sx={{ p: 2, pb: 0 }}>
+          <AppCard>
+            <AppStack gap="md">
               <DividendsCategoryChart
                 dividends={filteredDividends}
                 categoryColors={categoryColors}
                 year={selectedYear}
                 size={320}
               />
-            </Box>
-            {categoryTotals.length > 0 && (
-              <Box
-                display="flex"
-                gap={2}
-                flexWrap="wrap"
-                sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider' }}
-              >
-                {categoryTotals.map(([cat, total]) => (
-                  <Box key={cat} display="flex" alignItems="center" gap={0.5}>
-                    <Box
-                      sx={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '2px',
-                        bgcolor: categoryColors[cat] ?? 'primary.main',
-                      }}
-                    />
-                    <Typography variant="caption" color="text.secondary">
-                      {cat}
-                    </Typography>
-                    <Typography variant="caption" fontWeight={600}>
-                      {formatCurrency(total)}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            )}
+
+              {/* O total de cada categoria no ano, colado ao gráfico que as
+                  empilha: é a leitura que a barra empilhada não dá. */}
+              {categoryTotals.length > 0 && (
+                <>
+                  <AppDivider />
+                  <AppStack direction="row" gap="md" wrap>
+                    {categoryTotals.map(([category, total]) => (
+                      <AppStack key={category} direction="row" align="center" gap="xs">
+                        <AppColorSwatch color={categoryColors[category] ?? theme.palette.primary.main} />
+                        <AppText variant="caption" tone="secondary">
+                          {category}
+                        </AppText>
+                        <AppText variant="caption" weight="strong">
+                          {formatCurrency(total)}
+                        </AppText>
+                      </AppStack>
+                    ))}
+                  </AppStack>
+                </>
+              )}
+            </AppStack>
           </AppCard>
 
-          {/* Table */}
-          <AppCard noPadding>
-            <TableContainer sx={{ maxHeight: 500 }}>
-              <Table size="small" stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 600, fontSize: '0.8rem', color: 'text.secondary' }}>Data</TableCell>
-                    <TableCell sx={{ fontWeight: 600, fontSize: '0.8rem', color: 'text.secondary' }}>Ativo</TableCell>
-                    <TableCell sx={{ fontWeight: 600, fontSize: '0.8rem', color: 'text.secondary' }}>Categoria</TableCell>
-                    <TableCell sx={{ fontWeight: 600, fontSize: '0.8rem', color: 'text.secondary' }} align="right">Valor</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {tableDividends.map((dividend) => (
-                    <TableRow
-                      key={dividend.id}
-                      hover
-                      sx={{
-                        cursor: 'pointer',
-                        '&:last-child td': { borderBottom: 0 },
-                      }}
-                      onClick={() => {
-                        setSelectedDividend(dividend)
-                        setFormOpen(true)
-                      }}
-                    >
-                      <TableCell sx={{ fontSize: '0.85rem' }}>
-                        {dayjs(dividend.date).format('DD/MM/YYYY')}
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={600}>{dividend.ticker}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={dividend.category}
-                          size="small"
-                          sx={{
-                            fontSize: '0.72rem',
-                            height: 22,
-                            bgcolor: categoryColors[dividend.category] ? `${categoryColors[dividend.category]}22` : 'action.selected',
-                            color: categoryColors[dividend.category] ?? 'text.primary',
-                            fontWeight: 600,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography
-                          variant="body2"
-                          fontWeight={600}
-                          color={dividend.amount >= 0 ? 'success.main' : 'error.main'}
-                        >
-                          {dividend.amount >= 0 ? '+ ' : '- '}{formatCurrency(Math.abs(dividend.amount))}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {tableDividends.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                        Nenhum provento encontrado
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+          <AppCard padding="none">
+            <AppSimpleTable
+              rows={tableDividends}
+              columns={columns}
+              getRowKey={(dividend) => dividend.id}
+              maxHeight={TABLE_MAX_HEIGHT}
+              onRowClick={(dividend) => {
+                setSelectedDividend(dividend)
+                setFormOpen(true)
+              }}
+              emptyMessage="Nenhum provento encontrado"
+            />
           </AppCard>
         </>
       )}
@@ -313,6 +269,6 @@ export default function PortfolioDividendsPage() {
         }}
         dividend={selectedDividend ?? undefined}
       />
-    </Box>
+    </AppStack>
   )
 }
