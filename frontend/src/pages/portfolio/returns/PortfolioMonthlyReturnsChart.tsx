@@ -1,5 +1,5 @@
 // src/components/PortfolioMonthlyReturnsChart.tsx
-import { Box, Stack, Typography, useTheme } from '@mui/material'
+import { AppChartArea, AppInlineToggle, AppStack, SectionTitle, useAppTheme } from '@/components/ui'
 import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
 import {
@@ -34,7 +34,7 @@ export default function PortfolioMonthlyReturnsChart({
   defaultRange = '1y',
   data,
 }: Props) {
-  const theme = useTheme()
+  const theme = useAppTheme()
 
   const successColor = theme.palette.success.main
   const warningColor = theme.palette.error.main
@@ -145,44 +145,24 @@ export default function PortfolioMonthlyReturnsChart({
 
   if (!monthlyData.length) {
     return (
-      <Box height={height} display="flex" alignItems="center" justifyContent="center">
-        <Typography variant="body2" color="text.secondary">
-          Sem dados de rentabilidade para exibir o desempenho mensal.
-        </Typography>
-      </Box>
+      <AppChartArea
+        height={height}
+        emptyMessage="Sem dados de rentabilidade para exibir o desempenho mensal."
+      />
     )
   }
 
   return (
-    <Box sx={{ mt: 4, ml: 1.8, mr: 1.8 }}>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        sx={{ mb: 1, ml: 1, mr: 1 }}
-      >
-        <Typography variant="h6">Desempenho Mensal</Typography>
-
-        {/* Timeframes (mesmo estilo do primeiro gráfico) */}
-        <Stack direction="row" spacing={1}>
-          {ranges.map((r) => (
-            <Typography
-              key={r.value}
-              onClick={() => setRange(r.value)}
-              sx={{
-                cursor: 'pointer',
-                fontWeight: range === r.value ? 700 : 400,
-                fontSize: 13,
-              }}
-            >
-              {r.label}
-            </Typography>
-          ))}
-        </Stack>
-      </Stack>
-
-      <Box height={height}>
-        <ResponsiveContainer width="100%" height="100%">
+    <AppChartArea
+      height={height}
+      toolbar={
+        <AppStack direction="row" justify="between" align="center" gap="md">
+          <SectionTitle>Desempenho Mensal</SectionTitle>
+          <AppInlineToggle options={ranges} value={range} onChange={setRange} />
+        </AppStack>
+      }
+    >
+      <ResponsiveContainer width="100%" height="100%">
           <BarChart data={monthlyData} margin={{ left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
             <XAxis
@@ -216,8 +196,7 @@ export default function PortfolioMonthlyReturnsChart({
               ))}
             </Bar>
           </BarChart>
-        </ResponsiveContainer>
-      </Box>
-    </Box>
+      </ResponsiveContainer>
+    </AppChartArea>
   )
 }

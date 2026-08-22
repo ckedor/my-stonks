@@ -14,6 +14,12 @@
 export { default as AppStack, AppStackItem } from './AppStack'
 export type { AppStackItemProps, AppStackProps } from './AppStack'
 export { default as AppGrid, AppGridItem } from './AppGrid'
+export { default as AppHeatmapTable } from './AppHeatmapTable'
+export type {
+  AppHeatmapCell,
+  AppHeatmapRow,
+  AppHeatmapTableProps,
+} from './AppHeatmapTable'
 export type { AppGridProps, AppGridItemProps } from './AppGrid'
 export { default as AppCard } from './AppCard'
 export { default as AppDivider } from './AppDivider'

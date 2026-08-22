@@ -1,5 +1,5 @@
 // src/components/PortfolioMonthlyHeatmap.tsx
-import { Box, Typography, useTheme } from '@mui/material'
+import { AppChartArea, AppHeatmapTable, useAppTheme, type AppHeatmapRow } from '@/components/ui'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 
@@ -18,6 +18,9 @@ interface HeatmapCell {
   value: number | null // retorno mensal em %
 }
 
+/** Altura reservada quando não há o que desenhar, para a tela não saltar. */
+const EMPTY_HEIGHT = 260
+
 const MONTH_LABELS = [
   'jan',
   'fev',
@@ -34,7 +37,7 @@ const MONTH_LABELS = [
 ]
 
 export default function PortfolioMonthlyHeatmap({ data }: Props) {
-  const theme = useTheme()
+  const theme = useAppTheme()
 
   // série completa da curva (sem filtro de timeframe)
   const baseSeries: SeriesPoint[] = useMemo(() => {
@@ -160,117 +163,41 @@ export default function PortfolioMonthlyHeatmap({ data }: Props) {
 
   if (!years.length) {
     return (
-      <Box height={260} display="flex" alignItems="center" justifyContent="center">
-        <Typography variant="body2" color="text.secondary">
-          Sem dados de rentabilidade suficientes para exibir o mapa mensal.
-        </Typography>
-      </Box>
+      <AppChartArea
+        height={EMPTY_HEIGHT}
+        emptyMessage="Sem dados de rentabilidade suficientes para exibir o mapa mensal."
+      />
     )
   }
 
+  const percent = (value: number | null) => (value != null ? `${value.toFixed(1)}%` : '')
+
+  const cellFor = (value: number | null) => {
+    const { backgroundColor, color } = getCellStyle(value)
+    return { text: percent(value), background: backgroundColor, color }
+  }
+
+  const rows: AppHeatmapRow[] = years.map((year) => {
+    const byMonth = new Map<number, HeatmapCell>()
+    ;(byYear[year] || []).forEach((cell) => byMonth.set(cell.monthIndex, cell))
+
+    const annual = annualReturns[year] ?? null
+
+    return {
+      label: String(year),
+      cells: [
+        ...MONTH_LABELS.map((_, monthIndex) => cellFor(byMonth.get(monthIndex)?.value ?? null)),
+        cellFor(annual),
+      ],
+    }
+  })
+
   return (
-    <Box sx={{ mt: 1, ml: 1.8, mr: 1.8 }}>
-      <Box sx={{ overflowX: 'auto' }}>
-        <Box
-          component="table"
-          sx={{
-            borderCollapse: 'collapse',
-            width: '100%',
-            fontSize: 12,
-            minWidth: 600,
-          }}
-        >
-          <Box component="thead">
-            <Box component="tr">
-              <Box
-                component="th"
-                sx={{ textAlign: 'left', padding: '4px 8px' }}
-              >
-                Ano
-              </Box>
-              {MONTH_LABELS.map((m) => (
-                <Box
-                  key={m}
-                  component="th"
-                  sx={{ textAlign: 'center', padding: '4px 6px' }}
-                >
-                  {m}
-                </Box>
-              ))}
-              <Box
-                component="th"
-                sx={{ textAlign: 'center', padding: '4px 8px' }}
-              >
-                Ano
-              </Box>
-            </Box>
-          </Box>
-
-          <Box component="tbody">
-            {years.map((year) => {
-              const cells = byYear[year] || []
-              const byMonth = new Map<number, HeatmapCell>()
-              cells.forEach((c) => byMonth.set(c.monthIndex, c))
-
-              const annual = annualReturns[year] ?? null
-              const { backgroundColor: annualBg, color: annualColor } =
-                getCellStyle(annual)
-
-              return (
-                <Box component="tr" key={year}> 
-                  <Box
-                    component="td"
-                    sx={{
-                      padding: '4px 8px',
-                      textAlign: 'left',
-                      fontWeight: 500,
-                    }}
-                  >
-                    {year}
-                  </Box>
-
-                  {MONTH_LABELS.map((_, monthIndex) => {
-                    const cell = byMonth.get(monthIndex)
-                    const value = cell?.value ?? null
-                    const { backgroundColor, color } = getCellStyle(value)
-
-                    return (
-                      <Box
-                        key={monthIndex}
-                        component="td"
-                        sx={{
-                          padding: '2px 4px',
-                          textAlign: 'center',
-                          border: `1px solid ${theme.palette.divider}`,
-                          backgroundColor,
-                          color,
-                          minWidth: 40,
-                        }}
-                      >
-                        {value != null ? `${value.toFixed(1)}%` : '-'}
-                      </Box>
-                    )
-                  })}
-
-                  <Box
-                    component="td"
-                    sx={{
-                      padding: '2px 6px',
-                      textAlign: 'center',
-                      border: `1px solid ${theme.palette.divider}`,
-                      fontWeight: 500,
-                      backgroundColor: annualBg,
-                      color: annualColor,
-                    }}
-                  >
-                    {annual != null ? `${annual.toFixed(1)}%` : '-'}
-                  </Box>
-                </Box>
-              )
-            })}
-          </Box>
-        </Box>
-      </Box>
-    </Box>
+    <AppHeatmapTable
+      rowHeader="Ano"
+      columns={[...MONTH_LABELS, 'Ano']}
+      rows={rows}
+      borderColor={theme.palette.divider}
+    />
   )
 }
