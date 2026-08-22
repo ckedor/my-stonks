@@ -1,0 +1,137 @@
+import { expect, expectNothingClipped, test } from './fixtures/app'
+
+/* As telas restantes, uma por vez. Como nas outras, os snapshots nascem
+   antes da migração. */
+
+const HOJE = new Date('2026-03-17T12:00:00-03:00')
+
+const PORTFOLIOS = [
+  {
+    id: 1,
+    name: 'Principal',
+    user_id: 1,
+    custom_categories: [
+      { id: 10, name: 'Ações', color: '#1976d2', benchmark_id: null },
+      { id: 11, name: 'FIIs', color: '#2e7d32', benchmark_id: null },
+    ],
+  },
+]
+
+const POSICOES = [
+  {
+    asset_id: 1, date: '2026-03-17', ticker: 'PETR4', name: 'Petrobras PN',
+    quantity: 300, average_price: 32.4, profit_pct: 41.98, category: 'Ações',
+    value: 13800, price: 46, acc_return: 0.4198, twelve_months_return: 0.1903,
+    cagr: 0.1832, total_invested: 9720, type: 'Ação', class: 'Renda Variável',
+  },
+  {
+    asset_id: 2, date: '2026-03-17', ticker: 'HGLG11', name: 'CSHG Logística',
+    quantity: 90, average_price: 152.1, profit_pct: -4.2, category: 'FIIs',
+    value: 13113, price: 145.7, acc_return: -0.042, twelve_months_return: 0.061,
+    cagr: 0.074, total_invested: 13689, type: 'FII', class: 'Renda Variável',
+  },
+  {
+    asset_id: 3, date: '2026-03-17', ticker: 'BOVA11', name: 'iShares Ibovespa',
+    quantity: 40, average_price: 108.5, profit_pct: 12.4, category: 'Ações',
+    value: 4877, price: 121.9, acc_return: 0.124, twelve_months_return: 0.088,
+    cagr: 0.095, total_invested: 4340, type: 'ETF', class: 'Renda Variável',
+  },
+]
+
+test.use({ viewport: { width: 1440, height: 1200 } })
+
+test('login', async ({ page }) => {
+  await page.goto('/login')
+
+  await expect(page.getByRole('button', { name: 'Acessar conta' })).toBeVisible()
+  await expectNothingClipped(page)
+
+  await expect(page).toHaveScreenshot('page-login.png')
+})
+
+test('portfolio/trades', async ({ page, mockApi }) => {
+  await page.clock.setFixedTime(HOJE)
+  await mockApi('/portfolio', PORTFOLIOS)
+  await mockApi('/portfolio/transaction', [
+    {
+      id: 1, asset_id: 1, date: '2025-11-04', ticker: 'PETR4', type: 'Compra',
+      quantity: 100, price: 30.5, value: 3050, average_price: 30.5, broker: 'Rico',
+      broker_id: 1, realized_profit: 0, acc_quantity: 100, position: 3050,
+      profit_pct: 0, portfolio_id: 1, original_price: 30.5, currency: 'BRL',
+    },
+    {
+      id: 2, asset_id: 2, date: '2026-02-20', ticker: 'HGLG11', type: 'Venda',
+      quantity: -50, price: 144.9, value: -7245, average_price: 152.1, broker: 'Avenue',
+      broker_id: 2, realized_profit: -360, acc_quantity: 90, position: 13113,
+      profit_pct: -4.73, portfolio_id: 1, original_price: 144.9, currency: 'BRL',
+    },
+  ])
+
+  await page.goto('/portfolio/trades')
+
+  await expect(page.getByText('HGLG11')).toBeVisible()
+  await expectNothingClipped(page)
+
+  await expect(page).toHaveScreenshot('page-trades.png')
+})
+
+test('portfolio/distribuição', async ({ page, mockApi }) => {
+  await page.clock.setFixedTime(HOJE)
+  await mockApi('/portfolio', PORTFOLIOS)
+  await mockApi('/portfolio/position/1', POSICOES)
+
+  await page.goto('/portfolio/distribution')
+
+  await expect(page.getByRole('heading', { name: 'Distribuição' })).toBeVisible()
+  await expect(page.getByText('PETR4').first()).toBeVisible()
+  await expectNothingClipped(page)
+
+  await expect(page).toHaveScreenshot('page-distribution.png')
+})
+
+test('portfolio/rebalanceamento', async ({ page, mockApi }) => {
+  await page.clock.setFixedTime(HOJE)
+  await mockApi('/portfolio', PORTFOLIOS)
+  await mockApi('/portfolio/rebalancing/1', {
+    portfolio_id: 1,
+    total_value: 31790,
+    categories: [
+      {
+        category_id: 10, category_name: 'Ações', color: '#1976d2',
+        current_value: 18677, current_pct: 58.75, target_pct: 60, target_value: 19074,
+        diff_pct: 1.25, diff_value: 397,
+        assets: [
+          {
+            asset_id: 1, ticker: 'PETR4', name: 'Petrobras PN', category: 'Ações',
+            category_id: 10, current_value: 13800, current_pct_in_category: 73.89,
+            target_pct_in_category: 70, target_value: 13352, diff_pct: -3.89, diff_value: -448,
+          },
+          {
+            asset_id: 3, ticker: 'BOVA11', name: 'iShares Ibovespa', category: 'Ações',
+            category_id: 10, current_value: 4877, current_pct_in_category: 26.11,
+            target_pct_in_category: 30, target_value: 5722, diff_pct: 3.89, diff_value: 845,
+          },
+        ],
+      },
+      {
+        category_id: 11, category_name: 'FIIs', color: '#2e7d32',
+        current_value: 13113, current_pct: 41.25, target_pct: 40, target_value: 12716,
+        diff_pct: -1.25, diff_value: -397,
+        assets: [
+          {
+            asset_id: 2, ticker: 'HGLG11', name: 'CSHG Logística', category: 'FIIs',
+            category_id: 11, current_value: 13113, current_pct_in_category: 100,
+            target_pct_in_category: 100, target_value: 12716, diff_pct: 0, diff_value: -397,
+          },
+        ],
+      },
+    ],
+  })
+
+  await page.goto('/portfolio/rebalancing')
+
+  await expect(page.getByText('Ações').first()).toBeVisible()
+  await expectNothingClipped(page)
+
+  await expect(page).toHaveScreenshot('page-rebalancing.png')
+})
