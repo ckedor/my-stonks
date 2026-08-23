@@ -18,7 +18,6 @@
     "src/pages/market/ativos/FavoriteAssets.tsx",
     "src/pages/market/ativos/page.tsx",
     "src/pages/market/overview/page.tsx",
-    "src/pages/portfolio/rebalancing/page.tsx",
     "src/pages/portfolio/user-configurations/IntegrationsTab.tsx",
     "src/pages/portfolio/user-configurations/ThemeTab.tsx",
     "src/pages/portfolio/user-configurations/page.tsx",

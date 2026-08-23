@@ -60,6 +60,9 @@ export interface AppStackProps {
    *  patente, que desce sobre o gráfico sem empurrar nada. Sozinha não
    *  desenha nada: é o `position: relative` que o filho fixado precisa. */
   anchor?: boolean
+  /** Recuo à esquerda: a linha que pertence à de cima — o ativo sob a
+   *  categoria numa tabela onde os dois níveis dividem a mesma coluna. */
+  indent?: SpaceToken
 }
 
 const STYLE_PROPS = new Set([
@@ -72,11 +75,12 @@ const STYLE_PROPS = new Set([
   'fullHeight',
   'collapseBelow',
   'anchor',
+  'indent',
 ])
 
 const AppStack = styled('div', {
   shouldForwardProp: (prop) => !STYLE_PROPS.has(prop as string),
-})<AppStackProps>(({ theme, direction = 'column', gap = 'none', align, justify, wrap, grow, fullHeight, collapseBelow, anchor }) => ({
+})<AppStackProps>(({ theme, direction = 'column', gap = 'none', align, justify, wrap, grow, fullHeight, collapseBelow, anchor, indent }) => ({
   display: 'flex',
   flexDirection: direction,
   gap: theme.spacing(space[gap]),
@@ -86,6 +90,7 @@ const AppStack = styled('div', {
   ...(grow ? { flex: 1, minWidth: 0 } : null),
   ...(fullHeight ? { height: '100vh' } : null),
   ...(anchor ? { position: 'relative' } : null),
+  ...(indent ? { paddingLeft: theme.spacing(space[indent]) } : null),
   ...(collapseBelow
     ? {
         [theme.breakpoints.down(collapseBelow)]: {
