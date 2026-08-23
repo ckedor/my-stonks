@@ -41,6 +41,10 @@ export interface AppChartAreaProps {
   plotRef?: Ref<HTMLDivElement>
   /** Posicionado por cima do desenho — um balão que segue o cursor. */
   overlay?: ReactNode
+  /** Estica o desenho até a borda do card, cancelando o respiro lateral. O
+   *  eixo de um gráfico já é margem visual, e o padding do card por cima
+   *  dele afasta o desenho do título sem motivo. */
+  bleed?: boolean
   children?: ReactNode
 }
 
@@ -53,6 +57,7 @@ export default function AppChartArea({
   note,
   plotRef,
   overlay,
+  bleed = false,
   children,
 }: AppChartAreaProps) {
   if (loading || emptyMessage) {
@@ -65,11 +70,12 @@ export default function AppChartArea({
 
   const plot = (
     <Box
-      sx={
-        sizing === 'frame'
+      sx={{
+        ...(sizing === 'frame'
           ? { flex: 1, minHeight: 0, position: 'relative' }
-          : { width: '100%', ...(height ? { height } : null), position: 'relative' }
-      }
+          : { width: '100%', ...(height ? { height } : null), position: 'relative' }),
+        ...(bleed ? { mx: -space.md } : null),
+      }}
     >
       {/* O nó da biblioteca de canvas é irmão do overlay, não pai: ela
           apaga e recria o que está dentro do próprio nó, e levaria o balão

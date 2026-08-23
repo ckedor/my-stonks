@@ -7,14 +7,13 @@ import {
 } from '@/api/market'
 import AssetHeader from '@/components/asset/AssetHeader'
 import AssetPositionCard from '@/components/asset/AssetPositionCard'
-import AppBreadcrumbs from '@/components/ui/AppBreadcrumbs'
+import { AppBreadcrumbs, AppStack, AppText } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
 import { QUOTE_CHART_HEIGHT } from './AssetQuoteCard'
 import MarketAssetSkeleton from './MarketAssetSkeleton'
 import { assetMarketView } from './views'
 import { useFavoritesStore } from '@/stores/favorites'
 import { useMarketStore } from '@/stores/market'
-import { Box, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
@@ -24,10 +23,7 @@ export default function MarketAssetPage() {
   const { currency, format } = useCurrency()
   const recordVisit = useFavoritesStore((state) => state.recordVisit)
 
-  const storedAsset = useMemo(
-    () => assets.find((a) => a.id === Number(id)),
-    [assets, id],
-  )
+  const storedAsset = useMemo(() => assets.find((a) => a.id === Number(id)), [assets, id])
   const [fetchedAsset, setFetchedAsset] = useState<MarketAssetDetails | null>(null)
   const [assetLoading, setAssetLoading] = useState(!storedAsset)
   const [quotes, setQuotes] = useState<AssetQuoteHistory | null>(null)
@@ -74,10 +70,7 @@ export default function MarketAssetPage() {
       .finally(() => setLoading(false))
   }, [asset, currency, recordVisit])
 
-  const candleData = useMemo(
-    () => (quotes ? quotesToCandleData(quotes.quotes) : []),
-    [quotes],
-  )
+  const candleData = useMemo(() => (quotes ? quotesToCandleData(quotes.quotes) : []), [quotes])
 
   // What this asset's type has to show. Everything below the header varies
   // with it; the header itself does not.
@@ -88,34 +81,38 @@ export default function MarketAssetPage() {
   }
 
   return (
-    <Box pt={2}>
-      <AppBreadcrumbs items={[{ label: 'Mercado', href: '/market/assets' }, { label: ticker ?? '' }]} />
+    <AppStack gap="md">
+      <AppBreadcrumbs
+        items={[{ label: 'Mercado', href: '/market/assets' }, { label: ticker ?? '' }]}
+      />
 
-      <Box mb={2}>
-        <AssetHeader
-          ticker={ticker ?? ''}
-          name={asset?.name}
-          typeShortName={asset?.asset_type?.short_name}
-          logoUrl={quotes?.logo_url}
-          // Vem em fração desta ponta da API, ao contrário da análise da
-          // posição; o header trabalha sempre em pontos percentuais.
-          cagr={quotes?.cagr ? { value: quotes.cagr.value * 100, startDate: quotes.cagr.start_date } : null}
-          cagrHint="Calculado sobre o fechamento ajustado por proventos e desdobramentos"
-          action={
-            asset && (
-              <AssetPositionCard
-                assetId={asset.id}
-                ticker={asset.ticker ?? ''}
-                name={asset.name}
-                assetTypeId={asset.asset_type_id}
-              />
-            )
-          }
-        />
-      </Box>
+      <AssetHeader
+        ticker={ticker ?? ''}
+        name={asset?.name}
+        typeShortName={asset?.asset_type?.short_name}
+        logoUrl={quotes?.logo_url}
+        // Vem em fração desta ponta da API, ao contrário da análise da
+        // posição; o header trabalha sempre em pontos percentuais.
+        cagr={
+          quotes?.cagr
+            ? { value: quotes.cagr.value * 100, startDate: quotes.cagr.start_date }
+            : null
+        }
+        cagrHint="Calculado sobre o fechamento ajustado por proventos e desdobramentos"
+        action={
+          asset && (
+            <AssetPositionCard
+              assetId={asset.id}
+              ticker={asset.ticker ?? ''}
+              name={asset.name}
+              assetTypeId={asset.asset_type_id}
+            />
+          )
+        }
+      />
 
       {error || !asset ? (
-        <Typography color="error">{error ?? 'Ativo não encontrado'}</Typography>
+        <AppText tone="danger">{error ?? 'Ativo não encontrado'}</AppText>
       ) : (
         <AssetMarketView
           assetId={asset.id}
@@ -124,6 +121,6 @@ export default function MarketAssetPage() {
           priceFormatter={format}
         />
       )}
-    </Box>
+    </AppStack>
   )
 }

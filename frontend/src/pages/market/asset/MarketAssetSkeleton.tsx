@@ -1,65 +1,54 @@
-import { Box, Skeleton, Stack } from '@mui/material'
+import { AppCard, AppSkeleton, AppStack } from '@/components/ui'
 
 /** Placeholder for the market asset page, laid out to match what loads into it:
  *  breadcrumb, ticker heading, then the quote card with its toolbar and chart. */
 export default function MarketAssetSkeleton({ height = 500 }: { height?: number }) {
   return (
-    <Box pt={2}>
+    <AppStack gap="md">
       {/* Breadcrumbs */}
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-        <Skeleton variant="text" width={70} height={20} />
-        <Skeleton variant="text" width={12} height={20} />
-        <Skeleton variant="text" width={60} height={20} />
-      </Stack>
+      <AppStack direction="row" gap="sm" align="center">
+        <AppSkeleton shape="text" width={70} height={20} />
+        <AppSkeleton shape="text" width={12} height={20} />
+        <AppSkeleton shape="text" width={60} height={20} />
+      </AppStack>
 
-      {/* Logo + ticker + type chip */}
-      <Box display="flex" alignItems="center" gap={1.25} mb={0.5}>
-        <Skeleton variant="rounded" width={28} height={28} />
-        <Skeleton variant="text" width={110} height={36} />
-        <Skeleton variant="rounded" width={46} height={20} />
-      </Box>
-      <Skeleton variant="text" width={240} height={24} />
-      {/* CAGR since the start of the series */}
-      <Skeleton variant="text" width={210} height={20} sx={{ mb: 2 }} />
+      <AppStack gap="xs">
+        {/* Logo + ticker + etiqueta do tipo */}
+        <AppStack direction="row" gap="sm" align="center">
+          <AppSkeleton width={28} height={28} />
+          <AppSkeleton shape="text" width={110} height={36} />
+          <AppSkeleton shape="pill" width={46} height={20} />
+        </AppStack>
+        <AppSkeleton shape="text" width={240} height={24} />
+        {/* CAGR desde o início da série */}
+        <AppSkeleton shape="text" width={210} height={20} />
+      </AppStack>
 
-      {/* Quote card */}
-      <Box
-        sx={{
-          p: 2,
-          borderRadius: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
-        }}
-      >
-        <Skeleton variant="text" width={90} height={26} sx={{ mb: 1.5 }} />
+      {/* Card da cotação */}
+      <AppCard>
+        <AppStack gap="sm">
+          <AppSkeleton shape="text" width={90} height={26} />
 
-        {/* Chart toolbar: performance readout on the left, controls on the right */}
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          flexWrap="wrap"
-          rowGap={1}
-          sx={{ mb: 1 }}
-        >
-          <Stack direction="row" spacing={2}>
-            <Skeleton variant="text" width={130} height={20} />
-            <Skeleton variant="text" width={90} height={20} />
-          </Stack>
-          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" rowGap={1}>
-            <Skeleton variant="text" width={54} height={24} />
-            <Skeleton variant="text" width={70} height={24} />
-            <Skeleton variant="rounded" width={82} height={28} />
-            <Skeleton variant="rounded" width={96} height={28} />
-            <Skeleton variant="rounded" width={64} height={28} />
-            <Skeleton variant="rounded" width={52} height={28} />
-            <Skeleton variant="text" width={40} height={24} />
-          </Stack>
-        </Stack>
+          {/* Barra do gráfico: desempenho à esquerda, controles à direita */}
+          <AppStack direction="row" justify="between" align="center" gap="sm" wrap>
+            <AppStack direction="row" gap="md">
+              <AppSkeleton shape="text" width={130} height={20} />
+              <AppSkeleton shape="text" width={90} height={20} />
+            </AppStack>
+            <AppStack direction="row" gap="sm" align="center" wrap>
+              <AppSkeleton shape="text" width={54} height={24} />
+              <AppSkeleton shape="text" width={70} height={24} />
+              <AppSkeleton width={82} height={28} />
+              <AppSkeleton width={96} height={28} />
+              <AppSkeleton width={64} height={28} />
+              <AppSkeleton width={52} height={28} />
+              <AppSkeleton shape="text" width={40} height={24} />
+            </AppStack>
+          </AppStack>
 
-        <Skeleton variant="rounded" width="100%" height={height} />
-      </Box>
-    </Box>
+          <AppSkeleton height={height} />
+        </AppStack>
+      </AppCard>
+    </AppStack>
   )
 }

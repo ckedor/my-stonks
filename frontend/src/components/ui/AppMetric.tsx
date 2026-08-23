@@ -1,5 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
+import AppTooltip from './AppTooltip'
 
 /* Um número com o nome dele em cima.
  *
@@ -36,6 +37,10 @@ export interface AppMetricProps {
    *  alinhamento à esquerda deixa os rótulos desencontrados dos valores.
    *  Padrão: `start`. */
   align?: 'start' | 'center'
+  /** O que o número responde, em uma frase, para o rótulo que é jargão —
+   *  "P/VP" não diz nada a quem não conhece a sigla. Marca o rótulo com um
+   *  sublinhado pontilhado, que é o que avisa que há o que ler ali. */
+  hint?: string
 }
 
 export default function AppMetric({
@@ -45,16 +50,27 @@ export default function AppMetric({
   tone = 'default',
   suffix,
   align = 'start',
+  hint,
 }: AppMetricProps) {
+  const heading = (
+    <Typography
+      variant={size === 'lg' ? 'body2' : 'caption'}
+      color="text.secondary"
+      sx={{
+        display: 'block',
+        lineHeight: 1.2,
+        ...(hint
+          ? { borderBottom: '1px dotted', borderColor: 'text.disabled', cursor: 'help' }
+          : null),
+      }}
+    >
+      {label}
+    </Typography>
+  )
+
   return (
     <Box sx={{ minWidth: { xs: MIN_WIDTH_XS, sm: 'auto' }, textAlign: align }}>
-      <Typography
-        variant={size === 'lg' ? 'body2' : 'caption'}
-        color="text.secondary"
-        sx={{ display: 'block', lineHeight: 1.2 }}
-      >
-        {label}
-      </Typography>
+      {hint ? <AppTooltip title={hint}>{heading}</AppTooltip> : heading}
       <Box
         sx={{
           display: 'flex',

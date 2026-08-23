@@ -1,6 +1,5 @@
 import { fetchFIIProfile, type FIIProfile } from '@/api/market'
-import AppCard from '@/components/ui/AppCard'
-import { Skeleton, Stack, Typography } from '@mui/material'
+import { AppCard, AppSkeleton, AppStack, AppText } from '@/components/ui'
 import { useEffect, useState } from 'react'
 import AssetQuoteCard from '../../AssetQuoteCard'
 import type { AssetMarketViewProps } from '../types'
@@ -38,7 +37,7 @@ export default function FIIMarketView({
   }, [assetId])
 
   return (
-    <Stack spacing={2}>
+    <AppStack gap="md">
       <AssetQuoteCard
         data={candleData}
         persistKey={`market-asset:${ticker}`}
@@ -49,9 +48,9 @@ export default function FIIMarketView({
 
       {failed && (
         <AppCard>
-          <Typography variant="body2" color="text.secondary">
+          <AppText variant="bodySmall" tone="secondary">
             Não foi possível carregar os dados do fundo.
-          </Typography>
+          </AppText>
         </AppCard>
       )}
 
@@ -62,22 +61,26 @@ export default function FIIMarketView({
           exactly like a page that was never built -- and the chart's own empty
           message, which says which of the two it is, could never be reached. */}
       {profile && <FIIDividendsCard dividends={profile.dividends} />}
-    </Stack>
+    </AppStack>
   )
 }
 
 function FIIProfileSkeleton() {
   return (
-    <Stack spacing={2}>
+    <AppStack gap="md">
       <AppCard>
-        <Skeleton variant="text" width={180} height={28} />
-        <Skeleton variant="text" width="60%" height={22} sx={{ mb: 2 }} />
-        <Skeleton variant="rounded" width="100%" height={92} />
+        <AppStack gap="sm">
+          <AppSkeleton shape="text" width={180} height={28} />
+          <AppSkeleton shape="text" width={320} height={22} />
+          <AppSkeleton height={92} />
+        </AppStack>
       </AppCard>
       <AppCard>
-        <Skeleton variant="text" width={200} height={28} sx={{ mb: 1.5 }} />
-        <Skeleton variant="rounded" width="100%" height={280} />
+        <AppStack gap="sm">
+          <AppSkeleton shape="text" width={200} height={28} />
+          <AppSkeleton height={280} />
+        </AppStack>
       </AppCard>
-    </Stack>
+    </AppStack>
   )
 }
