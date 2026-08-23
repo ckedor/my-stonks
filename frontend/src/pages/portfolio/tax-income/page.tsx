@@ -1,61 +1,57 @@
-
+import { AppSelect, AppStack, AppTabs, PageTitle } from '@/components/ui'
 import { usePortfolioStore } from '@/stores/portfolio'
-import { Box, FormControl, InputLabel, MenuItem, Select, Tab, Tabs, Typography } from '@mui/material'
 import dayjs from 'dayjs'
 import { useState } from 'react'
 import AssetsAndRights from './AssetsAndRights'
-import CommonOperationsTaxIncome from './CommonOperationsTaxIncome'
 import DarfSummaryTable from './DarfSummaryTable'
-import FIITaxIncome from './FIITaxIncome'
+import MonthlyGainsTable from './MonthlyGainsTable'
+
+type TaxTab = 'darf' | 'assets' | 'fii' | 'common'
+
+const TABS = [
+  { id: 'darf' as const, label: 'DARF' },
+  { id: 'assets' as const, label: 'Bens e Direitos' },
+  { id: 'fii' as const, label: 'Apuração FIIs' },
+  { id: 'common' as const, label: 'Apuração Operações Comuns' },
+]
 
 export default function TaxIncomePage() {
   const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
   const [fiscalYear, setFiscalYear] = useState(dayjs().year() - 1)
-  const [tabIndex, setTabIndex] = useState(0)
+  const [tab, setTab] = useState<TaxTab>('darf')
 
   const years = Array.from({ length: 5 }, (_, i) => dayjs().year() - i)
 
   if (!selectedPortfolio?.id) return null
 
   return (
-    <Box pt={2}>
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>Declaração de Imposto de Renda</Typography>
-      <Box display="flex" alignItems="center" gap={2} mb={2}>
-        <FormControl variant="standard" sx={{ minWidth: 100 }}>
-          <InputLabel>Ano</InputLabel>
-          <Select
-            value={fiscalYear}
-            onChange={(e) => setFiscalYear(Number(e.target.value))}
-            disableUnderline
-          >
-            {years.map((year) => (
-              <MenuItem key={year} value={year}>
-                {year}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+    <AppStack gap="md">
+      <PageTitle>Declaração de Imposto de Renda</PageTitle>
 
-        <Tabs value={tabIndex} onChange={(_, idx) => setTabIndex(idx)}>
-          <Tab label="DARF" />
-          <Tab label="Bens e Direitos" />
-          <Tab label="Apuração FIIs" />
-          <Tab label="Apuração Operações Comuns" />
-        </Tabs>
-      </Box>
+      <AppStack direction="row" gap="md" align="center">
+        <AppSelect
+          label="Ano"
+          size="auto"
+          options={years.map((year) => ({ value: String(year), label: String(year) }))}
+          value={String(fiscalYear)}
+          onChange={(value) => setFiscalYear(Number(value))}
+        />
 
-      {tabIndex === 0 && (
+        <AppTabs items={TABS} value={tab} onChange={setTab} label="Seções da declaração" />
+      </AppStack>
+
+      {tab === 'darf' && (
         <DarfSummaryTable fiscalYear={fiscalYear} portfolioId={selectedPortfolio.id} />
       )}
-      {tabIndex === 1 && (
+      {tab === 'assets' && (
         <AssetsAndRights fiscalYear={fiscalYear} portfolioId={selectedPortfolio.id} />
       )}
-      {tabIndex === 2 && (
-        <FIITaxIncome fiscalYear={fiscalYear} portfolioId={selectedPortfolio.id} />
+      {tab === 'fii' && (
+        <MonthlyGainsTable scope="fii" fiscalYear={fiscalYear} portfolioId={selectedPortfolio.id} />
       )}
-      {tabIndex === 3 && (
-        <CommonOperationsTaxIncome fiscalYear={fiscalYear} portfolioId={selectedPortfolio.id} />
+      {tab === 'common' && (
+        <MonthlyGainsTable scope="common" fiscalYear={fiscalYear} portfolioId={selectedPortfolio.id} />
       )}
-    </Box>
+    </AppStack>
   )
 }

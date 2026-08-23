@@ -1,9 +1,13 @@
-
-import AppCard from '@/components/ui/AppCard'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+  AppCard,
+  AppSimpleTable,
+  AppStack,
+  LoadingSpinner,
+  SectionTitle,
+  type AppSimpleTableColumn,
+} from '@/components/ui'
 import { INCOME_TAX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
-import { Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 
 interface AssetTaxInfo {
@@ -23,6 +27,8 @@ interface AssetsAndRightsProps {
   fiscalYear: number
   portfolioId: number
 }
+
+const amount = (value: number) => value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
 
 export default function AssetsAndRights({ fiscalYear, portfolioId }: AssetsAndRightsProps) {
   const [data, setData] = useState<AssetTaxInfo[]>([])
@@ -48,59 +54,42 @@ export default function AssetsAndRights({ fiscalYear, portfolioId }: AssetsAndRi
 
   if (loading) return <LoadingSpinner />
 
+  const columns: AppSimpleTableColumn<AssetTaxInfo>[] = [
+    { label: 'Grupo', render: (item) => item.grupo },
+    { label: 'Código', render: (item) => item.codigo },
+    { label: 'Localização', render: (item) => item.locale },
+    { label: 'CNPJ', render: (item) => item.cnpj },
+    /* A discriminação é a frase que a Receita quer inteira, e é longa: sem
+       largura fixa ela empurra as colunas de valor para fora da tela. */
+    { label: 'Discriminação', width: 'clamped', render: (item) => item.discriminacao },
+    { label: 'Código de Negociação', render: (item) => item.codigo_negociacao },
+    {
+      label: `31/12/${fiscalYear - 1}`,
+      align: 'right',
+      render: (item) => amount(item.position_previous_year),
+    },
+    {
+      label: `31/12/${fiscalYear}`,
+      align: 'right',
+      render: (item) => amount(item.position_fiscal_year),
+    },
+    {
+      label: `Dividendos Isentos (${fiscalYear})`,
+      align: 'right',
+      render: (item) => amount(item.exempt_dividends),
+    },
+  ]
+
   return (
-    <AppCard sx={{ mt: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Bens e Direitos
-      </Typography>
-
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Grupo</TableCell>
-            <TableCell>Código</TableCell>
-            <TableCell>Localização</TableCell>
-            <TableCell>CNPJ</TableCell>
-            <TableCell sx={{ maxWidth: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-              Discriminação
-            </TableCell>
-            <TableCell>Código de Negociação</TableCell>
-            <TableCell>31/12/{fiscalYear - 1}</TableCell>
-            <TableCell>31/12/{fiscalYear}</TableCell>
-            <TableCell>Dividendos Isentos ({fiscalYear})</TableCell>
-          </TableRow>
-        </TableHead>
-
-        <TableBody>
-          {data.map((item, index) => (
-            <TableRow key={index}>
-              <TableCell>{item.grupo}</TableCell>
-              <TableCell>{item.codigo}</TableCell>
-              <TableCell>{item.locale}</TableCell>
-              <TableCell>{item.cnpj}</TableCell>
-              <TableCell sx={{ maxWidth: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                {item.discriminacao}
-              </TableCell>
-              <TableCell>{item.codigo_negociacao}</TableCell>
-              <TableCell>
-                {item.position_previous_year.toLocaleString('pt-BR', {
-                  maximumFractionDigits: 2,
-                })}
-              </TableCell>
-              <TableCell>
-                {item.position_fiscal_year.toLocaleString('pt-BR', {
-                  maximumFractionDigits: 2,
-                })}
-              </TableCell>
-              <TableCell>
-                {item.exempt_dividends.toLocaleString('pt-BR', {
-                  maximumFractionDigits: 2,
-                })}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <AppCard>
+      <AppStack gap="sm">
+        <SectionTitle>Bens e Direitos</SectionTitle>
+        <AppSimpleTable
+          rows={data}
+          columns={columns}
+          getRowKey={(item) => `${item.codigo_negociacao}-${item.discriminacao}`}
+        />
+      </AppStack>
     </AppCard>
   )
 }

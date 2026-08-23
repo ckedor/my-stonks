@@ -1,19 +1,17 @@
-
-import AppCard from '@/components/ui/AppCard'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+  AppCard,
+  AppSimpleTable,
+  AppStack,
+  AppText,
+  LoadingSpinner,
+  SectionTitle,
+  type AppSimpleTableColumn,
+} from '@/components/ui'
 import { INCOME_TAX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Typography
-} from '@mui/material'
 import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
+import { formatTaxValue, gainTone, taxRate } from './format'
 
 interface DarfEntry {
   label: string
@@ -24,8 +22,17 @@ interface DarfEntry {
 }
 
 interface DarfReportItem {
-  month: string // format YYYY-MM
+  /** YYYY-MM */
+  month: string
   entries: DarfEntry[]
+}
+
+/** Uma linha da tabela: a entrada, mais o mês a que pertence e se é a primeira
+ *  dele — só a primeira mostra o mês, e o fundo alterna de mês em mês. */
+interface DarfRow extends DarfEntry {
+  month: string
+  monthIndex: number
+  first: boolean
 }
 
 interface Props {
@@ -56,64 +63,47 @@ export default function DarfSummaryTable({ portfolioId, fiscalYear }: Props) {
 
   if (loading) return <LoadingSpinner />
 
-  const formatValue = (value: number) =>
-    value === 0
-      ? '-'
-      : value.toLocaleString('pt-BR', {
-          style: 'currency',
-          currency: 'BRL',
-        })
+  const rows: DarfRow[] = data.flatMap((item, monthIndex) =>
+    item.entries.map((entry, i) => ({
+      ...entry,
+      month: item.month,
+      monthIndex,
+      first: i === 0,
+    })),
+  )
 
-  const profitColor = (value: number) => {
-    if (value > 0) return '#2e7d32'
-    if (value < 0) return '#c62828'
-    return 'inherit'
-  }
+  const columns: AppSimpleTableColumn<DarfRow>[] = [
+    { label: 'Mês/Ano', render: (row) => (row.first ? dayjs(row.month).format('MMM/YYYY') : '') },
+    { label: 'Ativos', render: (row) => row.label },
+    { label: 'Total Vendas', align: 'right', render: (row) => formatTaxValue(row.gross_sales) },
+    {
+      label: 'Lucro Realizado',
+      align: 'right',
+      render: (row) => (
+        <AppText variant="bodySmall" tone={gainTone(row.base)}>
+          {formatTaxValue(row.base)}
+        </AppText>
+      ),
+    },
+    { label: 'Alíquota', align: 'right', render: (row) => taxRate(row.darf, row.base) },
+    {
+      label: 'DARF',
+      align: 'right',
+      render: (row) => (row.darf > 0 ? formatTaxValue(row.darf) : 'Isento'),
+    },
+  ]
 
   return (
-    <AppCard sx={{ mt: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Meu DARF ({fiscalYear})
-      </Typography>
-      <TableContainer>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Mês/Ano</TableCell>
-              <TableCell>Ativos</TableCell>
-              <TableCell align="right">Total Vendas</TableCell>
-              <TableCell align="right">Lucro Realizado</TableCell>
-              <TableCell align="right">Alíquota</TableCell>
-              <TableCell align="right">DARF</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {data.map((item, monthIndex) =>
-              item.entries.map((entry, i) => (
-                <TableRow
-                  key={`${item.month}-${entry.label}`}
-                  sx={{
-                    backgroundColor: monthIndex % 2 === 0 ? 'background.paper' : 'action.hover',
-                  }}
-                >
-                  <TableCell>{i === 0 ? dayjs(item.month).format('MMM/YYYY') : ''}</TableCell>
-                  <TableCell>{entry.label}</TableCell>
-                  <TableCell align="right">{formatValue(entry.gross_sales)}</TableCell>
-                  <TableCell align="right" sx={{ color: profitColor(entry.base) }}>
-                    {formatValue(entry.base)}
-                  </TableCell>
-                  <TableCell align="right">
-                    {entry.darf > 0 ? ((entry.darf / entry.base) * 100).toFixed(0) + '%' : '-'}
-                  </TableCell>
-                  <TableCell align="right">
-                    {entry.darf > 0 ? formatValue(entry.darf) : 'Isento'}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+    <AppCard>
+      <AppStack gap="sm">
+        <SectionTitle>{`Meu DARF (${fiscalYear})`}</SectionTitle>
+        <AppSimpleTable
+          rows={rows}
+          columns={columns}
+          getRowKey={(row) => `${row.month}-${row.label}`}
+          getRowSurface={(row) => (row.monthIndex % 2 === 0 ? 'paper' : 'sunken')}
+        />
+      </AppStack>
     </AppCard>
   )
 }
