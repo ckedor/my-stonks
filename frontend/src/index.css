@@ -99,3 +99,11 @@ svg[tabindex]:focus:not(:focus-visible) {
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* O mapa de arquitetura não é editável: as pontas de ligação que o react-flow
+   desenha em cada nó existem para arrastar uma aresta nova, e ali só poluem o
+   desenho. Fica aqui, e não num `style` no nó, porque a regra é do react-flow
+   e o design system não conhece essa biblioteca. */
+.react-flow__handle {
+  opacity: 0;
+}

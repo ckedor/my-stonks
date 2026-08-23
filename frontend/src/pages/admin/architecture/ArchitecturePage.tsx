@@ -9,7 +9,21 @@ import {
   ReactFlow,
   type NodeTypes,
 } from '@xyflow/react'
-import { Alert, Box, Chip, Divider, Paper, Stack, Tab, Tabs, Typography, useTheme } from '@mui/material'
+import {
+  AppAlert,
+  AppBulletList,
+  AppCard,
+  AppChip,
+  AppDivider,
+  AppStack,
+  AppStackItem,
+  AppStepBadge,
+  AppTabs,
+  AppText,
+  PageTitle,
+  SectionTitle,
+  useAppTheme,
+} from '@/components/ui'
 
 import { flows, moduleRules } from './flows'
 import {
@@ -22,8 +36,12 @@ import ArchitectureNode from './nodes/ArchitectureNode'
 
 const nodeTypes: NodeTypes = { architecture: ArchitectureNode }
 
+/* Ocupa o que sobra da janela abaixo do cabeçalho e das abas: o diagrama é a
+   tela, e um retângulo de altura fixa deixaria faixa vazia embaixo. */
+const DIAGRAM_HEIGHT = 'max(520px, calc(100vh - 220px))'
+
 function Diagram() {
-  const theme = useTheme()
+  const theme = useAppTheme()
   const nodes = useMemo(() => layoutArchitectureGraph(architectureNodes, architectureEdges), [])
   const edges = useMemo(
     () =>
@@ -38,17 +56,7 @@ function Diagram() {
   )
 
   return (
-    <Box
-      sx={{
-        height: 'calc(100vh - 220px)',
-        minHeight: 520,
-        border: 1,
-        borderColor: 'divider',
-        borderRadius: 2,
-        overflow: 'hidden',
-        bgcolor: 'background.default',
-      }}
-    >
+    <AppCard padding="none" height={DIAGRAM_HEIGHT}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -71,130 +79,111 @@ function Diagram() {
           maskColor={theme.palette.mode === 'dark' ? 'rgba(0,0,0,.55)' : 'rgba(255,255,255,.72)'}
         />
       </ReactFlow>
-    </Box>
+    </AppCard>
   )
 }
 
 function Flows() {
   return (
-    <Stack spacing={2.5}>
+    <AppStack gap="md">
       {flows.map((flow) => (
-        <Paper key={flow.id} variant="outlined" sx={{ p: 2.5 }}>
-          <Stack direction="row" spacing={1.5} alignItems="baseline" flexWrap="wrap">
-            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-              {flow.name}
-            </Typography>
-            <Chip label={flow.trigger} size="small" variant="outlined" sx={{ fontSize: 11 }} />
-          </Stack>
+        <AppCard key={flow.id}>
+          <AppStack gap="md">
+            <AppStack gap="xs">
+              <AppStack direction="row" gap="sm" align="baseline" wrap>
+                <SectionTitle>{flow.name}</SectionTitle>
+                <AppChip label={flow.trigger} emphasis="outline" />
+              </AppStack>
+              <AppText variant="bodySmall" tone="secondary">
+                {flow.summary}
+              </AppText>
+            </AppStack>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-            {flow.summary}
-          </Typography>
+            <AppStack gap="sm">
+              {flow.steps.map((step, index) => (
+                <AppStack key={step.title} direction="row" gap="sm" align="start">
+                  <AppStepBadge step={index + 1} />
+                  <AppStackItem>
+                    <AppText variant="bodySmall" weight="strong">
+                      {step.title}
+                    </AppText>
+                    <AppText variant="bodySmall" tone="secondary">
+                      {step.detail}
+                    </AppText>
+                  </AppStackItem>
+                </AppStack>
+              ))}
+            </AppStack>
 
-          <Stack spacing={1.5}>
-            {flow.steps.map((step, index) => (
-              <Stack key={step.title} direction="row" spacing={1.5} alignItems="flex-start">
-                <Box
-                  sx={{
-                    flexShrink: 0,
-                    width: 22,
-                    height: 22,
-                    borderRadius: '50%',
-                    bgcolor: 'action.hover',
-                    color: 'text.secondary',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {index + 1}
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {step.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {step.detail}
-                  </Typography>
-                </Box>
-              </Stack>
-            ))}
-          </Stack>
-
-          {flow.notes?.length ? (
-            <>
-              <Divider sx={{ my: 2 }} />
-              <Stack spacing={0.75}>
-                {flow.notes.map((note) => (
-                  <Typography key={note} variant="caption" color="text.secondary">
-                    — {note}
-                  </Typography>
-                ))}
-              </Stack>
-            </>
-          ) : null}
-        </Paper>
+            {flow.notes?.length ? (
+              <>
+                <AppDivider />
+                <AppStack gap="xs">
+                  {flow.notes.map((note) => (
+                    <AppText key={note} variant="caption" tone="secondary">
+                      — {note}
+                    </AppText>
+                  ))}
+                </AppStack>
+              </>
+            ) : null}
+          </AppStack>
+        </AppCard>
       ))}
-    </Stack>
+    </AppStack>
   )
 }
 
 function Modules() {
   return (
-    <Stack spacing={2.5}>
+    <AppStack gap="md">
       {moduleRules.map((module) => (
-        <Paper key={module.name} variant="outlined" sx={{ p: 2.5 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-            {module.name}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1.5 }}>
-            {module.role}
-          </Typography>
-          <Stack component="ul" spacing={0.75} sx={{ m: 0, pl: 2.5 }}>
-            {module.rules.map((rule) => (
-              <Typography key={rule} component="li" variant="body2" color="text.secondary">
-                {rule}
-              </Typography>
-            ))}
-          </Stack>
-        </Paper>
+        <AppCard key={module.name}>
+          <AppStack gap="sm">
+            <AppStack gap="none">
+              <SectionTitle>{module.name}</SectionTitle>
+              <AppText variant="bodySmall" tone="secondary">
+                {module.role}
+              </AppText>
+            </AppStack>
+            <AppBulletList items={module.rules} />
+          </AppStack>
+        </AppCard>
       ))}
-    </Stack>
+    </AppStack>
   )
 }
 
+type ArchitectureTab = 'diagram' | 'flows' | 'modules'
+
+const TABS = [
+  { id: 'diagram' as const, label: 'Diagrama' },
+  { id: 'flows' as const, label: 'Fluxos' },
+  { id: 'modules' as const, label: 'Módulos' },
+]
+
 export default function ArchitecturePage() {
   const errors = useMemo(() => validateArchitectureMap(), [])
-  const [tab, setTab] = useState(0)
+  const [tab, setTab] = useState<ArchitectureTab>('diagram')
 
-  if (errors.length) return <Alert severity="error">{errors.join('; ')}</Alert>
+  if (errors.length) return <AppAlert severity="error">{errors.join('; ')}</AppAlert>
 
   return (
-    <Box>
-      <Typography variant="h5" fontWeight={700}>
-        Arquitetura da aplicação
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        Mapa e regras dos fluxos operacionais. É documentação versionada com o frontend, não
-        introspecção em tempo real — ao mudar um fluxo, atualize aqui.
-      </Typography>
+    <AppStack gap="md">
+      <AppStack gap="xs">
+        <PageTitle>Arquitetura da aplicação</PageTitle>
+        <AppText variant="bodySmall" tone="secondary">
+          Mapa e regras dos fluxos operacionais. É documentação versionada com o frontend, não
+          introspecção em tempo real — ao mudar um fluxo, atualize aqui.
+        </AppText>
+      </AppStack>
 
-      <Tabs
-        value={tab}
-        onChange={(_, value) => setTab(value)}
-        sx={{ my: 2, borderBottom: 1, borderColor: 'divider' }}
-      >
-        <Tab label="Diagrama" />
-        <Tab label="Fluxos" />
-        <Tab label="Módulos" />
-      </Tabs>
+      <AppTabs items={TABS} value={tab} onChange={setTab} label="Seções da arquitetura" />
 
-      {tab === 0 && <Diagram />}
-      {tab === 1 && <Flows />}
-      {tab === 2 && <Modules />}
-    </Box>
+      {tab === 'diagram' && <Diagram />}
+      {tab === 'flows' && <Flows />}
+      {tab === 'modules' && <Modules />}
+    </AppStack>
   )
 }
 

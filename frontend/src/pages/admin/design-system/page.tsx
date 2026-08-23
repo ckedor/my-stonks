@@ -1,55 +1,46 @@
-import AppTable from '@/components/ui/app-table/AppTable'
-import AppCard from '@/components/ui/AppCard'
-import { Box, Tab, Tabs, Typography } from '@mui/material'
+import { AppCard, AppStack, AppTable, AppTabs, AppText, PageTitle, SectionTitle } from '@/components/ui'
 import { useState } from 'react'
 import ChartsTab from './ChartsTab'
 import GeneralTab from './GeneralTab'
-import {
-    MOCK_TABLE_COLUMNS,
-    MOCK_TABLE_ROWS,
-    MOCK_TABLE_TOTAL,
-} from './mockData'
+import { MOCK_TABLE_COLUMNS, MOCK_TABLE_ROWS, MOCK_TABLE_TOTAL } from './mockData'
 
-function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
-  if (value !== index) return null
-  return <Box sx={{ pt: 3 }}>{children}</Box>
-}
+type DesignSystemTab = 'general' | 'charts' | 'table'
+
+const TABS = [
+  { id: 'general' as const, label: 'General' },
+  { id: 'charts' as const, label: 'Charts' },
+  { id: 'table' as const, label: 'Data Table' },
+]
 
 export default function DesignSystemPage() {
-  const [tab, setTab] = useState(0)
+  const [tab, setTab] = useState<DesignSystemTab>('general')
 
   return (
-    <Box>
-      <Typography variant="h4" sx={{ mb: 2 }}>Design System</Typography>
+    <AppStack gap="lg">
+      <PageTitle>Design System</PageTitle>
 
-      <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-        <Tab label="General" />
-        <Tab label="Charts" />
-        <Tab label="Data Table" />
-      </Tabs>
+      <AppTabs items={TABS} value={tab} onChange={setTab} label="Seções do design system" />
 
-      <TabPanel value={tab} index={0}>
-        <GeneralTab />
-      </TabPanel>
-
-      <TabPanel value={tab} index={1}>
-        <ChartsTab />
-      </TabPanel>
-
-      <TabPanel value={tab} index={2}>
+      {tab === 'general' && <GeneralTab />}
+      {tab === 'charts' && <ChartsTab />}
+      {tab === 'table' && (
         <AppCard>
-          <Typography variant="h6" gutterBottom>AppTable</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Sortable table with currency formatting and gain/loss colors
-          </Typography>
-          <AppTable
-            columns={MOCK_TABLE_COLUMNS}
-            rows={MOCK_TABLE_ROWS}
-            totalRow={MOCK_TABLE_TOTAL}
-            size="small"
-          />
+          <AppStack gap="sm">
+            <AppStack gap="none">
+              <SectionTitle>AppTable</SectionTitle>
+              <AppText variant="bodySmall" tone="secondary">
+                Sortable table with currency formatting and gain/loss colors
+              </AppText>
+            </AppStack>
+            <AppTable
+              columns={MOCK_TABLE_COLUMNS}
+              rows={MOCK_TABLE_ROWS}
+              totalRow={MOCK_TABLE_TOTAL}
+              size="small"
+            />
+          </AppStack>
         </AppCard>
-      </TabPanel>
-    </Box>
+      )}
+    </AppStack>
   )
 }
