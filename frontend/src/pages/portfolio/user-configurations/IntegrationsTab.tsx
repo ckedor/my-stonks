@@ -1,16 +1,15 @@
+import {
+  AppSnackbar,
+  AppStack,
+  AppStackItem,
+  AppSwitch,
+  AppText,
+  LoadingSpinner,
+} from '@/components/ui'
 import { USER_CONFIGURATION_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
-import {
-    Alert,
-    CircularProgress,
-    FormControlLabel,
-    Snackbar,
-    Stack,
-    Switch,
-    Typography,
-} from '@mui/material'
-import { JSX, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 /* `name` e `enabled` são o que toda configuração tem; o resto só existe depois
    que a carteira gravou uma escolha. Uma opção nunca tocada não tem linha no
@@ -24,34 +23,29 @@ type UserConfiguration = {
   config_data?: Record<string, unknown>
 }
 
-const CONFIG_LABELS: Record<string, JSX.Element> = {
-  foxbit_integration: (
-    <Typography variant="body1">
-      <strong>Integração com Foxbit:</strong> Atualização de transações de criptomoeda na corretora
-      Foxbit
-    </Typography>
-  ),
-  fiis_dividends_integration: (
-    <Typography variant="body1">
-      <strong>Dividendos de FIIs:</strong> Atualização automática dos dividendos pagos pelos FIIs em
-      carteira
-    </Typography>
-  ),
-  wealth_tier_artwork: (
-    <Typography variant="body1">
-      <strong>Personagem da patente:</strong> Mostra a ilustração da patente ao lado do patrimônio.
-      A patente e a barra de progresso aparecem de qualquer jeito
-    </Typography>
-  ),
+const CONFIG_LABELS: Record<string, { title: string; description: string }> = {
+  foxbit_integration: {
+    title: 'Integração com Foxbit',
+    description: 'Atualização de transações de criptomoeda na corretora Foxbit',
+  },
+  fiis_dividends_integration: {
+    title: 'Dividendos de FIIs',
+    description: 'Atualização automática dos dividendos pagos pelos FIIs em carteira',
+  },
+  wealth_tier_artwork: {
+    title: 'Personagem da patente',
+    description:
+      'Mostra a ilustração da patente ao lado do patrimônio. A patente e a barra de progresso aparecem de qualquer jeito',
+  },
 }
 
 export default function IntegrationsTab() {
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
 
   const [configurations, setConfigurations] = useState<UserConfiguration[]>([])
   const [loading, setLoading] = useState(true)
   const [snackbar, setSnackbar] = useState<{ message: string; type: 'success' | 'error' } | null>(
-    null,
+    null
   )
 
   useEffect(() => {
@@ -70,8 +64,8 @@ export default function IntegrationsTab() {
       const saved: UserConfiguration[] = res.data.configurations
       setConfigurations(
         (res.data.nameOptions as string[]).map(
-          (name) => saved.find((c) => c.name === name) ?? { name, enabled: false },
-        ),
+          (name) => saved.find((c) => c.name === name) ?? { name, enabled: false }
+        )
       )
     } catch (err) {
       console.log('Erro ao carregar configurações:', err)
@@ -88,7 +82,7 @@ export default function IntegrationsTab() {
         enabled: !enabled,
       })
       setConfigurations((prev) =>
-        prev.map((c) => (c.name === name ? { ...c, enabled: !enabled } : c)),
+        prev.map((c) => (c.name === name ? { ...c, enabled: !enabled } : c))
       )
       setSnackbar({ message: 'Configuração atualizada', type: 'success' })
     } catch {
@@ -96,47 +90,40 @@ export default function IntegrationsTab() {
     }
   }
 
-  if (loading) {
-    return <CircularProgress sx={{ mt: 4, mx: 'auto', display: 'block' }} />
-  }
+  if (loading) return <LoadingSpinner />
 
   return (
     <>
-      <Stack spacing={3} maxWidth={600}>
-        {configurations.map((config) => (
-          <FormControlLabel
-            key={config.name}
-            control={
-              <Switch
-                checked={config.enabled}
-                onChange={() => handleToggle(config.name, config.enabled)}
-              />
-            }
-            label={CONFIG_LABELS[config.name] ?? config.name}
-            labelPlacement="end"
-            sx={{
-              alignItems: 'flex-start',
-              '& .MuiFormControlLabel-label': { mt: '2px' },
-            }}
-          />
-        ))}
-        {configurations.length === 0 && (
-          <Typography variant="body2" color="text.secondary">
-            Nenhuma configuração disponível
-          </Typography>
-        )}
-      </Stack>
+      <AppStack direction="row">
+        <AppStackItem width={600}>
+          <AppStack gap="lg">
+            {configurations.map((config) => {
+              const labels = CONFIG_LABELS[config.name]
+              return (
+                <AppSwitch
+                  key={config.name}
+                  label={labels?.title ?? config.name}
+                  description={labels?.description}
+                  checked={config.enabled}
+                  onChange={() => handleToggle(config.name, config.enabled)}
+                />
+              )
+            })}
+            {configurations.length === 0 && (
+              <AppText variant="bodySmall" tone="secondary">
+                Nenhuma configuração disponível
+              </AppText>
+            )}
+          </AppStack>
+        </AppStackItem>
+      </AppStack>
 
-      <Snackbar
+      <AppSnackbar
         open={!!snackbar}
-        autoHideDuration={3000}
+        message={snackbar?.message ?? ''}
+        severity={snackbar?.type ?? 'success'}
         onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity={snackbar?.type} variant="filled" onClose={() => setSnackbar(null)}>
-          {snackbar?.message}
-        </Alert>
-      </Snackbar>
+      />
     </>
   )
 }

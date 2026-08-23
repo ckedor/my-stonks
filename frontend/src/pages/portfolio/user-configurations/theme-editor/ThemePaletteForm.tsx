@@ -1,77 +1,19 @@
+import { AppGrid, AppGridItem, AppHexColorField, AppStack, SectionTitle } from '@/components/ui'
 import type { ThemePaletteConfig } from '@/theme/themes'
-import { Box, Grid, TextField, Typography } from '@mui/material'
-import { useEffect, useRef, useState } from 'react'
 
 interface Props {
   config: ThemePaletteConfig
   onChange: (config: ThemePaletteConfig) => void
 }
 
-function ColorField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-}) {
-  const isHex = /^#[0-9a-fA-F]{3,8}$/.test(value)
-  const [localColor, setLocalColor] = useState(isHex ? value.slice(0, 7) : '#000000')
-  const isPickerOpen = useRef(false)
-
-  // Sync from parent when value changes externally (e.g. text field edit)
-  useEffect(() => {
-    if (!isPickerOpen.current) {
-      setLocalColor(isHex ? value.slice(0, 7) : '#000000')
-    }
-  }, [value, isHex])
-
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Box
-        component="input"
-        type="color"
-        value={localColor}
-        onFocus={() => { isPickerOpen.current = true }}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocalColor(e.target.value)}
-        onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
-          isPickerOpen.current = false
-          onChange(e.target.value)
-        }}
-        sx={{
-          width: 36,
-          height: 36,
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 1,
-          cursor: 'pointer',
-          p: 0,
-          '&::-webkit-color-swatch-wrapper': { p: 0 },
-          '&::-webkit-color-swatch': { border: 'none', borderRadius: 4 },
-        }}
-      />
-      <TextField
-        size="small"
-        label={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        sx={{ flex: 1 }}
-      />
-    </Box>
-  )
-}
-
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <Box>
-      <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-        {title}
-      </Typography>
-      <Grid container spacing={2}>
+    <AppStack gap="sm">
+      <SectionTitle>{title}</SectionTitle>
+      <AppGrid cols={{ xs: 1, sm: 2 }} gap="md">
         {children}
-      </Grid>
-    </Box>
+      </AppGrid>
+    </AppStack>
   )
 }
 
@@ -98,125 +40,92 @@ export default function ThemePaletteForm({ config, onChange }: Props) {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {/* Background */}
+    <AppStack gap="lg">
       <Section title="Fundo">
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField
-            label="Background"
-            value={config.background.default}
-            onChange={(v) => setNested('background', 'default' as never, v)}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField
-            label="Paper (Cards)"
-            value={config.background.paper}
-            onChange={(v) => setNested('background', 'paper' as never, v)}
-          />
-        </Grid>
+        <AppHexColorField
+          label="Background"
+          value={config.background.default}
+          onChange={(v) => setNested('background', 'default' as never, v)}
+        />
+        <AppHexColorField
+          label="Paper (Cards)"
+          value={config.background.paper}
+          onChange={(v) => setNested('background', 'paper' as never, v)}
+        />
       </Section>
 
-      {/* Text */}
       <Section title="Texto">
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField
-            label="Primário"
-            value={config.text.primary}
-            onChange={(v) => setNested('text', 'primary' as never, v)}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField
-            label="Secundário"
-            value={config.text.secondary}
-            onChange={(v) => setNested('text', 'secondary' as never, v)}
-          />
-        </Grid>
+        <AppHexColorField
+          label="Primário"
+          value={config.text.primary}
+          onChange={(v) => setNested('text', 'primary' as never, v)}
+        />
+        <AppHexColorField
+          label="Secundário"
+          value={config.text.secondary}
+          onChange={(v) => setNested('text', 'secondary' as never, v)}
+        />
       </Section>
 
-      {/* Main colors */}
       <Section title="Cores Principais">
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField label="Primary" value={config.primary} onChange={(v) => set('primary', v)} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField
-            label="Secondary"
-            value={config.secondary}
-            onChange={(v) => set('secondary', v)}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField label="Golden" value={config.golden} onChange={(v) => set('golden', v)} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField label="Dark" value={config.dark} onChange={(v) => set('dark', v)} />
-        </Grid>
+        <AppHexColorField label="Primary" value={config.primary} onChange={(v) => set('primary', v)} />
+        <AppHexColorField
+          label="Secondary"
+          value={config.secondary}
+          onChange={(v) => set('secondary', v)}
+        />
+        <AppHexColorField label="Golden" value={config.golden} onChange={(v) => set('golden', v)} />
+        <AppHexColorField label="Dark" value={config.dark} onChange={(v) => set('dark', v)} />
       </Section>
 
-      {/* Status */}
       <Section title="Status">
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <ColorField label="Sucesso" value={config.success} onChange={(v) => set('success', v)} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <ColorField label="Erro" value={config.error} onChange={(v) => set('error', v)} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <ColorField label="Aviso" value={config.warning} onChange={(v) => set('warning', v)} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <ColorField label="Info" value={config.info} onChange={(v) => set('info', v)} />
-        </Grid>
+        <AppHexColorField label="Sucesso" value={config.success} onChange={(v) => set('success', v)} />
+        <AppHexColorField label="Erro" value={config.error} onChange={(v) => set('error', v)} />
+        <AppHexColorField label="Aviso" value={config.warning} onChange={(v) => set('warning', v)} />
+        <AppHexColorField label="Info" value={config.info} onChange={(v) => set('info', v)} />
       </Section>
 
-      {/* Layout */}
       <Section title="Layout (Sidebar / Topbar)">
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField label="Sidebar" value={config.sidebar} onChange={(v) => set('sidebar', v)} />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField
-            label="Topbar Fundo"
-            value={config.topbar.background}
-            onChange={(v) => setNested('topbar', 'background' as never, v)}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField
-            label="Topbar Texto"
-            value={config.topbar.text}
-            onChange={(v) => setNested('topbar', 'text' as never, v)}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField label="Divider" value={config.divider} onChange={(v) => set('divider', v)} />
-        </Grid>
+        <AppHexColorField label="Sidebar" value={config.sidebar} onChange={(v) => set('sidebar', v)} />
+        <AppHexColorField
+          label="Topbar Fundo"
+          value={config.topbar.background}
+          onChange={(v) => setNested('topbar', 'background' as never, v)}
+        />
+        <AppHexColorField
+          label="Topbar Texto"
+          value={config.topbar.text}
+          onChange={(v) => setNested('topbar', 'text' as never, v)}
+        />
+        <AppHexColorField label="Divider" value={config.divider} onChange={(v) => set('divider', v)} />
       </Section>
 
-      {/* Chart */}
       <Section title="Gráficos">
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField
-            label="Grid"
-            value={config.chart.grid}
-            onChange={(v) => onChange({ ...config, chart: { ...config.chart, grid: v } })}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <ColorField
-            label="Label"
-            value={config.chart.label}
-            onChange={(v) => onChange({ ...config, chart: { ...config.chart, label: v } })}
-          />
-        </Grid>
-        {config.chart.colors.map((color, i) => (
-          <Grid key={i} size={{ xs: 6, sm: 4, md: 3 }}>
-            <ColorField label={`Cor ${i + 1}`} value={color} onChange={(v) => setChartColor(i, v)} />
-          </Grid>
-        ))}
+        <AppHexColorField
+          label="Grid"
+          value={config.chart.grid}
+          onChange={(v) => onChange({ ...config, chart: { ...config.chart, grid: v } })}
+        />
+        <AppHexColorField
+          label="Label"
+          value={config.chart.label}
+          onChange={(v) => onChange({ ...config, chart: { ...config.chart, label: v } })}
+        />
+        {/* As cores de série são muitas e curtas: cabem em quatro colunas onde
+            os campos nomeados cabem em duas. */}
+        <AppGridItem span={{ xs: 1, sm: 2 }}>
+          <AppGrid cols={{ xs: 2, sm: 3, md: 4 }} gap="md">
+            {config.chart.colors.map((color, i) => (
+              <AppHexColorField
+                key={i}
+                label={`Cor ${i + 1}`}
+                value={color}
+                onChange={(v) => setChartColor(i, v)}
+              />
+            ))}
+          </AppGrid>
+        </AppGridItem>
       </Section>
-    </Box>
+    </AppStack>
   )
 }

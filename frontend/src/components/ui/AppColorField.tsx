@@ -12,15 +12,28 @@ export interface AppColorFieldProps {
   onChange: (value: string) => void
   /** Descrição para leitor de tela — um quadrado colorido não tem nome. */
   label: string
+  /** Enquanto o seletor está aberto o navegador dispara `change` a cada
+   *  pixel arrastado. Quem precisa reagir só à cor final usa este par para
+   *  saber quando ele abriu e quando fechou. */
+  onFocus?: () => void
+  onBlur?: () => void
 }
 
-export default function AppColorField({ value, onChange, label }: AppColorFieldProps) {
+export default function AppColorField({
+  value,
+  onChange,
+  label,
+  onFocus,
+  onBlur,
+}: AppColorFieldProps) {
   return (
     <input
       type="color"
       aria-label={label}
       value={value}
       onChange={(event) => onChange(event.target.value)}
+      onFocus={onFocus}
+      onBlur={onBlur}
       style={{ width: SIZE, height: SIZE, border: 'none', cursor: 'pointer' }}
     />
   )

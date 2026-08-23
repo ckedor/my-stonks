@@ -34,6 +34,12 @@ export interface AppCardProps extends Omit<BoxProps, 'padding'> {
   /** Cor da borda no hover de um card `interactive` — a do assunto que ele
    *  mostra, como a da categoria do ativo. Sem ela o realce é só o fundo. */
   accentColor?: string
+  /** Marca o card escolhido entre vários — o tema em uso na grade de temas.
+   *  A borda vira a cor primária e ganha peso. */
+  selected?: boolean
+  /** Borda tracejada: o card que ainda não é nada — o "novo tema" no fim da
+   *  grade. Ele convida a criar, e a linha cheia o faria parecer um item. */
+  dashed?: boolean
 }
 
 export default function AppCard({
@@ -45,6 +51,8 @@ export default function AppCard({
   raised = false,
   interactive = false,
   accentColor,
+  selected = false,
+  dashed = false,
   ...props
 }: AppCardProps) {
   const resolvedPadding = padding ?? (noPadding ? 'none' : 'md')
@@ -53,8 +61,9 @@ export default function AppCard({
   return (
     <Box
       sx={{
-        border: '1px solid',
-        borderColor: 'divider',
+        border: selected || dashed ? '2px solid' : '1px solid',
+        borderStyle: dashed ? 'dashed' : 'solid',
+        borderColor: selected ? 'primary.main' : 'divider',
         borderRadius: `${theme.radius.md}px`,
         p: space[resolvedPadding],
         backgroundColor: 'background.paper',
@@ -67,6 +76,7 @@ export default function AppCard({
               '&:hover': {
                 backgroundColor: 'action.hover',
                 ...(accentColor ? { borderColor: accentColor } : null),
+                ...(selected ? { borderColor: 'primary.main' } : null),
               },
             }
           : null),

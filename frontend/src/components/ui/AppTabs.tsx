@@ -1,4 +1,5 @@
 import { Tab, Tabs } from '@mui/material'
+import type { ReactElement } from 'react'
 
 /* Abas que trocam o conteúdo abaixo delas.
  *
@@ -12,6 +13,9 @@ import { Tab, Tabs } from '@mui/material'
 export interface AppTabsItem<T extends string> {
   id: T
   label: string
+  /** Ícone antes do rótulo, para a barra em que cada aba é um assunto
+   *  diferente do app e não um recorte do mesmo dado. */
+  icon?: ReactElement
 }
 
 export interface AppTabsProps<T extends string> {
@@ -52,7 +56,13 @@ export default function AppTabs<T extends string>({
       }}
     >
       {items.map((item) => (
-        <Tab key={item.id} value={item.id} label={item.label} />
+        <Tab
+          key={item.id}
+          value={item.id}
+          label={item.label}
+          icon={item.icon}
+          iconPosition={item.icon ? 'start' : undefined}
+        />
       ))}
     </Tabs>
   )

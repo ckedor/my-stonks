@@ -13,12 +13,38 @@ export interface AppSwitchProps {
   label: string
   checked: boolean
   onChange: (checked: boolean) => void
+  /** A frase que explica o que ligar isso muda. Com ela o interruptor troca
+   *  de forma: vem antes do texto e o rótulo vira o título da linha — é o
+   *  arranjo de uma tela de configuração, onde a explicação é tão parte do
+   *  item quanto o nome. Sem ela, continua sendo o par curto de uma barra
+   *  de controles. */
+  description?: string
   /** O que se liga aqui, em uma frase, para o rótulo que é abreviação —
    *  "MM200" não diz nada a quem não conhece a sigla. */
   hint?: string
 }
 
-export default function AppSwitch({ label, checked, onChange, hint }: AppSwitchProps) {
+export default function AppSwitch({
+  label,
+  checked,
+  onChange,
+  hint,
+  description,
+}: AppSwitchProps) {
+  if (description) {
+    return (
+      <AppStack direction="row" gap="sm" align="start">
+        <Switch checked={checked} onChange={(_, value) => onChange(value)} />
+        <AppStack gap="none">
+          <AppText weight="strong">{label}</AppText>
+          <AppText variant="bodySmall" tone="secondary">
+            {description}
+          </AppText>
+        </AppStack>
+      </AppStack>
+    )
+  }
+
   const control = (
     <AppStack direction="row" gap="xs" align="center">
       <AppText variant="bodySmall" tone="secondary">

@@ -1,22 +1,37 @@
-import { buildMuiTheme, type ThemePaletteConfig } from '@/theme/themes'
-import { Box, Paper, ThemeProvider, Typography } from '@mui/material'
-import { useMemo } from 'react'
 import {
-    Bar,
-    BarChart,
-    CartesianGrid,
-    Cell,
-    ComposedChart,
-    Legend,
-    Line,
-    Pie,
-    PieChart,
-    ReferenceLine,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
+  AppCard,
+  AppChartArea,
+  AppChip,
+  AppGrid,
+  AppStack,
+  AppText,
+  AppThemeScope,
+  SectionTitle,
+} from '@/components/ui'
+import type { ThemePaletteConfig } from '@/theme/themes'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Legend,
+  Line,
+  Pie,
+  PieChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts'
+
+/* O tema sendo editado, aplicado a uma tela de mentira.
+ *
+ * Os componentes aqui dentro são os do app de verdade: dentro do
+ * `AppThemeScope` eles leem o tema que está sendo montado, então o que aparece
+ * é o que a carteira vai ver — e não uma imitação que envelhece sozinha. Só os
+ * gráficos recebem cor explícita, porque cor de série é dado. */
 
 const barData = [
   { month: 'Jan', '2025': 180, '2026': 220 },
@@ -44,190 +59,134 @@ const pieData = [
   { name: 'Ações US', value: 10 },
 ]
 
+const pieTotal = pieData.reduce((sum, slice) => sum + slice.value, 0)
+
 interface Props {
   config: ThemePaletteConfig
 }
 
 export default function ThemePreviewPanel({ config }: Props) {
-  const theme = useMemo(() => buildMuiTheme(config), [config])
   const colors = config.chart.colors
 
+  const swatches = [
+    { label: 'Primary', color: config.primary },
+    { label: 'Secondary', color: config.secondary },
+    { label: 'Sucesso', color: config.success },
+    { label: 'Erro', color: config.error },
+    { label: 'Aviso', color: config.warning },
+    { label: 'Info', color: config.info },
+    { label: 'Golden', color: config.golden },
+  ]
+
   return (
-    <ThemeProvider theme={theme}>
-      <Box
-        sx={{
-          bgcolor: config.background.default,
-          borderRadius: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Mini topbar */}
-        <Box
-          sx={{
-            bgcolor: config.topbar.background,
-            color: config.topbar.text,
-            px: 2,
-            py: 1,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-          }}
-        >
-          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: config.primary }} />
-          <Typography variant="subtitle2" sx={{ color: config.topbar.text }}>
-            Preview do Tema
-          </Typography>
-        </Box>
+    <AppThemeScope palette={config} title="Preview do Tema">
+      <AppStack gap="md">
+        <AppStack direction="row" gap="sm" wrap>
+          {swatches.map((swatch) => (
+            <AppChip key={swatch.label} label={swatch.label} tint={swatch.color} />
+          ))}
+        </AppStack>
 
-        <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {/* Status color chips */}
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {[
-              { label: 'Primary', color: config.primary },
-              { label: 'Secondary', color: config.secondary },
-              { label: 'Sucesso', color: config.success },
-              { label: 'Erro', color: config.error },
-              { label: 'Aviso', color: config.warning },
-              { label: 'Info', color: config.info },
-              { label: 'Golden', color: config.golden },
-            ].map((c) => (
-              <Paper
-                key={c.label}
-                sx={{
-                  px: 1.5,
-                  py: 0.5,
-                  bgcolor: c.color,
-                  color: config.mode === 'dark' ? '#fff' : '#000',
-                  borderRadius: 2,
-                }}
-              >
-                <Typography variant="caption" fontWeight={600}>
-                  {c.label}
-                </Typography>
-              </Paper>
-            ))}
-          </Box>
-
-          {/* Bar chart — Dividendos */}
-          <Paper sx={{ p: 2 }}>
-            <Typography
-              variant="subtitle2"
-              sx={{ mb: 1, color: config.text.primary }}
-              fontWeight={700}
-            >
-              Proventos por Mês
-            </Typography>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={barData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={config.chart.grid} />
-                <XAxis dataKey="month" stroke={config.text.primary} tick={{ fontSize: 12 }} />
-                <YAxis
-                  orientation="right"
-                  stroke={config.text.primary}
-                  tick={{ fontSize: 12 }}
-                />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="2025" fill={config.primary} radius={[4, 4, 0, 0]} />
-                <Bar dataKey="2026" fill={config.secondary} radius={[4, 4, 0, 0]} />
-                <ReferenceLine
-                  y={210}
-                  stroke={config.text.primary}
-                  strokeDasharray="5 5"
-                  strokeWidth={1.5}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </Paper>
-
-          {/* Line chart + Pie side by side */}
-          <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
-            <Paper sx={{ p: 2, flex: 1 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{ mb: 1, color: config.text.primary }}
-                fontWeight={700}
-              >
-                Rentabilidade Acumulada
-              </Typography>
-              <ResponsiveContainer width="100%" height={200}>
-                <ComposedChart data={returnsData}>
+        <AppCard>
+          <AppStack gap="sm">
+            <SectionTitle>Proventos por Mês</SectionTitle>
+            <AppChartArea height={220}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={barData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={config.chart.grid} />
-                  <XAxis dataKey="date" stroke={config.text.primary} tick={{ fontSize: 12 }} />
-                  <YAxis
-                    orientation="right"
-                    stroke={config.text.primary}
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(v) => `${v}%`}
-                  />
+                  <XAxis dataKey="month" stroke={config.text.primary} tick={{ fontSize: 12 }} />
+                  <YAxis orientation="right" stroke={config.text.primary} tick={{ fontSize: 12 }} />
                   <Tooltip />
                   <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="Carteira"
-                    stroke={config.primary}
-                    strokeWidth={2}
-                    dot={false}
+                  <Bar dataKey="2025" fill={config.primary} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="2026" fill={config.secondary} radius={[4, 4, 0, 0]} />
+                  <ReferenceLine
+                    y={210}
+                    stroke={config.text.primary}
+                    strokeDasharray="5 5"
+                    strokeWidth={1.5}
                   />
-                  <Line
-                    type="monotone"
-                    dataKey="CDI"
-                    stroke={config.secondary}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </ComposedChart>
+                </BarChart>
               </ResponsiveContainer>
-            </Paper>
+            </AppChartArea>
+          </AppStack>
+        </AppCard>
 
-            <Paper sx={{ p: 2, flex: 1 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{ mb: 1, color: config.text.primary }}
-                fontWeight={700}
-              >
-                Alocação por Classe
-              </Typography>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={70}
-                    dataKey="value"
-                    label={(props) => {
-                      const name = String(props.name ?? '')
-                      const percent = Number(props.value ?? 0) / pieData.reduce((a, b) => a + b.value, 0)
-                      return `${name} ${(percent * 100).toFixed(0)}%`
-                    }}
-                  >
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={colors[i % colors.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </Paper>
-          </Box>
+        <AppGrid cols={{ xs: 1, md: 2 }} gap="md">
+          <AppCard>
+            <AppStack gap="sm">
+              <SectionTitle>Rentabilidade Acumulada</SectionTitle>
+              <AppChartArea height={200}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={returnsData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={config.chart.grid} />
+                    <XAxis dataKey="date" stroke={config.text.primary} tick={{ fontSize: 12 }} />
+                    <YAxis
+                      orientation="right"
+                      stroke={config.text.primary}
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(v) => `${v}%`}
+                    />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="Carteira"
+                      stroke={config.primary}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="CDI"
+                      stroke={config.secondary}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </AppChartArea>
+            </AppStack>
+          </AppCard>
 
-          {/* Text preview */}
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" sx={{ color: config.text.primary }}>
-              Título de Exemplo
-            </Typography>
-            <Typography variant="body1" sx={{ color: config.text.primary }}>
-              Texto primário para verificar legibilidade sobre o fundo.
-            </Typography>
-            <Typography variant="body2" sx={{ color: config.text.secondary }}>
+          <AppCard>
+            <AppStack gap="sm">
+              <SectionTitle>Alocação por Classe</SectionTitle>
+              <AppChartArea height={200}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={70}
+                      dataKey="value"
+                      label={(props) =>
+                        `${String(props.name ?? '')} ${((Number(props.value ?? 0) / pieTotal) * 100).toFixed(0)}%`
+                      }
+                    >
+                      {pieData.map((_, i) => (
+                        <Cell key={i} fill={colors[i % colors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </AppChartArea>
+            </AppStack>
+          </AppCard>
+        </AppGrid>
+
+        <AppCard>
+          <AppStack gap="xs">
+            <AppText variant="cardValue">Título de Exemplo</AppText>
+            <AppText>Texto primário para verificar legibilidade sobre o fundo.</AppText>
+            <AppText variant="bodySmall" tone="secondary">
               Texto secundário em tom mais suave para informações complementares.
-            </Typography>
-          </Paper>
-        </Box>
-      </Box>
-    </ThemeProvider>
+            </AppText>
+          </AppStack>
+        </AppCard>
+      </AppStack>
+    </AppThemeScope>
   )
 }
