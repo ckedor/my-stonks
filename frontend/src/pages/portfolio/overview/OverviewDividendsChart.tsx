@@ -1,7 +1,7 @@
 import { useCurrency } from '@/hooks/useCurrency'
 import { getLast12MonthDividendStats } from '@/lib/utils/dividends'
 import { Dividend } from '@/types'
-import { Box, Stack, Typography, useTheme } from '@mui/material'
+import { AppChartArea, AppStack, AppText, useAppTheme } from '@/components/ui'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -13,18 +13,18 @@ interface Props {
 }
 
 export default function OverviewDividendsChart({ dividends, selected, size = 340 }: Props) {
-  const theme = useTheme()
+  const theme = useAppTheme()
   const { format: formatCurrency, locale } = useCurrency()
 
   const filtered = useMemo(
     () => (selected === 'portfolio' ? dividends : dividends.filter((d) => d.category === selected)),
-    [dividends, selected],
+    [dividends, selected]
   )
 
   const { currentYear, previousYear, data, average12m } = useMemo(() => {
     const mostRecent = filtered.reduce<Dividend | undefined>(
       (a, b) => (!a || dayjs(a.date).isBefore(b.date) ? b : a),
-      undefined,
+      undefined
     )
     const currentYear = mostRecent ? dayjs(mostRecent.date).year() : dayjs().year()
     const previousYear = currentYear - 1
@@ -51,32 +51,24 @@ export default function OverviewDividendsChart({ dividends, selected, size = 340
 
   const labelColor = theme.palette.chart.label
 
-  if (!filtered.length) {
-    return (
-      <Box height={size} display="flex" alignItems="center" justifyContent="center">
-        <Typography variant="body2" color="text.secondary">
-          Sem dividendos no período
-        </Typography>
-      </Box>
-    )
-  }
-
   return (
-    <Box sx={{ height: size, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <Stack direction="row" justifyContent="flex-end" alignItems="baseline" sx={{ mb: 2 }}>
-        <Stack direction="row" spacing={0.5} alignItems="baseline">
-          <Typography variant="body2" color="text.secondary">
+    <AppChartArea
+      height={size}
+      sizing="frame"
+      emptyMessage={filtered.length ? undefined : 'Sem dividendos no período'}
+      toolbar={
+        <AppStack direction="row" justify="end" align="baseline" gap="xs">
+          <AppText variant="bodySmall" tone="secondary">
             Média 12 meses:
-          </Typography>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          </AppText>
+          <AppText variant="bodySmall" weight="strong">
             {formatCurrency(average12m)}
-          </Typography>
-        </Stack>
-      </Stack>
-
-      <Box sx={{ flex: 1, minHeight: 0 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ left: 0, right: 0, top: 5, bottom: 5 }}>
+          </AppText>
+        </AppStack>
+      }
+    >
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ left: 0, right: 0, top: 5, bottom: 5 }}>
           <XAxis
             dataKey="month"
             stroke={labelColor}
@@ -103,9 +95,7 @@ export default function OverviewDividendsChart({ dividends, selected, size = 340
               boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
               fontSize: 13,
             }}
-            formatter={(value: number) => [
-              formatCurrency(value),
-            ]}
+            formatter={(value: number) => [formatCurrency(value)]}
           />
           <Bar
             dataKey={String(previousYear)}
@@ -120,9 +110,8 @@ export default function OverviewDividendsChart({ dividends, selected, size = 340
             fill={theme.palette.primary.main}
             radius={[4, 4, 0, 0]}
           />
-          </BarChart>
-        </ResponsiveContainer>
-      </Box>
-    </Box>
+        </BarChart>
+      </ResponsiveContainer>
+    </AppChartArea>
   )
 }

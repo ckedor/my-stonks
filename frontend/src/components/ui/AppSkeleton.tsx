@@ -11,15 +11,16 @@ export interface AppSkeletonProps {
   width?: number
   height: number
   /** `text` para linha de texto, `rounded` para bloco, `pill` para etiqueta
-   *  totalmente arredondada. Padrão: `rounded`. */
-  shape?: 'text' | 'rounded' | 'pill'
+   *  totalmente arredondada, `circle` para o lugar de um avatar ou ícone
+   *  redondo. Padrão: `rounded`. */
+  shape?: 'text' | 'rounded' | 'pill' | 'circle'
 }
 
 export default function AppSkeleton({ width, height, shape = 'rounded' }: AppSkeletonProps) {
   const theme = useAppTheme()
   return (
     <Skeleton
-      variant={shape === 'text' ? 'text' : 'rounded'}
+      variant={shape === 'text' ? 'text' : shape === 'circle' ? 'circular' : 'rounded'}
       width={width ?? '100%'}
       height={height}
       sx={shape === 'pill' ? { borderRadius: `${theme.radius.pill}px` } : undefined}

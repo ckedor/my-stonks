@@ -56,6 +56,10 @@ export interface AppStackProps {
    *  'center' }}` à mão. As duas decisões andam juntas, então andam juntas
    *  aqui. */
   collapseBelow?: 'sm' | 'md'
+  /** Âncora para um filho posicionado por cima do fluxo — a arte de uma
+   *  patente, que desce sobre o gráfico sem empurrar nada. Sozinha não
+   *  desenha nada: é o `position: relative` que o filho fixado precisa. */
+  anchor?: boolean
 }
 
 const STYLE_PROPS = new Set([
@@ -67,11 +71,12 @@ const STYLE_PROPS = new Set([
   'grow',
   'fullHeight',
   'collapseBelow',
+  'anchor',
 ])
 
 const AppStack = styled('div', {
   shouldForwardProp: (prop) => !STYLE_PROPS.has(prop as string),
-})<AppStackProps>(({ theme, direction = 'column', gap = 'none', align, justify, wrap, grow, fullHeight, collapseBelow }) => ({
+})<AppStackProps>(({ theme, direction = 'column', gap = 'none', align, justify, wrap, grow, fullHeight, collapseBelow, anchor }) => ({
   display: 'flex',
   flexDirection: direction,
   gap: theme.spacing(space[gap]),
@@ -80,6 +85,7 @@ const AppStack = styled('div', {
   ...(wrap ? { flexWrap: 'wrap' } : null),
   ...(grow ? { flex: 1, minWidth: 0 } : null),
   ...(fullHeight ? { height: '100vh' } : null),
+  ...(anchor ? { position: 'relative' } : null),
   ...(collapseBelow
     ? {
         [theme.breakpoints.down(collapseBelow)]: {
