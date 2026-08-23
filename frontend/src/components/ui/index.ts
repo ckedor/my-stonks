@@ -22,6 +22,8 @@ export type {
 } from './AppHeatmapTable'
 export type { AppGridProps, AppGridItemProps } from './AppGrid'
 export { default as AppCard } from './AppCard'
+export { default as AppGroupHeader } from './AppGroupHeader'
+export type { AppGroupHeaderProps } from './AppGroupHeader'
 export { default as AppListRow } from './AppListRow'
 export type { AppListRowProps } from './AppListRow'
 export { default as AppCollapse } from './AppCollapse'

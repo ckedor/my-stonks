@@ -5,7 +5,7 @@ import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
 import { usePortfolioStore } from '@/stores/portfolio'
-import { Box, Typography } from '@mui/material'
+import { AppStack, PageTitle } from '@/components/ui'
 import { useCallback, useState } from 'react'
 import AssetListTable from './AssetList'
 import AssetListSkeleton from './AssetListSkeleton'
@@ -29,14 +29,14 @@ export default function PortfolioAssetsPage() {
   const loading = !positions && !!portfolioId
 
   return (
-    <Box pt={2}>
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>Ativos em Carteira</Typography>
+    <AppStack gap="md">
+      <PageTitle>Ativos em Carteira</PageTitle>
 
       {loading ? (
         <AssetListSkeleton />
       ) : (
         <AssetListTable positions={positions ?? []} groupBy={groupBy} onGroupByChange={setGroupBy} />
       )}
-    </Box>
+    </AppStack>
   )
 }
