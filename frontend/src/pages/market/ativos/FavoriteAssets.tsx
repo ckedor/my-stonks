@@ -1,7 +1,8 @@
+import { fetchFavoriteAssets, type FavoriteAsset } from '@/api/market'
 import { useFavoritesStore } from '@/stores/favorites'
 import StarIcon from '@mui/icons-material/Star'
 import { Box, Stack, Typography } from '@mui/material'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TypeBadge } from './AssetCard'
 
@@ -9,15 +10,39 @@ import { TypeBadge } from './AssetCard'
  *  there the moment the page is, and refreshed behind what is on screen.
  *  Hidden entirely until there is a history to rank, so a new account sees no
  *  empty shelf. */
-export default function FavoriteAssets({ limit = 8 }: { limit?: number }) {
+export default function FavoriteAssets({
+  limit = 8,
+  assetTypeId,
+  assetIds,
+}: {
+  limit?: number
+  assetTypeId?: number
+  /** Limits the ranking to the universe represented by the current page. */
+  assetIds?: number[]
+}) {
   const navigate = useNavigate()
   const { favorites, refresh } = useFavoritesStore()
+  const [filteredFavorites, setFilteredFavorites] = useState<FavoriteAsset[]>([])
 
   useEffect(() => {
-    void refresh()
-  }, [refresh])
+    if (assetTypeId == null && assetIds == null) {
+      void refresh()
+      return
+    }
+    if (assetIds?.length === 0) {
+      setFilteredFavorites([])
+      return
+    }
+    void fetchFavoriteAssets(limit, assetTypeId, assetIds)
+      .then(setFilteredFavorites)
+      .catch(() => undefined)
+  }, [refresh, limit, assetTypeId, assetIds])
 
-  if (!favorites.length) return null
+  const visibleFavorites = assetTypeId == null && assetIds == null
+    ? favorites
+    : filteredFavorites
+
+  if (!visibleFavorites.length) return null
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -29,7 +54,7 @@ export default function FavoriteAssets({ limit = 8 }: { limit?: number }) {
       </Stack>
 
       <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
-        {favorites.slice(0, limit).map((asset) => (
+        {visibleFavorites.slice(0, limit).map((asset) => (
           <Box
             key={asset.id}
             onClick={() => navigate(`/market/asset/${asset.id}`)}

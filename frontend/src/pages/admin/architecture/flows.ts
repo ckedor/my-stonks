@@ -69,7 +69,12 @@ export const flows: Flow[] = [
         detail: 'Vêm do Banco Central. São taxas percentuais, não níveis de preço.',
       },
       {
-        title: 'IFIX, S&P500, IBOVESPA, NASDAQ',
+        title: 'IFIX',
+        detail:
+          'Vem da evolução diária oficial da B3. A janela móvel também recompõe falhas recentes da série persistida.',
+      },
+      {
+        title: 'S&P500, IBOVESPA, NASDAQ',
         detail:
           'Vêm da Brapi por /v2/stocks/historical. Dias sem pregão são preenchidos com o fechamento anterior.',
       },
@@ -81,7 +86,7 @@ export const flows: Flow[] = [
     ],
     notes: [
       'USD/BRL não é uma market data series e não aparece na tabela de séries.',
-      'A Brapi parou de servir histórico do IFIX: hoje ela devolve um único ponto, e o histórico salvo é o que sustenta os gráficos.',
+      'A Brapi passou a devolver um único ponto do IFIX mesmo com intervalo solicitado; por isso o índice usa a fonte oficial da B3.',
     ],
   },
   {

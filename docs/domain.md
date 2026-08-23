@@ -128,6 +128,9 @@ Do not use:
 | Total invested | Total investido | Cumulative net transaction amount used by the position calculation. |
 | Portfolio value | Patrimônio da carteira | Sum of quantity multiplied by current price across the selected portfolio positions on a date. |
 | Contribution | Aporte | Transaction cash flow added to or removed from the portfolio, calculated from transaction quantity and unit price. |
+| Peak portfolio value | Pico do patrimônio | Highest portfolio value ever reached, read from the portfolio's own value history rather than stored. It is what a wealth tier is earned against, and it is not what the distance to the next tier is measured from. |
+| Wealth tier | Patente | Title a portfolio earns by reaching a patrimony threshold, such as Pedinte or Imperador. The ladder is data: its rungs, names, thresholds, and artwork are edited through an administrative CRUD, so nothing may assume a fixed number of tiers or a fixed title. A tier is measured against the peak portfolio value and therefore reached once and never lost — a portfolio that falls back keeps the title. What remains to reach the next tier is measured against the current portfolio value instead, since that is a question about today: a portfolio that fell back keeps its title and sees the real distance ahead. Thresholds are held in BRL, independent of the currency a screen displays. |
+| Tier artwork | Arte da patente | Illustration belonging to a wealth tier, stored as SVG source on the tier itself. It is content, not an asset path: there is no bucket, file store, or static route behind it. |
 
 ## Organization and rebalancing
 

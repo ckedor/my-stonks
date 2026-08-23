@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 
@@ -31,10 +32,11 @@ async def list_market_data_series_options(
 
 @router.get('/time_series', response_model=MarketDataSeriesTimeSeries)
 async def get_series_time_series(
+    currency: Literal['BRL', 'USD'] = Query(default='BRL'),
     service: MarketDataReadService = Depends(get_market_data_read_service),
 ):
-    """Every series' history at once, keyed by short name, for charting."""
-    return await service.get_all_series_history()
+    """Every series' history in one currency, keyed by short name, for charting."""
+    return await service.get_all_series_history(currency=currency)
 
 
 @router.get('/{series_id}/history', response_model=list[MarketDataSeriesHistoryPoint])

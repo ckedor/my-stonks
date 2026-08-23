@@ -36,7 +36,6 @@ export const ASSET_ROUTES = {
   etfSegment: `${MARKET_DATA}/asset/etf/segment`,
   treasuryBondType: `${MARKET_DATA}/asset/treasury_bond/type`,
   exchange: `${MARKET_DATA}/asset/exchange`,
-  index: `${MARKET_DATA}/asset/index`,
   favorites: `${MARKET_DATA}/asset/favorites`,
   visit: (assetId: number | string) => `${MARKET_DATA}/asset/${assetId}/visit`,
   event: `${MARKET_DATA}/asset/event`,
@@ -75,7 +74,12 @@ export const QUOTE_ROUTES = {
 } as const
 
 export const FII_ROUTES = {
+  market: `${MARKET_DATA}/fii/market`,
   profile: (assetId: number | string) => `${MARKET_DATA}/fii/${assetId}/profile`,
+} as const
+
+export const MARKET_CATALOGUE_ROUTES = {
+  byKind: (kind: 'stock' | 'etf' | 'crypto') => `${MARKET_DATA}/market/${kind}`,
 } as const
 
 export const DATA_INGESTION_ROUTES = {
@@ -99,6 +103,13 @@ export const PORTFOLIO_ROUTES = {
   all: `${PORTFOLIO}/all`,
   create: PORTFOLIO,
   byId: (portfolioId: number | string) => `${PORTFOLIO}/${portfolioId}`,
+} as const
+
+export const WEALTH_TIER_ROUTES = {
+  list: `${PORTFOLIO}/wealth_tier`,
+  create: `${PORTFOLIO}/wealth_tier`,
+  byId: (tierId: number | string) => `${PORTFOLIO}/wealth_tier/${tierId}`,
+  status: (portfolioId: number | string) => `${PORTFOLIO}/wealth_tier/status/${portfolioId}`,
 } as const
 
 export const CATEGORY_ROUTES = {
@@ -126,6 +137,10 @@ export const INCOME_TAX_ROUTES = {
 export const POSITION_ROUTES = {
   byPortfolio: (portfolioId: number | string) => `${PORTFOLIO}/position/${portfolioId}`,
   returns: (portfolioId: number | string) => `${PORTFOLIO}/position/${portfolioId}/returns`,
+  assetTypeReturns: (portfolioId: number | string, assetTypeId: number | string) =>
+    `${PORTFOLIO}/position/${portfolioId}/asset-type/${assetTypeId}/returns`,
+  assetTypeAnalysis: (portfolioId: number | string, assetTypeId: number | string) =>
+    `${PORTFOLIO}/position/${portfolioId}/asset-type/${assetTypeId}/analysis`,
   patrimonyEvolution: (portfolioId: number | string) =>
     `${PORTFOLIO}/position/${portfolioId}/patrimony_evolution`,
   analysis: (portfolioId: number | string) => `${PORTFOLIO}/position/${portfolioId}/analysis`,
@@ -152,6 +167,8 @@ export const POSITION_CONSOLIDATOR_ROUTES = {
     `${PORTFOLIO}/position_consolidator/${portfolioId}/consolidate_portfolio_returns`,
   consolidateCategoryReturns: (portfolioId: number | string) =>
     `${PORTFOLIO}/position_consolidator/${portfolioId}/consolidate_category_returns`,
+  consolidateAssetTypeReturns: (portfolioId: number | string) =>
+    `${PORTFOLIO}/position_consolidator/${portfolioId}/consolidate_asset_type_returns`,
 } as const
 
 export const REBALANCING_ROUTES = {

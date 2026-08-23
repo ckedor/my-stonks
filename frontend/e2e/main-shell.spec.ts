@@ -49,6 +49,25 @@ test('main shell — mega-menu Carteira', async ({ page, mockApi }) => {
   await expect(page).toHaveScreenshot('main-shell-carteira.png')
 })
 
+test('main shell — atalhos das categorias da carteira', async ({ page, mockApi }) => {
+  await mockApi('/portfolio', [
+    {
+      ...PORTFOLIOS[0],
+      custom_categories: [
+        { id: 10, name: 'Ações', color: '#1976d2', benchmark_id: null },
+        { id: 11, name: 'FIIs', color: '#2e7d32', benchmark_id: null },
+      ],
+    },
+  ])
+
+  await openShell(page)
+  await page.getByRole('button', { name: 'Carteira', exact: true }).click()
+
+  await expect(page.getByText('Categorias')).toBeVisible()
+  await page.getByText('Ações', { exact: true }).click()
+  await expect(page).toHaveURL('/portfolio/category/10')
+})
+
 test('main shell — mega-menu Mercado com mais acessados', async ({ page, mockApi }) => {
   await mockApi('/portfolio', PORTFOLIOS)
   await mockApi('/market_data/asset/favorites', FAVORITES)

@@ -1,7 +1,6 @@
-import DrawdownChart from '@/components/DrawdownChart'
+import RiskAnalysisCards from '@/components/RiskAnalysisCards'
 import { AppStack, AppText, LoadingSpinner, PageTitle } from '@/components/ui'
 import { useAnalysisStore } from '@/stores/portfolio/analysis'
-import RiskMetricsPanel from '@/components/RiskMetricsPanel'
 
 export default function PortfolioRiskPage() {
   const { analysis, loading: analysisLoading } = useAnalysisStore()
@@ -23,12 +22,8 @@ export default function PortfolioRiskPage() {
   return (
     <AppStack gap="lg">
       <PageTitle>Risco</PageTitle>
-      <RiskMetricsPanel analysis={analysis} />
-      <DrawdownChart
-        series={analysis.risk_metrics.drawdown.series}
-        stats={analysis.risk_metrics.drawdown.stats}
-        size={350}
-      />
+
+      <RiskAnalysisCards analysis={analysis} />
     </AppStack>
   )
 }

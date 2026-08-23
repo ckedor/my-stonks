@@ -262,10 +262,8 @@ class BrapiClient:
         params = {'search': search}
         return await self._get(endpoint, params)
 
-    async def list_stocks(self, search: str | None = None):
-        endpoint = '/quote/list'
-        params = {'search': search}
-        return await self._get(endpoint, params)
+    async def list_stocks(self, **params):
+        return await self._get('/quote/list', params)
 
     @staticmethod
     def _brapi_range_from_init_date(init_date: datetime | pd.Timestamp | None) -> str:

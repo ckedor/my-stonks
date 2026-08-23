@@ -20,6 +20,7 @@ from .rebalancing.router import router as rebalancing_router
 from .report.router import router as report_router
 from .transaction.router import router as transaction_router
 from .user_configuration.router import router as user_configuration_router
+from .wealth_tier.router import router as wealth_tier_router
 
 router = APIRouter(prefix='/portfolio', dependencies=[Depends(current_active_user)])
 
@@ -89,5 +90,6 @@ router.include_router(income_tax_router)
 router.include_router(user_configuration_router)
 router.include_router(report_router)
 router.include_router(rebalancing_router)
+router.include_router(wealth_tier_router)
 
 __all__ = ['router']

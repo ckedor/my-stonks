@@ -52,6 +52,15 @@ async def test_indexes_time_series_empty(client):
     assert response.status_code == HTTPStatus.OK
 
 
+async def test_indexes_time_series_rejects_unsupported_currency(client):
+    response = await client.get(
+        '/market_data/series/time_series',
+        params={'currency': 'EUR'},
+    )
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
 async def test_indexes_time_series_with_data(client, db):
     """Seed index_history and verify the time series endpoint returns data."""
     await db.execute(

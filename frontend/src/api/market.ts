@@ -1,12 +1,14 @@
 import type { CandleDataPoint } from '@/components/charts/CandleChart'
-import { ASSET_ROUTES, CURRENCY_ROUTES, FII_ROUTES, MARKET_DATA_SERIES_ROUTES, QUOTE_ROUTES, USD_BRL_ROUTES } from '@/constants/routes'
+import { ASSET_ROUTES, CURRENCY_ROUTES, FII_ROUTES, MARKET_CATALOGUE_ROUTES, MARKET_DATA_SERIES_ROUTES, QUOTE_ROUTES, USD_BRL_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import type { ReturnsEntry } from '@/types'
 
 export type BenchmarksPayload = Record<string, ReturnsEntry[]>
 
-export const fetchBenchmarks = (): Promise<BenchmarksPayload> =>
-  api.get<BenchmarksPayload>(MARKET_DATA_SERIES_ROUTES.timeSeries).then((r) => r.data)
+export const fetchBenchmarks = (currency: 'BRL' | 'USD' = 'BRL'): Promise<BenchmarksPayload> =>
+  api
+    .get<BenchmarksPayload>(MARKET_DATA_SERIES_ROUTES.timeSeries, { params: { currency } })
+    .then((r) => r.data)
 
 // ---------------------------------------------------------------------------
 // Market data inspection (admin)
@@ -219,6 +221,76 @@ export interface FIIProfile {
 export const fetchFIIProfile = (assetId: number): Promise<FIIProfile> =>
   api.get<FIIProfile>(FII_ROUTES.profile(assetId)).then((r) => r.data)
 
+export interface FIIMarketFund {
+  asset_id: number | null
+  ticker: string
+  name: string
+  cnpj: string | null
+  type: string | null
+  segment: string | null
+  mandate: string | null
+  management_type: string | null
+  administrator: string | null
+  price: number | null
+  nav_per_share: number | null
+  price_to_nav: number | null
+  dividend_yield_12m: number | null
+  investors: number | null
+}
+
+export interface FIIMarket {
+  funds: FIIMarketFund[]
+  total: number
+  source: string
+}
+
+export const fetchFIIMarket = (): Promise<FIIMarket> =>
+  api.get<FIIMarket>(FII_ROUTES.market).then((r) => r.data)
+
+
+// ---------------------------------------------------------------------------
+// Market catalogues
+// ---------------------------------------------------------------------------
+
+export type MarketCatalogueKind = 'stock' | 'etf' | 'crypto'
+
+export interface MarketCatalogueAsset {
+  asset_id: number | null
+  ticker: string
+  name: string
+  price: number | null
+  change_percent: number | null
+  volume: number | null
+  market_cap: number | null
+  currency: string
+  logo_url: string | null
+}
+
+export interface MarketCatalogue {
+  assets: MarketCatalogueAsset[]
+  total: number
+  source: string
+}
+
+export const fetchMarketCatalogue = (kind: MarketCatalogueKind): Promise<MarketCatalogue> =>
+  api.get<MarketCatalogue>(MARKET_CATALOGUE_ROUTES.byKind(kind)).then((r) => r.data)
+
+export interface MarketAssetDetails {
+  id: number
+  ticker: string | null
+  name: string
+  asset_type_id: number
+  asset_type: {
+    id: number
+    short_name: string
+    name: string
+    asset_class_id: number
+  }
+}
+
+export const fetchMarketAssetDetails = (assetId: number): Promise<MarketAssetDetails> =>
+  api.get<MarketAssetDetails>(ASSET_ROUTES.byId(assetId)).then((r) => r.data)
+
 
 // ---------------------------------------------------------------------------
 // Favourites, ranked by how often the user opens an asset
@@ -234,8 +306,16 @@ export interface FavoriteAsset {
   last_visited_at: string | null
 }
 
-export const fetchFavoriteAssets = (limit = 8): Promise<FavoriteAsset[]> =>
-  api.get<FavoriteAsset[]>(ASSET_ROUTES.favorites, { params: { limit } }).then((r) => r.data)
+export const fetchFavoriteAssets = (
+  limit = 8,
+  assetTypeId?: number,
+  assetIds?: number[],
+): Promise<FavoriteAsset[]> =>
+  api
+    .get<FavoriteAsset[]>(ASSET_ROUTES.favorites, {
+      params: { limit, asset_type_id: assetTypeId, asset_ids: assetIds },
+    })
+    .then((r) => r.data)
 
 /** Counts one visit. Always resolves: a lost visit count must never break the
  *  page. Awaited only to reorder the ranking after the backend has taken it. */

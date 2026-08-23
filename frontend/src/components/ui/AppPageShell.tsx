@@ -22,9 +22,12 @@ export default function AppPageShell({ topbar, children }: AppPageShellProps) {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {topbar}
 
+      {/* Respiro maior no topo que embaixo: o conteúdo colado na barra a fazia
+          parecer parte da primeira linha da página em vez de moldura dela. */}
       <Box
         px={4}
-        py={2}
+        pt={5}
+        pb={2}
         sx={{ flexGrow: 1, maxWidth: CONTENT_MAX_WIDTH, width: '100%', mx: 'auto' }}
       >
         {children}

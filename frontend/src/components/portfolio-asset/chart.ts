@@ -14,6 +14,10 @@ export const MIN_BAR_SPACING = 0.02
 export function baseChartOptions(theme: AppTheme, height: number): DeepPartial<ChartOptions> {
   return {
     height,
+    /* O eixo de tempo escreve o mês por extenso, e sem `locale` a biblioteca
+       usa o idioma do navegador: a mesma tela mostrava "Oct 2025" ou "out.
+       2025" conforme a máquina de quem abriu. O app é em português. */
+    localization: { locale: 'pt-BR' },
     layout: {
       background: { type: ColorType.Solid, color: 'transparent' },
       textColor: theme.palette.text.secondary,

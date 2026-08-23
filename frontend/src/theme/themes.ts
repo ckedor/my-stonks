@@ -372,6 +372,25 @@ const claudeShape: ThemeShapeConfig = {
   headingFontFamily: fontStacks.newsreader,
 }
 
+/* O tema Pixel Art é o motivo de `ThemeShapeConfig` existir (veja o comentário
+   do tipo): sprite não tem canto arredondado nem letra vetorial, e nenhuma das
+   duas coisas cabia numa paleta.
+
+   Raio zero em toda a escala, `pill` incluído: um chip em formato de cápsula
+   entrega na hora que o desenho é vetorial.
+
+   Uma fonte só, título e corpo. A Press Start 2P chegou a entrar nos títulos
+   por ser a fonte de arcade de verdade, mas cada glifo dela ocupa uma célula
+   quadrada: o valor do patrimônio crescia a ponto de invadir a arte da patente
+   ao lado. Fonte de título é decisão que se paga no maior número da tela. */
+const pixelRadius: RadiusScale = { sm: 0, md: 0, lg: 0, pill: 0 }
+
+const pixelShape: ThemeShapeConfig = {
+  radius: pixelRadius,
+  fontFamily: fontStacks.pixelifySans,
+  headingFontFamily: fontStacks.pixelifySans,
+}
+
 /* Série compartilhada pelos três Sépia: nenhuma cor repete `primary` nem
    `secondary` de nenhum deles, porque no gráfico de rentabilidade essas duas
    já estão presas a Carteira e CDI. Todas passam de 4.5:1 sobre o paper. */
@@ -673,7 +692,7 @@ export const darkThemes: ThemeDefinition[] = [
     id: 'pixel-art',
     name: 'Pixel Art',
     mode: 'dark',
-    description: 'Marrom de caverna com ouro e verde de sprite',
+    description: 'Marrom de caverna com ouro, verde de sprite e letra bitmap',
     preview: {
       background: '#221A15',
       paper: '#2C231D',
@@ -683,7 +702,7 @@ export const darkThemes: ThemeDefinition[] = [
       sidebar: '#1A1410',
       text: '#EEE3D7',
     },
-    theme: buildMuiTheme(pixelArtPalette),
+    theme: buildMuiTheme(pixelArtPalette, pixelShape),
   },
 
   /* ── 3. Grafite Quente ────────────────────── */

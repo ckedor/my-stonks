@@ -38,6 +38,9 @@ from app.modules.portfolio.service.portfolio_transaction_service import (
 from app.modules.portfolio.service.portfolio_user_configuration import (
     PortfolioUserConfigurationService,
 )
+from app.modules.portfolio.service.portfolio_wealth_tier_service import (
+    PortfolioWealthTierService,
+)
 
 
 def build_portfolio_position_service(uow: UnitOfWork) -> PortfolioPositionService:
@@ -58,6 +61,19 @@ def get_portfolio_position_service(
     uow: UnitOfWork = Depends(get_uow),
 ) -> PortfolioPositionService:
     return build_portfolio_position_service(uow)
+
+
+def get_wealth_tier_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> PortfolioWealthTierService:
+    # The tier is read off the patrimony series, so the position service comes
+    # in already built: the peak is not a second way of computing patrimony.
+    # It gets its own UnitOfWork, since one instance cannot be entered by both
+    # services.
+    return PortfolioWealthTierService(
+        uow=uow,
+        position_service=build_portfolio_position_service(UnitOfWork()),
+    )
 
 
 def get_portfolio_service(uow: UnitOfWork = Depends(get_uow)) -> PortfolioBaseService:

@@ -10,6 +10,7 @@ from app.infra.db.unit_of_work import UnitOfWork
 from app.lib.finance.performance_metrics import cagr
 from app.lib.utils.df import rows_to_df
 from app.modules.portfolio.domain.entities import (
+    AssetTypeReturn,
     CategoryReturn,
     CustomCategory,
     PortfolioReturn,
@@ -46,6 +47,11 @@ class PortfolioReturnsConsolidatorService:
                 pos_df,
                 portfolio_id,
             )
+            await self._consolidate_asset_type_returns(
+                uow.portfolios,
+                pos_df,
+                portfolio_id,
+            )
             await uow.commit()
         logger.info(f'Retornos consolidados com sucesso para portfolio {portfolio_id}')
 
@@ -70,6 +76,28 @@ class PortfolioReturnsConsolidatorService:
             )
             await uow.commit()
         logger.info(f'Retornos das categorias consolidados para portfolio {portfolio_id}')
+
+    async def consolidate_asset_type_returns(self, portfolio_id: int):
+        logger.info(f'Consolidando retornos por tipo de ativo do portfolio {portfolio_id}')
+
+        async with self.uow as uow:
+            portfolio_position_df = rows_to_df(
+                await uow.portfolios.get_portfolio_position(portfolio_id),
+                datetime_cols=['date'],
+                numeric_fillna_cols=['dividend', 'dividend_usd'],
+            )
+            if portfolio_position_df.empty:
+                logger.warning(f'Sem posições para portfolio {portfolio_id}')
+                return
+
+            pos_df = calculate_portfolio_daily_returns(portfolio_position_df)
+            await self._consolidate_asset_type_returns(
+                uow.portfolios,
+                pos_df,
+                portfolio_id,
+            )
+            await uow.commit()
+        logger.info(f'Retornos por tipo de ativo consolidados para portfolio {portfolio_id}')
 
     async def _consolidate_portfolio_returns(
         self,
@@ -203,11 +231,77 @@ class PortfolioReturnsConsolidatorService:
             sorted_df['custom_category_id'] = cat_id
             sorted_df['date'] = sorted_df['date'].dt.date
 
-            all_records.extend(cat_df[CategoryReturn.COLUMNS].to_dict(orient='records'))
+            all_records.extend(sorted_df[CategoryReturn.COLUMNS].to_dict(orient='records'))
 
         if all_records:
             await repository.upsert_bulk(
                 CategoryReturn,
                 all_records,
                 unique_columns=['portfolio_id', 'custom_category_id', 'date'],
+            )
+
+    async def _consolidate_asset_type_returns(
+        self,
+        repository: PortfolioRepository,
+        pos_df: pd.DataFrame,
+        portfolio_id: int,
+    ) -> None:
+        """Persist value-weighted daily returns independently for each asset type."""
+        df = pos_df.copy()
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.sort_values(['asset_id', 'date'])
+
+        df['base_value'] = (df['value'] - df['contribution']).replace(0, pd.NA)
+        df['base_value_prev'] = df.groupby('asset_id')['base_value'].shift(1)
+        df['type_base_prev_total'] = df.groupby(['date', 'asset_type_id'])[
+            'base_value_prev'
+        ].transform('sum')
+        df['type_weight'] = df['base_value_prev'] / df['type_base_prev_total'].replace(0, pd.NA)
+        df['type_weight'] = pd.to_numeric(df['type_weight'], errors='coerce').fillna(0)
+        df['type_weighted_return'] = df['type_weight'] * df['asset_return']
+
+        df['base_value_usd'] = (df['value_usd'] - df['contribution_usd']).replace(0, pd.NA)
+        df['base_value_prev_usd'] = df.groupby('asset_id')['base_value_usd'].shift(1)
+        df['type_base_prev_total_usd'] = df.groupby(['date', 'asset_type_id'])[
+            'base_value_prev_usd'
+        ].transform('sum')
+        df['type_weight_usd'] = df['base_value_prev_usd'] / df['type_base_prev_total_usd'].replace(
+            0, pd.NA
+        )
+        df['type_weight_usd'] = pd.to_numeric(df['type_weight_usd'], errors='coerce').fillna(0)
+        df['type_weighted_return_usd'] = df['type_weight_usd'] * df['asset_return_usd']
+
+        daily = (
+            df.groupby(['date', 'asset_type_id'])
+            .agg(
+                daily_return=('type_weighted_return', 'sum'),
+                daily_return_usd=('type_weighted_return_usd', 'sum'),
+            )
+            .reset_index()
+        )
+
+        records: list[dict] = []
+        for asset_type_id, type_df in daily.groupby('asset_type_id'):
+            grouped = type_df.sort_values('date').reset_index(drop=True)
+            grouped['acc_return'] = (1 + grouped['daily_return']).cumprod() - 1
+            grouped['acc_return_usd'] = (1 + grouped['daily_return_usd']).cumprod() - 1
+            grouped['cagr'] = None
+            grouped['cagr_usd'] = None
+
+            brl_returns = grouped.set_index('date')['daily_return']
+            usd_returns = grouped.set_index('date')['daily_return_usd']
+            for index in range(1, len(grouped)):
+                grouped.loc[grouped.index[index], 'cagr'] = cagr(brl_returns.iloc[: index + 1])
+                grouped.loc[grouped.index[index], 'cagr_usd'] = cagr(usd_returns.iloc[: index + 1])
+
+            grouped['portfolio_id'] = portfolio_id
+            grouped['asset_type_id'] = int(asset_type_id)
+            grouped['date'] = grouped['date'].dt.date
+            records.extend(grouped[AssetTypeReturn.COLUMNS].to_dict(orient='records'))
+
+        if records:
+            await repository.upsert_bulk(
+                AssetTypeReturn,
+                records,
+                unique_columns=['portfolio_id', 'asset_type_id', 'date'],
             )

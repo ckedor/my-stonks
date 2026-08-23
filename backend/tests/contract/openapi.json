@@ -2342,6 +2342,182 @@
     "title": "FIIIndicatorsResponse",
     "type": "object"
    },
+   "FIIMarketFundResponse": {
+    "properties": {
+     "administrator": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Administrator"
+     },
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "dividend_yield_12m": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Dividend Yield 12M"
+     },
+     "investors": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Investors"
+     },
+     "management_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Management Type"
+     },
+     "mandate": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Mandate"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "nav_per_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Nav Per Share"
+     },
+     "price": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price"
+     },
+     "price_to_nav": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price To Nav"
+     },
+     "segment": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Segment"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     },
+     "type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Type"
+     }
+    },
+    "required": [
+     "ticker",
+     "name"
+    ],
+    "title": "FIIMarketFundResponse",
+    "type": "object"
+   },
+   "FIIMarketResponse": {
+    "properties": {
+     "funds": {
+      "items": {
+       "$ref": "#/components/schemas/FIIMarketFundResponse"
+      },
+      "title": "Funds",
+      "type": "array"
+     },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
+     "total": {
+      "title": "Total",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "funds",
+     "total",
+     "source"
+    ],
+    "title": "FIIMarketResponse",
+    "type": "object"
+   },
    "FIIOut": {
     "properties": {
      "asset_id": {
@@ -2890,6 +3066,121 @@
     "title": "InvestmentFundOut",
     "type": "object"
    },
+   "MarketCatalogueAssetResponse": {
+    "properties": {
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "change_percent": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Change Percent"
+     },
+     "currency": {
+      "title": "Currency",
+      "type": "string"
+     },
+     "logo_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Logo Url"
+     },
+     "market_cap": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Market Cap"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "price": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     },
+     "volume": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Volume"
+     }
+    },
+    "required": [
+     "ticker",
+     "name",
+     "currency"
+    ],
+    "title": "MarketCatalogueAssetResponse",
+    "type": "object"
+   },
+   "MarketCatalogueResponse": {
+    "properties": {
+     "assets": {
+      "items": {
+       "$ref": "#/components/schemas/MarketCatalogueAssetResponse"
+      },
+      "title": "Assets",
+      "type": "array"
+     },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
+     "total": {
+      "title": "Total",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "assets",
+     "total",
+     "source"
+    ],
+    "title": "MarketCatalogueResponse",
+    "type": "object"
+   },
    "MarketDataSeriesHistoryPoint": {
     "properties": {
      "close": {
@@ -3215,6 +3506,61 @@
      "user_id"
     ],
     "title": "PortfolioSummary",
+    "type": "object"
+   },
+   "PortfolioWealthTier": {
+    "description": "A portfolio's standing on the ladder, from two deliberately different numbers.\n\n`peak_patrimony` is the highest the portfolio has ever been worth, and it is\nwhat earns `current_tier`: a rung is reached once and never lost.\n\n`remaining` and `progress` are measured from `current_patrimony` instead,\nbecause how much is left to climb is a question about today. A portfolio\nthat fell back keeps its title and sees the real distance ahead of it.",
+    "properties": {
+     "current_patrimony": {
+      "title": "Current Patrimony",
+      "type": "number"
+     },
+     "current_tier": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/WealthTier"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "next_tier": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/WealthTier"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "peak_patrimony": {
+      "title": "Peak Patrimony",
+      "type": "number"
+     },
+     "progress": {
+      "title": "Progress",
+      "type": "number"
+     },
+     "remaining": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Remaining"
+     }
+    },
+    "required": [
+     "peak_patrimony",
+     "current_patrimony",
+     "progress"
+    ],
+    "title": "PortfolioWealthTier",
     "type": "object"
    },
    "QuoteResponse": {
@@ -3982,6 +4328,199 @@
      "type"
     ],
     "title": "ValidationError",
+    "type": "object"
+   },
+   "WealthTier": {
+    "properties": {
+     "artwork": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Artwork"
+     },
+     "artwork_height": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Artwork Height"
+     },
+     "artwork_offset": {
+      "default": 0,
+      "title": "Artwork Offset",
+      "type": "integer"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "rank": {
+      "title": "Rank",
+      "type": "integer"
+     },
+     "threshold": {
+      "title": "Threshold",
+      "type": "number"
+     }
+    },
+    "required": [
+     "id",
+     "rank",
+     "name",
+     "threshold"
+    ],
+    "title": "WealthTier",
+    "type": "object"
+   },
+   "WealthTierCreate": {
+    "properties": {
+     "artwork": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Artwork"
+     },
+     "artwork_height": {
+      "anyOf": [
+       {
+        "maximum": 600.0,
+        "minimum": 16.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Artwork Height"
+     },
+     "artwork_offset": {
+      "default": 0,
+      "maximum": 400.0,
+      "minimum": -400.0,
+      "title": "Artwork Offset",
+      "type": "integer"
+     },
+     "name": {
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "rank": {
+      "minimum": 1.0,
+      "title": "Rank",
+      "type": "integer"
+     },
+     "threshold": {
+      "minimum": 0.0,
+      "title": "Threshold",
+      "type": "number"
+     }
+    },
+    "required": [
+     "rank",
+     "name",
+     "threshold"
+    ],
+    "title": "WealthTierCreate",
+    "type": "object"
+   },
+   "WealthTierUpdate": {
+    "properties": {
+     "artwork": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Artwork"
+     },
+     "artwork_height": {
+      "anyOf": [
+       {
+        "maximum": 600.0,
+        "minimum": 16.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Artwork Height"
+     },
+     "artwork_offset": {
+      "anyOf": [
+       {
+        "maximum": 400.0,
+        "minimum": -400.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Artwork Offset"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "maxLength": 50,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "rank": {
+      "anyOf": [
+       {
+        "minimum": 1.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rank"
+     },
+     "threshold": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Threshold"
+     }
+    },
+    "title": "WealthTierUpdate",
     "type": "object"
    },
    "app__modules__portfolio__api__category__schema__CustomCategory": {
@@ -4783,6 +5322,43 @@
        "title": "Limit",
        "type": "integer"
       }
+     },
+     {
+      "in": "query",
+      "name": "asset_type_id",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "minimum": 1,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Asset Type Id"
+      }
+     },
+     {
+      "in": "query",
+      "name": "asset_ids",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "maxItems": 1000,
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Asset Ids"
+      }
      }
     ],
     "responses": {
@@ -5422,6 +5998,33 @@
     ]
    }
   },
+  "/market_data/fii/market": {
+   "get": {
+    "description": "Complete FII catalogue with summarized BRAPI indicators.",
+    "operationId": "get_fii_market_market_data_fii_market_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FIIMarketResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Fii Market",
+    "tags": [
+     "FII"
+    ]
+   }
+  },
   "/market_data/fii/{asset_id}/profile": {
    "get": {
     "description": "Indicators and distribution history published for one real-estate fund.",
@@ -6046,6 +6649,59 @@
     ]
    }
   },
+  "/market_data/market/{kind}": {
+   "get": {
+    "description": "Complete BRAPI catalogue for one market class.",
+    "operationId": "get_market_catalogue_market_data_market__kind__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "kind",
+      "required": true,
+      "schema": {
+       "enum": [
+        "stock",
+        "etf",
+        "crypto"
+       ],
+       "title": "Kind",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MarketCatalogueResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Market Catalogue",
+    "tags": [
+     "Market Catalogue"
+    ]
+   }
+  },
   "/market_data/quotes/asset/{asset_id}": {
    "get": {
     "description": "Quote history for one asset, from storage when it exists.\n\nPrices come back in ``currency``, converted through the USD/BRL history when\nthe asset is not quoted in it.",
@@ -6392,8 +7048,24 @@
   },
   "/market_data/series/time_series": {
    "get": {
-    "description": "Every series' history at once, keyed by short name, for charting.",
+    "description": "Every series' history in one currency, keyed by short name, for charting.",
     "operationId": "get_series_time_series_market_data_series_time_series_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "enum": [
+        "BRL",
+        "USD"
+       ],
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
     "responses": {
      "200": {
       "content": {
@@ -6404,6 +7076,16 @@
        }
       },
       "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
      }
     },
     "security": [
@@ -7443,6 +8125,134 @@
     ]
    }
   },
+  "/portfolio/position/{portfolio_id}/asset-type/{asset_type_id}/analysis": {
+   "get": {
+    "operationId": "get_asset_type_analysis_portfolio_position__portfolio_id__asset_type__asset_type_id__analysis_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "path",
+      "name": "asset_type_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Type Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Asset Type Analysis",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/asset-type/{asset_type_id}/returns": {
+   "get": {
+    "operationId": "get_asset_type_returns_portfolio_position__portfolio_id__asset_type__asset_type_id__returns_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "path",
+      "name": "asset_type_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Type Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Asset Type Returns",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
   "/portfolio/position/{portfolio_id}/asset/{asset_id}/analysis": {
    "get": {
     "operationId": "get_asset_analysis_portfolio_position__portfolio_id__asset__asset_id__analysis_get",
@@ -7996,6 +8806,51 @@
      }
     ],
     "summary": "Consolidate Portfolio",
+    "tags": [
+     "Portfolio Position Consolidator"
+    ]
+   }
+  },
+  "/portfolio/position_consolidator/{portfolio_id}/consolidate_asset_type_returns": {
+   "post": {
+    "operationId": "consolidate_asset_type_returns_portfolio_position_consolidator__portfolio_id__consolidate_asset_type_returns_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Consolidate Asset Type Returns",
     "tags": [
      "Portfolio Position Consolidator"
     ]
@@ -8698,6 +9553,227 @@
     "summary": "Update User Configuration",
     "tags": [
      "Portfolio User Configuration"
+    ]
+   }
+  },
+  "/portfolio/wealth_tier": {
+   "get": {
+    "description": "The whole ladder, lowest rung first.",
+    "operationId": "list_wealth_tiers_portfolio_wealth_tier_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/WealthTier"
+         },
+         "title": "Response List Wealth Tiers Portfolio Wealth Tier Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Wealth Tiers",
+    "tags": [
+     "Wealth Tier"
+    ]
+   },
+   "post": {
+    "description": "Add a rung to the ladder.",
+    "operationId": "create_wealth_tier_portfolio_wealth_tier_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/WealthTierCreate"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WealthTier"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Create Wealth Tier",
+    "tags": [
+     "Wealth Tier"
+    ]
+   }
+  },
+  "/portfolio/wealth_tier/status/{portfolio_id}": {
+   "get": {
+    "description": "The tier a portfolio has earned, and how far the next one is.",
+    "operationId": "get_portfolio_wealth_tier_portfolio_wealth_tier_status__portfolio_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PortfolioWealthTier"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Portfolio Wealth Tier",
+    "tags": [
+     "Wealth Tier"
+    ]
+   }
+  },
+  "/portfolio/wealth_tier/{tier_id}": {
+   "delete": {
+    "description": "Remove a rung from the ladder.",
+    "operationId": "delete_wealth_tier_portfolio_wealth_tier__tier_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "tier_id",
+      "required": true,
+      "schema": {
+       "title": "Tier Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Delete Wealth Tier",
+    "tags": [
+     "Wealth Tier"
+    ]
+   },
+   "put": {
+    "description": "Rename, reprice, reorder, or re-illustrate a rung.",
+    "operationId": "update_wealth_tier_portfolio_wealth_tier__tier_id__put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "tier_id",
+      "required": true,
+      "schema": {
+       "title": "Tier Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/WealthTierUpdate"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WealthTier"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Update Wealth Tier",
+    "tags": [
+     "Wealth Tier"
     ]
    }
   },

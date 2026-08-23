@@ -14,6 +14,7 @@ def build_service():
         delete=AsyncMock(),
         create=AsyncMock(),
         detach_ingestion_attempts=AsyncMock(),
+        get_most_visited_assets=AsyncMock(return_value=[]),
     )
     portfolios = SimpleNamespace(count_asset_references=AsyncMock(return_value={}))
     uow = FakeUnitOfWork(repository=repository, assets=repository, portfolios=portfolios)
@@ -69,3 +70,23 @@ async def test_delete_asset_with_portfolio_history_is_rejected_without_deleting_
 
     uow.assets.delete.assert_not_awaited()
     assert uow.exit_errors == [BusinessRuleError]
+
+
+@pytest.mark.asyncio
+async def test_favorite_assets_filters_the_universe_before_applying_the_limit():
+    service, uow = build_service()
+
+    result = await service.list_favorite_assets(
+        user_id=7,
+        limit=8,
+        asset_type_id=1,
+        asset_ids=[45, 46, 47],
+    )
+
+    assert result == []
+    uow.assets.get_most_visited_assets.assert_awaited_once_with(
+        7,
+        8,
+        asset_type_id=1,
+        asset_ids=[45, 46, 47],
+    )

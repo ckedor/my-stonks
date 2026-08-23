@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock
 import pandas as pd
 import pytest
 
+from app.modules.market_data.domain.constants import SERIES
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.service.market_data_series_ingestion_service import (
     MarketDataSeriesIngestionService,
@@ -192,4 +193,46 @@ async def test_series_with_no_new_observations_finishes_successfully_without_ups
         },
         fetched_rows=0,
         upserted_rows=0,
+    )
+
+
+@pytest.mark.asyncio
+async def test_ifix_incremental_ingestion_keeps_a_repair_window():
+    market_series = MarketDataSeries(
+        id=SERIES.IFIX,
+        symbol='IFIX.SA',
+        short_name='IFIX',
+        name='IFIX',
+        series_type='market_index',
+        value_type='level',
+        frequency='daily',
+    )
+    repository = SimpleNamespace(
+        get_all=AsyncMock(return_value=[market_series]),
+        get_latest_series_dates=AsyncMock(return_value={SERIES.IFIX: date.today()}),
+        upsert_bulk=AsyncMock(),
+    )
+    provider = SimpleNamespace(
+        get_series_source=lambda _: 'b3',
+        get_series_historical_data=AsyncMock(return_value=pd.DataFrame(columns=['date', 'close'])),
+    )
+    tracker = SimpleNamespace(
+        prepare_execution=AsyncMock(return_value=(11, False, [SERIES.IFIX])),
+        set_execution_items=AsyncMock(),
+        start_attempt=AsyncMock(return_value=60),
+        finish_attempt=AsyncMock(),
+        finish=AsyncMock(),
+        fail=AsyncMock(),
+        is_aborted=AsyncMock(return_value=False),
+    )
+    service = MarketDataSeriesIngestionService(
+        uow_factory=FakeUoWFactory(repository),
+        ingestion_service=tracker,
+        provider=provider,
+    )
+
+    await service.run(execution_id=11)
+
+    assert provider.get_series_historical_data.await_args.kwargs['init_date'] == (
+        date.today() - pd.Timedelta(days=550)
     )

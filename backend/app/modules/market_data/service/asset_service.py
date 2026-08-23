@@ -333,10 +333,21 @@ class AssetService:
             await uow.assets.record_asset_visit(user_id, asset_id)
             await uow.commit()
 
-    async def list_favorite_assets(self, user_id: int, limit: int = 8) -> list[dict]:
+    async def list_favorite_assets(
+        self,
+        user_id: int,
+        limit: int = 8,
+        asset_type_id: int | None = None,
+        asset_ids: list[int] | None = None,
+    ) -> list[dict]:
         """Assets the user opens most, as a shortcut back to them."""
         async with self.uow as uow:
-            rows = await uow.assets.get_most_visited_assets(user_id, limit)
+            rows = await uow.assets.get_most_visited_assets(
+                user_id,
+                limit,
+                asset_type_id=asset_type_id,
+                asset_ids=asset_ids,
+            )
             return [
                 {
                     'id': asset.id,

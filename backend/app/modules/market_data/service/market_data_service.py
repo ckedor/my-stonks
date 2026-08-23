@@ -14,12 +14,12 @@ from app.infra.redis.redis_service import RedisService
 from app.lib.finance.returns import calculate_acc_returns_from_prices
 from app.lib.utils.df import df_to_named_dict, rows_to_df
 from app.modules.market_data.domain.assets import Currency
-from app.modules.market_data.domain.constants import SERIES
+from app.modules.market_data.domain.constants import CURRENCY, CURRENCY_MAP, SERIES
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.domain.usd_brl import usd_brl_payload_to_df
 from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
 
-SERIES_HISTORY_CACHE_PREFIX = 'series_history'
+SERIES_HISTORY_CACHE_PREFIX = 'series_history_v2'
 
 
 class MarketDataReadService:
@@ -51,40 +51,60 @@ class MarketDataReadService:
     USD_SERIES: ClassVar[set[int]] = {SERIES.SP500, SERIES.NASDAQ}
 
     async def get_series_history_values(
-        self, start_date: pd.Timestamp = None, series_id: int | None = None
+        self,
+        start_date: pd.Timestamp = None,
+        series_id: int | None = None,
+        currency: str = 'BRL',
     ) -> pd.Series:
         """
-        Returns a price-like Series with DatetimeIndex for a given index.
+        Returns a price-like Series in ``currency`` with DatetimeIndex.
+
         For rate-based indexes (CDI, IPCA), builds a cumulative index from daily rates.
-        For USD-based indexes (S&P500, NASDAQ), converts to BRL.
-        For price-based indexes (IBOV, etc.), returns the value directly.
+        Price levels are then restated through the historical USD/BRL rate when
+        their source currency differs from the requested one.
         """
+        target_currency_id = self._currency_id(currency)
         async with self.uow as uow:
             rows = await uow.market_data.get_series_history_values(start_date, series_id=series_id)
         df = rows_to_df(rows, datetime_cols=['date'])
+        if df.empty:
+            return pd.Series(dtype=float, name='value')
+
         df = df.sort_values('date')
         df['value'] = df['value'].astype(float)
 
         if series_id in {SERIES.IPCA, SERIES.CDI}:
-            values = self._build_level_from_percent(df['value'])
-        else:
-            values = df['value']
+            df['value'] = self._build_level_from_percent(df['value'])
 
-        if series_id in self.USD_SERIES:
-            usd_brl_df = await self.get_usd_brl_history(start_date)
-            df = df.merge(usd_brl_df[['date', 'usd_brl']], on='date', how='left')
-            df['usd_brl'] = df['usd_brl'].ffill()
-            values *= df['usd_brl'].values
+        source_currency_id = self._series_currency_id(df, series_id=series_id)
+        if source_currency_id != target_currency_id:
+            usd_brl_df = usd_brl_payload_to_df(await self.usd_brl.get_full_history())
+            df = self._restated_level(
+                df[['date', 'value']],
+                source_currency_id=source_currency_id,
+                target_currency_id=target_currency_id,
+                usd_brl_df=usd_brl_df,
+            )
 
+        values = df['value'].copy()
         values.index = df['date'].values
         values.index.name = 'date'
         return values
 
     @cached(key_prefix=SERIES_HISTORY_CACHE_PREFIX, cache=lambda self: self.cache, ttl=3600)
-    async def get_all_series_history(self, start_date: pd.Timestamp = None) -> pd.DataFrame:
-        return await self.compute_indexes_history(start_date)
+    async def get_all_series_history(
+        self,
+        start_date: pd.Timestamp = None,
+        currency: str = 'BRL',
+    ) -> dict[str, list[dict]]:
+        return await self.compute_indexes_history(start_date, currency)
 
-    async def compute_indexes_history(self, start_date: pd.Timestamp = None):
+    async def compute_indexes_history(
+        self,
+        start_date: pd.Timestamp = None,
+        currency: str = 'BRL',
+    ):
+        target_currency_id = self._currency_id(currency)
         start_date = start_date or pd.Timestamp(datetime.today()) - pd.DateOffset(years=5)
         async with self.uow as uow:
             index_history_rows = await uow.market_data.get_series_history_values(start_date)
@@ -92,34 +112,50 @@ class MarketDataReadService:
 
         index_history_returns_df = pd.DataFrame()
 
-        # USD/BRL is not a market-data series: it always comes from its own
-        # table, and is appended here only so it can be charted alongside them.
-        usd_brl_df = await self.get_usd_brl_history(start_date)
-        usd_series_df = usd_brl_df.rename(columns={'usd_brl': 'value'}).copy()
+        # USD/BRL is used here as the return of holding USD. In BRL it follows
+        # the exchange rate; in USD its level is always 1, hence a 0% return.
+        full_usd_brl_df = usd_brl_payload_to_df(await self.usd_brl.get_full_history())
+        usd_brl_df = full_usd_brl_df[full_usd_brl_df['date'] >= pd.Timestamp(start_date)].copy()
+        usd_series_df = usd_brl_df[['date', 'usd_brl']].rename(columns={'usd_brl': 'value'}).copy()
+        if target_currency_id == CURRENCY.USD:
+            usd_series_df['value'] = 1.0
         usd_series_df['index_name'] = 'USD/BRL'
+        usd_series_df['currency_id'] = None
         index_history_df = pd.concat(
-            [index_history_df, usd_series_df[['date', 'value', 'index_name']]],
+            [
+                index_history_df,
+                usd_series_df[['date', 'value', 'index_name', 'currency_id']],
+            ],
             ignore_index=True,
         )
 
         for index_name in index_history_df['index_name'].unique():
             index_series = index_history_df[index_history_df['index_name'] == index_name].copy()
-            index_series.index = index_series['date']
-            index_series = index_series.drop(columns=['date'])
-            index_series[index_name] = index_series['value'].astype(float)
-            index_series = index_series.sort_index()
-
-            # Convert USD indexes to BRL
-            if index_name in {'NASDAQ', 'S&P500'}:
-                index_series = pd.merge(index_series, usd_brl_df, on='date', how='left')
-                index_series[index_name] *= index_series['usd_brl'].astype(float)
-                index_series.index = index_series['date']
-
-            index_series = index_series[[index_name]]
+            index_series = index_series.sort_values('date')
+            index_series['value'] = index_series['value'].astype(float)
 
             # Build cumulative index from percentage rates
             if index_name in {'IPCA', 'CDI'}:
-                index_series = self._build_level_from_percent(index_series)
+                index_series['value'] = self._build_level_from_percent(index_series['value'])
+
+            if index_name != 'USD/BRL':
+                source_currency_id = self._series_currency_id(
+                    index_series,
+                    index_name=index_name,
+                )
+                index_series = self._restated_level(
+                    index_series[['date', 'value']],
+                    source_currency_id=source_currency_id,
+                    target_currency_id=target_currency_id,
+                    usd_brl_df=full_usd_brl_df,
+                )
+
+            if index_series.empty:
+                continue
+
+            index_series = index_series.set_index('date')[['value']].rename(
+                columns={'value': index_name}
+            )
 
             returns_df = calculate_acc_returns_from_prices(index_series)
             if index_history_returns_df.empty:
@@ -133,6 +169,48 @@ class MarketDataReadService:
 
         result = df_to_named_dict(index_history_returns_df)
         return result
+
+    @staticmethod
+    def _currency_id(currency: str) -> CURRENCY:
+        target_currency_id = CURRENCY_MAP.get(currency.upper())
+        if target_currency_id is None:
+            raise ValueError(f'Unsupported currency: {currency}')
+        return target_currency_id
+
+    def _series_currency_id(
+        self,
+        series_df: pd.DataFrame,
+        series_id: int | None = None,
+        index_name: str | None = None,
+    ) -> CURRENCY:
+        if 'currency_id' in series_df:
+            currency_ids = series_df['currency_id'].dropna()
+            if not currency_ids.empty:
+                return CURRENCY(int(currency_ids.iloc[0]))
+
+        is_usd_series = series_id in self.USD_SERIES or index_name in {'NASDAQ', 'S&P500'}
+        return CURRENCY.USD if is_usd_series else CURRENCY.BRL
+
+    @staticmethod
+    def _restated_level(
+        level_df: pd.DataFrame,
+        *,
+        source_currency_id: CURRENCY,
+        target_currency_id: CURRENCY,
+        usd_brl_df: pd.DataFrame,
+    ) -> pd.DataFrame:
+        if source_currency_id == target_currency_id:
+            return level_df[['date', 'value']].copy()
+        if usd_brl_df.empty:
+            return level_df.iloc[0:0][['date', 'value']].copy()
+
+        rate_column = 'usd_brl' if target_currency_id == CURRENCY.BRL else 'brl_usd'
+        values = level_df[['date', 'value']].sort_values('date').copy()
+        rates = usd_brl_df[['date', rate_column]].sort_values('date').copy()
+        values = pd.merge_asof(values, rates, on='date', direction='backward')
+        values = values.dropna(subset=[rate_column])
+        values['value'] *= values[rate_column].astype(float)
+        return values[['date', 'value']]
 
     @staticmethod
     def _build_level_from_percent(

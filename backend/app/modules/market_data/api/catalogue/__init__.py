@@ -1,0 +1,1 @@
+"""Market catalogue HTTP API."""

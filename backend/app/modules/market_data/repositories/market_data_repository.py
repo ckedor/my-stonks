@@ -34,13 +34,15 @@ class MarketDataRepository(SQLAlchemyRepository):
         """Return raw index history rows joined with index metadata.
 
         Each row is a mapping with keys: ``date``, ``value``, ``index_symbol``,
-        ``index_name``. Conversion to DataFrame is the caller's responsibility.
+        ``index_name`` and ``currency_id``. Conversion to DataFrame is the
+        caller's responsibility.
         """
         stmt = select(
             MarketDataSeriesHistory.date,
             MarketDataSeriesHistory.close.label('value'),
             MarketDataSeries.symbol.label('index_symbol'),
             MarketDataSeries.short_name.label('index_name'),
+            MarketDataSeries.currency_id.label('currency_id'),
         ).join(
             MarketDataSeries,
             MarketDataSeriesHistory.series_id == MarketDataSeries.id,

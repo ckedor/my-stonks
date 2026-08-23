@@ -53,15 +53,30 @@ interface Props {
   size: number
   selectedCategory?: string
   selectedBenchmark?: string
+  selectedBenchmarks?: string[]
   selectedAssets?: string[]
+  externalSeries?: ReturnsChartExternalSeries[]
+  selectedExternalSeries?: string[]
+  externalLoading?: boolean
   defaultRange?: string
   onRangeChange?: (range: string) => void
-  onCurveChange?: (curve: { kind: 'category' | 'benchmark' | 'asset'; key: string }) => void
+  onCurveChange?: (curve: { kind: SeriesKind; key: string }) => void
   /** Guarda período e janela visível. Sem chave, o gráfico não lembra nada. */
   persistKey?: string
 }
 
-type SeriesKind = 'category' | 'benchmark' | 'asset'
+const EMPTY_KEYS: string[] = []
+const EMPTY_EXTERNAL_SERIES: ReturnsChartExternalSeries[] = []
+
+export interface ReturnsChartExternalSeries {
+  key: string
+  label: string
+  data: { date: string; value: number }[]
+  color?: string
+  assetIds?: number[]
+}
+
+type SeriesKind = 'external' | 'category' | 'benchmark' | 'asset'
 
 interface SeriesOption {
   /** Identificador único: o mesmo nome pode existir em dois grupos. */
@@ -71,9 +86,12 @@ interface SeriesOption {
   key: string
   label: string
   group: string
+  color?: string
+  assetIds?: number[]
 }
 
 const GROUP_LABEL: Record<SeriesKind, string> = {
+  external: 'Classes',
   category: 'Categorias',
   benchmark: 'Benchmarks',
   asset: 'Ativos',
@@ -100,7 +118,11 @@ export default function PortfolioReturnsChart({
   size,
   selectedCategory,
   selectedBenchmark,
-  selectedAssets = [],
+  selectedBenchmarks = EMPTY_KEYS,
+  selectedAssets = EMPTY_KEYS,
+  externalSeries = EMPTY_EXTERNAL_SERIES,
+  selectedExternalSeries = EMPTY_KEYS,
+  externalLoading = false,
   defaultRange,
   onRangeChange,
   onCurveChange,
@@ -110,7 +132,10 @@ export default function PortfolioReturnsChart({
   const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
   const trades = useTradesStore((s) => s.trades)
   const positions = usePositionsStore((s) => s.positions)
-  const userCategories = selectedPortfolio?.custom_categories ?? []
+  const userCategories = useMemo(
+    () => selectedPortfolio?.custom_categories ?? [],
+    [selectedPortfolio?.custom_categories],
+  )
   const { symbol: currencySymbol, format: formatCurrency } = useCurrency()
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -124,6 +149,9 @@ export default function PortfolioReturnsChart({
   const [showTrades, setShowTrades] = useState(restored.trades ?? true)
   const [hoveredFlow, setHoveredFlow] = useState<HoveredFlow | null>(null)
   const viewRef = useRef<PersistedView | null>(isValidView(restored.view) ? restored.view : null)
+  const selectedExternalKeys = selectedExternalSeries.join('\u0000')
+  const selectedBenchmarkKeys = selectedBenchmarks.join('\u0000')
+  const selectedAssetKeys = selectedAssets.join('\u0000')
 
   const options = useMemo<SeriesOption[]>(() => {
     const build = (kind: SeriesKind, keys: string[]) =>
@@ -136,27 +164,46 @@ export default function PortfolioReturnsChart({
       }))
 
     return [
+      ...externalSeries.map((series) => ({
+        id: optionId('external', series.key),
+        kind: 'external' as const,
+        key: series.key,
+        label: series.label,
+        group: GROUP_LABEL.external,
+        color: series.color,
+        assetIds: series.assetIds,
+      })),
       ...build('category', Object.keys(categoryReturns)),
       ...build('benchmark', Object.keys(benchmarks)),
       ...build('asset', Object.keys(assetReturns)),
     ]
-  }, [categoryReturns, benchmarks, assetReturns])
+  }, [externalSeries, categoryReturns, benchmarks, assetReturns])
 
   // As séries pedidas por quem montou a página. Elas são o ponto de partida da
   // seleção, e o usuário mexe a partir daí.
   const initialIds = useMemo(() => {
     const ids: string[] = []
+    for (const series of selectedExternalKeys ? selectedExternalKeys.split('\u0000') : []) {
+      ids.push(optionId('external', series))
+    }
     if (selectedCategory) ids.push(optionId('category', selectedCategory === 'Carteira' ? 'portfolio' : selectedCategory))
     if (selectedBenchmark) ids.push(optionId('benchmark', selectedBenchmark))
-    for (const asset of selectedAssets) ids.push(optionId('asset', asset))
+    for (const benchmark of selectedBenchmarkKeys ? selectedBenchmarkKeys.split('\u0000') : []) {
+      ids.push(optionId('benchmark', benchmark))
+    }
+    for (const asset of selectedAssetKeys ? selectedAssetKeys.split('\u0000') : []) {
+      ids.push(optionId('asset', asset))
+    }
     return ids
-  }, [selectedCategory, selectedBenchmark, selectedAssets.join(',')])
+  }, [selectedExternalKeys, selectedCategory, selectedBenchmark, selectedBenchmarkKeys, selectedAssetKeys])
 
   const [selectedIds, setSelectedIds] = useState<string[]>(initialIds)
   useEffect(() => setSelectedIds(initialIds), [initialIds])
 
   const selected = useMemo(
-    () => options.filter((option) => selectedIds.includes(option.id)),
+    () => selectedIds
+      .map((id) => options.find((option) => option.id === id))
+      .filter((option): option is SeriesOption => option !== undefined),
     [options, selectedIds],
   )
 
@@ -175,6 +222,7 @@ export default function PortfolioReturnsChart({
     }
 
     return (option: SeriesOption, index: number) =>
+      option.color ??
       byCategory[option.label] ??
       named[option.label] ??
       theme.palette.chart.colors[index % theme.palette.chart.colors.length]
@@ -182,6 +230,7 @@ export default function PortfolioReturnsChart({
 
   const seriesByKey = useMemo(() => {
     const source: Record<SeriesKind, Record<string, { date: string; value: number }[]>> = {
+      external: Object.fromEntries(externalSeries.map((series) => [series.key, series.data])),
       category: categoryReturns,
       benchmark: benchmarks,
       asset: assetReturns,
@@ -189,7 +238,7 @@ export default function PortfolioReturnsChart({
     const map: Record<string, { date: string; value: number }[]> = {}
     for (const option of selected) map[option.id] = source[option.kind][option.key] ?? []
     return map
-  }, [selected, categoryReturns, benchmarks, assetReturns])
+  }, [selected, externalSeries, categoryReturns, benchmarks, assetReturns])
 
   const oldestDateISO = useMemo(() => {
     let oldest: string | null = null
@@ -227,6 +276,10 @@ export default function PortfolioReturnsChart({
   const subjectTrades = useMemo(() => {
     if (!subject || subject.kind === 'benchmark') return []
     if (subject.kind === 'asset') return trades.filter((trade) => trade.ticker === subject.key)
+    if (subject.kind === 'external') {
+      const assetIds = new Set(subject.assetIds ?? [])
+      return trades.filter((trade) => assetIds.has(trade.asset_id))
+    }
     if (subject.key === 'portfolio') return trades
 
     const tickers = new Set(
@@ -234,6 +287,8 @@ export default function PortfolioReturnsChart({
     )
     return trades.filter((trade) => tickers.has(trade.ticker))
   }, [subject, trades, positions])
+
+  const chartLoading = externalSeries.length > 0 ? externalLoading : loading
 
   // `value` já vem em reais: o backend guarda o preço em BRL e devolve a moeda
   // original em `original_price`, então a soma de uma carteira com ativos em
@@ -289,7 +344,7 @@ export default function PortfolioReturnsChart({
   }, [range, persistKey])
 
   useEffect(() => {
-    if (!containerRef.current || loading) return
+    if (!containerRef.current || chartLoading) return
 
     const chart = createChart(containerRef.current, baseChartOptions(theme, size))
 
@@ -404,14 +459,14 @@ export default function PortfolioReturnsChart({
     size,
     theme,
     persistKey,
-    loading,
+    chartLoading,
   ])
 
   return (
     <AppChartArea
       plotRef={containerRef}
-      loading={loading}
-      height={loading ? size : undefined}
+      loading={chartLoading}
+      height={chartLoading ? size : undefined}
       overlay={
         hoveredFlow && (
           <FlowTooltip

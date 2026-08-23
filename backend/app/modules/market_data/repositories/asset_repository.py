@@ -34,15 +34,29 @@ class AssetRepository(SQLAlchemyRepository):
             {'user_id': user_id, 'asset_id': asset_id},
         )
 
-    async def get_most_visited_assets(self, user_id: int, limit: int) -> list[tuple]:
+    async def get_most_visited_assets(
+        self,
+        user_id: int,
+        limit: int,
+        asset_type_id: int | None = None,
+        asset_ids: list[int] | None = None,
+    ) -> list[tuple]:
         """The user's most opened assets, most visited first."""
-        result = await self.session.execute(
+        if asset_ids is not None and not asset_ids:
+            return []
+
+        statement = (
             select(Asset, AssetVisit.visit_count, AssetVisit.last_visited_at)
             .join(AssetVisit, AssetVisit.asset_id == Asset.id)
             .where(AssetVisit.user_id == user_id)
             .order_by(AssetVisit.visit_count.desc(), AssetVisit.last_visited_at.desc())
             .limit(limit)
         )
+        if asset_type_id is not None:
+            statement = statement.where(Asset.asset_type_id == asset_type_id)
+        if asset_ids is not None:
+            statement = statement.where(Asset.id.in_(asset_ids))
+        result = await self.session.execute(statement)
         return list(result.all())
 
     async def detach_ingestion_attempts(self, asset_id: int) -> None:

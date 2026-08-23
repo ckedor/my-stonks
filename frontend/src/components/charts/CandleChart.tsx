@@ -344,11 +344,16 @@ export default function CandleChart({
         borderColor: theme.palette.divider,
         mode: PRICE_SCALE_MODES[priceScaleMode],
       },
-      // The percentage axis formats itself relative to the first visible bar,
-      // and a currency formatter would overwrite that with a price.
-      ...(hasPriceFormatter && priceScaleMode !== 'percent'
-        ? { localization: { priceFormatter: formatPrice } }
-        : {}),
+      // `locale` names the months on the time axis; without it the library
+      // follows the browser's language. The percentage axis formats itself
+      // relative to the first visible bar, and a currency formatter would
+      // overwrite that with a price.
+      localization: {
+        locale: 'pt-BR',
+        ...(hasPriceFormatter && priceScaleMode !== 'percent'
+          ? { priceFormatter: formatPrice }
+          : {}),
+      },
       timeScale: {
         borderColor: theme.palette.divider,
         timeVisible: false,

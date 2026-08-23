@@ -100,3 +100,14 @@ async def consolidate_category_returns(
 ):
     await service.consolidate_category_returns(portfolio_id)
     return {'message': 'OK'}
+
+
+@router.post('/{portfolio_id}/consolidate_asset_type_returns')
+async def consolidate_asset_type_returns(
+    portfolio_id: int,
+    service: PortfolioReturnsConsolidatorService = Depends(
+        get_portfolio_returns_consolidator_service
+    ),
+):
+    await service.consolidate_asset_type_returns(portfolio_id)
+    return {'message': 'OK'}

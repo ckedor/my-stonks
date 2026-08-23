@@ -2,6 +2,42 @@ import MenuIcon from '@mui/icons-material/Menu'
 import { AppBar, Box, Button, Divider, Toolbar, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import AppIconButton from './AppIconButton'
+import { useAppTheme } from './useAppTheme'
+
+/* Qual das duas cores de destaque da barra se lê sobre o fundo dela.
+ *
+ * `activeText` e `activeBg` são um par: a segunda é o fundo do item ativo, a
+ * primeira é o texto por cima dela. A aba selecionada da barra centralizada não
+ * pinta fundo nenhum — ela é um sublinhado —, então usar `activeText` ali a
+ * desenha direto sobre `background`, e o par não promete nada sobre isso.
+ *
+ * Os temas se dividem em dois grupos: nos antigos `activeText` é branco e
+ * funciona por acaso; nos novos (Pixel Art, Grafite) é escuro, porque foi
+ * escolhido para contrastar com um `activeBg` vivo — e a aba selecionada some.
+ * Fixar qualquer uma das duas conserta um grupo e quebra o outro, então a
+ * escolha é pelo contraste medido. Assim um tema novo já nasce certo, em vez
+ * de depender de alguém lembrar da regra. */
+function relativeLuminance(color: string): number {
+  const hex = color.replace('#', '')
+  const full =
+    hex.length === 3
+      ? hex
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : hex
+  const channels = [0, 2, 4].map((i) => {
+    const value = parseInt(full.slice(i, i + 2), 16) / 255
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+}
+
+function contrastRatio(a: string, b: string): number {
+  const [x, y] = [relativeLuminance(a), relativeLuminance(b)]
+  const [lighter, darker] = x > y ? [x, y] : [y, x]
+  return (lighter + 0.05) / (darker + 0.05)
+}
 
 /* Barra superior com abas de seção e uma área de ações.
  *
@@ -59,6 +95,15 @@ export default function AppTopbar({
   children,
 }: AppTopbarProps) {
   const centered = layout === 'centered'
+
+  const { topbar } = useAppTheme().palette
+  /* A aba selecionada é um sublinhado sem fundo, então a cor tem que se ler
+     sobre `background`. Entre as duas de destaque, ganha a que contrasta. */
+  const selectedAccent =
+    contrastRatio(topbar.activeText, topbar.background) >=
+    contrastRatio(topbar.activeBg, topbar.background)
+      ? topbar.activeText
+      : topbar.activeBg
 
   return (
     <AppBar
@@ -143,9 +188,9 @@ export default function AppTopbar({
                       sx={{
                         textTransform: 'none',
                         fontWeight: selected ? 'bold' : 'normal',
-                        color: 'topbar.text',
+                        color: selected ? selectedAccent : 'topbar.text',
                         borderBottom: selected ? 2 : 0,
-                        borderColor: 'topbar.text',
+                        borderColor: selectedAccent,
                         borderRadius: 0,
                         px: 1.5,
                       }}

@@ -8,7 +8,8 @@ import Dexie, { type EntityTable } from 'dexie'
 //    "positions:42"         → positions for portfolio 42
 //    "returns:42"           → returns  for portfolio 42
 //    "analysis:42"          → analysis for portfolio 42
-//    "benchmarks"           → global benchmark time-series
+//    "benchmarks:BRL"       → benchmark time-series restated in BRL
+//    "benchmarks:USD"       → benchmark time-series restated in USD
 // ---------------------------------------------------------------------------
 
 export interface CacheEntry {

@@ -8,6 +8,7 @@ import pandas as pd
 
 from app.config.logger import logger
 from app.core.exceptions import ValidationError
+from app.infra.integrations.b3_index_client import B3IndexClient
 from app.infra.integrations.bcb_client import BCBClient
 from app.infra.integrations.brapi_client import BrapiClient
 from app.infra.integrations.crypto_compare_client import CryptoCompareClient
@@ -75,6 +76,7 @@ class MarketDataProvider:
 
     def __init__(self):
         self.brapi_client = BrapiClient()
+        self.b3_index_client = B3IndexClient()
         self.bcb_api_client = BCBClient()
         self.mais_retorno_client = MaisRetornoClient()
         self.crypto_compare_client = CryptoCompareClient()
@@ -96,8 +98,8 @@ class MarketDataProvider:
             history_df.rename(columns={'value': 'close'}, inplace=True)
 
         elif series.id == SERIES.IFIX:
-            history_df = await self._fetch_market_index_history(
-                series.symbol,
+            history_df = await self._fetch_b3_index_history(
+                'IFIX',
                 init_date=init_date,
             )
 
@@ -117,7 +119,73 @@ class MarketDataProvider:
     def get_series_source(series: MarketDataSeries) -> str:
         if series.id in {SERIES.CDI, SERIES.IPCA}:
             return 'bcb'
+        if series.id == SERIES.IFIX:
+            return 'b3'
         return 'brapi'
+
+    async def _fetch_b3_index_history(
+        self,
+        index: str,
+        *,
+        init_date: pd.Timestamp | date | None,
+    ) -> pd.DataFrame:
+        """Read B3's official year tables and turn the month matrix into dates.
+
+        BRAPI currently returns only the latest IFIX point even when a range is
+        requested. B3 publishes the complete daily evolution split by year;
+        asking from ``init_date`` also repairs a missed ingestion window.
+        """
+        today = datetime.now(MARKET_TIMEZONE).date()
+        first_year = pd.Timestamp(init_date).year if init_date else 2010
+        responses = await asyncio.gather(
+            *(
+                self.b3_index_client.get_daily_evolution(index=index, year=year)
+                for year in range(first_year, today.year + 1)
+            )
+        )
+
+        points: list[dict] = []
+        for year, response in zip(range(first_year, today.year + 1), responses, strict=True):
+            for row in response.get('results', []):
+                day = row.get('day')
+                if not isinstance(day, int):
+                    continue
+                for month in range(1, 13):
+                    close = self._b3_number(row.get(f'rateValue{month}'))
+                    if close is None:
+                        continue
+                    try:
+                        point_date = date(year, month, day)
+                    except ValueError:
+                        continue
+                    if point_date > today or (
+                        init_date and point_date < pd.Timestamp(init_date).date()
+                    ):
+                        continue
+                    points.append({'date': pd.Timestamp(point_date), 'close': close})
+
+        if not points:
+            return pd.DataFrame(columns=['date', 'close'])
+        return (
+            pd.DataFrame(points)
+            .drop_duplicates(subset=['date'])
+            .sort_values('date')
+            .reset_index(drop=True)
+        )
+
+    @staticmethod
+    def _b3_number(value: object) -> float | None:
+        if value is None or isinstance(value, bool):
+            return None
+        if isinstance(value, int | float):
+            return float(value)
+        text = str(value).strip()
+        if not text:
+            return None
+        try:
+            return float(text.replace('.', '').replace(',', '.'))
+        except ValueError:
+            return None
 
     async def _fetch_market_index_history(
         self,
@@ -392,6 +460,71 @@ class MarketDataProvider:
             dividends=self._fii_dividends(dividends_response, symbol),
         )
 
+    async def fetch_fii_market(self) -> list[dict]:
+        """The complete summarized FII catalogue exposed by BRAPI.
+
+        The listing route is intentionally used once for the universe instead
+        of fanning out indicator requests in batches of twenty.
+        """
+        response = await self.brapi_client.list_fiis(
+            page=1,
+            limit=10000,
+            sortBy='symbol',
+            sortOrder='asc',
+        )
+        return response.get('fiis', [])
+
+    async def fetch_market_catalogue(self, kind: str) -> list[dict]:
+        """A current, comparable snapshot of one exchange-traded universe.
+
+        B3 instruments have a paginated screener endpoint. Crypto has a
+        separate symbol dictionary and quote endpoint, so its universe is
+        quoted in bounded batches and then returned as the same flat list.
+        """
+        if kind in {'stock', 'etf'}:
+            filters = {'type': 'stock'} if kind == 'stock' else {'subType': 'etf'}
+            response = await self.brapi_client.list_stocks(
+                page=1,
+                limit=10000,
+                sortBy='volume',
+                sortOrder='desc',
+                **filters,
+            )
+            return response.get('stocks', [])
+
+        if kind != 'crypto':
+            raise ValidationError('Unsupported market catalogue', context={'kind': kind})
+
+        available = await self.brapi_client.get_crypto_available()
+        symbols = [str(symbol).upper() for symbol in available.get('coins', []) if symbol]
+        batches = [symbols[index : index + 50] for index in range(0, len(symbols), 50)]
+        responses = await asyncio.gather(
+            *(
+                self.brapi_client.get_crypto(
+                    coin=','.join(batch),
+                    currency='BRL',
+                    range='1d',
+                    interval='1d',
+                )
+                for batch in batches
+            ),
+            return_exceptions=True,
+        )
+
+        quoted: dict[str, dict] = {}
+        for response in responses:
+            if isinstance(response, BaseException):
+                logger.warning('Could not read a BRAPI crypto market batch: %s', response)
+                continue
+            for coin in response.get('coins', []):
+                symbol = str(coin.get('coin', '')).upper()
+                if symbol:
+                    quoted[symbol] = coin
+
+        # A transient failure in one quote batch should cost those rows their
+        # current numbers, not remove supported symbols from the catalogue.
+        return [quoted.get(symbol, {'coin': symbol, 'coinName': symbol}) for symbol in symbols]
+
     def _fii_indicators(self, response: object, symbol: str) -> FIIIndicators | None:
         """The one fund's entry from `GET /v2/fii/indicators`, under `fiis`."""
         payload = self._fii_payload(response, symbol, key='fiis', subject='indicators')
@@ -588,6 +721,7 @@ class MarketDataProvider:
         """Close all HTTP clients."""
         await asyncio.gather(
             self.brapi_client.aclose(),
+            self.b3_index_client.aclose(),
             self.bcb_api_client.aclose(),
             self.mais_retorno_client.aclose(),
             self.crypto_compare_client.aclose(),

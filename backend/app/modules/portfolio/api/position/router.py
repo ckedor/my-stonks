@@ -40,6 +40,26 @@ async def get_portfolio_returns(
     return await service.get_portfolio_returns(portfolio_id, currency)
 
 
+@router.get('/{portfolio_id}/asset-type/{asset_type_id}/returns')
+async def get_asset_type_returns(
+    portfolio_id: int,
+    asset_type_id: int,
+    currency: str = Query('BRL'),
+    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+):
+    return await service.get_asset_type_returns(portfolio_id, asset_type_id, currency)
+
+
+@router.get('/{portfolio_id}/asset-type/{asset_type_id}/analysis')
+async def get_asset_type_analysis(
+    portfolio_id: int,
+    asset_type_id: int,
+    currency: str = Query('BRL'),
+    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+):
+    return await service.get_asset_type_stats(portfolio_id, asset_type_id, currency)
+
+
 @router.get('/{portfolio_id}/patrimony_evolution')
 async def get_patrimony_evolution(  # noqa: PLR0913
     portfolio_id: int,

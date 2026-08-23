@@ -1,4 +1,4 @@
-import { ASSET_ROUTES } from '@/constants/routes'
+import { ASSET_ROUTES, MARKET_DATA_SERIES_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
 import axios from 'axios'
@@ -48,7 +48,11 @@ interface TreasuryBondType {
   name: string
 }
 
-interface IndexItem {
+/* A série de referência de uma renda fixa — o CDI de um CDB a 110% do CDI.
+   O campo continua `index_id` porque é o nome do backend, mas a lista vem de
+   `/market_data/series`: "index" deixou de ser uma rota própria, e chamar uma
+   série de índice é justamente o que `docs/domain.md` proíbe. */
+interface SeriesOption {
   id: number
   name: string
   short_name?: string
@@ -94,7 +98,7 @@ export default function AdminAssetsPage() {
   const [etfSegments, setEtfSegments] = useState<Segment[]>([])
   const [fixedIncomeTypes, setFixedIncomeTypes] = useState<FixedIncomeType[]>([])
   const [treasuryBondTypes, setTreasuryBondTypes] = useState<TreasuryBondType[]>([])
-  const [indexes, setIndexes] = useState<IndexItem[]>([])
+  const [referenceSeries, setReferenceSeries] = useState<SeriesOption[]>([])
 
   // Track selected asset_type_id for dynamic form fields
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null)
@@ -122,7 +126,7 @@ export default function AdminAssetsPage() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [assetsRes, typesRes, exchangesRes, fiiSegRes, etfSegRes, fiTypesRes, tbTypesRes, indexesRes] =
+      const [assetsRes, typesRes, exchangesRes, fiiSegRes, etfSegRes, fiTypesRes, tbTypesRes, seriesRes] =
         await Promise.all([
           api.get(ASSET_ROUTES.list),
           api.get(ASSET_ROUTES.type),
@@ -131,7 +135,7 @@ export default function AdminAssetsPage() {
           api.get(ASSET_ROUTES.etfSegment),
           api.get(ASSET_ROUTES.fixedIncomeType),
           api.get(ASSET_ROUTES.treasuryBondType),
-          api.get(ASSET_ROUTES.index),
+          api.get(MARKET_DATA_SERIES_ROUTES.options),
         ])
       setAssets(assetsRes.data)
       setFilteredAssets(assetsRes.data)
@@ -141,7 +145,7 @@ export default function AdminAssetsPage() {
       setEtfSegments(etfSegRes.data)
       setFixedIncomeTypes(fiTypesRes.data)
       setTreasuryBondTypes(tbTypesRes.data)
-      setIndexes(indexesRes.data)
+      setReferenceSeries(seriesRes.data)
     } catch (error) {
       console.error('Erro ao buscar dados:', error)
       setSnackbar({ open: true, message: 'Erro ao carregar dados', severity: 'error' })
@@ -311,7 +315,7 @@ export default function AdminAssetsPage() {
             name: 'index_id',
             label: 'Índice',
             type: 'select',
-            options: indexes.map((i) => ({ value: i.id, label: i.short_name || i.name })),
+            options: referenceSeries.map((s) => ({ value: s.id, label: s.short_name || s.name })),
           },
         ]
       }
@@ -338,7 +342,7 @@ export default function AdminAssetsPage() {
       }
       return []
     },
-    [fiiSegments, etfSegments, fixedIncomeTypes, treasuryBondTypes, indexes],
+    [fiiSegments, etfSegments, fixedIncomeTypes, treasuryBondTypes, referenceSeries],
   )
 
   const baseFields: FieldConfig[] = useMemo(

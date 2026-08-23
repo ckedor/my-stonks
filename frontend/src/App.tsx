@@ -5,6 +5,7 @@ import MainLayout from "./layouts/MainLayout";
 import AdminAIFeaturesPage from "./pages/admin/ai-features/page";
 import AdminAssetsPage from "./pages/admin/assets/page";
 import AdminBrokersPage from "./pages/admin/brokers/page";
+import AdminWealthTiersPage from "./pages/admin/wealth-tiers/page";
 import AdminConsolidationPage from "./pages/admin/consolidation/page";
 import ArchitecturePage from "./pages/admin/architecture/ArchitecturePage";
 import DesignSystemPage from "./pages/admin/design-system/page";
@@ -20,12 +21,15 @@ import AdminUsersPage from "./pages/admin/users/page";
 import LoginPage from "./pages/login";
 import MarketAssetPage from "./pages/market/asset/page";
 import MarketAtivosPage from "./pages/market/ativos/page";
+import MarketCataloguePage from "./pages/market/catalogue/page";
+import MarketFIIPage from "./pages/market/fii/page";
 import MarketOverviewPage from "./pages/market/overview/page";
 import PortfolioAssetsPage from "./pages/portfolio/asset";
 import PortfolioAssetPage from "./pages/portfolio/asset/[id]/page";
 import PortfolioCategoryPage from "./pages/portfolio/category/[id]/page";
 import DistributionPage from "./pages/portfolio/distribution/page";
 import PortfolioDividendsPage from "./pages/portfolio/dividends/page";
+import PortfolioFIIPage from "./pages/portfolio/fii/page";
 import PortfolioOverviewPage from "./pages/portfolio/overview";
 import RebalancingPage from "./pages/portfolio/rebalancing/page";
 import PortfolioReturnsPage from "./pages/portfolio/returns/page";
@@ -49,6 +53,7 @@ const router = createBrowserRouter([
       { path: "portfolio/category/:id", element: <PortfolioCategoryPage /> },
       { path: "portfolio/distribution", element: <DistributionPage /> },
       { path: "portfolio/dividends", element: <PortfolioDividendsPage /> },
+      { path: "portfolio/fii", element: <PortfolioFIIPage /> },
       { path: "portfolio/returns", element: <PortfolioReturnsPage /> },
       { path: "portfolio/analysis", element: <PortfolioRiskPage /> },
       { path: "portfolio/tax-income", element: <TaxIncomePage /> },
@@ -60,6 +65,10 @@ const router = createBrowserRouter([
       { path: "portfolio/user-configurations/theme-editor/:id", element: <ThemeEditorPage /> },
       { path: "market/assets", element: <MarketAtivosPage /> },
       { path: "market/overview", element: <MarketOverviewPage /> },
+      { path: "market/fii", element: <MarketFIIPage /> },
+      { path: "market/stock", element: <MarketCataloguePage kind="stock" /> },
+      { path: "market/etf", element: <MarketCataloguePage kind="etf" /> },
+      { path: "market/crypto", element: <MarketCataloguePage kind="crypto" /> },
       { path: "market/asset/:id", element: <MarketAssetPage /> },
     ],
   },
@@ -69,6 +78,7 @@ const router = createBrowserRouter([
     children: [
       { path: "assets", element: <AdminAssetsPage /> },
       { path: "brokers", element: <AdminBrokersPage /> },
+      { path: "wealth-tiers", element: <AdminWealthTiersPage /> },
       { path: "events", element: <AdminEventsPage /> },
       { path: "users", element: <AdminUsersPage /> },
       { path: "design-system", element: <DesignSystemPage /> },

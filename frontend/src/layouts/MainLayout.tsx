@@ -1,4 +1,4 @@
-import { syncAnalysis, syncDividends, syncPatrimony, syncPortfolioData, syncPortfolios, syncPositions, syncReturns } from '@/actions/portfolio'
+import { syncAnalysis, syncBenchmarks, syncDividends, syncPatrimony, syncPortfolioData, syncPortfolios, syncPositions, syncReturns } from '@/actions/portfolio'
 import GlobalTradeForm from '@/components/GlobalTradeForm'
 import { AppPageShell } from '@/components/ui'
 import { useAuthStore } from '@/stores/auth'
@@ -31,13 +31,14 @@ function usePortfolioSync() {
     }
   }, [selectedPortfolioId])
 
-  // Re-sync positions, dividends, patrimony and returns when currency changes (skip initial render)
+  // Re-sync every currency-dependent dataset when currency changes (skip initial render)
   useEffect(() => {
     if (prevCurrency.current !== currency && selectedPortfolioId) {
       syncPositions(selectedPortfolioId, true)
       syncDividends(selectedPortfolioId, true)
       syncPatrimony(selectedPortfolioId, true)
       syncReturns(selectedPortfolioId, true)
+      syncBenchmarks(true)
       syncAnalysis(selectedPortfolioId, true)
     }
     prevCurrency.current = currency

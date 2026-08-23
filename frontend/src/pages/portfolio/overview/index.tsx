@@ -5,18 +5,26 @@ import { usePatrimonyStore } from '@/stores/portfolio/patrimony'
 import { usePositionsStore } from '@/stores/portfolio/positions'
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useTradeFormStore } from '@/stores/trade-form'
+import { useWealthTierStore } from '@/stores/portfolio/wealth-tier'
 import { Box, Button, Grid, Tab, Tabs, Typography } from '@mui/material'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import PortfolioMonthlyAportsChart from '../wealth/PortfolioMonthlyAportsChart'
+import OverviewAportsChart from './OverviewAportsChart'
 import OverviewDividendsChart from './OverviewDividendsChart'
 import OverviewPatrimonyChart from './OverviewPatrimonyChart'
 import OverviewReturnsChart from './OverviewReturnsChart'
 import OverviewSkeleton from './OverviewSkeleton'
 import PositionPieChart from './PositionPieChart'
 import PositionTable from './PositionTable'
+import PortfolioStandingCard from './PortfolioStandingCard'
+import { AppIllustration } from '@/components/ui'
 
 const OVERVIEW_PANEL_HEIGHT = 360
+/* Só o padrão de quem ainda não tem altura própria cadastrada. A altura real e
+   o ajuste vertical são por arte, no CRUD de patentes. */
+const TIER_ARTWORK_HEIGHT = 220
+/* Onde o bloco de patrimônio termina e a arte começa. */
+const STANDING_CARD_WIDTH = 320
 
 export default function PortfolioOverviewPage() {
   const navigate = useNavigate()
@@ -28,6 +36,9 @@ export default function PortfolioOverviewPage() {
   const dividends = useDividendsStore(s => s.dividends)
   const returnsLoading = useReturnsStore(s => s.loading)
   const categoryCagr = useReturnsStore(s => s.categoryCagr)
+
+  const wealthTierStanding = useWealthTierStore(s => s.standing)
+  const tier = wealthTierStanding?.current_tier ?? null
 
   const { analysis } = useAnalysisStore()
   const { format: formatCurrency } = useCurrency()
@@ -92,27 +103,36 @@ export default function PortfolioOverviewPage() {
 
   return (
     <Box>
-      {/* ── Hero: Patrimony ── */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-          Patrimônio
-        </Typography>
-        <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-          {formatCurrency(totalValue)}
-        </Typography>
-        {cagr != null && (
-          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mt: 0.5 }}>
-            <Typography
-              variant="body2"
-              sx={{ fontWeight: 600, color: cagr >= 0 ? 'success.main' : 'error.main' }}
-            >
-              CAGR {cagr >= 0 ? '+' : ''}{cagr.toFixed(2)}%
-            </Typography>
-            {cdiPct != null && (
-              <Typography variant="body2" color="text.secondary">
-                ({cdiPct.toFixed(0)}% do CDI)
-              </Typography>
-            )}
+      {/* ── Hero: patrimônio e patente, um bloco só ── */}
+      {/* A arte fica à direita do bloco e fora do fluxo: assim ela desce sobre
+          o gráfico pelo `artwork_offset` sem empurrar nada, e a altura da faixa
+          continua sendo a do texto. Sem receber cliques — ela cobre um pedaço
+          do gráfico e roubaria o cursor do tooltip. */}
+      <Box sx={{ mb: 6, position: 'relative' }}>
+        <Box sx={{ maxWidth: STANDING_CARD_WIDTH }}>
+          <PortfolioStandingCard
+            patrimony={totalValue}
+            cagr={cagr}
+            cdiPct={cdiPct}
+            standing={wealthTierStanding}
+            formatCurrency={formatCurrency}
+          />
+        </Box>
+
+        {tier?.artwork && (
+          <Box
+            sx={{
+              position: 'absolute',
+              left: STANDING_CARD_WIDTH,
+              top: tier.artwork_offset,
+              zIndex: 2,
+              pointerEvents: 'none',
+            }}
+          >
+            <AppIllustration
+              src={tier.artwork}
+              height={tier.artwork_height ?? TIER_ARTWORK_HEIGHT}
+            />
           </Box>
         )}
       </Box>
@@ -194,12 +214,9 @@ export default function PortfolioOverviewPage() {
                 />
               )}
               {bottomTab === 2 && (
-                <PortfolioMonthlyAportsChart
-                  height="100%"
-                  groupBy="month"
-                  defaultRange="1y"
-                  title={null}
-                  fitContainer
+                <OverviewAportsChart
+                  patrimonyEvolution={patrimonyEvolution}
+                  size="100%"
                 />
               )}
             </Box>

@@ -46,3 +46,26 @@ class FIIProfileResponse(BaseModel):
     ticker: str
     indicators: FIIIndicatorsResponse | None = None
     dividends: list[FIIDividendResponse] = []
+
+
+class FIIMarketFundResponse(BaseModel):
+    asset_id: int | None = None
+    ticker: str
+    name: str
+    cnpj: str | None = None
+    type: str | None = None
+    segment: str | None = None
+    mandate: str | None = None
+    management_type: str | None = None
+    administrator: str | None = None
+    price: float | None = None
+    nav_per_share: float | None = None
+    price_to_nav: float | None = None
+    dividend_yield_12m: float | None = None
+    investors: int | None = None
+
+
+class FIIMarketResponse(BaseModel):
+    funds: list[FIIMarketFundResponse]
+    total: int
+    source: str

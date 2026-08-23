@@ -78,12 +78,13 @@ export interface PortfolioPositionEntry {
   cagr: number | null
   total_invested: number
   type: string
+  type_id?: number
   class: string
 }
 
 export interface FIIPortfolioPositionEntry extends PortfolioPositionEntry {
-  fii_type: string
-  fii_segment: string
+  fii_type: string | null
+  fii_segment: string | null
 }
 
 export interface StockPortfolioPositionEntry extends PortfolioPositionEntry {
@@ -235,4 +236,40 @@ export interface AssetAnalysis {
     cvar_95: number
   }
   rolling_cagr: RollingCagrEntry[]
+}
+
+/* Uma patente da escala. A escala é dado, editável pelo admin: nada aqui pode
+   assumir uma quantidade de degraus nem um nome fixo. */
+export interface WealthTier {
+  id: number
+  rank: number
+  name: string
+  threshold: number
+  /** A ilustração do personagem, como data URI — a própria imagem, e não um
+      caminho ou chave de storage. PNG e SVG são igualmente aceitos. */
+  artwork: string | null
+  /** Ajuste vertical em px, para o pé do personagem encostar na linha de base
+      do layout. É dado da arte, não da tela: cada arquivo põe o personagem
+      numa altura diferente, então nenhum valor único serve para todos. */
+  artwork_offset: number
+  /** Altura desenhada em px. Ausente usa o padrão da tela. */
+  artwork_height: number | null
+}
+
+/* A posição da carteira na escala, a partir de dois números propositalmente
+   diferentes.
+
+   `peak_patrimony` é o maior valor que a carteira já teve, e é ele que decide
+   `current_tier`: um degrau é alcançado uma vez e nunca se perde.
+
+   `remaining` e `progress` saem de `current_patrimony`, porque quanto falta
+   para subir é pergunta sobre hoje. Quem caiu mantém o título e enxerga a
+   distância real que tem pela frente. */
+export interface PortfolioWealthTier {
+  peak_patrimony: number
+  current_patrimony: number
+  current_tier: WealthTier | null
+  next_tier: WealthTier | null
+  remaining: number | null
+  progress: number
 }

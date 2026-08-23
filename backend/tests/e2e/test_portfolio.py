@@ -421,6 +421,17 @@ class TestPosition:
 
         assert response.status_code == HTTPStatus.OK
 
+    async def test_get_asset_type_returns(self, client, db, factory):
+        portfolio = await _seed_portfolio(factory)
+        fii_type = (await factory.ids()).fii_type
+
+        response = await client.get(
+            f'/portfolio/position/{portfolio.id}/asset-type/{fii_type}/returns'
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.json() == []
+
     async def test_get_patrimony_evolution(self, client, db, factory):
         portfolio = await _seed_portfolio(factory)
 

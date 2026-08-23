@@ -39,6 +39,7 @@ import {
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
+  getNavigationGroups,
   getNavigationSection,
   isNavigationItemActive,
   navigationSections,
@@ -143,7 +144,7 @@ export default function MainTopbar() {
   const toColumns = (id: SectionId | null): AppMegaMenuColumn[] => {
     const section = navigationSections.find((s) => s.id === id)
     if (!section) return []
-    return section.groups.map((group) => ({
+    return getNavigationGroups(section, selectedPortfolio?.custom_categories).map((group) => ({
       title: group.title,
       items: group.items.map((item) => ({
         id: item.path,
@@ -382,7 +383,7 @@ export default function MainTopbar() {
           id: section.id,
           label: section.label,
           active: section.id === currentSection,
-          groups: section.groups.map((group) => ({
+          groups: getNavigationGroups(section, selectedPortfolio?.custom_categories).map((group) => ({
             title: group.title,
             items: group.items.map((item) => ({
               id: item.path,

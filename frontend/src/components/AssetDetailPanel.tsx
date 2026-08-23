@@ -2,15 +2,14 @@ import { syncBenchmarks } from '@/actions/portfolio'
 import { fetchAssetAnalysis, fetchAssetDetails, fetchAssetReturns, recalculateAssetPosition } from '@/api/portfolio'
 import AssetDetailPanelSkeleton from '@/components/AssetDetailPanelSkeleton'
 import DividendForm from '@/components/DividendForm'
-import DrawdownChart from '@/components/DrawdownChart'
 import PortfolioDividendsChart from '@/components/PortfolioDividendsChart'
+import RiskAnalysisCards from '@/components/RiskAnalysisCards'
 import AssetHeader from '@/components/asset/AssetHeader'
 import BenchmarkComparison from '@/components/portfolio-asset/BenchmarkComparison'
 import ChartSection from '@/components/portfolio-asset/ChartSection'
 import PortfolioAssetChart from '@/components/portfolio-asset/PortfolioAssetChart'
 import PortfolioAssetPatrimonyChart from '@/components/portfolio-asset/PortfolioAssetPatrimonyChart'
 import type { PositionHistoryEntry, TradeEntry } from '@/components/portfolio-asset/helpers'
-import RiskMetricsPanel from '@/components/RiskMetricsPanel'
 import Trades from '@/components/Trades'
 import { DIVIDEND_ROUTES, POSITION_ROUTES, TRANSACTION_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
@@ -157,7 +156,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
   // ação é cacheada, então chamar aqui não custa uma requisição extra.
   useEffect(() => {
     syncBenchmarks()
-  }, [])
+  }, [currency])
 
   const handleRecalculate = async () => {
     setRecalculating(true)
@@ -263,21 +262,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
         )
       case 'risco':
         return analysis ? (
-          <AppStack gap="lg">
-            {/* Dois cards, e não um: juntos, o título interno do gráfico caía
-                colado na última linha das métricas. */}
-            <ChartSection title="Métricas de Risco">
-              <RiskMetricsPanel analysis={analysis} />
-            </ChartSection>
-
-            <ChartSection>
-              <DrawdownChart
-                series={analysis.risk_metrics.drawdown.series}
-                stats={analysis.risk_metrics.drawdown.stats}
-                size={SECTION_CHART_HEIGHT}
-              />
-            </ChartSection>
-          </AppStack>
+          <RiskAnalysisCards analysis={analysis} drawdownSize={SECTION_CHART_HEIGHT} />
         ) : (
           <EmptyTabContent label="Risco — dados não disponíveis" />
         )
@@ -292,7 +277,11 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
           </ChartSection>
         )
       case 'trades':
-        return <Trades assetId={assetId} />
+        return (
+          <ChartSection>
+            <Trades assetId={assetId} />
+          </ChartSection>
+        )
       default:
         return null
     }

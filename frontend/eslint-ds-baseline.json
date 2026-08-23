@@ -10,7 +10,6 @@
     "src/pages/market/asset/AssetQuoteCard.tsx",
     "src/pages/market/asset/MarketAssetSkeleton.tsx",
     "src/pages/market/asset/page.tsx",
-    "src/pages/market/asset/views/fii/FIIDividendsCard.test.tsx",
     "src/pages/market/asset/views/fii/FIIDividendsCard.tsx",
     "src/pages/market/asset/views/fii/FIIIndicatorsCard.tsx",
     "src/pages/market/asset/views/fii/FIIMarketView.tsx",

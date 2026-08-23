@@ -34,6 +34,36 @@ export const fetchTrades = (portfolioId: number): Promise<Trade[]> =>
 export const fetchReturns = (portfolioId: number, currency: string = 'BRL'): Promise<PortfolioReturnEntry[]> =>
   api.get<PortfolioReturnEntry[]>(POSITION_ROUTES.returns(portfolioId), { params: { currency } }).then((r) => r.data ?? [])
 
+export const fetchAssetTypeReturns = (
+  portfolioId: number,
+  assetTypeId: number,
+  currency: string = 'BRL',
+): Promise<PortfolioReturnEntry[]> =>
+  api.get<PortfolioReturnEntry[]>(POSITION_ROUTES.assetTypeReturns(portfolioId, assetTypeId), {
+    params: { currency },
+  }).then((r) => r.data ?? [])
+
+export const fetchAssetTypeAnalysis = (
+  portfolioId: number,
+  assetTypeId: number,
+  currency: string = 'BRL',
+): Promise<AssetAnalysis | null> =>
+  api.get<AssetAnalysis>(POSITION_ROUTES.assetTypeAnalysis(portfolioId, assetTypeId), {
+    params: { currency },
+  }).then((r) => r.data).catch(() => null)
+
+export const fetchAssetTypePatrimony = (
+  portfolioId: number,
+  assetTypeId: number,
+  currency: string = 'BRL',
+): Promise<PatrimonyEntry[]> =>
+  api.get<PatrimonyEntry[]>(POSITION_ROUTES.patrimonyEvolution(portfolioId), {
+    params: { asset_type_id: assetTypeId, currency },
+  }).then((r) => r.data ?? []).catch((err) => {
+    if (err?.response?.status === 404) return []
+    throw err
+  })
+
 export const fetchCategoryReturns = (
   portfolioId: number,
   categoryId?: number,

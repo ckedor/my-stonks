@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 
 from app.infra.db.base import Base
 from app.infra.db.tables.portfolio import (
+    asset_type_return_table,
     category_return_table,
     configuration_name_table,
     custom_category_assignment_table,
@@ -14,10 +15,12 @@ from app.infra.db.tables.portfolio import (
     position_table,
     return_12m_table,
     transaction_table,
+    wealth_tier_table,
 )
-from app.modules.market_data.domain.assets import Asset, Broker
+from app.modules.market_data.domain.assets import Asset, AssetType, Broker
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.portfolio.domain.entities import (
+    AssetTypeReturn,
     CategoryReturn,
     ConfigurationName,
     CustomCategory,
@@ -29,6 +32,7 @@ from app.modules.portfolio.domain.entities import (
     Position,
     Return12M,
     Transaction,
+    WealthTier,
 )
 from app.modules.users.domain import User
 
@@ -128,3 +132,12 @@ def map_portfolio() -> None:
             'category': relationship(CustomCategory),
         },
     )
+    Base.registry.map_imperatively(
+        AssetTypeReturn,
+        asset_type_return_table,
+        properties={
+            'portfolio': relationship(Portfolio),
+            'asset_type': relationship(AssetType),
+        },
+    )
+    Base.registry.map_imperatively(WealthTier, wealth_tier_table)

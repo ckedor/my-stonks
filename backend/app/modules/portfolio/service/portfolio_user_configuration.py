@@ -3,7 +3,7 @@
 Portfolio user configuration service - handles portfolio settings.
 """
 
-from app.core.exceptions import NotFoundError, ValidationError
+from app.core.exceptions import ValidationError
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.portfolio.domain.entities import ConfigurationName, PortfolioUserConfiguration
 
@@ -58,9 +58,22 @@ class PortfolioUserConfigurationService:
                     'configuration_name_id': config_name.id,
                 },
             )
-            if not existing_configs:
-                raise NotFoundError('Configuration not found.')
-            existing_configs[0].enabled = enabled
+            # Sem linha significa "nunca configurado", não "não existe": toda
+            # configuração nasce assim, e a primeira vez que alguém mexe no
+            # interruptor é justamente quando a linha precisa ser criada. Antes
+            # disso o serviço recusava, então uma configuração nova era
+            # impossível de ligar.
+            if existing_configs:
+                existing_configs[0].enabled = enabled
+            else:
+                await uow.portfolios.create(
+                    PortfolioUserConfiguration,
+                    {
+                        'portfolio_id': portfolio_id,
+                        'configuration_name_id': config_name.id,
+                        'enabled': enabled,
+                    },
+                )
             await uow.commit()
 
         return {'detail': 'Configuration updated successfully'}

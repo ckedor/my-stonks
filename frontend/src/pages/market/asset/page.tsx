@@ -1,7 +1,9 @@
 import {
   fetchAssetQuoteHistory,
+  fetchMarketAssetDetails,
   quotesToCandleData,
   type AssetQuoteHistory,
+  type MarketAssetDetails,
 } from '@/api/market'
 import AssetHeader from '@/components/asset/AssetHeader'
 import AssetPositionCard from '@/components/asset/AssetPositionCard'
@@ -22,16 +24,41 @@ export default function MarketAssetPage() {
   const { currency, format } = useCurrency()
   const recordVisit = useFavoritesStore((state) => state.recordVisit)
 
-  const asset = useMemo(
+  const storedAsset = useMemo(
     () => assets.find((a) => a.id === Number(id)),
     [assets, id],
   )
-
-  const ticker = asset?.ticker
-
+  const [fetchedAsset, setFetchedAsset] = useState<MarketAssetDetails | null>(null)
+  const [assetLoading, setAssetLoading] = useState(!storedAsset)
   const [quotes, setQuotes] = useState<AssetQuoteHistory | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const asset = storedAsset ?? fetchedAsset
+
+  useEffect(() => {
+    if (storedAsset || !id) {
+      setAssetLoading(false)
+      return
+    }
+
+    let active = true
+    setAssetLoading(true)
+    fetchMarketAssetDetails(Number(id))
+      .then((value) => {
+        if (active) setFetchedAsset(value)
+      })
+      .catch(() => {
+        if (active) setError('Ativo não encontrado')
+      })
+      .finally(() => {
+        if (active) setAssetLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [id, storedAsset])
+
+  const ticker = asset?.ticker
 
   useEffect(() => {
     if (!asset) return
@@ -56,7 +83,9 @@ export default function MarketAssetPage() {
   // with it; the header itself does not.
   const AssetMarketView = assetMarketView(asset?.asset_type_id)
 
-  if (loading) return <MarketAssetSkeleton height={QUOTE_CHART_HEIGHT} />
+  if (assetLoading || (loading && asset)) {
+    return <MarketAssetSkeleton height={QUOTE_CHART_HEIGHT} />
+  }
 
   return (
     <Box pt={2}>
@@ -76,7 +105,7 @@ export default function MarketAssetPage() {
             asset && (
               <AssetPositionCard
                 assetId={asset.id}
-                ticker={asset.ticker}
+                ticker={asset.ticker ?? ''}
                 name={asset.name}
                 assetTypeId={asset.asset_type_id}
               />
@@ -90,7 +119,7 @@ export default function MarketAssetPage() {
       ) : (
         <AssetMarketView
           assetId={asset.id}
-          ticker={asset.ticker}
+          ticker={asset.ticker ?? ''}
           candleData={candleData}
           priceFormatter={format}
         />

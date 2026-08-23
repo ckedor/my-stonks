@@ -6,20 +6,25 @@
 
 export type SectionId = 'carteira' | 'mercado'
 
-interface NavigationItem {
+export interface NavigationItem {
   path: string
   label: string
 }
 
-interface NavigationGroup {
+export interface NavigationGroup {
   title: string
   items: NavigationItem[]
 }
 
-interface NavigationSection {
+export interface NavigationSection {
   id: SectionId
   label: string
   groups: NavigationGroup[]
+}
+
+export interface PortfolioCategoryNavigationItem {
+  id: number
+  name: string
 }
 
 export const navigationSections: NavigationSection[] = [
@@ -45,6 +50,10 @@ export const navigationSections: NavigationSection[] = [
         ],
       },
       {
+        title: 'Especializadas',
+        items: [{ label: 'FIIs', path: '/portfolio/fii' }],
+      },
+      {
         title: 'Operações',
         items: [
           { label: 'Trades', path: '/portfolio/trades' },
@@ -65,9 +74,39 @@ export const navigationSections: NavigationSection[] = [
           { label: 'Ativos', path: '/market/assets' },
         ],
       },
+      {
+        title: 'Categorias',
+        items: [
+          { label: 'Ações BR', path: '/market/stock' },
+          { label: 'ETFs BR', path: '/market/etf' },
+          { label: 'FIIs', path: '/market/fii' },
+          { label: 'Cripto', path: '/market/crypto' },
+        ],
+      },
     ],
   },
 ]
+
+/** Acrescenta à Carteira uma coluna com as páginas das categorias da carteira
+ *  selecionada. As demais colunas continuam estáticas; esta depende dos dados
+ *  do usuário e por isso só pode ser montada depois que a carteira carregar. */
+export function getNavigationGroups(
+  section: NavigationSection,
+  categories: PortfolioCategoryNavigationItem[] = [],
+): NavigationGroup[] {
+  if (section.id !== 'carteira' || categories.length === 0) return section.groups
+
+  return [
+    ...section.groups,
+    {
+      title: 'Categorias',
+      items: categories.map((category) => ({
+        label: category.name,
+        path: `/portfolio/category/${category.id}`,
+      })),
+    },
+  ]
+}
 
 export function getNavigationSection(pathname: string): SectionId {
   return pathname.startsWith('/market') ? 'mercado' : 'carteira'

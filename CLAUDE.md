@@ -10,8 +10,9 @@ they are requirements rather than context:
 
 - **`.pre-commit-config.yaml` is the CI.** It is the only automatic barrier
   between the code and the repository, so a check that is not wired there does
-  not run. Fast checks run on commit; slow ones (`tsc` + build, visual
-  regression) run on push. Both hook types must be installed:
+  not run. Lint and the import rule run on commit; everything that scans the
+  whole project or executes code (knip, vitest, pytest, `tsc` + build, visual
+  regression) runs on push. Both hook types must be installed:
   `pre-commit install --hook-type pre-commit --hook-type pre-push`.
 - **There is no reviewer.** Nobody will catch a mistake by reading the diff
   later, which is why the guards lean toward the mechanical: a rule that fails

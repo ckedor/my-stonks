@@ -11,6 +11,88 @@ from app.modules.market_data.domain.constants import ASSET_TYPE
 #: few hours of staleness costs a reader nothing and spares the provider a call
 #: on every page open. The cache fills on miss; nothing warms it.
 FII_PROFILE_TTL_SECONDS = 21600
+FII_MARKET_TTL_SECONDS = 21600
+
+
+class FIIMarketReadService:
+    """Provider catalogue enriched with ids of funds registered in the app."""
+
+    def __init__(
+        self,
+        *,
+        uow: UnitOfWork,
+        provider: MarketDataProvider,
+        cache: RedisService | None = None,
+    ) -> None:
+        self.uow = uow
+        self.provider = provider
+        self.cache = cache or RedisService()
+
+    async def list_market(self) -> dict:
+        provider_funds = await self._fetch_market()
+        tickers = [fund['ticker'] for fund in provider_funds]
+        async with self.uow as uow:
+            assets = await uow.assets.get_by_tickers(tickers, ASSET_TYPE.FII)
+        asset_ids = {asset.ticker.upper(): asset.id for asset in assets if asset.ticker}
+
+        return {
+            'funds': [
+                {**fund, 'asset_id': asset_ids.get(fund['ticker'])} for fund in provider_funds
+            ],
+            'total': len(provider_funds),
+            'source': 'brapi',
+        }
+
+    @cached(
+        key_prefix='fii_market',
+        cache=lambda self: self.cache,
+        ttl=FII_MARKET_TTL_SECONDS,
+    )
+    async def _fetch_market(self) -> list[dict]:
+        funds = await self.provider.fetch_fii_market()
+        normalized: list[dict] = []
+        for fund in funds:
+            ticker = self._text(fund.get('symbol'))
+            if not ticker:
+                continue
+            normalized.append({
+                'ticker': ticker.upper(),
+                'name': self._text(fund.get('name')) or ticker.upper(),
+                'cnpj': self._text(fund.get('cnpj')),
+                'type': self._text(fund.get('segmentType')),
+                'segment': self._text(fund.get('segmentoAtuacao')),
+                'mandate': self._text(fund.get('mandate')),
+                'management_type': self._text(fund.get('tipoGestao')),
+                'administrator': self._text(fund.get('administratorName')),
+                'price': self._number(fund.get('price')),
+                'nav_per_share': self._number(fund.get('navPerShare')),
+                'price_to_nav': self._number(fund.get('priceToNav')),
+                'dividend_yield_12m': self._number(fund.get('dividendYield12m')),
+                'investors': self._integer(fund.get('totalInvestors')),
+            })
+        return normalized
+
+    @staticmethod
+    def _text(value: object) -> str | None:
+        text = str(value).strip() if value is not None else ''
+        return text or None
+
+    @staticmethod
+    def _number(value: object) -> float | None:
+        if value is None or isinstance(value, bool):
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    @classmethod
+    def _integer(cls, value: object) -> int | None:
+        number = cls._number(value)
+        return int(number) if number is not None else None
+
+    async def aclose(self) -> None:
+        await self.provider.close()
 
 
 class FIIProfileReadService:

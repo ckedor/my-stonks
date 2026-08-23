@@ -139,7 +139,9 @@ test('portfolio/risco', async ({ page, mockApi }) => {
 
   await page.goto('/portfolio/analysis')
 
-  await expect(page.getByRole('heading', { name: 'Risco' })).toBeVisible()
+  /* `exact`: a página agora tem também o título do card, "Métricas de
+     Risco", e sem isso o seletor casa com os dois. */
+  await expect(page.getByRole('heading', { name: 'Risco', exact: true })).toBeVisible()
   await expect(page.getByText('Volatilidade anual')).toBeVisible()
   await expectNothingClipped(page)
 
@@ -284,7 +286,9 @@ test('portfolio/asset — aba de trades', async ({ page, mockApi }) => {
   await abrirFichaDoAtivo(page, mockApi)
 
   await page.getByRole('tab', { name: 'Trades' }).click()
-  await expect(page.getByRole('heading', { name: 'Compras / Vendas' })).toBeVisible()
+  /* A aba já se chama Trades e o card não repete o nome: o que prova que a
+     tabela chegou é a própria tabela. */
+  await expect(page.getByRole('button', { name: 'Nova Operação' })).toBeVisible()
   await expect(page.getByText('Lucro Realizado')).toBeVisible()
 
   await expect(page).toHaveScreenshot('panel-trades.png')

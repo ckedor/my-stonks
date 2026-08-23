@@ -6,6 +6,7 @@ from app.config.logger import logger
 from app.core.exceptions import NotFoundError
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
+from app.modules.market_data.domain.constants import SERIES
 from app.modules.market_data.domain.ingestion import DataIngestionType
 from app.modules.market_data.domain.market_data_series import (
     MarketDataSeries,
@@ -17,6 +18,7 @@ from app.modules.market_data.repositories.market_data_repository import (
 from app.modules.market_data.service.data_ingestion_service import DataIngestionService
 
 SERIES_HISTORY_OVERLAP_DAYS = 7
+IFIX_REPAIR_LOOKBACK_DAYS = 550
 MAX_CONCURRENT_SERIES_REQUESTS = 5
 
 
@@ -99,6 +101,12 @@ class MarketDataSeriesIngestionService:
             if force_full_history
             else (latest_date or date.today()) - timedelta(days=SERIES_HISTORY_OVERLAP_DAYS)
         )
+        # BRAPI silently returned one IFIX point for months, leaving a hole
+        # while each execution still looked successful. The official B3 feed
+        # is cheap by year, so keep a longer repair window for this series.
+        if series.id == SERIES.IFIX and not force_full_history:
+            repair_start = date.today() - timedelta(days=IFIX_REPAIR_LOOKBACK_DAYS)
+            start_date = min(start_date, repair_start)
         parameters = {
             'series_id': series.id,
             'symbol': series.symbol,

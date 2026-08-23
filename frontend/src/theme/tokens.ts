@@ -41,6 +41,9 @@ export const fontStacks = {
   newsreader: `'Newsreader Variable', Newsreader, Georgia, serif`,
   /** Grotesca geométrica que acompanha a Newsreader no corpo. */
   figtree: `'Figtree Variable', Figtree, 'Helvetica Neue', Arial, sans-serif`,
+  /** Bitmap de corpo — desenho pixelado com formas de letra ainda largas o
+   *  bastante para uma tabela de números. É a do corpo no tema Pixel Art. */
+  pixelifySans: `'Pixelify Sans Variable', 'Pixelify Sans', 'Courier New', monospace`,
 } as const
 
 /* A escala é um *valor de tema*, não uma constante global: o tema Pixel Art

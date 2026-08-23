@@ -231,3 +231,86 @@ test('portfolio/categoria', async ({ page, mockApi }) => {
   await page.getByRole('tab', { name: 'Proventos' }).click()
   await expect(page.getByText('Nenhum provento recebido nesta categoria.')).toBeVisible()
 })
+
+test('portfolio/fiis mostra desempenho, patrimônio e risco do tipo', async ({ page, mockApi }) => {
+  await page.clock.setFixedTime(HOJE)
+  const fiiPositions = [
+    {
+      ...POSICOES[1], type_id: 2, fii_type: 'Tijolo', fii_segment: 'Logística',
+    },
+    {
+      asset_id: 4, date: '2026-03-17', ticker: 'XPML11', name: 'XP Malls',
+      quantity: 80, average_price: 102, profit_pct: 8.2, category: 'FIIs',
+      value: 8824, price: 110.3, acc_return: 0.082, twelve_months_return: 0.11,
+      cagr: 0.09, total_invested: 8160, type: 'FII', type_id: 2,
+      class: 'Renda Variável', fii_type: 'Tijolo', fii_segment: 'Shoppings',
+    },
+  ]
+  const typeReturns = [
+    { date: '2025-03-17', daily_return: 0, acc_return: 0, cagr: null },
+    { date: '2025-09-17', daily_return: 0.002, acc_return: 0.08, cagr: 0.16 },
+    { date: '2026-03-17', daily_return: 0.001, acc_return: 0.18, cagr: 0.18 },
+  ]
+  const analysis = {
+    start_date: '2025-03-17',
+    performance_metrics: {
+      cagr: 18,
+      benchmarks_metrics: { CDI: { cagr: 12, alpha: 6, beta: 0.4, correlation: 0.1 } },
+    },
+    risk_metrics: {
+      annualized_vol: 0.13, sharpe_ratio: 0.8, semideviation: 0.09,
+      skewness: -0.2, kurtosis: 3.1, var_95: -0.018, cvar_95: -0.026,
+      drawdown: {
+        series: [
+          { date: '2025-03-17', drawdown: 0 },
+          { date: '2025-09-17', drawdown: -0.06 },
+          { date: '2026-03-17', drawdown: -0.01 },
+        ],
+        stats: {
+          max_drawdown: -0.06, max_drawdown_date: '2025-09-17',
+          peak_date_before_max_dd: '2025-06-10', recovery_date: '2025-11-01',
+          recovery_days: 45, max_drawdown_duration_days: 138,
+        },
+      },
+    },
+    rolling_cagr: [],
+  }
+
+  await mockApi('/portfolio', PORTFOLIOS)
+  await mockApi('/portfolio/position/1', fiiPositions)
+  await mockApi('/portfolio/position/1/asset-type/2/returns', typeReturns)
+  await mockApi('/portfolio/position/1/asset-type/2/analysis', analysis)
+  await mockApi('/portfolio/position/1/returns', typeReturns)
+  await mockApi('/portfolio/position/1/category/returns', [])
+  await mockApi('/portfolio/position/1/patrimony_evolution', [
+    { date: '2025-03-17', portfolio: 18000, aported: 18000 },
+    { date: '2026-03-17', portfolio: 21937, aported: 200 },
+  ])
+  await mockApi('/portfolio/dividend', [])
+  await mockApi('/portfolio/transaction', [])
+  await mockApi('/portfolio/position/1/analysis', analysis)
+  await mockApi('/market_data/series/time_series', { CDI: [] })
+  for (const [assetId, ticker] of [[2, 'HGLG11'], [4, 'XPML11']] as const) {
+    await mockApi(`/portfolio/position/1/asset/${assetId}/returns`, [
+      { date: '2025-03-17', [ticker]: 0 },
+      { date: '2026-03-17', [ticker]: 0.12 },
+    ])
+  }
+
+  await page.goto('/portfolio/fii')
+
+  await expect(page.getByRole('heading', { name: 'Fundos Imobiliários' })).toBeVisible()
+  await expect(page.getByText('+18,00%').first()).toBeVisible()
+  await expect(page.getByText('Rentabilidade acumulada dos FIIs')).toBeVisible()
+  await expect(page.locator('canvas').first()).toBeVisible()
+  await expect(page).toHaveScreenshot('page-fiis.png')
+
+  await page.getByRole('tab', { name: 'Risco' }).click()
+  await expect(page.getByText('Volatilidade anual')).toBeVisible()
+
+  await page.getByRole('tab', { name: 'Patrimônio' }).click()
+  await expect(page.getByText('Projeção')).toBeVisible()
+
+  await page.getByRole('tab', { name: 'Proventos' }).click()
+  await expect(page.getByText('Nenhum provento recebido dos FIIs.')).toBeVisible()
+})

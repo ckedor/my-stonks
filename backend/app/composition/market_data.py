@@ -12,7 +12,8 @@ from app.modules.market_data.service.data_ingestion_service import (
     DataIngestionReadService,
     DataIngestionService,
 )
-from app.modules.market_data.service.fii_service import FIIProfileReadService
+from app.modules.market_data.service.fii_service import FIIMarketReadService, FIIProfileReadService
+from app.modules.market_data.service.market_catalogue_service import MarketCatalogueReadService
 from app.modules.market_data.service.market_data_series_ingestion_service import (
     MarketDataSeriesIngestionService,
 )
@@ -100,6 +101,35 @@ async def get_fii_profile_read_service(
 ) -> AsyncIterator[FIIProfileReadService]:
     """The provider-backed profile of a registered real-estate fund."""
     service = FIIProfileReadService(
+        uow=uow,
+        provider=MarketDataProvider(),
+        cache=RedisService(),
+    )
+    try:
+        yield service
+    finally:
+        await service.aclose()
+
+
+async def get_fii_market_read_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> AsyncIterator[FIIMarketReadService]:
+    """The BRAPI FII universe enriched with registered asset ids."""
+    service = FIIMarketReadService(
+        uow=uow,
+        provider=MarketDataProvider(),
+        cache=RedisService(),
+    )
+    try:
+        yield service
+    finally:
+        await service.aclose()
+
+
+async def get_market_catalogue_read_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> AsyncIterator[MarketCatalogueReadService]:
+    service = MarketCatalogueReadService(
         uow=uow,
         provider=MarketDataProvider(),
         cache=RedisService(),

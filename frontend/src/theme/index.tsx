@@ -87,7 +87,11 @@ export function ThemeRegistry({ children }: { children: React.ReactNode }) {
   return (
     <ThemeModeContext.Provider value={ctx}>
       <ThemeProvider theme={theme}>
-        <CssBaseline />
+        {/* `enableColorScheme` escreve `color-scheme: dark` na raiz quando o
+            tema é escuro. Sem isso o navegador desenha as barras de rolagem
+            no esquema claro — uma faixa cinza-clara colada na lateral de uma
+            tela escura, em toda área que rola. */}
+        <CssBaseline enableColorScheme />
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
           {children}
         </LocalizationProvider>

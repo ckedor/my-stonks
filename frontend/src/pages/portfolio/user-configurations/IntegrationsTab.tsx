@@ -12,12 +12,16 @@ import {
 } from '@mui/material'
 import { JSX, useEffect, useState } from 'react'
 
+/* `name` e `enabled` são o que toda configuração tem; o resto só existe depois
+   que a carteira gravou uma escolha. Uma opção nunca tocada não tem linha no
+   banco — ela aparece na lista como desligada, que é o padrão, e ganha id na
+   primeira vez que alguém mexe no interruptor. */
 type UserConfiguration = {
-  id: number
-  portfolio_id: number
+  id?: number
+  portfolio_id?: number
   name: string
   enabled: boolean
-  config_data: Record<string, unknown>
+  config_data?: Record<string, unknown>
 }
 
 const CONFIG_LABELS: Record<string, JSX.Element> = {
@@ -31,6 +35,12 @@ const CONFIG_LABELS: Record<string, JSX.Element> = {
     <Typography variant="body1">
       <strong>Dividendos de FIIs:</strong> Atualização automática dos dividendos pagos pelos FIIs em
       carteira
+    </Typography>
+  ),
+  wealth_tier_artwork: (
+    <Typography variant="body1">
+      <strong>Personagem da patente:</strong> Mostra a ilustração da patente ao lado do patrimônio.
+      A patente e a barra de progresso aparecem de qualquer jeito
     </Typography>
   ),
 }
@@ -53,7 +63,16 @@ export default function IntegrationsTab() {
     setLoading(true)
     try {
       const res = await api.get(USER_CONFIGURATION_ROUTES.byPortfolio(selectedPortfolio?.id ?? ''))
-      setConfigurations(res.data.configurations)
+      /* A lista sai de `nameOptions`, não das linhas gravadas: uma configuração
+         que a carteira nunca tocou não tem linha no banco, e antes disso ela
+         simplesmente não aparecia — não havia como ligar o que nunca foi
+         ligado. Sem linha significa desligada, que é o padrão. */
+      const saved: UserConfiguration[] = res.data.configurations
+      setConfigurations(
+        (res.data.nameOptions as string[]).map(
+          (name) => saved.find((c) => c.name === name) ?? { name, enabled: false },
+        ),
+      )
     } catch (err) {
       console.log('Erro ao carregar configurações:', err)
       setSnackbar({ message: 'Erro ao carregar configurações', type: 'error' })

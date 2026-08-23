@@ -1,6 +1,6 @@
 from datetime import date
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, call
 
 import pandas as pd
 import pytest
@@ -54,36 +54,17 @@ async def test_ipca_keeps_bcb_as_primary_source():
 @pytest.mark.asyncio
 async def test_ifix_uses_market_history_and_normalizes_ohlc_without_filling_dates():
     provider = MarketDataProvider.__new__(MarketDataProvider)
-    provider.brapi_client = SimpleNamespace(
-        get_stock_historical=AsyncMock(
-            return_value={
-                'results': [
-                    {
-                        'requestedSymbol': 'IFIX.SA',
-                        'symbol': 'IFIX.SA',
-                        'data': {
-                            'historicalDataPrice': [
-                                {
-                                    'date': 1735776000,
-                                    'open': 3100.0,
-                                    'high': 3120.0,
-                                    'low': 3090.0,
-                                    'close': 3110.0,
-                                    'volume': 0,
-                                },
-                                {
-                                    'date': 1736035200,
-                                    'open': 3110.0,
-                                    'high': 3130.0,
-                                    'low': 3100.0,
-                                    'close': 3125.0,
-                                    'volume': 0,
-                                },
-                            ]
-                        },
-                    }
-                ]
-            }
+    provider.b3_index_client = SimpleNamespace(
+        get_daily_evolution=AsyncMock(
+            side_effect=[
+                {
+                    'results': [
+                        {'day': 2, 'rateValue1': '3.110,00'},
+                        {'day': 5, 'rateValue1': '3.125,50'},
+                    ]
+                },
+                {'results': []},
+            ]
         )
     )
     series = build_series(series_id=SERIES.IFIX, symbol='IFIX.SA')
@@ -97,12 +78,9 @@ async def test_ifix_uses_market_history_and_normalizes_ohlc_without_filling_date
         pd.Timestamp('2025-01-02'),
         pd.Timestamp('2025-01-05'),
     ]
-    assert result['close'].tolist() == [3110.0, 3125.0]
-    provider.brapi_client.get_stock_historical.assert_awaited_once_with(
-        symbols='IFIX.SA',
-        interval='1d',
-        startDate='2025-01-01',
-        endDate=provider.brapi_client.get_stock_historical.await_args.kwargs['endDate'],
-        sortOrder='asc',
-    )
-    assert provider.get_series_source(series) == 'brapi'
+    assert result['close'].tolist() == [3110.0, 3125.5]
+    assert provider.b3_index_client.get_daily_evolution.await_args_list == [
+        call(index='IFIX', year=2025),
+        call(index='IFIX', year=2026),
+    ]
+    assert provider.get_series_source(series) == 'b3'

@@ -15,6 +15,7 @@ from app.modules.market_data.domain.assets import (
     AssetType,
     Broker,
     FIISegment,
+    FIIType,
     FixedIncome,
     FixedIncomeType,
     TreasuryBond,
@@ -22,6 +23,7 @@ from app.modules.market_data.domain.assets import (
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.portfolio.domain.dividend import DividendQuery
 from app.modules.portfolio.domain.entities import (
+    AssetTypeReturn,
     CategoryReturn,
     CustomCategory,
     CustomCategoryAssignment,
@@ -416,6 +418,7 @@ class PortfolioRepository(SQLAlchemyRepository):
             select(
                 Position.date,
                 Position.asset_id,
+                Asset.asset_type_id,
                 Asset.ticker,
                 Position.quantity,
                 Position.price,
@@ -442,6 +445,34 @@ class PortfolioRepository(SQLAlchemyRepository):
         if end_date:
             stmt = stmt.where(Position.date <= end_date)
 
+        result = await self.session.execute(stmt)
+        return result.mappings().all()
+
+    async def get_asset_type_returns(
+        self,
+        portfolio_id: int,
+        asset_type_id: int,
+        currency: str = 'BRL',
+    ) -> list[dict]:
+        suffix = '_usd' if currency == 'USD' else ''
+        daily_col = getattr(AssetTypeReturn, f'daily_return{suffix}')
+        acc_col = getattr(AssetTypeReturn, f'acc_return{suffix}')
+        cagr_col = getattr(AssetTypeReturn, f'cagr{suffix}')
+
+        stmt = (
+            select(
+                AssetTypeReturn.date,
+                AssetTypeReturn.asset_type_id,
+                AssetType.short_name.label('asset_type'),
+                daily_col.label('daily_return'),
+                acc_col.label('acc_return'),
+                cagr_col.label('cagr'),
+            )
+            .join(AssetType, AssetType.id == AssetTypeReturn.asset_type_id)
+            .where(AssetTypeReturn.portfolio_id == portfolio_id)
+            .where(AssetTypeReturn.asset_type_id == asset_type_id)
+            .order_by(AssetTypeReturn.date)
+        )
         result = await self.session.execute(stmt)
         return result.mappings().all()
 
@@ -474,6 +505,7 @@ class PortfolioRepository(SQLAlchemyRepository):
             select(
                 Position.date,
                 Position.asset_id,
+                Asset.asset_type_id,
                 Asset.ticker,
                 Position.quantity,
                 Position.price,
@@ -562,6 +594,8 @@ class PortfolioRepository(SQLAlchemyRepository):
                 AssetType.short_name.label('type'),
                 AssetType.id.label('type_id'),
                 AssetClass.name.label('class'),
+                FIISegment.name.label('fii_segment'),
+                FIIType.name.label('fii_type'),
                 # O que remunera um papel de renda fixa: indexador, taxa e a
                 # forma de combinar os dois (prefixado, index+, %index). Nulo
                 # para todo o resto, que é a maioria das linhas.
@@ -574,6 +608,9 @@ class PortfolioRepository(SQLAlchemyRepository):
             .outerjoin(cat_assignment_subq, cat_assignment_subq.c.asset_id == Position.asset_id)
             .join(AssetType, Asset.asset_type_id == AssetType.id)
             .join(AssetClass, AssetType.asset_class_id == AssetClass.id)
+            .outerjoin(FII, FII.asset_id == Asset.id)
+            .outerjoin(FIISegment, FIISegment.id == FII.segment_id)
+            .outerjoin(FIIType, FIIType.id == FIISegment.type_id)
             .outerjoin(FixedIncome, FixedIncome.asset_id == Asset.id)
             .outerjoin(MarketDataSeries, FixedIncome.index_id == MarketDataSeries.id)
             .outerjoin(FixedIncomeType, FixedIncome.fixed_income_type_id == FixedIncomeType.id)

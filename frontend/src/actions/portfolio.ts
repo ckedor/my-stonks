@@ -1,4 +1,5 @@
 import { fetchBenchmarks } from '@/api/market'
+import { fetchPortfolioWealthTier } from '@/api/wealth-tier'
 import {
     consolidatePortfolio,
     fetchAnalysis,
@@ -19,6 +20,7 @@ import { usePatrimonyStore } from '@/stores/portfolio/patrimony'
 import { usePositionsStore } from '@/stores/portfolio/positions'
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useTradesStore } from '@/stores/portfolio/trades'
+import { useWealthTierStore } from '@/stores/portfolio/wealth-tier'
 import type { Portfolio, ReturnsEntry } from '@/types'
 import { staleWhileRevalidate } from './sync'
 
@@ -126,12 +128,23 @@ export async function syncReturns(portfolioId: number, force = false): Promise<v
 }
 
 export async function syncBenchmarks(force = false): Promise<void> {
+  const currency = useCurrencyStore.getState().currency
+  const store = useReturnsStore.getState()
+
+  if (store.benchmarkCurrency !== currency) {
+    store.setBenchmarks({}, currency)
+  }
+
   await staleWhileRevalidate({
-    cacheKey: 'benchmarks',
-    fetcher: fetchBenchmarks,
+    cacheKey: `benchmarks:${currency}`,
+    fetcher: () => fetchBenchmarks(currency),
     force,
     onLoadingChange: () => {}, // benchmarks don't drive a top-level loading spinner
-    onHydrate: (data) => useReturnsStore.getState().setBenchmarks(data),
+    onHydrate: (data) => {
+      if (useCurrencyStore.getState().currency === currency) {
+        useReturnsStore.getState().setBenchmarks(data, currency)
+      }
+    },
   })
 }
 
@@ -195,6 +208,22 @@ export async function syncTrades(portfolioId: number, force = false): Promise<vo
 }
 
 // ---------------------------------------------------------------------------
+// Wealth tier
+// ---------------------------------------------------------------------------
+
+/* Sem moeda na chave, ao contrário dos vizinhos: a patente sai do patrimônio
+   em BRL, então trocar o seletor de moeda não muda a resposta. */
+async function syncWealthTier(portfolioId: number, force = false): Promise<void> {
+  await staleWhileRevalidate({
+    cacheKey: `wealth-tier:${portfolioId}`,
+    fetcher: () => fetchPortfolioWealthTier(portfolioId),
+    force,
+    onLoadingChange: (loading) => useWealthTierStore.setState({ loading }),
+    onHydrate: (data) => useWealthTierStore.getState().setStanding(data),
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Composite: sync all data for a portfolio (non-blocking, parallel)
 // ---------------------------------------------------------------------------
 
@@ -207,6 +236,7 @@ export function syncPortfolioData(portfolioId: number, force = false): void {
   syncDividends(portfolioId, force).catch(console.error)
   syncPatrimony(portfolioId, force).catch(console.error)
   syncTrades(portfolioId, force).catch(console.error)
+  syncWealthTier(portfolioId, force).catch(console.error)
 }
 
 // ---------------------------------------------------------------------------
@@ -229,5 +259,6 @@ export async function forceRefreshAll(portfolioId: number): Promise<void> {
     syncDividends(portfolioId, true),
     syncPatrimony(portfolioId, true),
     syncTrades(portfolioId, true),
+    syncWealthTier(portfolioId, true),
   ])
 }

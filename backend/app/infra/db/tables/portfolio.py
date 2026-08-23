@@ -9,6 +9,7 @@ from sqlalchemy import (
     Integer,
     String,
     Table,
+    Text,
     UniqueConstraint,
 )
 
@@ -190,5 +191,46 @@ category_return_table = Table(
         'date',
         name='uq_category_return_portfolio_category_date',
     ),
+    schema='portfolio',
+)
+
+asset_type_return_table = Table(
+    'asset_type_return',
+    Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('portfolio_id', Integer, ForeignKey('portfolio.portfolio.id'), nullable=False),
+    Column('asset_type_id', Integer, ForeignKey('asset.asset_type.id'), nullable=False),
+    Column('date', Date, nullable=False),
+    Column('daily_return', Float, nullable=False),
+    Column('acc_return', Float, nullable=False),
+    Column('cagr', Float, nullable=True),
+    Column('daily_return_usd', Float, nullable=True),
+    Column('acc_return_usd', Float, nullable=True),
+    Column('cagr_usd', Float, nullable=True),
+    UniqueConstraint(
+        'portfolio_id',
+        'asset_type_id',
+        'date',
+        name='uq_asset_type_return_portfolio_type_date',
+    ),
+    schema='portfolio',
+)
+
+wealth_tier_table = Table(
+    'wealth_tier',
+    Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('rank', Integer, nullable=False, unique=True),
+    Column('name', String(50), nullable=False, unique=True),
+    Column('threshold', Float, nullable=False, unique=True),
+    # The artwork is the picture itself, not a path or a key: a base64 data URI,
+    # which is text, so the ladder stays a plain CRUD table with no bucket, no
+    # volume, and no static mount to keep in sync with it.
+    Column('artwork', Text, nullable=True),
+    # How the drawing is placed, per drawing. Each illustration puts the
+    # character's feet at a different height inside its own file, so placement
+    # cannot live as one constant in the layout.
+    Column('artwork_offset', Integer, nullable=False, server_default='0'),
+    Column('artwork_height', Integer, nullable=True),
     schema='portfolio',
 )

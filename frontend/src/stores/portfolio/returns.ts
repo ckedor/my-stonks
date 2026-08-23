@@ -1,3 +1,4 @@
+import type { Currency } from '@/stores/currency'
 import type { ReturnsEntry } from '@/types'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
@@ -7,13 +8,14 @@ export interface ReturnsState {
   categoryCagr: Record<string, number | null>
   assetReturns: Record<string, ReturnsEntry[]>
   benchmarks: Record<string, ReturnsEntry[]>
+  benchmarkCurrency: Currency | null
   loading: boolean
 
   setPortfolioReturns: (returns: ReturnsEntry[], cagr?: number | null) => void
   setCategoryReturns: (name: string, returns: ReturnsEntry[]) => void
   setAllCategoryReturns: (categories: Record<string, ReturnsEntry[]>, cagrs?: Record<string, number | null>) => void
   addAssetReturns: (assetReturns: Record<string, ReturnsEntry[]>) => void
-  setBenchmarks: (benchmarks: Record<string, ReturnsEntry[]>) => void
+  setBenchmarks: (benchmarks: Record<string, ReturnsEntry[]>, currency: Currency) => void
   setLoading: (loading: boolean) => void
 }
 
@@ -24,6 +26,7 @@ export const useReturnsStore = create<ReturnsState>()(
       categoryCagr: {},
       assetReturns: {},
       benchmarks: {},
+      benchmarkCurrency: null,
       loading: true,
 
       setPortfolioReturns: (returns, cagr) =>
@@ -56,7 +59,7 @@ export const useReturnsStore = create<ReturnsState>()(
         set((state) => ({
           assetReturns: { ...state.assetReturns, ...assetReturns },
         })),
-      setBenchmarks: (benchmarks) => set({ benchmarks }),
+      setBenchmarks: (benchmarks, benchmarkCurrency) => set({ benchmarks, benchmarkCurrency }),
       setLoading: (loading) => set({ loading }),
     }),
     {
@@ -66,6 +69,7 @@ export const useReturnsStore = create<ReturnsState>()(
         categoryCagr: state.categoryCagr,
         assetReturns: state.assetReturns,
         benchmarks: state.benchmarks,
+        benchmarkCurrency: state.benchmarkCurrency,
       }),
       onRehydrateStorage: () => (state) => {
         if (state && Object.keys(state.categoryReturns).length > 0) {

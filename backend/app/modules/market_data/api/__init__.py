@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app.modules.market_data.api.asset.router import router as asset_router
 from app.modules.market_data.api.broker.router import router as broker_router
+from app.modules.market_data.api.catalogue.router import router as catalogue_router
 from app.modules.market_data.api.currency.router import router as currency_router
 from app.modules.market_data.api.fii.router import router as fii_router
 from app.modules.market_data.api.ingestion.router import router as ingestion_router
@@ -19,5 +20,6 @@ router.include_router(ingestion_router)
 router.include_router(series_router)
 router.include_router(usd_brl_router)
 router.include_router(fii_router)
+router.include_router(catalogue_router)
 
 __all__ = ['router']
