@@ -1,6 +1,6 @@
 import { Box, BoxProps } from '@mui/material'
 import { space, type SpaceToken } from '@/theme/tokens'
-import { useAppTheme } from './useAppTheme'
+import { useAppTheme, withOpacity } from './useAppTheme'
 
 /* ──────────────────────────────────────────────
    AppCard — superfície padrão do app
@@ -37,6 +37,12 @@ export interface AppCardProps extends Omit<BoxProps, 'padding'> {
   /** Marca o card escolhido entre vários — o tema em uso na grade de temas.
    *  A borda vira a cor primária e ganha peso. */
   selected?: boolean
+  /** Faixa colorida no topo, na cor do assunto do card — a classe de ativo
+   *  que ele resume. */
+  accentEdge?: string
+  /** Fundo tingido de leve pela cor do assunto, para o bloco que se lê como
+   *  um destaque dentro de um card maior. */
+  tint?: string
   /** Borda tracejada: o card que ainda não é nada — o "novo tema" no fim da
    *  grade. Ele convida a criar, e a linha cheia o faria parecer um item. */
   dashed?: boolean
@@ -53,6 +59,8 @@ export default function AppCard({
   accentColor,
   selected = false,
   dashed = false,
+  accentEdge,
+  tint,
   ...props
 }: AppCardProps) {
   const resolvedPadding = padding ?? (noPadding ? 'none' : 'md')
@@ -66,7 +74,8 @@ export default function AppCard({
         borderColor: selected ? 'primary.main' : 'divider',
         borderRadius: `${theme.radius.md}px`,
         p: space[resolvedPadding],
-        backgroundColor: 'background.paper',
+        backgroundColor: tint ? withOpacity(tint, 0.07) : 'background.paper',
+        ...(accentEdge ? { borderTop: '3px solid', borderTopColor: accentEdge } : null),
         ...(minWidth ? { minWidth } : null),
         ...(raised ? { boxShadow: 3 } : null),
         ...(interactive

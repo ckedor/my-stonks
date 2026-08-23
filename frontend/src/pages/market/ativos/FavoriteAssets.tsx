@@ -1,7 +1,7 @@
 import { fetchFavoriteAssets, type FavoriteAsset } from '@/api/market'
 import { useFavoritesStore } from '@/stores/favorites'
+import { AppCard, AppStack, AppText, SectionLabel } from '@/components/ui'
 import StarIcon from '@mui/icons-material/Star'
-import { Box, Stack, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TypeBadge } from './AssetCard'
@@ -45,59 +45,39 @@ export default function FavoriteAssets({
   if (!visibleFavorites.length) return null
 
   return (
-    <Box sx={{ mb: 3 }}>
-      <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1.5 }}>
-        <StarIcon sx={{ fontSize: 16, color: 'warning.main' }} />
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: '0.02em' }}>
-          Mais acessados
-        </Typography>
-      </Stack>
+    <AppStack gap="sm">
+      <AppStack direction="row" gap="xs" align="center">
+        <StarIcon color="warning" fontSize="small" />
+        <SectionLabel>Mais acessados</SectionLabel>
+      </AppStack>
 
-      <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
+      <AppStack direction="row" gap="sm" scrollX>
         {visibleFavorites.slice(0, limit).map((asset) => (
-          <Box
+          <AppCard
             key={asset.id}
+            padding="sm"
+            interactive
+            minWidth={150}
             onClick={() => navigate(`/market/asset/${asset.id}`)}
-            sx={{
-              flexShrink: 0,
-              minWidth: 150,
-              maxWidth: 200,
-              px: 1.75,
-              py: 1.25,
-              cursor: 'pointer',
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
-              transition: 'border-color 150ms',
-              '&:hover': { borderColor: 'primary.main' },
-            }}
           >
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.25 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 15 }}>
-                {asset.ticker ?? asset.name}
-              </Typography>
-              {asset.asset_type?.short_name && (
-                <TypeBadge label={asset.asset_type.short_name} />
-              )}
-            </Stack>
-            {/* The visit count only ranks the shelf -- showing it tells the
-                user about our bookkeeping, not about the asset. */}
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                display: 'block',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {asset.name}
-            </Typography>
-          </Box>
+            <AppStack gap="none">
+              <AppStack direction="row" gap="sm" align="center">
+                <AppText weight="strong" noWrap>
+                  {asset.ticker ?? asset.name}
+                </AppText>
+                {asset.asset_type?.short_name && (
+                  <TypeBadge label={asset.asset_type.short_name} />
+                )}
+              </AppStack>
+              {/* The visit count only ranks the shelf -- showing it tells the
+                  user about our bookkeeping, not about the asset. */}
+              <AppText variant="caption" tone="secondary" noWrap>
+                {asset.name}
+              </AppText>
+            </AppStack>
+          </AppCard>
         ))}
-      </Stack>
-    </Box>
+      </AppStack>
+    </AppStack>
   )
 }

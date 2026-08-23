@@ -6,11 +6,6 @@
     "src/pages/admin/architecture/nodes/ArchitectureNode.tsx",
     "src/pages/admin/design-system/ChartsTab.tsx",
     "src/pages/admin/design-system/GeneralTab.tsx",
-    "src/pages/admin/design-system/page.tsx",
-    "src/pages/market/ativos/AssetCard.tsx",
-    "src/pages/market/ativos/AssetListView.tsx",
-    "src/pages/market/ativos/FavoriteAssets.tsx",
-    "src/pages/market/ativos/page.tsx",
-    "src/pages/market/overview/page.tsx"
+    "src/pages/admin/design-system/page.tsx"
   ]
 }

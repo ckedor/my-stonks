@@ -20,11 +20,27 @@ export interface AppEmptyStateProps {
   description?: string
   /** O botão que resolve o vazio. */
   action?: ReactNode
+  /** `section` é o vazio de uma lista dentro de uma tela que tem mais coisas
+   *  — os filtros continuam ali em cima, e tomar a altura toda empurraria
+   *  para longe justamente o que resolve o vazio. Padrão: `screen`. */
+  size?: 'screen' | 'section'
 }
 
-export default function AppEmptyState({ title, description, action }: AppEmptyStateProps) {
+export default function AppEmptyState({
+  title,
+  description,
+  action,
+  size = 'screen',
+}: AppEmptyStateProps) {
   return (
-    <Box sx={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Box
+      sx={{
+        ...(size === 'screen' ? { height: '80vh' } : { py: space.xl }),
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <AppStack align="center" gap="sm">
         <AppText variant="cardValue">{title}</AppText>
         {description && (

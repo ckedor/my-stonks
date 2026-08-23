@@ -1,31 +1,36 @@
+import {
+  AppCard,
+  AppEmptyState,
+  AppGrid,
+  AppPagination,
+  AppSearchField,
+  AppSelect,
+  AppStack,
+  AppStackItem,
+  AppText,
+  AppToggleGroup,
+  LoadingSpinner,
+} from '@/components/ui'
 import { ASSET_ROUTES } from '@/constants/routes'
+import api from '@/lib/api'
 import { useMarketStore } from '@/stores/market'
 import { useTradeFormStore } from '@/stores/trade-form'
-import SearchIcon from '@mui/icons-material/Search'
 import ViewListIcon from '@mui/icons-material/ViewList'
 import ViewModuleIcon from '@mui/icons-material/ViewModule'
-import {
-    Box,
-    FormControl,
-    Grid,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Pagination,
-    Select,
-    TextField,
-    ToggleButton,
-    ToggleButtonGroup,
-    Tooltip,
-    Typography,
-} from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import LoadingSpinner from '../../../components/ui/LoadingSpinner'
-import api from '../../../lib/api'
 import AssetCard from './AssetCard'
 import AssetListView from './AssetListView'
 import FavoriteAssets from './FavoriteAssets'
+
+const VIEW_OPTIONS = [
+  { value: 'card' as const, label: 'Cards', icon: <ViewModuleIcon fontSize="small" /> },
+  { value: 'list' as const, label: 'Lista', icon: <ViewListIcon fontSize="small" /> },
+]
+
+/** Opção que desliga o filtro. Vazio é a ausência de recorte, e é o valor com
+ *  que o estado nasce. */
+const ALL = ''
 
 const ITEMS_PER_PAGE = 24
 const VIEW_MODE_KEY = 'my-stonks:market:view-mode'
@@ -122,120 +127,76 @@ export default function MarketAtivosPage() {
   if (loading) return <LoadingSpinner />
 
   if (error) {
-    return (
-      <Box p={3}>
-        <Typography color="error">{error}</Typography>
-      </Box>
-    )
+    return <AppText tone="danger">{error}</AppText>
   }
 
   return (
-    <Box pt={2}>
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 2,
-          mb: 3,
-          p: 2,
-          bgcolor: 'background.paper',
-          borderRadius: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <TextField
-          placeholder="Buscar por ticker ou nome..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          size="small"
-          sx={{ minWidth: 280, flex: 1 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+    <AppStack gap="lg">
+      <AppCard>
+        <AppStack direction="row" gap="md" align="center" wrap>
+          <AppStackItem minWidth={280}>
+            <AppSearchField
+              label="Buscar ativo"
+              hideLabel
+              icon
+              placeholder="Buscar por ticker ou nome..."
+              value={search}
+              onChange={setSearch}
+            />
+          </AppStackItem>
 
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>Classe</InputLabel>
-          <Select
-            value={selectedClass}
+          <AppSelect
             label="Classe"
-            onChange={(e) => {
-              setSelectedClass(e.target.value as number | '')
-              setSelectedType('')
+            options={[
+              { value: ALL, label: 'Todas' },
+              ...assetClasses.map((cls) => ({ value: String(cls.id), label: cls.name })),
+            ]}
+            value={String(selectedClass)}
+            onChange={(value) => {
+              setSelectedClass(value === ALL ? ALL : Number(value))
+              setSelectedType(ALL)
             }}
-          >
-            <MenuItem value="">Todas</MenuItem>
-            {assetClasses.map((cls) => (
-              <MenuItem key={cls.id} value={cls.id}>
-                {cls.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+          />
 
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>Tipo</InputLabel>
-          <Select
-            value={selectedType}
+          <AppSelect
             label="Tipo"
-            onChange={(e) => setSelectedType(e.target.value as number | '')}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            {filteredTypes.map((type) => (
-              <MenuItem key={type.id} value={type.id}>
-                {type.short_name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+            options={[
+              { value: ALL, label: 'Todos' },
+              ...filteredTypes.map((type) => ({ value: String(type.id), label: type.short_name })),
+            ]}
+            value={String(selectedType)}
+            onChange={(value) => setSelectedType(value === ALL ? ALL : Number(value))}
+          />
 
-        <ToggleButtonGroup
-          size="small"
-          exclusive
-          value={viewMode}
-          onChange={(_, value) => value && setViewMode(value as ViewMode)}
-        >
-          <ToggleButton value="card" sx={{ px: 1 }}>
-            <Tooltip title="Cards">
-              <ViewModuleIcon fontSize="small" />
-            </Tooltip>
-          </ToggleButton>
-          <ToggleButton value="list" sx={{ px: 1 }}>
-            <Tooltip title="Lista">
-              <ViewListIcon fontSize="small" />
-            </Tooltip>
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
+          <AppToggleGroup
+            label="Modo de exibição"
+            options={VIEW_OPTIONS}
+            value={viewMode}
+            onChange={setViewMode}
+          />
+        </AppStack>
+      </AppCard>
 
       <FavoriteAssets />
 
       {viewMode === 'card' ? (
-        <Grid container spacing={2}>
+        <AppGrid cols={{ xs: 1, sm: 2, md: 3, lg: 4 }} gap="md">
           {paginatedAssets.map((asset) => (
-            <Grid key={asset.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <AssetCard
-                asset={asset}
-                onOpen={() => navigate(`/market/asset/${asset.id}`)}
-                onBuy={() =>
-                  openTradeForm({
-                    id: asset.id,
-                    ticker: asset.ticker,
-                    name: asset.name,
-                    asset_type_id: asset.asset_type_id,
-                  })
-                }
-              />
-            </Grid>
+            <AssetCard
+              key={asset.id}
+              asset={asset}
+              onOpen={() => navigate(`/market/asset/${asset.id}`)}
+              onBuy={() =>
+                openTradeForm({
+                  id: asset.id,
+                  ticker: asset.ticker,
+                  name: asset.name,
+                  asset_type_id: asset.asset_type_id,
+                })
+              }
+            />
           ))}
-        </Grid>
+        </AppGrid>
       ) : (
         <AssetListView
           assets={paginatedAssets}
@@ -253,34 +214,21 @@ export default function MarketAtivosPage() {
       )}
 
       {totalPages > 1 && (
-        <Box display="flex" justifyContent="center" alignItems="center" gap={2} mt={4}>
-          <Typography variant="body2" color="text.secondary">
+        <AppStack direction="row" justify="center" align="center" gap="md">
+          <AppText variant="bodySmall" tone="secondary">
             {filteredAssets.length} ativos
-          </Typography>
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={(_, value) => setPage(value)}
-            color="primary"
-            showFirstButton
-            showLastButton
-          />
-        </Box>
+          </AppText>
+          <AppPagination count={totalPages} page={page} onChange={setPage} />
+        </AppStack>
       )}
 
-      {/* Empty state */}
       {filteredAssets.length === 0 && (
-        <Box
-          sx={{
-            textAlign: 'center',
-            py: 8,
-            color: 'text.secondary',
-          }}
-        >
-          <Typography variant="h6">Nenhum ativo encontrado</Typography>
-          <Typography variant="body2">Tente ajustar os filtros de busca</Typography>
-        </Box>
+        <AppEmptyState
+          size="section"
+          title="Nenhum ativo encontrado"
+          description="Tente ajustar os filtros de busca"
+        />
       )}
-    </Box>
+    </AppStack>
   )
 }

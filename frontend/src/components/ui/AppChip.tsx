@@ -2,13 +2,16 @@ import { Chip } from '@mui/material'
 
 /* Etiqueta curta de estado. */
 
-type Tone = 'neutral' | 'primary' | 'success' | 'info' | 'danger'
+type Tone = 'neutral' | 'primary' | 'success' | 'info' | 'caution' | 'danger'
 
-const TONE: Record<Tone, 'default' | 'primary' | 'success' | 'info' | 'error'> = {
+const TONE: Record<Tone, 'default' | 'primary' | 'success' | 'info' | 'warning' | 'error'> = {
   neutral: 'default',
   primary: 'primary',
   success: 'success',
   info: 'info',
+  /* O meio-termo que não é erro: um valuation esticado, um impacto que pede
+     atenção. Mesmo eixo do `caution` do AppButton. */
+  caution: 'warning',
   danger: 'error',
 }
 
