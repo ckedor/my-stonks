@@ -62,6 +62,12 @@ grow; listed files leave the list as they are migrated. `npm run lint:ds`
 fails if the list grows, keeps a file that no longer violates anything, or
 names a file that no longer exists. Both checks run in `pre-commit`.
 
+One file is left on the list: `pages/admin/design-system/GeneralTab.tsx`.
+Half of it is a deliberate inventory of raw MUI, kept from when the page
+was written, so migrating it means deleting that reference — a call for
+the maintainer, not a mechanical migration. When the list empties, the
+legacy block at the end of `eslint.config.js` goes with it.
+
 ## Verification
 
 From `frontend/`, run:
@@ -76,7 +82,7 @@ npm run e2e       # regressão visual (Playwright)
 ```
 
 Todos rodam no `pre-commit` — os quatro primeiros a cada commit, `build` e
-`e2e` no push. ESLint não reporta erros; as 12 warnings restantes são
+`e2e` no push. ESLint não reporta erros; as 9 warnings restantes são
 `react-hooks/exhaustive-deps` e ficam de propósito: mexer no array de
 dependências sem ler o efeito é como se cria loop de render.
 
