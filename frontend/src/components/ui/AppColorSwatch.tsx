@@ -13,17 +13,21 @@ const BAR = { width: 3, height: 16 }
 /* O ponto: a mesma marca numa linha de tabela, onde o quadrado com canto vivo
  * compete com a grade da própria tabela. */
 const DOT = 12
+/* O quadrado grande do catálogo de paleta, onde a cor é o assunto e não a
+ * marca de outra coisa. */
+const LARGE = 56
 
 export interface AppColorSwatchProps {
   color: string
   /** `bar` para a marca ao lado do nome de uma série, `dot` para a de uma
-   *  linha de tabela. Padrão: `square`. */
-  shape?: 'square' | 'bar' | 'dot'
+   *  linha de tabela, `large` para o catálogo de paleta. Padrão: `square`. */
+  shape?: 'square' | 'bar' | 'dot' | 'large'
 }
 
 export default function AppColorSwatch({ color, shape = 'square' }: AppColorSwatchProps) {
-  const size =
-    shape === 'bar' ? BAR : shape === 'dot' ? { width: DOT, height: DOT } : { width: SIZE, height: SIZE }
+  const side = shape === 'dot' ? DOT : shape === 'large' ? LARGE : SIZE
+  const size = shape === 'bar' ? BAR : { width: side, height: side }
+
   return (
     <Box
       sx={{
@@ -31,6 +35,9 @@ export default function AppColorSwatch({ color, shape = 'square' }: AppColorSwat
         flexShrink: 0,
         borderRadius: shape === 'dot' ? '50%' : '2px',
         bgcolor: color,
+        /* A moldura só existe no tamanho grande: sem ela, um branco de fundo
+           some contra a superfície do card e o catálogo mente. */
+        ...(shape === 'large' ? { border: '1px solid', borderColor: 'divider' } : null),
       }}
     />
   )

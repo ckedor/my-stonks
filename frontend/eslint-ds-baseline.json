@@ -1,6 +1,4 @@
 {
   "_": "Dívida do design system. Cada arquivo aqui ainda pode importar @mui/material e usar sx/style. A lista só encolhe: migre o arquivo para @/components/ui e remova a linha. Validado por: npm run lint:ds",
-  "files": [
-    "src/pages/admin/design-system/GeneralTab.tsx"
-  ]
+  "files": []
 }

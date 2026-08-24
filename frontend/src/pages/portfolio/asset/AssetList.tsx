@@ -69,6 +69,11 @@ const VIEW_OPTIONS = [
   { value: 'card' as const, label: 'Cards', icon: <GridViewIcon fontSize="small" /> },
 ]
 
+/** Percentual é percentual: passá-lo pelo formatador de moeda escrevia
+ *  "R$ 41,98%" na coluna de CAGR e na de lucro. */
+const formatPercent = (value: number) =>
+  `${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
+
 /** A escolha entre lista e cards é uma preferência de leitura, não um estado da
  *  sessão: quem prefere cards os quer de novo na próxima visita. */
 function readView(): ViewMode {
@@ -236,7 +241,7 @@ export default function AssetList({ positions, groupBy = 'category', onGroupByCh
       align: 'right',
       render: (pos) => (
         <AppText variant="bodySmall" weight="strong" tone={signTone(pos.cagr)}>
-          {pos.cagr != null ? `${formatCurrency(pos.cagr * 100)}%` : '—'}
+          {pos.cagr != null ? formatPercent(pos.cagr * 100) : '—'}
         </AppText>
       ),
     },
@@ -255,7 +260,7 @@ export default function AssetList({ positions, groupBy = 'category', onGroupByCh
             {profitPct != null && (
               <AppText variant="caption" tone={signTone(profitPct)}>
                 {profitPct > 0 ? '+' : ''}
-                {formatCurrency(profitPct)}%
+                {formatPercent(profitPct)}
               </AppText>
             )}
           </AppStack>
