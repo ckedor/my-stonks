@@ -1,7 +1,6 @@
 import type { FIIDividend } from '@/api/market'
 import AppBarChart from '@/components/charts/app-bar-chart'
-import AppCard from '@/components/ui/AppCard'
-import { Box, Stack, Typography } from '@mui/material'
+import { AppCard, AppChartArea, AppStack, AppText, SectionTitle } from '@/components/ui'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 import { formatBRL, formatDate, formatMonth } from './format'
@@ -37,7 +36,7 @@ export default function FIIDividendsCard({ dividends }: Props) {
 
   const series = useMemo(
     () => income.map((item) => ({ date: item.payment_date, value: item.value_per_share })),
-    [income],
+    [income]
   )
 
   const last = income.at(-1)
@@ -55,48 +54,40 @@ export default function FIIDividendsCard({ dividends }: Props) {
 
   return (
     <AppCard>
-      <Stack
-        direction="row"
-        alignItems="baseline"
-        justifyContent="space-between"
-        flexWrap="wrap"
-        rowGap={0.5}
-        columnGap={2}
-        sx={{ mb: 1.5 }}
-      >
-        <Typography variant="h6">Rendimentos por cota</Typography>
-        {last && (
-          <Typography variant="body2" color="text.secondary">
-            Último {formatBRL(last.value_per_share)} em {formatDate(last.payment_date)}
-            {lastTwelveMonths !== null && ` · 12 meses ${formatBRL(lastTwelveMonths)}`}
-          </Typography>
+      <AppStack gap="sm">
+        <AppStack direction="row" align="baseline" justify="between" gap="md" wrap>
+          <SectionTitle>Rendimentos por cota</SectionTitle>
+          {last && (
+            <AppText variant="bodySmall" tone="secondary">
+              Último {formatBRL(last.value_per_share)} em {formatDate(last.payment_date)}
+              {lastTwelveMonths !== null && ` · 12 meses ${formatBRL(lastTwelveMonths)}`}
+            </AppText>
+          )}
+        </AppStack>
+
+        <AppChartArea bleed>
+          <AppBarChart
+            data={series}
+            height={CHART_HEIGHT}
+            groupBy="month"
+            valueType="number"
+            showRangePicker
+            defaultRange="5y"
+            emptyMessage="O provedor não retornou rendimentos para este fundo."
+            valueFormatter={(value) => formatBRL(value)}
+            tooltipLabelFormatter={formatMonth}
+          />
+        </AppChartArea>
+
+        {amortizations.length > 0 && (
+          <AppText variant="caption" tone="secondary">
+            Fora do gráfico: {amortizations.length}{' '}
+            {amortizations.length === 1 ? 'amortização' : 'amortizações'} de capital, somando{' '}
+            {formatBRL(amortizations.reduce((total, item) => total + item.value_per_share, 0))} por
+            cota. Amortização devolve principal e não é rendimento.
+          </AppText>
         )}
-      </Stack>
-
-      <Box sx={{ mx: -1.8 }}>
-        <AppBarChart
-          data={series}
-          height={CHART_HEIGHT}
-          groupBy="month"
-          valueType="number"
-          showRangePicker
-          defaultRange="5y"
-          emptyMessage="O provedor não retornou rendimentos para este fundo."
-          valueFormatter={(value) => formatBRL(value)}
-          tooltipLabelFormatter={formatMonth}
-        />
-      </Box>
-
-      {amortizations.length > 0 && (
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-          Fora do gráfico: {amortizations.length}{' '}
-          {amortizations.length === 1 ? 'amortização' : 'amortizações'} de capital, somando{' '}
-          {formatBRL(
-            amortizations.reduce((total, item) => total + item.value_per_share, 0),
-          )}{' '}
-          por cota. Amortização devolve principal e não é rendimento.
-        </Typography>
-      )}
+      </AppStack>
     </AppCard>
   )
 }

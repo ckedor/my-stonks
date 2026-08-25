@@ -1,5 +1,6 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
-import { Box, Typography, useTheme } from '@mui/material'
+
+import { AppCard, AppStack, AppText } from '@/components/ui'
 
 import type { ArchitectureNode as ArchitectureNodeType } from '../graph/types'
 
@@ -13,46 +14,33 @@ const accentByKind = {
   external: '#68717d',
 } as const
 
+const NODE_WIDTH = 220
+
+/* As pontas de ligação ficam invisíveis por `src/index.css`: o mapa não é
+   editável, e o que liga um nó ao outro é a seta desenhada entre eles. */
+
 export default function ArchitectureNode({ data }: NodeProps<ArchitectureNodeType>) {
-  const theme = useTheme()
   const accent = accentByKind[data.kind]
 
   return (
-    <Box
-      sx={{
-        width: 220,
-        minHeight: 104,
-        border: `1px solid ${theme.palette.divider}`,
-        borderLeft: `5px solid ${accent}`,
-        borderRadius: 2,
-        bgcolor: 'background.paper',
-        color: 'text.primary',
-        px: 1.5,
-        py: 1.25,
-        boxShadow: theme.shadows[2],
-      }}
-    >
-      <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
-      <Typography sx={{ fontSize: 13, fontWeight: 750, lineHeight: 1.25 }}>
-        {data.title}
-      </Typography>
-      <Typography
-        sx={{
-          mt: 0.4,
-          color: accent,
-          fontSize: 9,
-          fontWeight: 800,
-          letterSpacing: 0.8,
-        }}
-      >
-        {data.subtitle ?? data.kind.toUpperCase()}
-      </Typography>
-      {data.details?.map((detail) => (
-        <Typography key={detail} sx={{ mt: 0.25, color: 'text.secondary', fontSize: 10.5 }}>
-          {detail}
-        </Typography>
-      ))}
-      <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
-    </Box>
+    <AppCard padding="sm" minWidth={NODE_WIDTH} accentEdge={accent} accentSide="left" raised>
+      <Handle type="target" position={Position.Left} />
+
+      <AppStack gap="none">
+        <AppText variant="bodySmall" weight="strong">
+          {data.title}
+        </AppText>
+        <AppText variant="caption" weight="strong" tint={accent}>
+          {data.subtitle ?? data.kind.toUpperCase()}
+        </AppText>
+        {data.details?.map((detail) => (
+          <AppText key={detail} variant="caption" tone="secondary">
+            {detail}
+          </AppText>
+        ))}
+      </AppStack>
+
+      <Handle type="source" position={Position.Right} />
+    </AppCard>
   )
 }

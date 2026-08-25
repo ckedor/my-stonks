@@ -1,13 +1,13 @@
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import {
-    Box,
-    CircularProgress,
-    MenuItem,
-    Select,
-    Stack,
-    Typography,
-    useTheme,
-} from '@mui/material'
+    AppChartArea,
+    AppColorSwatch,
+    AppInlineToggle,
+    AppSelect,
+    AppStack,
+    AppText,
+    useAppTheme,
+} from '@/components/ui'
 import dayjs from 'dayjs'
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
 import { useEffect, useMemo, useState } from 'react'
@@ -31,7 +31,7 @@ interface Props {
 
 export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', selectedCategory = 'portfolio' }: Props) {
   const { categoryReturns, benchmarks, loading } = useReturnsStore()
-  const theme = useTheme()
+  const theme = useAppTheme()
 
   const portfolioColor = theme.palette.primary.main
   const benchmarkColor = theme.palette.warning.main
@@ -160,158 +160,113 @@ export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', 
   const gradientId = 'overviewPortfolioGradient'
 
   return (
-    <Box sx={{ height: size, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      {/* Header: returns + benchmark selector */}
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={2}>
-        <Box>
-          <Stack direction="row" spacing={3} alignItems="baseline">
-            <Box>
-              <Stack direction="row" spacing={0.8} alignItems="center">
-                <Box sx={{ width: 3, height: 16, bgcolor: portfolioColor, borderRadius: 1 }} />
-                <Typography variant="body2" color="text.secondary">
-                  Carteira
-                </Typography>
-              </Stack>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 600,
-                  color: portfolioReturn >= 0 ? 'success.main' : 'error.main',
-                  ml: 1.4,
-                  lineHeight: 1.2,
-                }}
-              >
-                {portfolioReturn >= 0 ? '+' : ''}{portfolioReturn.toFixed(1)}%
-              </Typography>
-            </Box>
+    <AppChartArea
+      height={size}
+      sizing="frame"
+      loading={loading}
+      toolbar={
+        <AppStack direction="row" justify="between" align="start" gap="md">
+          <AppStack direction="row" gap="lg" align="baseline">
+            <SeriesLegend
+              name="Carteira"
+              color={portfolioColor}
+              changePct={portfolioReturn}
+            />
+            <SeriesLegend
+              name={selectedBenchmark}
+              color={benchmarkColor}
+              changePct={benchmarkReturn}
+            />
+          </AppStack>
 
-            <Box>
-              <Stack direction="row" spacing={0.8} alignItems="center">
-                <Box sx={{ width: 3, height: 16, bgcolor: benchmarkColor, borderRadius: 1 }} />
-                <Typography variant="body2" color="text.secondary">
-                  {selectedBenchmark}
-                </Typography>
-              </Stack>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 600,
-                  color: benchmarkReturn >= 0 ? 'success.main' : 'error.main',
-                  ml: 1.4,
-                  lineHeight: 1.2,
-                }}
-              >
-                {benchmarkReturn >= 0 ? '+' : ''}{benchmarkReturn.toFixed(1)}%
-              </Typography>
-            </Box>
-          </Stack>
-        </Box>
-
-        <Stack direction="row" spacing={1} alignItems="center">
-          {/* Period selector */}
-          <Stack direction="row" spacing={0.5}>
-            {ranges.map((r) => (
-              <Box
-                key={r.value}
-                onClick={() => setRange(r.value)}
-                sx={{
-                  px: 1.2,
-                  py: 0.4,
-                  borderRadius: 2,
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: range === r.value ? 600 : 400,
-                  bgcolor: range === r.value ? 'action.selected' : 'transparent',
-                  color: range === r.value ? 'text.primary' : 'text.secondary',
-                  '&:hover': { bgcolor: 'action.hover' },
-                  transition: 'all 0.15s',
-                }}
-              >
-                {r.label}
-              </Box>
-            ))}
-          </Stack>
-
-          {/* Benchmark selector */}
-          <Select
-            value={selectedBenchmark}
-            onChange={(e) => setSelectedBenchmark(e.target.value)}
-            variant="outlined"
-            size="small"
-            MenuProps={{ disableScrollLock: true }}
-            sx={{
-              fontSize: 13,
-              height: 32,
-              minWidth: 90,
-              borderRadius: 2,
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: 'divider',
-              },
-            }}
-          >
-            {Object.keys(benchmarks).map((key) => (
-              <MenuItem key={key} value={key} sx={{ fontSize: 13 }}>
-                {key}
-              </MenuItem>
-            ))}
-          </Select>
-        </Stack>
-      </Stack>
-
-      {/* Chart */}
-      {loading ? (
-        <Box sx={{ flex: 1, minHeight: 0 }} display="flex" justifyContent="center" alignItems="center">
-          <CircularProgress size={48} thickness={4} />
-        </Box>
-      ) : (
-        <Box sx={{ flex: 1, minHeight: 0 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+          <AppStack direction="row" gap="md" align="center">
+            <AppInlineToggle
+              options={ranges}
+              value={range}
+              onChange={setRange}
+            />
+            <AppSelect
+              size="auto"
+              options={Object.keys(benchmarks).map((key) => ({ value: key, label: key }))}
+              value={selectedBenchmark}
+              onChange={setSelectedBenchmark}
+            />
+          </AppStack>
+        </AppStack>
+      }
+    >
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
             <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={portfolioColor} stopOpacity={0.12} />
-                <stop offset="60%" stopColor={portfolioColor} stopOpacity={0.04} />
-                <stop offset="100%" stopColor={portfolioColor} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <XAxis dataKey="date" hide />
-            <YAxis hide />
-            <Tooltip
-              contentStyle={{
-                borderRadius: 8,
-                border: 'none',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
-                fontSize: 13,
-              }}
-              labelFormatter={(v) => dayjs(v).format('DD/MM/YYYY')}
-              formatter={(value: number, name: string) => [
-                `${value.toFixed(2)}%`,
-                name === 'portfolio' ? 'Carteira' : selectedBenchmark,
-              ]}
-            />
-            <Area
-              type="monotone"
-              dataKey="portfolio"
-              stroke={portfolioColor}
-              strokeWidth={2.5}
-              fill={`url(#${gradientId})`}
-              dot={false}
-              activeDot={{ r: 4, strokeWidth: 0, fill: portfolioColor }}
-              name="portfolio"
-            />
-            <Line
-              type="monotone"
-              dataKey="benchmark"
-              stroke={benchmarkColor}
-              strokeWidth={1.8}
-              dot={false}
-              activeDot={{ r: 3, strokeWidth: 0, fill: benchmarkColor }}
-              name="benchmark"
-            />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </Box>
-      )}
-    </Box>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={portfolioColor} stopOpacity={0.12} />
+              <stop offset="60%" stopColor={portfolioColor} stopOpacity={0.04} />
+              <stop offset="100%" stopColor={portfolioColor} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <XAxis dataKey="date" hide />
+          <YAxis hide />
+          <Tooltip
+            contentStyle={{
+              borderRadius: 8,
+              border: 'none',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
+              fontSize: 13,
+            }}
+            labelFormatter={(v) => dayjs(v).format('DD/MM/YYYY')}
+            formatter={(value: number, name: string) => [
+              `${value.toFixed(2)}%`,
+              name === 'portfolio' ? 'Carteira' : selectedBenchmark,
+            ]}
+          />
+          <Area
+            type="monotone"
+            dataKey="portfolio"
+            stroke={portfolioColor}
+            strokeWidth={2.5}
+            fill={`url(#${gradientId})`}
+            dot={false}
+            activeDot={{ r: 4, strokeWidth: 0, fill: portfolioColor }}
+            name="portfolio"
+          />
+          <Line
+            type="monotone"
+            dataKey="benchmark"
+            stroke={benchmarkColor}
+            strokeWidth={1.8}
+            dot={false}
+            activeDot={{ r: 3, strokeWidth: 0, fill: benchmarkColor }}
+            name="benchmark"
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </AppChartArea>
+  )
+}
+
+/* O nome de uma série com a marca da cor e o retorno dela no período — a
+ * legenda que o gráfico não desenha porque os eixos estão escondidos. */
+function SeriesLegend({
+  name,
+  color,
+  changePct,
+}: {
+  name: string
+  color: string
+  changePct: number
+}) {
+  return (
+    <AppStack gap="none">
+      <AppStack direction="row" gap="xs" align="center">
+        <AppColorSwatch color={color} shape="bar" />
+        <AppText variant="bodySmall" tone="secondary">
+          {name}
+        </AppText>
+      </AppStack>
+      <AppText variant="bodySmall" weight="strong" tone={changePct >= 0 ? 'success' : 'danger'}>
+        {changePct >= 0 ? '+' : ''}
+        {changePct.toFixed(1)}%
+      </AppText>
+    </AppStack>
   )
 }

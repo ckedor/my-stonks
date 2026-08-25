@@ -1,7 +1,14 @@
 import {
-    getCustomThemeDefinitions,
-    useCustomThemesStore,
-} from '@/stores/custom-themes'
+  AppCard,
+  AppGrid,
+  AppIconButton,
+  AppStack,
+  AppStackItem,
+  AppText,
+  AppThemePreview,
+  SectionTitle,
+} from '@/components/ui'
+import { getCustomThemeDefinitions, useCustomThemesStore } from '@/stores/custom-themes'
 import { useThemeMode } from '@/theme/theme-mode'
 import { darkThemes, lightThemes, type ThemeDefinition } from '@/theme/themes'
 import AddIcon from '@mui/icons-material/Add'
@@ -11,99 +18,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import EditIcon from '@mui/icons-material/Edit'
 import LightModeIcon from '@mui/icons-material/LightMode'
 import PaletteIcon from '@mui/icons-material/Palette'
-import {
-    Box,
-    Card,
-    CardActionArea,
-    CardContent,
-    IconButton,
-    Tooltip,
-    Typography,
-} from '@mui/material'
 import { useNavigate } from 'react-router-dom'
-
-/* ── Mini-preview do layout ────────────────── */
-function ThemeMiniPreview({ preview }: { preview: ThemeDefinition['preview'] }) {
-  return (
-    <Box
-      sx={{
-        width: '100%',
-        aspectRatio: '16 / 9',
-        bgcolor: preview.background,
-        borderRadius: 1,
-        overflow: 'hidden',
-        border: '1px solid rgba(128,128,128,0.20)',
-      }}
-    >
-      {/* Topbar */}
-      <Box
-        sx={{
-          height: '14%',
-          bgcolor: preview.topbar,
-          display: 'flex',
-          alignItems: 'center',
-          px: 0.75,
-          gap: 0.5,
-        }}
-      >
-        <Box
-          sx={{
-            width: 5,
-            height: 5,
-            borderRadius: '50%',
-            bgcolor: preview.primary,
-          }}
-        />
-        <Box
-          sx={{
-            width: 16,
-            height: 2.5,
-            borderRadius: 1,
-            bgcolor: preview.text,
-            opacity: 0.4,
-          }}
-        />
-      </Box>
-
-      {/* Body */}
-      <Box sx={{ display: 'flex', height: '86%', p: 0.5, gap: 0.4 }}>
-        {/* Sidebar */}
-        <Box sx={{ width: '18%', bgcolor: preview.sidebar, borderRadius: 0.5, p: 0.4 }}>
-          {[0, 1, 2].map((i) => (
-            <Box
-              key={i}
-              sx={{
-                width: '70%',
-                height: 2.5,
-                bgcolor: preview.text,
-                opacity: 0.2,
-                mb: 0.4,
-                borderRadius: 0.5,
-              }}
-            />
-          ))}
-        </Box>
-
-        {/* Content cards */}
-        <Box sx={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.4 }}>
-          {[preview.primary, preview.accent, preview.text, preview.primary].map((color, i) => (
-            <Box key={i} sx={{ bgcolor: preview.paper, borderRadius: 0.5, p: 0.4 }}>
-              <Box
-                sx={{
-                  width: '50%',
-                  height: 2.5,
-                  bgcolor: color,
-                  opacity: i > 1 ? 0.2 : 0.7,
-                  borderRadius: 0.5,
-                }}
-              />
-            </Box>
-          ))}
-        </Box>
-      </Box>
-    </Box>
-  )
-}
 
 /* ── Card de tema ──────────────────────────── */
 function ThemeCard({
@@ -122,97 +37,69 @@ function ThemeCard({
   onDelete?: () => void
 }) {
   return (
-    <Card
-      elevation={0}
-      sx={{
-        border: 2,
-        borderColor: selected ? 'primary.main' : 'divider',
-        transition: 'all 0.2s ease',
-        position: 'relative',
-        '&:hover': {
-          borderColor: selected ? 'primary.main' : 'text.secondary',
-          transform: 'translateY(-2px)',
-          boxShadow: 4,
-        },
-      }}
-    >
-      <CardActionArea onClick={onSelect}>
-        <Box sx={{ p: 1.5, pb: 0 }}>
-          <ThemeMiniPreview preview={def.preview} />
-        </Box>
+    <AppCard padding="sm" interactive selected={selected} onClick={onSelect}>
+      <AppStack gap="sm">
+        <AppThemePreview colors={def.preview} />
 
-        <CardContent sx={{ pb: '12px !important' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="subtitle2" fontWeight={700}>
+        <AppStack gap="none">
+          <AppStack direction="row" justify="between" align="center" gap="xs">
+            <AppText variant="bodySmall" weight="strong">
               {def.name}
-            </Typography>
+            </AppText>
             {selected && <CheckCircleIcon color="primary" fontSize="small" />}
-          </Box>
-          <Typography variant="caption" color="text.secondary">
+          </AppStack>
+          <AppText variant="caption" tone="secondary">
             {def.description}
-          </Typography>
-        </CardContent>
-      </CardActionArea>
+          </AppText>
+        </AppStack>
 
-      {isCustom && (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            px: 1,
-            pb: 1,
-            gap: 0.5,
-          }}
-        >
-          <Tooltip title="Editar">
-            <IconButton size="small" onClick={onEdit}>
+        {isCustom && (
+          <AppStack direction="row" gap="xs" justify="end">
+            <AppIconButton
+              size="sm"
+              label="Editar"
+              tooltip
+              onClick={(event) => {
+                event.stopPropagation()
+                onEdit?.()
+              }}
+            >
               <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Excluir">
-            <IconButton size="small" color="error" onClick={onDelete}>
+            </AppIconButton>
+            <AppIconButton
+              size="sm"
+              tone="error"
+              label="Excluir"
+              tooltip
+              onClick={(event) => {
+                event.stopPropagation()
+                onDelete?.()
+              }}
+            >
               <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      )}
-    </Card>
+            </AppIconButton>
+          </AppStack>
+        )}
+      </AppStack>
+    </AppCard>
+  )
+}
+
+/* ── Card fantasma "+ Novo Tema" ──────────── */
+function NewThemeGhostCard({ onClick }: { onClick: () => void }) {
+  return (
+    <AppCard dashed interactive onClick={onClick}>
+      <AppStack align="center" justify="center" gap="xs">
+        <AddIcon fontSize="large" color="disabled" />
+        <AppText variant="caption" tone="secondary" weight="strong">
+          Novo Tema
+        </AppText>
+      </AppStack>
+    </AppCard>
   )
 }
 
 /* ── Seção de temas ────────────────────────── */
-/* ── Card fantasma "+ Novo Tema" ──────────── */
-function NewThemeGhostCard({ onClick }: { onClick: () => void }) {
-  return (
-    <Card
-      elevation={0}
-      sx={{
-        border: 2,
-        borderStyle: 'dashed',
-        borderColor: 'divider',
-        transition: 'all 0.2s ease',
-        cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 160,
-        '&:hover': {
-          borderColor: 'text.secondary',
-          transform: 'translateY(-2px)',
-          bgcolor: 'action.hover',
-        },
-      }}
-      onClick={onClick}
-    >
-      <AddIcon sx={{ fontSize: 36, color: 'text.secondary', mb: 0.5 }} />
-      <Typography variant="caption" color="text.secondary" fontWeight={600}>
-        Novo Tema
-      </Typography>
-    </Card>
-  )
-}
-
 function ThemeSection({
   icon,
   title,
@@ -235,24 +122,13 @@ function ThemeSection({
   onCreateNew?: () => void
 }) {
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+    <AppStack gap="md">
+      <AppStack direction="row" gap="sm" align="center">
         {icon}
-        <Typography variant="h6">{title}</Typography>
-      </Box>
+        <SectionTitle>{title}</SectionTitle>
+      </AppStack>
 
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            sm: 'repeat(2, 1fr)',
-            md: 'repeat(3, 1fr)',
-            lg: 'repeat(5, 1fr)',
-          },
-          gap: 2,
-        }}
-      >
+      <AppGrid cols={{ xs: 1, sm: 2, md: 3, lg: 5 }} gap="md">
         {themes.map((def) => (
           <ThemeCard
             key={def.id}
@@ -275,8 +151,8 @@ function ThemeSection({
         ))}
 
         {onCreateNew && <NewThemeGhostCard onClick={onCreateNew} />}
-      </Box>
-    </Box>
+      </AppGrid>
+    </AppStack>
   )
 }
 
@@ -299,9 +175,9 @@ export default function ThemeTab() {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+    <AppStack gap="xl">
       <ThemeSection
-        icon={<LightModeIcon sx={{ color: 'warning.main' }} />}
+        icon={<LightModeIcon color="warning" />}
         title="Tema Claro"
         themes={lightThemes}
         selectedId={lightThemeId}
@@ -313,7 +189,7 @@ export default function ThemeTab() {
       />
 
       <ThemeSection
-        icon={<DarkModeIcon sx={{ color: 'info.main' }} />}
+        icon={<DarkModeIcon color="info" />}
         title="Tema Escuro"
         themes={darkThemes}
         selectedId={darkThemeId}
@@ -325,15 +201,15 @@ export default function ThemeTab() {
       />
 
       {customDefs.length > 0 && (
-        <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-            <PaletteIcon sx={{ color: 'secondary.main' }} />
-            <Typography variant="subtitle1" fontWeight={600} color="text.secondary">
+        <AppStack direction="row" gap="sm" align="center">
+          <PaletteIcon color="secondary" />
+          <AppStackItem>
+            <AppText tone="secondary" weight="strong">
               {customDefs.length} tema(s) personalizado(s) salvo(s) localmente
-            </Typography>
-          </Box>
-        </Box>
+            </AppText>
+          </AppStackItem>
+        </AppStack>
       )}
-    </Box>
+    </AppStack>
   )
 }

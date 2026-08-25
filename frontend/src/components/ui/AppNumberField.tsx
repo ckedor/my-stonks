@@ -11,10 +11,9 @@ import { CircularProgress, TextField } from '@mui/material'
  * têm o mesmo tamanho — mas os dois tamanhos são decisão daqui, não os
  * 60/80/120px avulsos que estavam espalhados nas telas. */
 
-export interface AppNumberFieldProps {
+interface AppNumberFieldBase {
+  /** Some da tela com `hideLabel`, mas continua sendo o nome acessível. */
   label: string
-  value: number
-  onChange: (value: number) => void
   min?: number
   step?: number
   /** Texto curto colado antes do número — um símbolo de moeda, um sinal. */
@@ -35,7 +34,29 @@ export interface AppNumberFieldProps {
   /** Spinner no canto do campo: o valor está sendo buscado, e o que está
    *  escrito ainda vai mudar. */
   busy?: boolean
+  /** Esconde o rótulo flutuante: dentro de uma célula de tabela o cabeçalho
+   *  da coluna já diz o que o número é, e o rótulo repetiria a palavra em
+   *  cada linha. */
+  hideLabel?: boolean
+  /** Alinha o número à direita, para a coluna de valores em que ele mora. */
+  align?: 'left' | 'right'
 }
+
+/* Vazio é um valor em alguns campos e não é em outros: no aporte simulado
+ * "nada" e "zero" são a mesma coisa, mas num alvo de rebalanceamento "sem
+ * alvo" e "alvo de 0%" são decisões diferentes. `allowEmpty` separa os dois
+ * casos no tipo, para a página não precisar adivinhar o que vem no callback. */
+export type AppNumberFieldProps =
+  | (AppNumberFieldBase & {
+      allowEmpty?: false
+      value: number
+      onChange: (value: number) => void
+    })
+  | (AppNumberFieldBase & {
+      allowEmpty: true
+      value: number | null
+      onChange: (value: number | null) => void
+    })
 
 const WIDTH = { xs: 72, sm: 104, md: 148, full: '100%' } as const
 
@@ -43,6 +64,9 @@ export default function AppNumberField({
   label,
   value,
   onChange,
+  allowEmpty = false,
+  hideLabel = false,
+  align = 'left',
   min = 0,
   step = 1,
   prefix,
@@ -55,15 +79,21 @@ export default function AppNumberField({
 }: AppNumberFieldProps) {
   return (
     <TextField
-      label={label}
+      label={hideLabel ? undefined : label}
+      aria-label={hideLabel ? label : undefined}
       type="number"
       size={density === 'compact' ? 'small' : 'medium'}
       error={error}
       helperText={helperText}
-      value={value}
+      value={value ?? ''}
       onChange={(event) => {
-        const next = Number(event.target.value)
-        onChange(Number.isFinite(next) ? next : min)
+        const raw = event.target.value
+        if (raw === '') {
+          ;(onChange as (value: number | null) => void)(allowEmpty ? null : min)
+          return
+        }
+        const next = Number(raw)
+        if (Number.isFinite(next)) onChange(next)
       }}
       slotProps={{
         htmlInput: { min, step },
@@ -76,7 +106,17 @@ export default function AppNumberField({
           ) : undefined,
         },
       }}
-      sx={{ width: WIDTH[size] }}
+      sx={{
+        width: WIDTH[size],
+        ...(align === 'right' ? { '& input': { textAlign: 'right' } } : null),
+        /* As setinhas do `type=number` roubam largura da célula e ninguém as
+           usa para digitar um percentual. */
+        '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
+          WebkitAppearance: 'none',
+          margin: 0,
+        },
+        '& input[type=number]': { MozAppearance: 'textfield' },
+      }}
     />
   )
 }

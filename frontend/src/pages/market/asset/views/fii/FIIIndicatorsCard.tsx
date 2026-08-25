@@ -1,6 +1,5 @@
 import type { FIIIndicators } from '@/api/market'
-import AppCard from '@/components/ui/AppCard'
-import { Box, Stack, Tooltip, Typography } from '@mui/material'
+import { AppCard, AppGrid, AppMetric, AppStack, AppText, SectionTitle } from '@/components/ui'
 import {
   EMPTY,
   formatBRL,
@@ -32,31 +31,6 @@ function classify(indicators: FIIIndicators): string {
     .filter((part): part is string => Boolean(part))
     .map((part) => sentenceCase(part.trim()))
   return [...new Set(parts)].join(' · ')
-}
-
-/** One published number, with the room its label needs and no more. */
-function StatTile({ label, value, hint }: Stat) {
-  const heading = (
-    <Typography
-      variant="caption"
-      color="text.secondary"
-      sx={{
-        whiteSpace: 'nowrap',
-        ...(hint && { borderBottom: '1px dotted', borderColor: 'text.disabled', cursor: 'help' }),
-      }}
-    >
-      {label}
-    </Typography>
-  )
-
-  return (
-    <Box sx={{ minWidth: 0 }}>
-      {hint ? <Tooltip title={hint}>{heading}</Tooltip> : heading}
-      <Typography fontWeight="bold" sx={{ color: value === EMPTY ? 'text.disabled' : 'text.primary' }}>
-        {value}
-      </Typography>
-    </Box>
-  )
 }
 
 /** What the fund reports about itself.
@@ -94,54 +68,46 @@ export default function FIIIndicatorsCard({ indicators }: { indicators: FIIIndic
 
   return (
     <AppCard>
-      <Stack
-        direction="row"
-        alignItems="baseline"
-        justifyContent="space-between"
-        flexWrap="wrap"
-        rowGap={0.5}
-        columnGap={2}
-      >
-        <Typography variant="h6">Indicadores do fundo</Typography>
-        {indicators.as_of_date && (
-          <Typography variant="caption" color="text.secondary">
-            Dados de {formatDate(indicators.as_of_date)}
-          </Typography>
-        )}
-      </Stack>
+      <AppStack gap="md">
+        <AppStack gap="xs">
+          <AppStack direction="row" align="baseline" justify="between" gap="md" wrap>
+            <SectionTitle>Indicadores do fundo</SectionTitle>
+            {indicators.as_of_date && (
+              <AppText variant="caption" tone="secondary">
+                Dados de {formatDate(indicators.as_of_date)}
+              </AppText>
+            )}
+          </AppStack>
 
-      {/* What kind of fund this is, as one line in the register of a subtitle.
+          {/* What kind of fund this is, as one line in the register of a subtitle.
           Chips would set it as two parallel tags to be picked from, which is
           not what it is: the strategy and the segment are one classification
           read from broad to narrow, and nothing here is filterable. The words
           are the provider's own, not the segment catalogue the application
           keeps for registered funds. */}
-      {classification && (
-        <Typography variant="body2" color="text.secondary">
-          {classification}
-        </Typography>
-      )}
+          {classification && (
+            <AppText variant="bodySmall" tone="secondary">
+              {classification}
+            </AppText>
+          )}
+        </AppStack>
 
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 2,
-          mt: 2,
-          gridTemplateColumns: {
-            xs: 'repeat(2, minmax(0, 1fr))',
-            sm: 'repeat(3, minmax(0, 1fr))',
-            md: 'repeat(5, minmax(0, 1fr))',
-          },
-        }}
-      >
-        {stats.map((stat) => (
-          <StatTile key={stat.label} {...stat} />
-        ))}
-      </Box>
+        <AppGrid cols={{ xs: 2, sm: 3, md: 5 }} gap="md">
+          {stats.map((stat) => (
+            <AppMetric
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              hint={stat.hint}
+              tone={stat.value === EMPTY ? 'secondary' : 'default'}
+            />
+          ))}
+        </AppGrid>
 
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
-        Valores em reais, como publicados pelo fundo.
-      </Typography>
+        <AppText variant="caption" tone="secondary">
+          Valores em reais, como publicados pelo fundo.
+        </AppText>
+      </AppStack>
     </AppCard>
   )
 }

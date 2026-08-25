@@ -1,9 +1,19 @@
+import {
+  AppCollapse,
+  AppDivider,
+  AppIconButton,
+  AppListRow,
+  AppStack,
+  AppStackItem,
+  AppText,
+  MiniDonut,
+  useAppTheme,
+} from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import { Box, CircularProgress, Collapse, Divider, IconButton, Typography, useTheme } from '@mui/material'
 import { useMemo, useState } from 'react'
 
 interface Position {
@@ -22,6 +32,23 @@ interface PositionTableProps {
   onAssetSelect?: (assetId: number) => void
 }
 
+/** Valor e retorno de uma linha, alinhados à direita. */
+function RowFigures({ value, changePct }: { value: string; changePct: number | null }) {
+  return (
+    <AppStack align="end">
+      <AppText variant="bodySmall" weight="strong">
+        {value}
+      </AppText>
+      {changePct != null && (
+        <AppText variant="caption" weight="strong" tone={changePct >= 0 ? 'success' : 'danger'}>
+          {changePct >= 0 ? '+' : ''}
+          {changePct.toFixed(2)}%
+        </AppText>
+      )}
+    </AppStack>
+  )
+}
+
 export default function PositionTable({
   positions,
   selectedCategory: controlledCategory,
@@ -35,7 +62,7 @@ export default function PositionTable({
   const userCategories = selectedPortfolio?.custom_categories ?? []
   const categoryCagr = useReturnsStore((s) => s.categoryCagr)
 
-  const theme = useTheme()
+  const theme = useAppTheme()
 
   const categoryColorMap = useMemo(() => {
     const map: Record<string, string> = {}
@@ -77,190 +104,65 @@ export default function PositionTable({
   const { format: fmt } = useCurrency()
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Box>
-        {data.rows.map((row, i) => {
-          const color = categoryColorMap[row.category] ?? theme.palette.primary.main
-          const isSelected = row.category === selectedCategory
-          return (
-            <Box key={row.category}>
-              <Box
-                onClick={() => handleClick(row.category)}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  py: 1.8,
-                  px: 1,
-                  cursor: 'pointer',
-                  borderRadius: 1,
-                  bgcolor: isSelected ? 'action.selected' : 'transparent',
-                  '&:hover': { bgcolor: 'action.hover' },
-                  transition: 'background 0.15s',
-                }}
-              >
-                {/* Mini donut */}
-                <Box sx={{ position: 'relative', width: 40, height: 40, mr: 1.5, flexShrink: 0 }}>
-                  <CircularProgress
-                    variant="determinate"
-                    value={100}
-                    size={40}
-                    thickness={3}
-                    sx={{ color: 'action.hover', position: 'absolute' }}
-                  />
-                  <CircularProgress
-                    variant="determinate"
-                    value={row.percentage}
-                    size={40}
-                    thickness={3}
-                    sx={{
-                      color,
-                      position: 'absolute',
-                      '& .MuiCircularProgress-circle': { strokeLinecap: 'round' },
-                    }}
-                  />
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Typography sx={{ fontSize: 10, fontWeight: 600, lineHeight: 1 }}>
-                      {row.percentage.toFixed(0)}%
-                    </Typography>
-                  </Box>
-                </Box>
+    <AppStack>
+      {data.rows.map((row, i) => {
+        const color = categoryColorMap[row.category] ?? theme.palette.primary.main
+        const expanded = expandedCategory === row.category
+        return (
+          <AppStack key={row.category}>
+            <AppListRow
+              selected={row.category === selectedCategory}
+              onClick={() => handleClick(row.category)}
+            >
+              <AppStack direction="row" gap="sm" align="center" grow>
+                <MiniDonut value={row.percentage} color={color} size={40} />
+                <AppStackItem>
+                  <AppText weight="strong">{row.category}</AppText>
+                </AppStackItem>
+                <RowFigures value={fmt(row.value)} changePct={row.returnAcc} />
+                <AppIconButton
+                  size="sm"
+                  label={expanded ? 'Recolher categoria' : 'Expandir categoria'}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setExpandedCategory(expanded ? null : row.category)
+                  }}
+                >
+                  {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                </AppIconButton>
+              </AppStack>
+            </AppListRow>
 
-                {/* Category name */}
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="body1" sx={{ fontWeight: 500, lineHeight: 1.3 }}>
-                    {row.category}
-                  </Typography>
-                </Box>
+            <AppCollapse open={expanded}>
+              <AppStack>
+                {row.assets.map((asset) => {
+                  const assetPct = data.total ? (asset.value / data.total) * 100 : 0
+                  const assetCagr = asset.cagr != null ? asset.cagr * 100 : null
+                  return (
+                    <AppListRow
+                      key={asset.asset_id}
+                      padding="sm"
+                      onClick={() => onAssetSelect?.(asset.asset_id)}
+                    >
+                      <AppStack direction="row" gap="sm" align="center" grow>
+                        <MiniDonut value={assetPct} color={color} />
+                        <AppStackItem>
+                          <AppText variant="bodySmall" weight="strong">
+                            {asset.ticker}
+                          </AppText>
+                        </AppStackItem>
+                        <RowFigures value={fmt(asset.value)} changePct={assetCagr} />
+                      </AppStack>
+                    </AppListRow>
+                  )
+                })}
+              </AppStack>
+            </AppCollapse>
 
-                {/* Right: value + return + expand */}
-                <Box sx={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.3 }}>
-                      {fmt(row.value)}
-                    </Typography>
-                    {row.returnAcc != null && (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: row.returnAcc >= 0 ? 'success.main' : 'error.main',
-                          fontWeight: 500,
-                        }}
-                      >
-                        {row.returnAcc >= 0 ? '+' : ''}{row.returnAcc.toFixed(2)}%
-                      </Typography>
-                    )}
-                  </Box>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setExpandedCategory(expandedCategory === row.category ? null : row.category)
-                    }}
-                    sx={{ ml: 0.5 }}
-                  >
-                    {expandedCategory === row.category ? (
-                      <ExpandLessIcon fontSize="small" />
-                    ) : (
-                      <ExpandMoreIcon fontSize="small" />
-                    )}
-                  </IconButton>
-                </Box>
-              </Box>
-
-              {/* Expanded asset list */}
-              <Collapse in={expandedCategory === row.category} timeout="auto" unmountOnExit>
-                <Box sx={{ pl: 1, pr: 1, pb: 1 }}>
-                  {row.assets.map((asset) => {
-                    const assetPct = data.total ? (asset.value / data.total) * 100 : 0
-                    const assetCagr = asset.cagr != null ? asset.cagr * 100 : null
-                    return (
-                      <Box
-                        key={asset.asset_id}
-                        onClick={() => onAssetSelect?.(asset.asset_id)}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          py: 0.8,
-                          px: 1,
-                          cursor: 'pointer',
-                          borderRadius: 1,
-                          '&:hover': { bgcolor: 'action.hover' },
-                          transition: 'background 0.15s',
-                        }}
-                      >
-                        {/* Mini donut - relative to portfolio */}
-                        <Box sx={{ position: 'relative', width: 32, height: 32, mr: 1.5, flexShrink: 0 }}>
-                          <CircularProgress
-                            variant="determinate"
-                            value={100}
-                            size={32}
-                            thickness={3}
-                            sx={{ color: 'action.hover', position: 'absolute' }}
-                          />
-                          <CircularProgress
-                            variant="determinate"
-                            value={assetPct}
-                            size={32}
-                            thickness={3}
-                            sx={{
-                              color,
-                              position: 'absolute',
-                              '& .MuiCircularProgress-circle': { strokeLinecap: 'round' },
-                            }}
-                          />
-                          <Box
-                            sx={{
-                              position: 'absolute',
-                              inset: 0,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <Typography sx={{ fontSize: 8, fontWeight: 600, lineHeight: 1 }}>
-                              {assetPct.toFixed(0)}%
-                            </Typography>
-                          </Box>
-                        </Box>
-
-                        <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>
-                          {asset.ticker}
-                        </Typography>
-                        <Box sx={{ textAlign: 'right' }}>
-                          <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.3 }}>
-                            {fmt(asset.value)}
-                          </Typography>
-                          {assetCagr != null && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: assetCagr >= 0 ? 'success.main' : 'error.main',
-                                fontWeight: 500,
-                              }}
-                            >
-                              {assetCagr >= 0 ? '+' : ''}{assetCagr.toFixed(2)}%
-                            </Typography>
-                          )}
-                        </Box>
-                      </Box>
-                    )
-                  })}
-                </Box>
-              </Collapse>
-
-              {i < data.rows.length - 1 && <Divider />}
-            </Box>
-          )
-        })}
-      </Box>
-    </Box>
+            {i < data.rows.length - 1 && <AppDivider />}
+          </AppStack>
+        )
+      })}
+    </AppStack>
   )
 }

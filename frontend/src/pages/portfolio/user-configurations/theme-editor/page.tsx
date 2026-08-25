@@ -4,17 +4,19 @@ import {
 import { usePageTitleStore } from '@/stores/page-title'
 import { useThemeMode } from '@/theme/theme-mode'
 import { defaultDarkPalette, defaultLightPalette, type ThemePaletteConfig } from '@/theme/themes'
+import {
+  AppButton,
+  AppGrid,
+  AppGridItem,
+  AppIconButton,
+  AppStack,
+  AppStackItem,
+  AppTextField,
+  AppToggleGroup,
+  PageTitle,
+} from '@/components/ui'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SaveIcon from '@mui/icons-material/Save'
-import {
-    Box,
-    Button,
-    IconButton,
-    TextField,
-    ToggleButton,
-    ToggleButtonGroup,
-    Typography,
-} from '@mui/material'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ThemePaletteForm from './ThemePaletteForm'
@@ -55,10 +57,8 @@ export default function ThemeEditorPage() {
   }, [setTitle, isEditing, name])
 
   const handleBaseMode = useCallback(
-    (_: unknown, newMode: 'light' | 'dark' | null) => {
-      if (newMode && !isEditing) {
-        setConfig(getBaseConfig(newMode))
-      }
+    (newMode: 'light' | 'dark') => {
+      if (!isEditing) setConfig(getBaseConfig(newMode))
     },
     [isEditing],
   )
@@ -80,80 +80,50 @@ export default function ThemeEditorPage() {
   }
 
   return (
-    <Box sx={{ mt: 3, pt: 1 }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-        <IconButton onClick={() => navigate(-1)}>
+    <AppStack gap="lg">
+      {/* Cabeçalho */}
+      <AppStack direction="row" gap="sm" align="center">
+        <AppIconButton label="Voltar" onClick={() => navigate(-1)}>
           <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>
-          {isEditing ? 'Editar Tema' : 'Novo Tema Personalizado'}
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<SaveIcon />}
-          disabled={!canSave}
-          onClick={handleSave}
-        >
+        </AppIconButton>
+        <AppStackItem>
+          <PageTitle>{isEditing ? 'Editar Tema' : 'Novo Tema Personalizado'}</PageTitle>
+        </AppStackItem>
+        <AppButton icon={<SaveIcon />} disabled={!canSave} onClick={handleSave}>
           Salvar
-        </Button>
-      </Box>
+        </AppButton>
+      </AppStack>
 
-      {/* Meta fields */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
-        <TextField
-          label="Nome do Tema"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          size="small"
-          sx={{ minWidth: 260 }}
-          required
-        />
-        <TextField
-          label="Descrição"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          size="small"
-          sx={{ minWidth: 320, flex: 1 }}
-        />
+      {/* Nome, descrição e o tema de base */}
+      <AppStack direction="row" gap="md" align="center" wrap>
+        <AppStackItem minWidth={260}>
+          <AppTextField label="Nome do Tema" value={name} onChange={setName} />
+        </AppStackItem>
+        <AppStackItem grow={2} minWidth={320}>
+          <AppTextField label="Descrição" value={description} onChange={setDescription} />
+        </AppStackItem>
         {!isEditing && (
-          <ToggleButtonGroup
-            exclusive
-            size="small"
+          <AppToggleGroup
+            label="Tema de base"
+            options={[
+              { value: 'light' as const, label: 'Claro' },
+              { value: 'dark' as const, label: 'Escuro' },
+            ]}
             value={config.mode}
             onChange={handleBaseMode}
-          >
-            <ToggleButton value="light">Claro</ToggleButton>
-            <ToggleButton value="dark">Escuro</ToggleButton>
-          </ToggleButtonGroup>
+          />
         )}
-      </Box>
+      </AppStack>
 
-      {/* Two-column: form + preview */}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 3,
-          flexDirection: { xs: 'column', lg: 'row' },
-          alignItems: 'flex-start',
-        }}
-      >
-        {/* Left: palette form */}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
+      {/* Formulário à esquerda, amostra ao vivo à direita */}
+      <AppGrid cols={{ xs: 1, lg: 12 }} gap="lg" align="start">
+        <AppGridItem span={{ xs: 1, lg: 5 }}>
           <ThemePaletteForm config={config} onChange={setConfig} />
-        </Box>
-
-        {/* Right: live preview (sticky) */}
-        <Box
-          sx={{
-            width: { xs: '100%', lg: '55%' },
-            position: { lg: 'sticky' },
-            top: { lg: 80 },
-          }}
-        >
+        </AppGridItem>
+        <AppGridItem span={{ xs: 1, lg: 7 }}>
           <ThemePreviewPanel config={config} />
-        </Box>
-      </Box>
-    </Box>
+        </AppGridItem>
+      </AppGrid>
+    </AppStack>
   )
 }

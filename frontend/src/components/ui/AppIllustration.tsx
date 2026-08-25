@@ -19,9 +19,13 @@ export interface AppIllustrationProps {
   alt?: string
   /** Altura em pixels. A largura acompanha a proporção da arte. */
   height: number
+  /** Posição em px dentro do `AppStack anchor` mais próximo, para a arte
+   *  ficar por cima do que vem depois sem ocupar espaço no fluxo. Não recebe
+   *  clique: ela cobre um pedaço do gráfico e roubaria o cursor do tooltip. */
+  pinned?: { left: number; top: number }
 }
 
-export default function AppIllustration({ src, alt = '', height }: AppIllustrationProps) {
+export default function AppIllustration({ src, alt = '', height, pinned }: AppIllustrationProps) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
 
   if (!src || failedSrc === src) return null
@@ -32,7 +36,21 @@ export default function AppIllustration({ src, alt = '', height }: AppIllustrati
       src={src}
       alt={alt}
       onError={() => setFailedSrc(src)}
-      sx={{ height, width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
+      sx={{
+        height,
+        width: 'auto',
+        maxWidth: '100%',
+        objectFit: 'contain',
+        ...(pinned
+          ? {
+              position: 'absolute',
+              left: pinned.left,
+              top: pinned.top,
+              zIndex: 2,
+              pointerEvents: 'none',
+            }
+          : null),
+      }}
     />
   )
 }

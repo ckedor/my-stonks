@@ -6,7 +6,17 @@ import { usePositionsStore } from '@/stores/portfolio/positions'
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useTradeFormStore } from '@/stores/trade-form'
 import { useWealthTierStore } from '@/stores/portfolio/wealth-tier'
-import { Box, Button, Grid, Tab, Tabs, Typography } from '@mui/material'
+import {
+  AppButton,
+  AppChartArea,
+  AppEmptyState,
+  AppGrid,
+  AppGridItem,
+  AppIllustration,
+  AppStack,
+  AppStackItem,
+  AppTabs,
+} from '@/components/ui'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import OverviewAportsChart from './OverviewAportsChart'
@@ -17,7 +27,6 @@ import OverviewSkeleton from './OverviewSkeleton'
 import PositionPieChart from './PositionPieChart'
 import PositionTable from './PositionTable'
 import PortfolioStandingCard from './PortfolioStandingCard'
-import { AppIllustration } from '@/components/ui'
 
 const OVERVIEW_PANEL_HEIGHT = 360
 /* Só o padrão de quem ainda não tem altura própria cadastrada. A altura real e
@@ -25,6 +34,14 @@ const OVERVIEW_PANEL_HEIGHT = 360
 const TIER_ARTWORK_HEIGHT = 220
 /* Onde o bloco de patrimônio termina e a arte começa. */
 const STANDING_CARD_WIDTH = 320
+
+type BottomTab = 'dividends' | 'patrimony' | 'aports'
+
+const BOTTOM_TABS = [
+  { id: 'dividends' as const, label: 'Proventos' },
+  { id: 'patrimony' as const, label: 'Patrimônio' },
+  { id: 'aports' as const, label: 'Aportes' },
+]
 
 export default function PortfolioOverviewPage() {
   const navigate = useNavigate()
@@ -56,7 +73,7 @@ export default function PortfolioOverviewPage() {
   const loading = (positionsLoading && positions.length === 0) || (returnsLoading && !hasCagr)
 
   const [selectedCategory, setSelectedCategory] = useState<string>('portfolio')
-  const [bottomTab, setBottomTab] = useState(0)
+  const [bottomTab, setBottomTab] = useState<BottomTab>('dividends')
 
   // The chart matches the height the category list has with its drawers closed.
   // Measured from the data, never from interaction, so expanding a category
@@ -76,40 +93,22 @@ export default function PortfolioOverviewPage() {
 
   if (!loading && positions.length === 0) {
     return (
-      <Box
-        height="80vh"
-        display="flex"
-        flexDirection="column"
-        justifyContent="center"
-        alignItems="center"
-      >
-        <Typography variant="h6" gutterBottom>
-          Sua carteira ainda está vazia
-        </Typography>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Comece cadastrando sua primeira compra
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ mt: 2 }}
-          onClick={() => openTradeForm()}
-        >
-          Cadastrar Primeira Compra
-        </Button>
-      </Box>
+      <AppEmptyState
+        title="Sua carteira ainda está vazia"
+        description="Comece cadastrando sua primeira compra"
+        action={<AppButton onClick={() => openTradeForm()}>Cadastrar Primeira Compra</AppButton>}
+      />
     )
   }
 
   return (
-    <Box>
+    <AppStack gap="lg">
       {/* ── Hero: patrimônio e patente, um bloco só ── */}
       {/* A arte fica à direita do bloco e fora do fluxo: assim ela desce sobre
           o gráfico pelo `artwork_offset` sem empurrar nada, e a altura da faixa
-          continua sendo a do texto. Sem receber cliques — ela cobre um pedaço
-          do gráfico e roubaria o cursor do tooltip. */}
-      <Box sx={{ mb: 6, position: 'relative' }}>
-        <Box sx={{ maxWidth: STANDING_CARD_WIDTH }}>
+          continua sendo a do texto. */}
+      <AppStack anchor>
+        <AppStackItem width={STANDING_CARD_WIDTH}>
           <PortfolioStandingCard
             patrimony={totalValue}
             cagr={cagr}
@@ -117,32 +116,23 @@ export default function PortfolioOverviewPage() {
             standing={wealthTierStanding}
             formatCurrency={formatCurrency}
           />
-        </Box>
+        </AppStackItem>
 
         {tier?.artwork && (
-          <Box
-            sx={{
-              position: 'absolute',
-              left: STANDING_CARD_WIDTH,
-              top: tier.artwork_offset,
-              zIndex: 2,
-              pointerEvents: 'none',
-            }}
-          >
-            <AppIllustration
-              src={tier.artwork}
-              height={tier.artwork_height ?? TIER_ARTWORK_HEIGHT}
-            />
-          </Box>
+          <AppIllustration
+            src={tier.artwork}
+            height={tier.artwork_height ?? TIER_ARTWORK_HEIGHT}
+            pinned={{ left: STANDING_CARD_WIDTH, top: tier.artwork_offset }}
+          />
         )}
-      </Box>
+      </AppStack>
 
-      {/* ── Row 1: Returns chart (70%) + Pie (30%) ── */}
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, lg: 8 }}>
+      {/* ── Linha 1: rentabilidade (70%) + pizza (30%) ── */}
+      <AppGrid cols={{ xs: 1, lg: 12 }} gap="md">
+        <AppGridItem span={{ xs: 1, lg: 8 }}>
           <OverviewReturnsChart size={OVERVIEW_PANEL_HEIGHT} selectedCategory={selectedCategory} />
-        </Grid>
-        <Grid size={{ xs: 12, lg: 4 }}>
+        </AppGridItem>
+        <AppGridItem span={{ xs: 1, lg: 4 }}>
           <PositionPieChart
             positions={positions}
             height={OVERVIEW_PANEL_HEIGHT}
@@ -150,79 +140,52 @@ export default function PortfolioOverviewPage() {
             onCategorySelect={setSelectedCategory}
             onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
           />
-        </Grid>
-      </Grid>
+        </AppGridItem>
+      </AppGrid>
 
-      {/* ── Row 2: Position list + Dividends/Patrimony tab ── */}
-      <Grid container spacing={3} sx={{ mt: 2 }} alignItems="flex-start">
-        <Grid size={{ xs: 12, lg: 5 }}>
-          <Box ref={positionListRef}>
-            <PositionTable
-              positions={positions}
-              selectedCategory={selectedCategory}
-              onCategorySelect={setSelectedCategory}
-              onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
-            />
-          </Box>
-        </Grid>
-        <Grid size={{ xs: 12, lg: 7 }}>
-          <Box sx={{ height: chartHeight, display: 'flex', flexDirection: 'column' }}>
-            <Tabs
-              value={bottomTab}
-              onChange={(_, v) => setBottomTab(v)}
-              sx={{
-                minHeight: 32,
-                mb: 1.5,
-                flexShrink: 0,
-                '& .MuiTabs-indicator': {
-                  height: 2,
-                  borderRadius: 1,
-                },
-                '& .MuiTab-root': {
-                  minHeight: 32,
-                  textTransform: 'none',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  px: 1.5,
-                  py: 0.3,
-                  color: 'text.secondary',
-                  '&.Mui-selected': {
-                    fontWeight: 600,
-                    color: 'text.primary',
-                  },
-                },
-              }}
-            >
-              <Tab label="Proventos" />
-              <Tab label="Patrimônio" />
-              <Tab label="Aportes" />
-            </Tabs>
-
-            <Box sx={{ flex: 1, minHeight: 0 }}>
-              {bottomTab === 0 && (
-                <OverviewDividendsChart
-                  dividends={dividends}
-                  selected={selectedCategory}
-                  size="100%"
-                />
-              )}
-              {bottomTab === 1 && (
-                <OverviewPatrimonyChart
-                  patrimonyEvolution={patrimonyEvolution}
-                  selected={selectedCategory}
-                  size="100%"
-                />
-              )}
-              {bottomTab === 2 && (
-                <OverviewAportsChart
-                  patrimonyEvolution={patrimonyEvolution}
-                  size="100%"
-                />
-              )}
-            </Box>
-          </Box>
-        </Grid>
-      </Grid>
-    </Box>
+      {/* ── Linha 2: lista de categorias + aba de proventos/patrimônio/aportes ── */}
+      <AppGrid cols={{ xs: 1, lg: 12 }} gap="md" align="start">
+        <AppGridItem span={{ xs: 1, lg: 5 }} ref={positionListRef}>
+          <PositionTable
+            positions={positions}
+            selectedCategory={selectedCategory}
+            onCategorySelect={setSelectedCategory}
+            onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
+          />
+        </AppGridItem>
+        <AppGridItem span={{ xs: 1, lg: 7 }}>
+          <AppChartArea
+            height={chartHeight}
+            sizing="frame"
+            toolbar={
+              <AppTabs
+                items={BOTTOM_TABS}
+                value={bottomTab}
+                onChange={setBottomTab}
+                label="Séries da carteira"
+              />
+            }
+          >
+            {bottomTab === 'dividends' && (
+              <OverviewDividendsChart
+                dividends={dividends}
+                selected={selectedCategory}
+                size="100%"
+              />
+            )}
+            {bottomTab === 'patrimony' && (
+              <OverviewPatrimonyChart
+                patrimonyEvolution={patrimonyEvolution}
+                selected={selectedCategory}
+                size="100%"
+              />
+            )}
+            {bottomTab === 'aports' && (
+              <OverviewAportsChart patrimonyEvolution={patrimonyEvolution} size="100%" />
+            )}
+          </AppChartArea>
+        </AppGridItem>
+      </AppGrid>
+    </AppStack>
   )
 }

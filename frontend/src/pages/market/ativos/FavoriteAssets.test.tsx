@@ -1,5 +1,6 @@
 import { fetchFavoriteAssets } from '@/api/market'
-import { render, screen, waitFor } from '@testing-library/react'
+import { renderWithTheme } from '@/theme/test-render'
+import { screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import FavoriteAssets from './FavoriteAssets'
@@ -28,7 +29,7 @@ describe('FavoriteAssets', () => {
       last_visited_at: '2026-08-22T12:00:00Z',
     }])
 
-    render(
+    renderWithTheme(
       <MemoryRouter>
         <FavoriteAssets limit={8} assetTypeId={1} assetIds={[42, 47]} />
       </MemoryRouter>,
@@ -41,7 +42,7 @@ describe('FavoriteAssets', () => {
   })
 
   it('does not fall back to every ETF when the page has no registered assets', () => {
-    render(
+    renderWithTheme(
       <MemoryRouter>
         <FavoriteAssets limit={8} assetTypeId={1} assetIds={[]} />
       </MemoryRouter>,

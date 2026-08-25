@@ -1,28 +1,28 @@
-
+import { AppStack, AppTabs, PageTitle } from '@/components/ui'
 import BrushIcon from '@mui/icons-material/Brush'
 import IntegrationInstructionsIcon from '@mui/icons-material/IntegrationInstructions'
-import { Box, Tab, Tabs, Typography } from '@mui/material'
 import { useState } from 'react'
 import IntegrationsTab from './IntegrationsTab'
 import ThemeTab from './ThemeTab'
 
+type ConfigTab = 'appearance' | 'integrations'
+
+const TABS = [
+  { id: 'appearance' as const, label: 'Aparência', icon: <BrushIcon /> },
+  { id: 'integrations' as const, label: 'Integrações', icon: <IntegrationInstructionsIcon /> },
+]
+
 export default function UserConfigurationPage() {
-  const [tab, setTab] = useState(0)
+  const [tab, setTab] = useState<ConfigTab>('appearance')
 
   return (
-    <Box mt={3} pt={1}>
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>Configurações</Typography>
-      <Tabs
-        value={tab}
-        onChange={(_, v) => setTab(v)}
-        sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
-      >
-        <Tab icon={<BrushIcon />} iconPosition="start" label="Aparência" />
-        <Tab icon={<IntegrationInstructionsIcon />} iconPosition="start" label="Integrações" />
-      </Tabs>
+    <AppStack gap="lg">
+      <PageTitle>Configurações</PageTitle>
 
-      {tab === 0 && <ThemeTab />}
-      {tab === 1 && <IntegrationsTab />}
-    </Box>
+      <AppTabs items={TABS} value={tab} onChange={setTab} label="Seções das configurações" />
+
+      {tab === 'appearance' && <ThemeTab />}
+      {tab === 'integrations' && <IntegrationsTab />}
+    </AppStack>
   )
 }

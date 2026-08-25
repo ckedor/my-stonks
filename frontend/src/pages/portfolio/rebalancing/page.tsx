@@ -1,28 +1,22 @@
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import SaveIcon from '@mui/icons-material/Save'
-import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Collapse,
-    IconButton,
-    Snackbar,
-    Stack,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
-    TextField,
-    Typography,
-    useTheme,
-} from '@mui/material'
 import { useCallback, useEffect, useState } from 'react'
 
-import AppCard from '@/components/ui/AppCard'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import {
+  AppAlert,
+  AppButton,
+  AppCard,
+  AppColorSwatch,
+  AppIconButton,
+  AppNumberField,
+  AppSimpleTable,
+  AppSnackbar,
+  AppStack,
+  AppText,
+  LoadingSpinner,
+  type AppSimpleTableColumn,
+} from '@/components/ui'
 import { REBALANCING_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
@@ -30,209 +24,30 @@ import api from '@/lib/api'
 import { usePageTitleStore } from '@/stores/page-title'
 import { usePortfolioStore } from '@/stores/portfolio'
 import type {
-    AssetRebalancingEntry,
-    CategoryRebalancingEntry,
-    RebalancingResponse,
+  AssetRebalancingEntry,
+  CategoryRebalancingEntry,
+  RebalancingResponse,
 } from '@/types'
-
-// ── Column widths ────────────────────────────────────────────────────
-// Shared between outer table, nested asset table and header so columns stay aligned.
-const COL_WIDTHS = ['auto', 160, 100, 120, 100, 120] as const
-
-// ── Helpers ──────────────────────────────────────────────────────────
-let _fmtCurrency: (v: number) => string = (v) =>
-  `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-
-const fmt = (v: number) => _fmtCurrency(v)
 
 const fmtPct = (v: number | null) =>
   v != null ? `${v.toFixed(2).replace('.', ',')}%` : '—'
 
-// ── Asset Row ────────────────────────────────────────────────────────
-interface AssetRowProps {
-  asset: AssetRebalancingEntry
-  categoryTargetSet: boolean
-  onTargetChange: (assetId: number, value: number | null) => void
-}
+/* Categoria, ativo e total moram na mesma tabela porque são a mesma leitura em
+ * três níveis: quanto há, quanto se quer, quanto falta. A categoria abre e
+ * fecha; o ativo só aparece com a categoria aberta; o total fecha a conta. */
+type Row =
+  | { kind: 'category'; key: string; category: CategoryRebalancingEntry }
+  | { kind: 'asset'; key: string; categoryId: number; asset: AssetRebalancingEntry; targetSet: boolean }
+  | { kind: 'total'; key: string }
 
-function AssetRow({ asset, categoryTargetSet, onTargetChange }: AssetRowProps) {
-  const theme = useTheme()
-  const color = (v: number | null) => {
-    if (v == null) return undefined
-    return v > 0 ? theme.palette.success.main : v < 0 ? theme.palette.error.main : undefined
-  }
+/** O sinal de uma diferença, lido como o resto do app lê retorno. */
+const diffTone = (v: number | null): 'success' | 'danger' | 'default' =>
+  v == null || v === 0 ? 'default' : v > 0 ? 'success' : 'danger'
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value
-    if (raw === '') {
-      onTargetChange(asset.asset_id, null)
-      return
-    }
-    const parsed = parseFloat(raw)
-    if (!isNaN(parsed)) onTargetChange(asset.asset_id, parsed)
-  }
-
-  return (
-    <TableRow sx={{ '& td': { py: 1, px: 1.5, fontSize: 13 } }}>
-      <TableCell sx={{ pl: 5, width: COL_WIDTHS[0] }}>
-        <Stack direction="row" alignItems="baseline" spacing={0.75}>
-          <span style={{ fontWeight: 'bold' }}>{asset.ticker}</span>
-          {asset.name && (
-            <Typography variant="caption" color="text.secondary" noWrap>
-              {asset.name}
-            </Typography>
-          )}
-        </Stack>
-      </TableCell>
-      <TableCell align="right" sx={{ width: COL_WIDTHS[1] }}>{fmt(asset.current_value)}</TableCell>
-      <TableCell align="right" sx={{ width: COL_WIDTHS[2] }}>{fmtPct(asset.current_pct_in_category)}</TableCell>
-      <TableCell align="right" sx={{ width: COL_WIDTHS[3] }}>
-        <TextField
-          size="small"
-          type="number"
-          value={asset.target_pct_in_category ?? ''}
-          onChange={handleChange}
-          slotProps={{ htmlInput: { min: 0, max: 100, step: 0.01 } }}
-          sx={{
-            width: 90,
-            '& input': { textAlign: 'right', py: 0.5, fontSize: 13 },
-            '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
-              WebkitAppearance: 'none',
-              margin: 0,
-            },
-            '& input[type=number]': {
-              MozAppearance: 'textfield',
-            },
-          }}
-        />
-      </TableCell>
-      <TableCell align="right" sx={{ width: COL_WIDTHS[4], color: color(asset.diff_pct) }}>
-        {categoryTargetSet ? fmtPct(asset.diff_pct) : '—'}
-      </TableCell>
-      <TableCell align="right" sx={{ width: COL_WIDTHS[5], color: color(asset.diff_value) }}>
-        {categoryTargetSet && asset.diff_value != null ? fmt(asset.diff_value) : '—'}
-      </TableCell>
-    </TableRow>
-  )
-}
-
-// ── Category Row (collapsible) ───────────────────────────────────────
-interface CategorySectionProps {
-  category: CategoryRebalancingEntry
-  onCategoryTargetChange: (categoryId: number, value: number | null) => void
-  onAssetTargetChange: (categoryId: number, assetId: number, value: number | null) => void
-}
-
-function CategorySection({
-  category,
-  onCategoryTargetChange,
-  onAssetTargetChange,
-}: CategorySectionProps) {
-  const [open, setOpen] = useState(false)
-  const theme = useTheme()
-
-  const color = (v: number | null) => {
-    if (v == null) return undefined
-    return v > 0 ? theme.palette.success.main : v < 0 ? theme.palette.error.main : undefined
-  }
-
-  const categoryTargetSet = category.target_pct != null
-
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value
-    if (raw === '') {
-      onCategoryTargetChange(category.category_id, null)
-      return
-    }
-    const parsed = parseFloat(raw)
-    if (!isNaN(parsed)) onCategoryTargetChange(category.category_id, parsed)
-  }
-
-  return (
-    <>
-      <TableRow
-        sx={{
-          bgcolor: 'action.hover',
-          '& td': { py: 1.2, px: 1.5, fontSize: 14, fontWeight: 'bold' },
-        }}
-      >
-        <TableCell sx={{ width: COL_WIDTHS[0] }}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <IconButton size="small" onClick={() => setOpen(!open)}>
-              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-            </IconButton>
-            <Box
-              sx={{
-                width: 12,
-                height: 12,
-                borderRadius: '50%',
-                bgcolor: category.color,
-                flexShrink: 0,
-              }}
-            />
-            <span>{category.category_name}</span>
-          </Stack>
-        </TableCell>
-        <TableCell align="right" sx={{ width: COL_WIDTHS[1] }}>{fmt(category.current_value)}</TableCell>
-        <TableCell align="right" sx={{ width: COL_WIDTHS[2] }}>{fmtPct(category.current_pct)}</TableCell>
-        <TableCell align="right" sx={{ width: COL_WIDTHS[3] }}>
-          <TextField
-            size="small"
-            type="number"
-            value={category.target_pct ?? ''}
-            onChange={handleCategoryChange}
-            slotProps={{ htmlInput: { min: 0, max: 100, step: 0.01 } }}
-            sx={{
-              width: 90,
-              '& input': { textAlign: 'right', py: 0.5, fontSize: 13 },
-              '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
-                WebkitAppearance: 'none',
-                margin: 0,
-              },
-              '& input[type=number]': {
-                MozAppearance: 'textfield',
-              },
-            }}
-          />
-        </TableCell>
-        <TableCell align="right" sx={{ width: COL_WIDTHS[4], color: color(category.diff_pct) }}>
-          {fmtPct(category.diff_pct)}
-        </TableCell>
-        <TableCell align="right" sx={{ width: COL_WIDTHS[5], color: color(category.diff_value) }}>
-          {category.diff_value != null ? fmt(category.diff_value) : '—'}
-        </TableCell>
-      </TableRow>
-
-      <TableRow>
-        <TableCell colSpan={6} sx={{ p: 0, borderBottom: open ? undefined : 'none' }}>
-          <Collapse in={open} timeout="auto" unmountOnExit>
-            <Table size="small" sx={{ tableLayout: 'fixed' }}>
-              <TableBody>
-                {category.assets.map((asset) => (
-                  <AssetRow
-                    key={asset.asset_id}
-                    asset={asset}
-                    categoryTargetSet={categoryTargetSet}
-                    onTargetChange={(assetId, value) =>
-                      onAssetTargetChange(category.category_id, assetId, value)
-                    }
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </Collapse>
-        </TableCell>
-      </TableRow>
-    </>
-  )
-}
-
-// ── Main Page ────────────────────────────────────────────────────────
 export default function RebalancingPage() {
   const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
   const { setTitle } = usePageTitleStore()
-  const { format: formatCurrency, symbol: currencySymbol } = useCurrency()
-  _fmtCurrency = formatCurrency
+  const { format: fmt, symbol: currencySymbol } = useCurrency()
 
   const portfolioId = selectedPortfolio?.id
 
@@ -250,6 +65,7 @@ export default function RebalancingPage() {
     severity: 'success' | 'error'
   }>({ open: false, message: '', severity: 'success' })
   const [contribution, setContribution] = useState<number | null>(null)
+  const [openCategories, setOpenCategories] = useState<number[]>([])
 
   // Sync fetched data into local state for editing
   useEffect(() => {
@@ -257,8 +73,6 @@ export default function RebalancingPage() {
   }, [fetchedData])
 
   const loading = !fetchedData && !!portfolioId
-
-  const showLoading = loading
 
   const effectiveTotal = (data?.total_value ?? 0) + (contribution ?? 0)
 
@@ -383,131 +197,197 @@ export default function RebalancingPage() {
     : 0
 
   // ── Render ─────────────────────────────────────────────────────────
-  if (showLoading) {
+  if (loading) {
     return <LoadingSpinner />
   }
 
   if (!data || data.categories.length === 0) {
-    return (
-      <Box mt={4}>
-        <Alert severity="info">
-          Nenhuma posição encontrada para rebalanceamento.
-        </Alert>
-      </Box>
-    )
+    return <AppAlert severity="info">Nenhuma posição encontrada para rebalanceamento.</AppAlert>
   }
 
-  return (
-    <Box maxWidth={{ xs: '100%', lg: 1400 }} mx="auto" pt={2}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Box>
-          <Typography variant="body2" color="text.secondary">
-            Valor total da carteira:{' '}
-            <strong>{fmt(data.total_value)}</strong>
-            {contribution != null && contribution > 0 && (
-              <> + aporte {fmt(contribution)} = <strong>{fmt(effectiveTotal)}</strong></>
+  const rows: Row[] = [
+    ...data.categories.flatMap<Row>((category) => {
+      const open = openCategories.includes(category.category_id)
+      const categoryRow: Row = {
+        kind: 'category',
+        key: `cat-${category.category_id}`,
+        category,
+      }
+      if (!open) return [categoryRow]
+      return [
+        categoryRow,
+        ...category.assets.map<Row>((asset) => ({
+          kind: 'asset',
+          key: `asset-${category.category_id}-${asset.asset_id}`,
+          categoryId: category.category_id,
+          asset,
+          targetSet: category.target_pct != null,
+        })),
+      ]
+    }),
+    { kind: 'total', key: 'total' },
+  ]
+
+  const toggleCategory = (categoryId: number) =>
+    setOpenCategories((current) =>
+      current.includes(categoryId)
+        ? current.filter((id) => id !== categoryId)
+        : [...current, categoryId],
+    )
+
+  const columns: AppSimpleTableColumn<Row>[] = [
+    {
+      label: 'Categoria / Ativo',
+      render: (row) => {
+        if (row.kind === 'total') return <AppText weight="strong">Total</AppText>
+        if (row.kind === 'category') {
+          const open = openCategories.includes(row.category.category_id)
+          return (
+            <AppStack direction="row" gap="xs" align="center">
+              <AppIconButton
+                size="sm"
+                label={open ? 'Recolher categoria' : 'Expandir categoria'}
+                onClick={() => toggleCategory(row.category.category_id)}
+              >
+                {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+              </AppIconButton>
+              <AppColorSwatch color={row.category.color} shape="dot" />
+              <AppText weight="strong">{row.category.category_name}</AppText>
+            </AppStack>
+          )
+        }
+        return (
+          <AppStack direction="row" gap="xs" align="baseline" indent="lg">
+            <AppText variant="bodySmall" weight="strong">
+              {row.asset.ticker}
+            </AppText>
+            {row.asset.name && (
+              <AppText variant="caption" tone="secondary" noWrap>
+                {row.asset.name}
+              </AppText>
             )}
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <TextField
-            size="small"
-            label="Simular Aporte"
-            type="number"
-            value={contribution ?? ''}
-            onChange={(e) => {
-              const raw = e.target.value
-              if (raw === '') { setContribution(null); return }
-              const parsed = parseFloat(raw)
-              if (!isNaN(parsed)) setContribution(parsed)
-            }}
-            placeholder={`${currencySymbol} 0,00`}
-            sx={{
-              width: 180,
-              '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
-                WebkitAppearance: 'none',
-                margin: 0,
-              },
-              '& input[type=number]': {
-                MozAppearance: 'textfield',
-              },
-            }}
+          </AppStack>
+        )
+      },
+    },
+    {
+      label: 'Valor Atual',
+      align: 'right',
+      render: (row) =>
+        row.kind === 'total'
+          ? fmt(data.total_value)
+          : row.kind === 'category'
+            ? fmt(row.category.current_value)
+            : fmt(row.asset.current_value),
+    },
+    {
+      label: '% Atual',
+      align: 'right',
+      render: (row) =>
+        row.kind === 'total'
+          ? '100,00%'
+          : row.kind === 'category'
+            ? fmtPct(row.category.current_pct)
+            : fmtPct(row.asset.current_pct_in_category),
+    },
+    {
+      label: '% Alvo',
+      align: 'right',
+      render: (row) => {
+        if (row.kind === 'total') {
+          return categoryTargetSum > 0
+            ? `${categoryTargetSum.toFixed(2).replace('.', ',')}%`
+            : '—'
+        }
+        const isCategory = row.kind === 'category'
+        return (
+          <AppNumberField
+            label={isCategory ? 'Alvo da categoria' : 'Alvo do ativo'}
+            hideLabel
+            align="right"
+            size="xs"
+            allowEmpty
+            step={0.01}
+            value={isCategory ? row.category.target_pct : row.asset.target_pct_in_category}
+            onChange={(value) =>
+              isCategory
+                ? handleCategoryTargetChange(row.category.category_id, value)
+                : handleAssetTargetChange(row.categoryId, row.asset.asset_id, value)
+            }
           />
-          <Button
-            variant="contained"
-            startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
-            onClick={handleSave}
-            disabled={saving}
-          >
+        )
+      },
+    },
+    {
+      label: 'Dif. %',
+      align: 'right',
+      render: (row) => {
+        if (row.kind === 'total') return '—'
+        const value = row.kind === 'category' ? row.category.diff_pct : row.asset.diff_pct
+        const show = row.kind === 'category' || row.targetSet
+        return (
+          <AppText variant="bodySmall" tone={diffTone(value)}>
+            {show ? fmtPct(value) : '—'}
+          </AppText>
+        )
+      },
+    },
+    {
+      label: 'Aporte',
+      align: 'right',
+      render: (row) => {
+        if (row.kind === 'total') return '—'
+        const value = row.kind === 'category' ? row.category.diff_value : row.asset.diff_value
+        const show = (row.kind === 'category' || row.targetSet) && value != null
+        return (
+          <AppText variant="bodySmall" tone={diffTone(value)}>
+            {show ? fmt(value as number) : '—'}
+          </AppText>
+        )
+      },
+    },
+  ]
+
+  return (
+    <AppStack gap="md">
+      <AppStack direction="row" justify="between" align="center" gap="md">
+        <AppText variant="bodySmall" tone="secondary">
+          Valor total da carteira: {fmt(data.total_value)}
+          {contribution != null && contribution > 0 &&
+            ` + aporte ${fmt(contribution)} = ${fmt(effectiveTotal)}`}
+        </AppText>
+
+        <AppStack direction="row" gap="md" align="center">
+          <AppNumberField
+            label="Simular Aporte"
+            size="md"
+            allowEmpty
+            step={0.01}
+            prefix={currencySymbol}
+            value={contribution}
+            onChange={setContribution}
+          />
+          <AppButton icon={<SaveIcon />} loading={saving} onClick={handleSave}>
             Salvar Targets
-          </Button>
-        </Stack>
-      </Stack>
+          </AppButton>
+        </AppStack>
+      </AppStack>
 
-      <AppCard noPadding>
-        <Table size="small" sx={{ tableLayout: 'fixed' }}>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ py: 1.3, px: 1.5, fontSize: 14, width: COL_WIDTHS[0] }}>
-                <strong>Categoria / Ativo</strong>
-              </TableCell>
-              <TableCell sx={{ py: 1.3, px: 1.5, fontSize: 14, width: COL_WIDTHS[1] }} align="right">
-                <strong>Valor Atual</strong>
-              </TableCell>
-              <TableCell sx={{ py: 1.3, px: 1.5, fontSize: 14, width: COL_WIDTHS[2] }} align="right">
-                <strong>% Atual</strong>
-              </TableCell>
-              <TableCell sx={{ py: 1.3, px: 1.5, fontSize: 14, width: COL_WIDTHS[3] }} align="right">
-                <strong>% Alvo</strong>
-              </TableCell>
-              <TableCell sx={{ py: 1.3, px: 1.5, fontSize: 14, width: COL_WIDTHS[4] }} align="right">
-                <strong>Dif. %</strong>
-              </TableCell>
-              <TableCell sx={{ py: 1.3, px: 1.5, fontSize: 14, width: COL_WIDTHS[5] }} align="right">
-                <strong>Aporte</strong>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {data.categories.map((cat) => (
-              <CategorySection
-                key={cat.category_id}
-                category={cat}
-                onCategoryTargetChange={handleCategoryTargetChange}
-                onAssetTargetChange={handleAssetTargetChange}
-              />
-            ))}
-
-            {/* Total row */}
-            <TableRow sx={{ '& td': { py: 1.3, px: 1.5, fontWeight: 'bold', fontSize: 14 } }}>
-              <TableCell sx={{ width: COL_WIDTHS[0] }}>Total</TableCell>
-              <TableCell align="right" sx={{ width: COL_WIDTHS[1] }}>{fmt(data.total_value)}</TableCell>
-              <TableCell align="right" sx={{ width: COL_WIDTHS[2] }}>100,00%</TableCell>
-              <TableCell align="right" sx={{ width: COL_WIDTHS[3] }}>
-                {categoryTargetSum > 0
-                  ? `${categoryTargetSum.toFixed(2).replace('.', ',')}%`
-                  : '—'}
-              </TableCell>
-              <TableCell align="right" sx={{ width: COL_WIDTHS[4] }}>—</TableCell>
-              <TableCell align="right" sx={{ width: COL_WIDTHS[5] }}>—</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+      <AppCard padding="none">
+        <AppSimpleTable
+          rows={rows}
+          columns={columns}
+          getRowKey={(row) => row.key}
+          getRowSurface={(row) => (row.kind === 'category' ? 'sunken' : 'paper')}
+        />
       </AppCard>
 
-      <Snackbar
+      <AppSnackbar
         open={snackbar.open}
-        autoHideDuration={4000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      />
+    </AppStack>
   )
 }

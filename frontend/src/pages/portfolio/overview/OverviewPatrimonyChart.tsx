@@ -1,6 +1,6 @@
 import { useCurrency } from '@/hooks/useCurrency'
 import { PatrimonyEntry } from '@/types'
-import { Box, CircularProgress, useTheme } from '@mui/material'
+import { AppChartArea, useAppTheme } from '@/components/ui'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 import {
@@ -26,7 +26,7 @@ export default function OverviewPatrimonyChart({
   loading = false,
 }: Props) {
   const key = selected === 'Carteira' ? 'portfolio' : selected
-  const theme = useTheme()
+  const theme = useAppTheme()
   const { symbol, locale } = useCurrency()
   const lineColor = theme.palette.primary.main
   const labelColor = theme.palette.chart.label
@@ -75,16 +75,8 @@ export default function OverviewPatrimonyChart({
 
   const gradientId = 'overviewPatrimonyGradient'
 
-  if (loading) {
-    return (
-      <Box height={size} display="flex" justifyContent="center" alignItems="center">
-        <CircularProgress size={48} thickness={4} />
-      </Box>
-    )
-  }
-
   return (
-    <Box sx={{ height: size, minHeight: 0 }}>
+    <AppChartArea height={size} sizing="frame" loading={loading}>
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: 48, bottom: 5 }}>
           <defs>
@@ -151,6 +143,6 @@ export default function OverviewPatrimonyChart({
           />
         </ComposedChart>
       </ResponsiveContainer>
-    </Box>
+    </AppChartArea>
   )
 }

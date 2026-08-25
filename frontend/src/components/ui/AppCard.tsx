@@ -1,6 +1,6 @@
 import { Box, BoxProps } from '@mui/material'
 import { space, type SpaceToken } from '@/theme/tokens'
-import { useAppTheme } from './useAppTheme'
+import { useAppTheme, withOpacity } from './useAppTheme'
 
 /* ──────────────────────────────────────────────
    AppCard — superfície padrão do app
@@ -22,6 +22,9 @@ export interface AppCardProps extends Omit<BoxProps, 'padding'> {
   padding?: SpaceToken
   /** @deprecated Use `padding="none"`. */
   noPadding?: boolean
+  /** Altura fixa, para o card que emoldura algo que se dimensiona sozinho —
+   *  um diagrama que ocupa a área e rola por dentro. Aceita `calc()`. */
+  height?: number | string
   /** Piso de largura, em px — o card que não pode espremer o que mostra
    *  quando divide a linha com um vizinho elástico. */
   minWidth?: number
@@ -34,6 +37,20 @@ export interface AppCardProps extends Omit<BoxProps, 'padding'> {
   /** Cor da borda no hover de um card `interactive` — a do assunto que ele
    *  mostra, como a da categoria do ativo. Sem ela o realce é só o fundo. */
   accentColor?: string
+  /** Marca o card escolhido entre vários — o tema em uso na grade de temas.
+   *  A borda vira a cor primária e ganha peso. */
+  selected?: boolean
+  /** Faixa colorida numa borda, na cor do assunto do card — a classe de
+   *  ativo que ele resume, o tipo de um nó do mapa de arquitetura. */
+  accentEdge?: string
+  /** Em qual borda a faixa fica. Padrão: `top`. */
+  accentSide?: 'top' | 'left'
+  /** Fundo tingido de leve pela cor do assunto, para o bloco que se lê como
+   *  um destaque dentro de um card maior. */
+  tint?: string
+  /** Borda tracejada: o card que ainda não é nada — o "novo tema" no fim da
+   *  grade. Ele convida a criar, e a linha cheia o faria parecer um item. */
+  dashed?: boolean
 }
 
 export default function AppCard({
@@ -42,9 +59,15 @@ export default function AppCard({
   padding,
   noPadding = false,
   minWidth,
+  height,
   raised = false,
   interactive = false,
   accentColor,
+  selected = false,
+  dashed = false,
+  accentEdge,
+  accentSide = 'top',
+  tint,
   ...props
 }: AppCardProps) {
   const resolvedPadding = padding ?? (noPadding ? 'none' : 'md')
@@ -53,12 +76,19 @@ export default function AppCard({
   return (
     <Box
       sx={{
-        border: '1px solid',
-        borderColor: 'divider',
+        border: selected || dashed ? '2px solid' : '1px solid',
+        borderStyle: dashed ? 'dashed' : 'solid',
+        borderColor: selected ? 'primary.main' : 'divider',
         borderRadius: `${theme.radius.md}px`,
         p: space[resolvedPadding],
-        backgroundColor: 'background.paper',
+        backgroundColor: tint ? withOpacity(tint, 0.07) : 'background.paper',
+        ...(accentEdge
+          ? accentSide === 'left'
+            ? { borderLeft: '5px solid', borderLeftColor: accentEdge }
+            : { borderTop: '3px solid', borderTopColor: accentEdge }
+          : null),
         ...(minWidth ? { minWidth } : null),
+        ...(height ? { height, overflow: 'hidden' } : null),
         ...(raised ? { boxShadow: 3 } : null),
         ...(interactive
           ? {
@@ -67,6 +97,7 @@ export default function AppCard({
               '&:hover': {
                 backgroundColor: 'action.hover',
                 ...(accentColor ? { borderColor: accentColor } : null),
+                ...(selected ? { borderColor: 'primary.main' } : null),
               },
             }
           : null),
