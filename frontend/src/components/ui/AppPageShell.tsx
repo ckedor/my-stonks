@@ -1,6 +1,5 @@
 import { Box } from '@mui/material'
 import type { ReactNode } from 'react'
-import { CONTENT_MAX_WIDTH } from './AppTopbar'
 
 /* Moldura das telas do app: barra superior, coluna de navegação e o
  * conteúdo.
@@ -11,9 +10,16 @@ import { CONTENT_MAX_WIDTH } from './AppTopbar'
  * inteira, com a barra superior subindo junto — a coluna de navegação fica
  * parada por `position: sticky`, dentro do próprio componente.
  *
- * A coluna mora *dentro* da faixa central, não colada na borda da janela:
- * assim a marca na barra superior cai sobre ela e o app inteiro se lê como
- * uma moldura só, em vez de uma barra lateral com um cabeçalho deslocado. */
+ * A coluna encosta na borda esquerda da janela, e quem se centraliza é só o
+ * conteúdo, no espaço que sobra. Foi o contrário por um tempo — coluna e
+ * conteúdo dentro da mesma faixa central — e o resultado era uma barra
+ * lateral flutuando com uma margem à esquerda, que não se lia como moldura
+ * de nada. Sem a coluna (tela estreita), a faixa se centraliza na janela
+ * inteira, que é o respiro que ela sempre teve. */
+
+/** O conteúdo para de crescer aqui: numa tela ultralarga, uma tabela que vai
+ *  de borda a borda obriga o olho a percorrer a linha inteira. */
+const CONTENT_MAX_WIDTH = 1600
 
 export interface AppPageShellProps {
   topbar: ReactNode
@@ -28,21 +34,18 @@ export default function AppPageShell({ topbar, sidebar, children }: AppPageShell
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {topbar}
 
-      <Box
-        sx={{
-          display: 'flex',
-          flexGrow: 1,
-          maxWidth: CONTENT_MAX_WIDTH,
-          width: '100%',
-          mx: 'auto',
-        }}
-      >
+      <Box sx={{ display: 'flex', flexGrow: 1 }}>
         {sidebar}
 
         {/* Respiro maior no topo que embaixo: o conteúdo colado na barra a
             fazia parecer parte da primeira linha da página em vez de
             moldura dela. */}
-        <Box px={4} pt={5} pb={2} sx={{ flexGrow: 1, minWidth: 0 }}>
+        <Box
+          px={4}
+          pt={5}
+          pb={2}
+          sx={{ flexGrow: 1, minWidth: 0, maxWidth: CONTENT_MAX_WIDTH, mx: 'auto' }}
+        >
           {children}
         </Box>
       </Box>

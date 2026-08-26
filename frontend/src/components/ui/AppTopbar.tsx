@@ -49,17 +49,19 @@ function contrastRatio(a: string, b: string): number {
  * juntas de propósito — foi assim que elas nasceram, e separá-las em uma
  * prop por detalhe é como se acumulam seis botões de estilo numa barra só:
  *
- *   `full`     — a barra do admin, acima de uma barra lateral. Ocupa a
- *                largura toda, fecha com uma régua e marca a seção ativa
- *                com uma pílula.
- *   `centered` — a barra do app, acima da coluna de navegação. Acompanha
- *                a faixa central onde o conteúdo mora, não fecha com régua
- *                (a marca e as abas já separam) e sublinha a seção ativa.
+ *   `full`     — a barra do admin. Fecha com uma régua e marca a seção
+ *                ativa com uma pílula.
+ *   `centered` — a barra do app. Não fecha com régua (a marca e as abas já
+ *                separam) e sublinha a seção ativa.
+ *
+ * As duas ocupam a largura da janela. A `centered` já acompanhou a faixa
+ * central onde o conteúdo mora, e parou quando a coluna de navegação chegou:
+ * a coluna encosta na borda esquerda, então a marca precisa cair sobre ela.
+ * Uma barra recuada com uma coluna colada na borda é o pior dos dois — nem
+ * moldura da janela, nem faixa alinhada.
  *
  * Sem seção na lista, nem as abas nem a régua vertical aparecem: é o que a
  * tela estreita pede, com a navegação migrada para o drawer. */
-
-export const CONTENT_MAX_WIDTH = 1600
 
 export interface AppTopbarSection {
   id: string
@@ -114,13 +116,7 @@ export default function AppTopbar({
         color: 'topbar.text',
       }}
     >
-      <Toolbar
-        sx={
-          centered
-            ? { justifyContent: 'space-between', maxWidth: CONTENT_MAX_WIDTH, width: '100%', mx: 'auto' }
-            : { justifyContent: 'space-between', gap: 2 }
-        }
-      >
+      <Toolbar sx={{ justifyContent: 'space-between', gap: centered ? 0 : 2 }}>
         <Box
           sx={{
             display: 'flex',
