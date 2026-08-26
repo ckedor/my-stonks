@@ -1,28 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { getNavigationGroups, navigationSections } from './navigation'
+import { navigationSections } from './navigation'
 
-describe('getNavigationGroups', () => {
-  it('adds the selected portfolio categories to the Carteira menu', () => {
+describe('navigationSections', () => {
+  it('reaches the categories through a single page', () => {
     const carteira = navigationSections.find((section) => section.id === 'carteira')!
+    const paths = carteira.groups.flatMap((group) => group.items.map((item) => item.path))
 
-    const groups = getNavigationGroups(carteira, [
-      { id: 10, name: 'Ações' },
-      { id: 11, name: 'FIIs' },
-    ])
-
-    expect(groups.at(-1)).toEqual({
-      title: 'Categorias',
-      items: [
-        { label: 'Ações', path: '/portfolio/category/10' },
-        { label: 'FIIs', path: '/portfolio/category/11' },
-      ],
-    })
-  })
-
-  it('does not add an empty category column', () => {
-    const carteira = navigationSections.find((section) => section.id === 'carteira')!
-
-    expect(getNavigationGroups(carteira)).toBe(carteira.groups)
+    expect(paths).toContain('/portfolio/category')
+    expect(paths.filter((path) => path.startsWith('/portfolio/category'))).toHaveLength(1)
   })
 
   it('exposes the specialized market pages', () => {

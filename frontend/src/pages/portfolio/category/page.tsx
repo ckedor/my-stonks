@@ -5,6 +5,7 @@ import {
   AppColorSwatch,
   AppDivider,
   AppMetric,
+  AppSelect,
   AppStack,
   AppTabs,
   AppText,
@@ -20,7 +21,7 @@ import { usePositionsStore } from '@/stores/portfolio/positions'
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import type { AssetAnalysis } from '@/types'
 import { useCallback, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import CategoryAssets from './CategoryAssets'
 import CategoryDividendsTab from './CategoryDividendsTab'
 import CategoryReturnsTab from './CategoryReturnsTab'
@@ -42,17 +43,25 @@ const DEFAULT_BENCHMARK = 'CDI'
 
 /** A carteira inteira, vista por uma categoria só.
  *
+ *  Todas as categorias mostram a mesma tela, então é uma tela só: a categoria
+ *  é escolhida num select e continua na URL, para o link continuar valendo.
+ *
  *  Os dados são os mesmos que as telas da carteira já carregam — posições,
  *  rentabilidade por categoria, patrimônio e proventos estão nos stores —, e a
  *  única busca própria desta tela é a análise de risco da categoria, que o
  *  backend calcula por `/portfolio/position/{id}/category/{id}/analysis`. */
 export default function PortfolioCategoryPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const categoryId = Number(id)
 
   const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
   const portfolioId = selectedPortfolio?.id
-  const category = selectedPortfolio?.custom_categories.find((item) => item.id === categoryId)
+  const categories = useMemo(
+    () => selectedPortfolio?.custom_categories ?? [],
+    [selectedPortfolio],
+  )
+  const category = categories.find((item) => item.id === categoryId)
 
   const { currency, format: formatCurrency } = useCurrency()
 
@@ -85,6 +94,12 @@ export default function PortfolioCategoryPage() {
 
   if (positionsLoading) return <LoadingSpinner />
 
+  /* Sem categoria na URL — a entrada do menu — abre a primeira, que é o que a
+     tela tem a mostrar; a URL passa a nomear o que está na tela. */
+  if (!id && categories.length > 0) {
+    return <Navigate to={`/portfolio/category/${categories[0].id}`} replace />
+  }
+
   if (!portfolioId || !category) {
     return <AppText tone="secondary">Categoria não encontrada nesta carteira.</AppText>
   }
@@ -99,13 +114,23 @@ export default function PortfolioCategoryPage() {
         <AppBreadcrumbs
           items={[
             { label: 'Carteira', href: '/portfolio/overview' },
-            { label: 'Ativos', href: '/portfolio/asset' },
-            { label: category.name },
+            { label: 'Categorias' },
           ]}
         />
-        <AppStack direction="row" align="center" gap="sm">
-          <AppColorSwatch color={category.color} />
-          <PageTitle>{category.name}</PageTitle>
+        <AppStack direction="row" align="center" gap="md" wrap>
+          <AppStack direction="row" align="center" gap="sm">
+            <AppColorSwatch color={category.color} />
+            <PageTitle>{category.name}</PageTitle>
+          </AppStack>
+          <AppSelect
+            label="Categoria"
+            options={categories.map((item) => ({
+              value: String(item.id),
+              label: item.name,
+            }))}
+            value={String(category.id)}
+            onChange={(value) => navigate(`/portfolio/category/${value}`)}
+          />
         </AppStack>
       </AppStack>
 

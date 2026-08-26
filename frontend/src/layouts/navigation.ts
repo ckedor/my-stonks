@@ -22,11 +22,6 @@ export interface NavigationSection {
   groups: NavigationGroup[]
 }
 
-export interface PortfolioCategoryNavigationItem {
-  id: number
-  name: string
-}
-
 export const navigationSections: NavigationSection[] = [
   {
     id: 'carteira',
@@ -37,6 +32,7 @@ export const navigationSections: NavigationSection[] = [
         items: [
           { label: 'Resumo', path: '/portfolio/overview' },
           { label: 'Ativos', path: '/portfolio/asset' },
+          { label: 'Categorias', path: '/portfolio/category' },
           { label: 'Distribuição', path: '/portfolio/distribution' },
           { label: 'Patrimônio', path: '/portfolio/wealth' },
         ],
@@ -86,27 +82,6 @@ export const navigationSections: NavigationSection[] = [
     ],
   },
 ]
-
-/** Acrescenta à Carteira uma coluna com as páginas das categorias da carteira
- *  selecionada. As demais colunas continuam estáticas; esta depende dos dados
- *  do usuário e por isso só pode ser montada depois que a carteira carregar. */
-export function getNavigationGroups(
-  section: NavigationSection,
-  categories: PortfolioCategoryNavigationItem[] = [],
-): NavigationGroup[] {
-  if (section.id !== 'carteira' || categories.length === 0) return section.groups
-
-  return [
-    ...section.groups,
-    {
-      title: 'Categorias',
-      items: categories.map((category) => ({
-        label: category.name,
-        path: `/portfolio/category/${category.id}`,
-      })),
-    },
-  ]
-}
 
 export function getNavigationSection(pathname: string): SectionId {
   return pathname.startsWith('/market') ? 'mercado' : 'carteira'

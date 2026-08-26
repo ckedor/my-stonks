@@ -26,7 +26,7 @@ import MarketFIIPage from "./pages/market/fii/page";
 import MarketOverviewPage from "./pages/market/overview/page";
 import PortfolioAssetsPage from "./pages/portfolio/asset";
 import PortfolioAssetPage from "./pages/portfolio/asset/[id]/page";
-import PortfolioCategoryPage from "./pages/portfolio/category/[id]/page";
+import PortfolioCategoryPage from "./pages/portfolio/category/page";
 import DistributionPage from "./pages/portfolio/distribution/page";
 import PortfolioDividendsPage from "./pages/portfolio/dividends/page";
 import PortfolioFIIPage from "./pages/portfolio/fii/page";
@@ -50,6 +50,7 @@ const router = createBrowserRouter([
       { path: "portfolio/overview", element: <PortfolioOverviewPage /> },
       { path: "portfolio/asset", element: <PortfolioAssetsPage /> },
       { path: "portfolio/asset/:id", element: <PortfolioAssetPage /> },
+      { path: "portfolio/category", element: <PortfolioCategoryPage /> },
       { path: "portfolio/category/:id", element: <PortfolioCategoryPage /> },
       { path: "portfolio/distribution", element: <DistributionPage /> },
       { path: "portfolio/dividends", element: <PortfolioDividendsPage /> },

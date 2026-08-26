@@ -49,7 +49,7 @@ test('main shell — mega-menu Carteira', async ({ page, mockApi }) => {
   await expect(page).toHaveScreenshot('main-shell-carteira.png')
 })
 
-test('main shell — atalhos das categorias da carteira', async ({ page, mockApi }) => {
+test('main shell — atalho para a tela de categorias', async ({ page, mockApi }) => {
   await mockApi('/portfolio', [
     {
       ...PORTFOLIOS[0],
@@ -63,8 +63,8 @@ test('main shell — atalhos das categorias da carteira', async ({ page, mockApi
   await openShell(page)
   await page.getByRole('button', { name: 'Carteira', exact: true }).click()
 
-  await expect(page.getByText('Categorias')).toBeVisible()
-  await page.getByText('Ações', { exact: true }).click()
+  await page.getByText('Categorias', { exact: true }).click()
+  /* A tela abre na primeira categoria da carteira, que passa a nomear a URL. */
   await expect(page).toHaveURL('/portfolio/category/10')
 })
 
