@@ -311,6 +311,51 @@ export const defaultDarkPalette: ThemePaletteConfig = {
   },
 }
 
+/* ══════════════════════════════════════════════
+   Sépia Noturno — o `Principal` depois do anoitecer
+   ══════════════════════════════════════════════
+
+   A mesma régua de neutros quentes do `Principal` claro, virada do avesso: o
+   off-white #FAF8F4 vira um quase-preto que ainda puxa para o marrom, e o
+   grafite #403B36 da barra desce para #100E0D. A barra continuar sendo a
+   coisa mais escura da tela é o ponto do desenho — é o que dá a leitura de
+   moldura em volta do conteúdo, e é justamente o que se perde num escuro
+   onde barra e página têm a mesma luminância.
+
+   O card é #211E1B, um degrau acima do fundo: como no claro, é a diferença
+   entre papel e página que separa um card do outro sem precisar de borda
+   forte.
+
+   A âmbar #B45309 do claro não sobrevive sobre fundo escuro (3.0:1), então
+   o acento sobe para #E0913F. A primária é o inverso da de lá: no claro é
+   tinta escura sobre papel, aqui é areia clara que preenche o botão e
+   recebe texto escuro por cima. */
+const sepiaNoturnoPalette: ThemePaletteConfig = {
+  mode: 'dark',
+  background: { default: '#171513', paper: '#211E1B' },
+  text: { primary: '#EDE8E2', secondary: '#A69E95' },
+  primary: '#D6CFC7',
+  secondary: '#E0913F',
+  error: '#F27171',
+  warning: '#E9A23B',
+  success: '#34D3A4',
+  info: '#7FB2E5',
+  golden: '#F0B44A',
+  dark: '#171513',
+  sidebar: '#100E0D',
+  topbar: { background: '#100E0D', text: '#D9D2CA', activeText: '#FFFFFF', activeBg: '#2A2622' },
+  divider: 'rgba(237,232,226,0.12)',
+  chart: {
+    grid: 'rgba(237,232,226,0.10)',
+    label: '#EDE8E2',
+    /* Nenhuma repete `primary` nem `secondary`: no gráfico de rentabilidade
+       essas duas já estão em uso fixo (Carteira e CDI) e o resto das séries
+       vem daqui por índice. O ouro é oliváceo (#B9A44E) e não dourado, senão
+       encostaria na âmbar do acento. Todas passam de 4.5:1 sobre o card. */
+    colors: ['#C88A6A', '#DE7A72', '#A3C1AD', '#9CAFB7', '#C4696D', '#A8886A', '#8FB8C9', '#B9A44E'],
+  },
+}
+
 /* O azul-acinzentado que era o `Grafite Neutro`, mantido ao lado do
    `Principal`: mesma estrutura (papel branco, header escuro), régua de
    neutros fria em vez de quente. */
@@ -677,7 +722,27 @@ const grafiteCobrePalette: ThemePaletteConfig = {
 }
 
 export const darkThemes: ThemeDefinition[] = [
-  /* ── 1. Principal ─────────────────────────── */
+  /* ── 1. Sépia Noturno ─────────────────────── */
+  /* O preview mostra o texto da barra, não o `text.primary` da página —
+     mesma razão do `Principal` claro. */
+  {
+    id: 'sepia-noturno',
+    name: 'Sépia Noturno',
+    mode: 'dark',
+    description: 'Quase-preto quente com barra grafite e acento âmbar',
+    preview: {
+      background: '#171513',
+      paper: '#211E1B',
+      primary: '#D6CFC7',
+      accent: '#E0913F',
+      topbar: '#100E0D',
+      sidebar: '#100E0D',
+      text: '#D9D2CA',
+    },
+    theme: buildMuiTheme(sepiaNoturnoPalette),
+  },
+
+  /* ── 2. Principal ─────────────────────────── */
   {
     id: 'principal-dark',
     name: 'Principal',
@@ -687,7 +752,7 @@ export const darkThemes: ThemeDefinition[] = [
     theme: buildMuiTheme(defaultDarkPalette),
   },
 
-  /* ── 2. Pixel Art ─────────────────────────── */
+  /* ── 3. Pixel Art ─────────────────────────── */
   {
     id: 'pixel-art',
     name: 'Pixel Art',
@@ -705,7 +770,7 @@ export const darkThemes: ThemeDefinition[] = [
     theme: buildMuiTheme(pixelArtPalette, pixelShape),
   },
 
-  /* ── 3. Grafite Quente ────────────────────── */
+  /* ── 4. Grafite Quente ────────────────────── */
   {
     id: 'grafite-quente',
     name: 'Grafite Quente',
@@ -723,7 +788,7 @@ export const darkThemes: ThemeDefinition[] = [
     theme: buildMuiTheme(grafiteQuentePalette, grafiteShape),
   },
 
-  /* ── 4. Grafite Claude ────────────────────── */
+  /* ── 5. Grafite Claude ────────────────────── */
   {
     id: 'grafite-claude',
     name: 'Grafite Claude',
@@ -741,7 +806,7 @@ export const darkThemes: ThemeDefinition[] = [
     theme: buildMuiTheme(grafiteClaudePalette, grafiteClaudeShape),
   },
 
-  /* ── 5. Grafite Cobre ─────────────────────── */
+  /* ── 6. Grafite Cobre ─────────────────────── */
   {
     id: 'grafite-cobre',
     name: 'Grafite Cobre',
@@ -771,4 +836,4 @@ export function getThemeById(id: string): ThemeDefinition | undefined {
 }
 
 export const DEFAULT_LIGHT_THEME_ID = 'principal-light'
-export const DEFAULT_DARK_THEME_ID = 'principal-dark'
+export const DEFAULT_DARK_THEME_ID = 'sepia-noturno'
