@@ -6,8 +6,9 @@ import { expect, expectNothingClipped, test } from './fixtures/app'
  * para no próprio esqueleto — um corpo de página estável e neutro, que deixa
  * o snapshot falar sobre a barra superior e não sobre o conteúdo.
  *
- * Os estados abertos (mega-menu, menus e drawer) entram um a um: são a maior
- * parte do componente e não apareceriam num snapshot só da barra fechada. */
+ * A coluna de navegação entra nos dois estados (expandida e recolhida), e os
+ * menus e o drawer um a um: são a maior parte do componente e não apareceriam
+ * num snapshot só da barra fechada. */
 
 const PORTFOLIOS = [
   { id: 1, name: 'Principal', user_id: 1 },
@@ -39,14 +40,35 @@ test('main shell — barra superior', async ({ page, mockApi }) => {
   await expect(page).toHaveScreenshot('main-shell.png')
 })
 
-test('main shell — mega-menu Carteira', async ({ page, mockApi }) => {
+test('main shell — coluna recolhida', async ({ page, mockApi }) => {
   await mockApi('/portfolio', PORTFOLIOS)
 
   await openShell(page)
-  await page.getByRole('button', { name: 'Carteira', exact: true }).click()
-  await expect(page.getByText('Rebalanceamento')).toBeVisible()
+  await page.getByRole('button', { name: 'Recolher menu' }).click()
 
-  await expect(page).toHaveScreenshot('main-shell-carteira.png')
+  /* Recolhida, o rótulo sai da tela e sobra o ícone — é o que distingue este
+     snapshot do primeiro, e checar isso aqui é o que faz o teste falhar se a
+     faixa deixar de recolher em vez de só mudar de cor. */
+  await expect(page.getByText('Rebalanceamento')).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Expandir menu' })).toBeVisible()
+
+  /* Tira o ponteiro e o foco do botão: em qualquer um dos dois o tooltip
+     continua aberto e entra no snapshot por cima do primeiro item. */
+  await page.mouse.move(700, 500)
+  await page.getByRole('button', { name: 'Expandir menu' }).blur()
+  await expect(page.getByRole('tooltip')).toBeHidden()
+
+  await expect(page).toHaveScreenshot('main-shell-collapsed.png')
+})
+
+test('main shell — a aba da seção leva à primeira página dela', async ({ page, mockApi }) => {
+  await mockApi('/portfolio', PORTFOLIOS)
+  await mockApi('/market_data/asset/favorites', FAVORITES)
+
+  await openShell(page)
+  await page.getByRole('button', { name: 'Mercado', exact: true }).click()
+
+  await expect(page).toHaveURL('/market/overview')
 })
 
 test('main shell — atalho para a tela de categorias', async ({ page, mockApi }) => {
@@ -61,14 +83,13 @@ test('main shell — atalho para a tela de categorias', async ({ page, mockApi }
   ])
 
   await openShell(page)
-  await page.getByRole('button', { name: 'Carteira', exact: true }).click()
 
   await page.getByText('Categorias', { exact: true }).click()
   /* A tela abre na primeira categoria da carteira, que passa a nomear a URL. */
   await expect(page).toHaveURL('/portfolio/category/10')
 })
 
-test('main shell — mega-menu Mercado com mais acessados', async ({ page, mockApi }) => {
+test('main shell — coluna do Mercado com mais acessados', async ({ page, mockApi }) => {
   await mockApi('/portfolio', PORTFOLIOS)
   await mockApi('/market_data/asset/favorites', FAVORITES)
 

@@ -1,8 +1,12 @@
 /* Navegação do app fora do admin.
  *
- * Os mesmos dados desenham os mega-menus do desktop e o drawer do mobile —
+ * Os mesmos dados desenham a coluna lateral do desktop e o drawer do mobile —
  * eram duas listas em `MainTopbar` e saíram de lá pelo mesmo motivo que a
- * do admin saiu: rota nova em um lugar só é rota que some do outro. */
+ * do admin saiu: rota nova em um lugar só é rota que some do outro.
+ *
+ * A hierarquia é de dois níveis e cada um tem o seu lugar na tela: a seção
+ * (Carteira, Mercado) são as abas da barra superior; os grupos e itens de
+ * dentro dela são a coluna lateral. */
 
 export type SectionId = 'carteira' | 'mercado'
 
@@ -82,6 +86,28 @@ export const navigationSections: NavigationSection[] = [
     ],
   },
 ]
+
+/** Acrescenta ao Mercado os ativos mais visitados. É o único grupo que vem
+ *  dos dados do usuário, e por isso o único que não cabe na lista estática
+ *  acima: só pode ser montado depois que os favoritos carregarem. Sem
+ *  nenhum, devolve a mesma referência da lista estática. */
+export function withMostVisited(
+  section: NavigationSection,
+  favorites: NavigationItem[],
+): NavigationGroup[] {
+  if (section.id !== 'mercado' || favorites.length === 0) return section.groups
+
+  /* Sem a contagem de visitas: ela ordena a lista, não é algo que se veio
+     aqui para ler. */
+  return [...section.groups, { title: 'Mais acessados', items: favorites }]
+}
+
+/** Para onde a aba da seção leva. É o primeiro item do primeiro grupo, em vez
+ *  de uma rota escrita à parte: assim não há um segundo lugar para esquecer
+ *  de atualizar quando a ordem da seção mudar. */
+export function getSectionDefaultPath(section: NavigationSection): string {
+  return section.groups[0].items[0].path
+}
 
 export function getNavigationSection(pathname: string): SectionId {
   return pathname.startsWith('/market') ? 'mercado' : 'carteira'

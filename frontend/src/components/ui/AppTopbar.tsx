@@ -52,7 +52,7 @@ function contrastRatio(a: string, b: string): number {
  *   `full`     — a barra do admin, acima de uma barra lateral. Ocupa a
  *                largura toda, fecha com uma régua e marca a seção ativa
  *                com uma pílula.
- *   `centered` — a barra do app, que é a única navegação da tela. Acompanha
+ *   `centered` — a barra do app, acima da coluna de navegação. Acompanha
  *                a faixa central onde o conteúdo mora, não fecha com régua
  *                (a marca e as abas já separam) e sublinha a seção ativa.
  *
@@ -69,9 +69,7 @@ export interface AppTopbarSection {
 export interface AppTopbarProps {
   sections: AppTopbarSection[]
   selectedSectionId: string
-  /** Recebe o elemento clicado: uma seção pode abrir um painel
-   *  ancorado nele em vez de navegar direto. */
-  onSelectSection: (id: string, element: HTMLElement) => void
+  onSelectSection: (id: string) => void
   /** Rótulo acessível do grupo de navegação. */
   navLabel: string
   /** Quando presente, mostra o botão de abrir a barra lateral. */
@@ -184,7 +182,7 @@ export default function AppTopbar({
                   return (
                     <Button
                       key={section.id}
-                      onClick={(event) => onSelectSection(section.id, event.currentTarget)}
+                      onClick={() => onSelectSection(section.id)}
                       sx={{
                         textTransform: 'none',
                         fontWeight: selected ? 'bold' : 'normal',
@@ -205,7 +203,7 @@ export default function AppTopbar({
                     key={section.id}
                     component="button"
                     type="button"
-                    onClick={(event) => onSelectSection(section.id, event.currentTarget)}
+                    onClick={() => onSelectSection(section.id)}
                     sx={{
                       appearance: 'none',
                       border: 0,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { navigationSections } from './navigation'
+import { getSectionDefaultPath, navigationSections, withMostVisited } from './navigation'
 
 describe('navigationSections', () => {
   it('reaches the categories through a single page', () => {
@@ -30,6 +30,43 @@ describe('navigationSections', () => {
           { label: 'Cripto', path: '/market/crypto' },
         ],
       },
+    ])
+  })
+})
+
+describe('withMostVisited', () => {
+  it('adds the most visited assets to the Mercado menu', () => {
+    const mercado = navigationSections.find((section) => section.id === 'mercado')!
+
+    expect(withMostVisited(mercado, [{ label: 'PETR4', path: '/market/asset/11' }]).at(-1)).toEqual({
+      title: 'Mais acessados',
+      items: [{ label: 'PETR4', path: '/market/asset/11' }],
+    })
+  })
+
+  it('does not add an empty group', () => {
+    const mercado = navigationSections.find((section) => section.id === 'mercado')!
+
+    expect(withMostVisited(mercado, [])).toBe(mercado.groups)
+  })
+
+  it('leaves the Carteira alone', () => {
+    const carteira = navigationSections.find((section) => section.id === 'carteira')!
+
+    expect(withMostVisited(carteira, [{ label: 'PETR4', path: '/market/asset/11' }])).toBe(
+      carteira.groups,
+    )
+  })
+})
+
+describe('getSectionDefaultPath', () => {
+  /* A aba da barra superior navega para cá. Vem do primeiro item da seção em
+     vez de uma rota à parte, e este teste é o que prova que a derivação
+     continua acompanhando a lista quando a ordem dela muda. */
+  it('is the first item of the first group', () => {
+    expect(navigationSections.map(getSectionDefaultPath)).toEqual([
+      '/portfolio/overview',
+      '/market/overview',
     ])
   })
 })

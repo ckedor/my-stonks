@@ -5,7 +5,6 @@ import DividendForm from '@/components/DividendForm'
 import PortfolioForm from '@/components/PortfolioForm'
 import { useAuthStore } from '@/stores/auth'
 import { useCurrencyStore } from '@/stores/currency'
-import { useFavoritesStore } from '@/stores/favorites'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { useTradeFormStore } from '@/stores/trade-form'
 import { useThemeMode } from '@/theme/theme-mode'
@@ -23,7 +22,6 @@ import SettingsIcon from '@mui/icons-material/Settings'
 
 import {
   AppIconButton,
-  AppMegaMenu,
   AppMenu,
   AppMenuButton,
   AppNavDrawer,
@@ -34,19 +32,16 @@ import {
   LoadingSpinner,
   useAppTheme,
   useViewportMatches,
-  type AppMegaMenuColumn,
 } from '@/components/ui'
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   getNavigationSection,
+  getSectionDefaultPath,
   isNavigationItemActive,
   navigationSections,
   type SectionId,
 } from './navigation'
-
-// O menu é um atalho, não a prateleira: cinco entradas mantêm a coluna curta.
-const MENU_FAVORITES = 5
 
 const CURRENCY_OPTIONS = [
   { value: 'BRL', label: 'R$' },
@@ -66,20 +61,9 @@ export default function MainTopbar() {
   const [selected, setSelected] = useState<number | null>(selectedPortfolio?.id ?? null)
   const [accountAnchor, setAccountAnchor] = useState<null | HTMLElement>(null)
   const [portfolioAnchor, setPortfolioAnchor] = useState<null | HTMLElement>(null)
-  const [sectionAnchor, setSectionAnchor] = useState<null | HTMLElement>(null)
-  const [openSectionId, setOpenSectionId] = useState<SectionId | null>(null)
 
   const [openForm, setOpenForm] = useState(false)
   const [editMode, setEditMode] = useState(false)
-
-  // Lido da store para que o atalho seja desenhado junto com o menu. Buscar
-  // primeiro fazia a coluna aparecer um instante depois, o que se lia como um
-  // piscar a cada abertura.
-  const favorites = useFavoritesStore((state) => state.favorites).slice(0, MENU_FAVORITES)
-  const refreshFavorites = useFavoritesStore((state) => state.refresh)
-  useEffect(() => {
-    if (openSectionId === 'mercado') void refreshFavorites()
-  }, [openSectionId, refreshFavorites])
 
   const theme = useAppTheme()
   const isMobile = useViewportMatches(theme.breakpoints.down('md'))
@@ -138,21 +122,6 @@ export default function MainTopbar() {
     if (portfolio) setSelectedPortfolio(portfolio)
   }
 
-  const openSection = navigationSections.find((section) => section.id === openSectionId)
-
-  const toColumns = (id: SectionId | null): AppMegaMenuColumn[] => {
-    const section = navigationSections.find((s) => s.id === id)
-    if (!section) return []
-    return section.groups.map((group) => ({
-      title: group.title,
-      items: group.items.map((item) => ({
-        id: item.path,
-        label: item.label,
-        active: isNavigationItemActive(location.pathname, item.path),
-      })),
-    }))
-  }
-
   return (
     <>
       <AppTopbar
@@ -161,9 +130,9 @@ export default function MainTopbar() {
         brand={{ label: 'My Stonks', onClick: () => navigate('/portfolio/overview') }}
         sections={isMobile ? [] : navigationSections.map((s) => ({ id: s.id, label: s.label }))}
         selectedSectionId={currentSection}
-        onSelectSection={(id, element) => {
-          setSectionAnchor(element)
-          setOpenSectionId(id as SectionId)
+        onSelectSection={(id) => {
+          const section = navigationSections.find((s) => s.id === id)
+          if (section) navigate(getSectionDefaultPath(section))
         }}
         onMenuClick={isMobile ? () => setDrawerOpen(true) : undefined}
       >
@@ -203,27 +172,6 @@ export default function MainTopbar() {
           <AccountCircle />
         </AppIconButton>
       </AppTopbar>
-
-      <AppMegaMenu
-        anchorEl={sectionAnchor}
-        open={Boolean(openSectionId)}
-        onClose={() => setOpenSectionId(null)}
-        columns={toColumns(openSectionId)}
-        aside={
-          openSection?.id === 'mercado'
-            ? {
-                title: 'Mais acessados',
-                // Sem a contagem de visitas: ela ordena a lista, não é algo
-                // que se veio aqui para ler.
-                items: favorites.map((asset) => ({
-                  id: `/market/asset/${asset.id}`,
-                  label: asset.ticker ?? asset.name,
-                })),
-              }
-            : undefined
-        }
-        onSelect={(path) => navigate(path)}
-      />
 
       <AppMenu
         id="menu-portfolio"

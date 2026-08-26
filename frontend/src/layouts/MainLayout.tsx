@@ -1,12 +1,13 @@
 import { syncAnalysis, syncBenchmarks, syncDividends, syncPatrimony, syncPortfolioData, syncPortfolios, syncPositions, syncReturns } from '@/actions/portfolio'
 import GlobalTradeForm from '@/components/GlobalTradeForm'
-import { AppPageShell } from '@/components/ui'
+import { AppPageShell, useAppTheme, useViewportMatches } from '@/components/ui'
 import { useAuthStore } from '@/stores/auth'
 import { useCurrencyStore } from '@/stores/currency'
 import { usePortfolioStore } from '@/stores/portfolio'
 
 import { useEffect, useRef } from 'react'
 import { Outlet } from 'react-router-dom'
+import MainSidebar from './MainSidebar'
 import MainTopbar from './MainTopbar'
 
 /**
@@ -47,6 +48,10 @@ function usePortfolioSync() {
 
 export default function MainLayout() {
   const { isAuthenticated, isLoading } = useAuthStore()
+  const theme = useAppTheme()
+  /* Abaixo de `md` a coluna comeria a largura que resta para o gráfico: ali
+     a navegação continua sendo o drawer da barra superior. */
+  const isMobile = useViewportMatches(theme.breakpoints.down('md'))
 
   usePortfolioSync()
 
@@ -58,7 +63,7 @@ export default function MainLayout() {
 
   return (
     <>
-      <AppPageShell topbar={<MainTopbar />}>
+      <AppPageShell topbar={<MainTopbar />} sidebar={isMobile ? undefined : <MainSidebar />}>
         <Outlet />
       </AppPageShell>
 
