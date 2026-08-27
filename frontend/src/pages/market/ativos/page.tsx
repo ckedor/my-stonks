@@ -1,7 +1,7 @@
 import {
-  AppCard,
   AppEmptyState,
   AppGrid,
+  AppPageHeader,
   AppPagination,
   AppSearchField,
   AppSelect,
@@ -132,9 +132,15 @@ export default function MarketAtivosPage() {
 
   return (
     <AppStack gap="lg">
-      <AppCard>
-        <AppStack direction="row" gap="md" align="center" wrap>
-          <AppStackItem minWidth={280}>
+      <AppPageHeader
+        title="Ativos"
+        breadcrumbs={[
+          { label: 'Mercado', href: '/market/overview' },
+          { label: 'Ativos' },
+        ]}
+        actions={
+          <>
+            <AppStackItem minWidth={280}>
             <AppSearchField
               label="Buscar ativo"
               hideLabel
@@ -174,8 +180,9 @@ export default function MarketAtivosPage() {
             value={viewMode}
             onChange={setViewMode}
           />
-        </AppStack>
-      </AppCard>
+          </>
+        }
+      />
 
       <FavoriteAssets />
 

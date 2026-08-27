@@ -1,21 +1,18 @@
 import {
     useCustomThemesStore,
 } from '@/stores/custom-themes'
-import { usePageTitleStore } from '@/stores/page-title'
 import { useThemeMode } from '@/theme/theme-mode'
 import { defaultDarkPalette, defaultLightPalette, type ThemePaletteConfig } from '@/theme/themes'
 import {
   AppButton,
   AppGrid,
   AppGridItem,
-  AppIconButton,
+  AppPageHeader,
   AppStack,
   AppStackItem,
   AppTextField,
   AppToggleGroup,
-  PageTitle,
 } from '@/components/ui'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SaveIcon from '@mui/icons-material/Save'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -29,7 +26,6 @@ function getBaseConfig(mode: 'light' | 'dark'): ThemePaletteConfig {
 export default function ThemeEditorPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { setTitle } = usePageTitleStore()
   const { setLightTheme, setDarkTheme } = useThemeMode()
 
   const existingEntry = useCustomThemesStore((s) =>
@@ -51,10 +47,6 @@ export default function ThemeEditorPage() {
       setConfig(structuredClone(existingEntry.config))
     }
   }, [existingEntry])
-
-  useEffect(() => {
-    setTitle(isEditing ? `Editar Tema — ${name || '...'}` : 'Criar Tema Personalizado')
-  }, [setTitle, isEditing, name])
 
   const handleBaseMode = useCallback(
     (newMode: 'light' | 'dark') => {
@@ -81,18 +73,19 @@ export default function ThemeEditorPage() {
 
   return (
     <AppStack gap="lg">
-      {/* Cabeçalho */}
-      <AppStack direction="row" gap="sm" align="center">
-        <AppIconButton label="Voltar" onClick={() => navigate(-1)}>
-          <ArrowBackIcon />
-        </AppIconButton>
-        <AppStackItem>
-          <PageTitle>{isEditing ? 'Editar Tema' : 'Novo Tema Personalizado'}</PageTitle>
-        </AppStackItem>
-        <AppButton icon={<SaveIcon />} disabled={!canSave} onClick={handleSave}>
-          Salvar
-        </AppButton>
-      </AppStack>
+      <AppPageHeader
+        title={isEditing ? 'Editar tema' : 'Novo tema personalizado'}
+        breadcrumbs={[
+          { label: 'Carteira', href: '/portfolio/overview' },
+          { label: 'Configurações', href: '/portfolio/user-configurations' },
+          { label: isEditing ? 'Editar tema' : 'Novo tema' },
+        ]}
+        actions={
+          <AppButton icon={<SaveIcon />} disabled={!canSave} onClick={handleSave}>
+            Salvar
+          </AppButton>
+        }
+      />
 
       {/* Nome, descrição e o tema de base */}
       <AppStack direction="row" gap="md" align="center" wrap>

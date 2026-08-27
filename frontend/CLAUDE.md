@@ -54,6 +54,38 @@ Fonte é valor de tema, não constante global: as pilhas ficam em `fontStacks`
 `fontStacks` precisa do `@fontsource-variable/*` correspondente importado em
 `src/main.tsx` — sem o import ela cai no fallback em silêncio.
 
+### Gramática de tela
+
+Ter todo componente vindo de `@/components/ui` resolve a procedência, não a
+coesão: as telas continuavam abrindo cada uma de um jeito. A abertura de uma
+tela é decisão do design system, e é uma só:
+
+```
+AppPageHeader   rastro › título · (ações) · (descrição) · (métricas)
+AppStack gap="lg"
+  SectionTitle + conteúdo
+```
+
+- **Três níveis de texto, e só três**: `PageTitle` (o nome da tela) →
+  `SectionTitle` (um bloco dentro dela) → `SectionLabel` (o assunto de um
+  grupo de itens). Nada mais.
+- **O título da tela é o rótulo dela em `src/layouts/navigation.ts`.** Se os
+  dois discordam, é a tela que está errada.
+- **Cor é identidade de série de gráfico.** A cor de uma categoria pinta a
+  fatia da pizza, o anel de peso, o ponto ao lado do nome numa linha de
+  tabela — nunca um título, um cabeçalho de grupo ou uma borda decorativa.
+  O `AppPageHeader` não tem prop de cor, e a falta é a regra.
+- **Métrica é `AppMetric`.** Um rótulo pequeno com um número grande escrito
+  à mão dentro de um card é a mesma coisa com outro nome.
+
+A regra em `eslint.config.js` reprova `PageTitle` dentro de
+`src/pages/portfolio/**` e `src/pages/market/**` — o caminho é o
+`AppPageHeader`. `src/test/eslint-page-header.test.ts` é o que prova que ela
+ainda dispara; sem esse teste a regra pode parar de casar em silêncio.
+
+`src/pages/admin/**` ainda está fora da regra, e é dívida declarada: o admin
+tem shell e navegação próprios. Quando migrar, o glob vira `src/pages/**`.
+
 ### The migration ratchet
 
 `eslint-ds-baseline.json` lists the files still allowed to break these
@@ -62,11 +94,9 @@ grow; listed files leave the list as they are migrated. `npm run lint:ds`
 fails if the list grows, keeps a file that no longer violates anything, or
 names a file that no longer exists. Both checks run in `pre-commit`.
 
-One file is left on the list: `pages/admin/design-system/GeneralTab.tsx`.
-Half of it is a deliberate inventory of raw MUI, kept from when the page
-was written, so migrating it means deleting that reference — a call for
-the maintainer, not a mechanical migration. When the list empties, the
-legacy block at the end of `eslint.config.js` goes with it.
+A lista está vazia: nenhum arquivo viola mais. O bloco legado no fim de
+`eslint.config.js` já não produz nenhuma isenção — ele some junto com o
+arquivo de baseline quando o mantenedor decidir que a dívida não volta.
 
 ## Verification
 

@@ -1,11 +1,10 @@
 import PortfolioPatrimonyChart from '@/components/PortfolioPatrimonyChart'
 import {
     AppCard,
-    AppHeroMetric,
+    AppMetric,
+    AppPageHeader,
     AppStack,
-    AppText,
     LoadingSpinner,
-    PageTitle,
     type AppSelectOption,
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
@@ -89,17 +88,33 @@ export default function PortfolioPatrimonyEvolution() {
 
   return (
     <AppStack gap="lg">
-      <PageTitle>Evolução do Patrimônio</PageTitle>
-
-      <AppHeroMetric
-        label={selectedCategory === 'portfolio' ? 'Patrimônio' : `Patrimônio · ${categoryLabel}`}
-        value={current ? formatCurrency(current.value) : '—'}
-        detail={
-          current && (
-            <AppText variant="bodySmall" tone="secondary">
-              Última posição em {new Date(current.date).toLocaleDateString('pt-BR')}
-            </AppText>
-          )
+      <AppPageHeader
+        title="Patrimônio"
+        breadcrumbs={[
+          { label: 'Carteira', href: '/portfolio/overview' },
+          { label: 'Patrimônio' },
+        ]}
+        metrics={
+          <>
+            <AppMetric
+              label={selectedCategory === 'portfolio' ? 'Patrimônio' : `Patrimônio · ${categoryLabel}`}
+              value={current ? formatCurrency(current.value) : '—'}
+              size="lg"
+            />
+            <AppMetric
+              label="Última posição"
+              value={current ? new Date(current.date).toLocaleDateString('pt-BR') : '—'}
+            />
+            <AppMetric
+              label="CAGR"
+              value={defaultRate == null ? '—' : `${defaultRate.toFixed(2).replace('.', ',')}% a.a.`}
+              tone={defaultRate != null && defaultRate < 0 ? 'danger' : 'success'}
+            />
+            <AppMetric
+              label="Aporte médio mensal"
+              value={defaultContribution == null ? '—' : formatCurrency(defaultContribution)}
+            />
+          </>
         }
       />
 

@@ -1,4 +1,4 @@
-import { AppStack, AppTabs, PageTitle } from '@/components/ui'
+import { AppPageHeader, AppStack, AppTabs } from '@/components/ui'
 import BrushIcon from '@mui/icons-material/Brush'
 import IntegrationInstructionsIcon from '@mui/icons-material/IntegrationInstructions'
 import { useState } from 'react'
@@ -17,7 +17,13 @@ export default function UserConfigurationPage() {
 
   return (
     <AppStack gap="lg">
-      <PageTitle>Configurações</PageTitle>
+      <AppPageHeader
+        title="Configurações"
+        breadcrumbs={[
+          { label: 'Carteira', href: '/portfolio/overview' },
+          { label: 'Configurações' },
+        ]}
+      />
 
       <AppTabs items={TABS} value={tab} onChange={setTab} label="Seções das configurações" />
 

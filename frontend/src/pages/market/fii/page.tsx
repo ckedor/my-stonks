@@ -1,6 +1,6 @@
 import { fetchFIIMarket, type FIIMarketFund } from '@/api/market'
 import {
-  AppBreadcrumbs,
+  AppPageHeader,
   AppCard,
   AppSearchField,
   AppSelect,
@@ -8,7 +8,6 @@ import {
   AppStack,
   AppText,
   LoadingSpinner,
-  PageTitle,
   SectionTitle,
   type AppSimpleTableColumn,
 } from '@/components/ui'
@@ -95,13 +94,14 @@ export default function MarketFIIPage() {
 
   return (
     <AppStack gap="lg">
-      <AppStack gap="xs">
-        <AppBreadcrumbs items={[{ label: 'Mercado', href: '/market/overview' }, { label: 'FIIs' }]} />
-        <PageTitle>Mercado de Fundos Imobiliários</PageTitle>
-        <AppText variant="bodySmall" tone="secondary">
-          Visão do universo de FIIs, com indicadores publicados e comparação dos benchmarks da classe.
-        </AppText>
-      </AppStack>
+      <AppPageHeader
+        title="FIIs"
+        breadcrumbs={[
+          { label: 'Mercado', href: '/market/overview' },
+          { label: 'FIIs' },
+        ]}
+        description="Visão do universo de FIIs, com indicadores publicados e comparação dos benchmarks da classe."
+      />
 
       <FavoriteAssets limit={8} assetTypeId={ASSET_TYPES.FII} />
 

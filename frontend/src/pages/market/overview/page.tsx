@@ -3,6 +3,7 @@ import {
   AppChartArea,
   AppChip,
   AppGrid,
+  AppPageHeader,
   AppGridItem,
   AppMetric,
   AppSimpleTable,
@@ -426,18 +427,16 @@ export default function MarketOverviewTabsPage() {
 
   return (
     <AppStack gap="xl">
-      <AppStack direction="row" justify="between" gap="md" collapseBelow="md">
-        <AppStack direction="row" gap="sm" align="center">
-          <AppText variant="pageHeading">Visão geral do mercado</AppText>
-          <AppChip label="MOCK" tone="neutral" emphasis="outline" />
-        </AppStack>
-        <AppStack direction="row" gap="sm" align="center">
-          <InsightsRoundedIcon fontSize="small" color="disabled" />
-          <AppText variant="caption" tone="secondary">
-            Dados ilustrativos para validação visual
-          </AppText>
-        </AppStack>
-      </AppStack>
+      <AppPageHeader
+        title="Visão geral"
+        description="Dados ilustrativos para validação visual."
+        actions={
+          <>
+            <InsightsRoundedIcon fontSize="small" color="disabled" />
+            <AppChip label="MOCK" tone="neutral" emphasis="outline" />
+          </>
+        }
+      />
 
       <AppGrid cols={{ xs: 1, lg: 12 }} gap="md" align="stretch">
         <AppGridItem span={{ xs: 1, lg: 7 }}>

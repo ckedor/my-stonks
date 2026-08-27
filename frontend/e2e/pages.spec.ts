@@ -299,7 +299,7 @@ test('portfolio/fiis mostra desempenho, patrimônio e risco do tipo', async ({ p
 
   await page.goto('/portfolio/fii')
 
-  await expect(page.getByRole('heading', { name: 'Fundos Imobiliários' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'FIIs', exact: true })).toBeVisible()
   await expect(page.getByText('+18,00%').first()).toBeVisible()
   await expect(page.getByText('Rentabilidade acumulada dos FIIs')).toBeVisible()
   await expect(page.locator('canvas').first()).toBeVisible()

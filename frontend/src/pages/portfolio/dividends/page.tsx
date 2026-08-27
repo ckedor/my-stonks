@@ -6,6 +6,7 @@ import {
   AppAutocomplete,
   AppButton,
   AppCard,
+  AppPageHeader,
   AppChip,
   AppColorSwatch,
   AppDivider,
@@ -14,7 +15,6 @@ import {
   AppStack,
   AppText,
   LoadingSpinner,
-  PageTitle,
   useAppTheme,
   type AppSimpleTableColumn,
 } from '@/components/ui'
@@ -139,7 +139,13 @@ export default function PortfolioDividendsPage() {
 
   return (
     <AppStack gap="lg">
-      <PageTitle>Proventos</PageTitle>
+      <AppPageHeader
+        title="Proventos"
+        breadcrumbs={[
+          { label: 'Carteira', href: '/portfolio/overview' },
+          { label: 'Proventos' },
+        ]}
+      />
 
       {loading ? (
         <LoadingSpinner />

@@ -1,16 +1,13 @@
 import { fetchCategoryAnalysis } from '@/api/portfolio'
 import {
-  AppBreadcrumbs,
-  AppCard,
-  AppColorSwatch,
   AppDivider,
   AppMetric,
+  AppPageHeader,
   AppSelect,
   AppStack,
   AppTabs,
   AppText,
   LoadingSpinner,
-  PageTitle,
 } from '@/components/ui'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
@@ -110,18 +107,13 @@ export default function PortfolioCategoryPage() {
 
   return (
     <AppStack gap="lg">
-      <AppStack gap="xs">
-        <AppBreadcrumbs
-          items={[
-            { label: 'Carteira', href: '/portfolio/overview' },
-            { label: 'Categorias' },
-          ]}
-        />
-        <AppStack direction="row" align="center" gap="md" wrap>
-          <AppStack direction="row" align="center" gap="sm">
-            <AppColorSwatch color={category.color} />
-            <PageTitle>{category.name}</PageTitle>
-          </AppStack>
+      <AppPageHeader
+        title={category.name}
+        breadcrumbs={[
+          { label: 'Carteira', href: '/portfolio/overview' },
+          { label: 'Categorias' },
+        ]}
+        actions={
           <AppSelect
             label="Categoria"
             options={categories.map((item) => ({
@@ -131,29 +123,28 @@ export default function PortfolioCategoryPage() {
             value={String(category.id)}
             onChange={(value) => navigate(`/portfolio/category/${value}`)}
           />
-        </AppStack>
-      </AppStack>
-
-      <AppCard>
-        <AppStack direction="row" gap="lg" wrap>
-          <AppMetric label="Patrimônio" value={formatCurrency(summary.value)} size="lg" />
-          <AppMetric
-            label="Rentabilidade acumulada"
-            value={summary.accReturn == null ? '—' : percent(summary.accReturn * 100)}
-            tone={summary.accReturn != null && summary.accReturn < 0 ? 'danger' : 'success'}
-          />
-          <AppMetric
-            label="CAGR"
-            value={cagr == null ? '—' : `${percent(cagr * 100)} a.a.`}
-            tone={cagr != null && cagr < 0 ? 'danger' : 'success'}
-          />
-          <AppMetric
-            label="Peso na carteira"
-            value={summary.weight == null ? '—' : `${summary.weight.toFixed(1).replace('.', ',')}%`}
-          />
-          <AppMetric label="Ativos" value={String(summary.assetCount)} />
-        </AppStack>
-      </AppCard>
+        }
+        metrics={
+          <>
+            <AppMetric label="Patrimônio" value={formatCurrency(summary.value)} size="lg" />
+            <AppMetric
+              label="Rentabilidade acumulada"
+              value={summary.accReturn == null ? '—' : percent(summary.accReturn * 100)}
+              tone={summary.accReturn != null && summary.accReturn < 0 ? 'danger' : 'success'}
+            />
+            <AppMetric
+              label="CAGR"
+              value={cagr == null ? '—' : `${percent(cagr * 100)} a.a.`}
+              tone={cagr != null && cagr < 0 ? 'danger' : 'success'}
+            />
+            <AppMetric
+              label="Peso na carteira"
+              value={summary.weight == null ? '—' : `${summary.weight.toFixed(1).replace('.', ',')}%`}
+            />
+            <AppMetric label="Ativos" value={String(summary.assetCount)} />
+          </>
+        }
+      />
 
       <CategoryAssets
         positions={ownPositions}

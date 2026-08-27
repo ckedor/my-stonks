@@ -3,6 +3,7 @@ import TradeForm from '@/components/TradeForm'
 import {
   AppButton,
   AppCard,
+  AppPageHeader,
   AppDayField,
   AppSearchField,
   AppSelect,
@@ -10,7 +11,6 @@ import {
   AppStack,
   AppText,
   LoadingSpinner,
-  PageTitle,
   type AppSimpleTableColumn,
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
@@ -173,12 +173,15 @@ export default function PortfolioTransactionsPage() {
   ]
 
   return (
-    <AppStack gap="md">
-      <PageTitle>Trades da Carteira</PageTitle>
-
-      <AppStack direction="row" justify="end">
-        <AppButton onClick={handleNew}>Nova Operação</AppButton>
-      </AppStack>
+    <AppStack gap="lg">
+      <AppPageHeader
+        title="Trades"
+        breadcrumbs={[
+          { label: 'Carteira', href: '/portfolio/overview' },
+          { label: 'Trades' },
+        ]}
+        actions={<AppButton onClick={handleNew}>Nova Operação</AppButton>}
+      />
 
       <AppStack direction="row" gap="md" align="end" wrap>
         <AppSearchField

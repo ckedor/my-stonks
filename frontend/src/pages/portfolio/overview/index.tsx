@@ -13,6 +13,7 @@ import {
   AppGrid,
   AppGridItem,
   AppIllustration,
+  AppPageHeader,
   AppStack,
   AppStackItem,
   AppTabs,
@@ -103,6 +104,8 @@ export default function PortfolioOverviewPage() {
 
   return (
     <AppStack gap="lg">
+      <AppPageHeader title="Resumo" />
+
       {/* ── Hero: patrimônio e patente, um bloco só ── */}
       {/* A arte fica à direita do bloco e fora do fluxo: assim ela desce sobre
           o gráfico pelo `artwork_offset` sem empurrar nada, e a altura da faixa

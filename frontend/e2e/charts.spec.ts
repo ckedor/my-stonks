@@ -39,7 +39,7 @@ test('portfolio/patrimônio', async ({ page, mockApi }) => {
 
   await page.goto('/portfolio/wealth')
 
-  await expect(page.getByRole('heading', { name: 'Evolução do Patrimônio' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Patrimônio', exact: true })).toBeVisible()
   await expect(page.getByText('Aportes Mensais')).toBeVisible()
   await expectNothingClipped(page)
 
@@ -178,7 +178,7 @@ test('portfolio/rentabilidade', async ({ page, mockApi }) => {
 
   await page.goto('/portfolio/returns')
 
-  await expect(page.getByRole('heading', { name: 'Rentabilidade Carteira' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Rentabilidade' })).toBeVisible()
   await expectNothingClipped(page)
 
   await expect(page).toHaveScreenshot('chart-returns.png')

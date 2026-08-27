@@ -1,5 +1,5 @@
 import RiskAnalysisCards from '@/components/RiskAnalysisCards'
-import { AppStack, AppText, LoadingSpinner, PageTitle } from '@/components/ui'
+import { AppPageHeader, AppStack, AppText, LoadingSpinner } from '@/components/ui'
 import { useAnalysisStore } from '@/stores/portfolio/analysis'
 
 export default function PortfolioRiskPage() {
@@ -21,7 +21,13 @@ export default function PortfolioRiskPage() {
 
   return (
     <AppStack gap="lg">
-      <PageTitle>Risco</PageTitle>
+      <AppPageHeader
+        title="Risco"
+        breadcrumbs={[
+          { label: 'Carteira', href: '/portfolio/overview' },
+          { label: 'Risco' },
+        ]}
+      />
 
       <RiskAnalysisCards analysis={analysis} />
     </AppStack>

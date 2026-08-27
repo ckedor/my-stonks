@@ -9,7 +9,9 @@ import {
   AppCard,
   AppColorSwatch,
   AppIconButton,
+  AppMetric,
   AppNumberField,
+  AppPageHeader,
   AppSimpleTable,
   AppSnackbar,
   AppStack,
@@ -21,7 +23,6 @@ import { REBALANCING_ROUTES } from '@/constants/routes'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
-import { usePageTitleStore } from '@/stores/page-title'
 import { usePortfolioStore } from '@/stores/portfolio'
 import type {
   AssetRebalancingEntry,
@@ -46,7 +47,6 @@ const diffTone = (v: number | null): 'success' | 'danger' | 'default' =>
 
 export default function RebalancingPage() {
   const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
-  const { setTitle } = usePageTitleStore()
   const { format: fmt, symbol: currencySymbol } = useCurrency()
 
   const portfolioId = selectedPortfolio?.id
@@ -112,11 +112,6 @@ export default function RebalancingPage() {
     }),
     []
   )
-
-  useEffect(() => {
-    setTitle('Rebalanceamento')
-    if (selectedPortfolio) setTitle(`Rebalanceamento - ${selectedPortfolio.name}`)
-  }, [selectedPortfolio, setTitle])
 
   // ── Local edits ────────────────────────────────────────────────────
   const handleCategoryTargetChange = (categoryId: number, value: number | null) => {
@@ -349,29 +344,45 @@ export default function RebalancingPage() {
   ]
 
   return (
-    <AppStack gap="md">
-      <AppStack direction="row" justify="between" align="center" gap="md">
-        <AppText variant="bodySmall" tone="secondary">
-          Valor total da carteira: {fmt(data.total_value)}
-          {contribution != null && contribution > 0 &&
-            ` + aporte ${fmt(contribution)} = ${fmt(effectiveTotal)}`}
-        </AppText>
-
-        <AppStack direction="row" gap="md" align="center">
-          <AppNumberField
-            label="Simular Aporte"
-            size="md"
-            allowEmpty
-            step={0.01}
-            prefix={currencySymbol}
-            value={contribution}
-            onChange={setContribution}
-          />
-          <AppButton icon={<SaveIcon />} loading={saving} onClick={handleSave}>
-            Salvar Targets
-          </AppButton>
-        </AppStack>
-      </AppStack>
+    <AppStack gap="lg">
+      <AppPageHeader
+        title="Rebalanceamento"
+        breadcrumbs={[
+          { label: 'Carteira', href: '/portfolio/overview' },
+          { label: 'Rebalanceamento' },
+        ]}
+        actions={
+          <>
+            <AppNumberField
+              label="Simular Aporte"
+              size="md"
+              allowEmpty
+              step={0.01}
+              prefix={currencySymbol}
+              value={contribution}
+              onChange={setContribution}
+            />
+            <AppButton icon={<SaveIcon />} loading={saving} onClick={handleSave}>
+              Salvar alvos
+            </AppButton>
+          </>
+        }
+        metrics={
+          <>
+            <AppMetric label="Patrimônio" value={fmt(data.total_value)} size="lg" />
+            <AppMetric
+              label="Aporte simulado"
+              value={contribution ? fmt(contribution) : '—'}
+            />
+            <AppMetric label="Base do cálculo" value={fmt(effectiveTotal)} />
+            <AppMetric
+              label="Soma dos alvos"
+              value={categoryTargetSum > 0 ? `${categoryTargetSum.toFixed(2).replace('.', ',')}%` : '—'}
+              tone={categoryTargetSum > 0 && Math.abs(categoryTargetSum - 100) > 0.01 ? 'danger' : 'default'}
+            />
+          </>
+        }
+      />
 
       <AppCard padding="none">
         <AppSimpleTable

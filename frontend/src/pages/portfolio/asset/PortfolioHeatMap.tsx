@@ -20,8 +20,11 @@ interface PortfolioHeatMapProps {
 
 const NO_CATEGORY = '(Sem categoria)'
 
-/** O mapa ocupa o que sobra da tela abaixo do cabeçalho e dos filtros. */
-const HEIGHT = 'calc(100vh - 200px)'
+/** O mapa ocupa o que sobra da tela abaixo da barra superior e do cabeçalho
+ *  da página. Os 210px são a soma do que está acima dele, e mudaram quando o
+ *  cabeçalho padrão trouxe o rastro de navegação — quem cobra a conta é o
+ *  `expectNothingClipped` do e2e, que falha dizendo por quantos pixels. */
+const HEIGHT = 'calc(100vh - 210px)'
 
 /* Extremos da escala de cor, por métrica. Um lucro de cem mil e uma
    rentabilidade de 30% são o mesmo verde: é o teto de cada uma. */

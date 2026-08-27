@@ -98,6 +98,44 @@ export default defineConfig([
     },
   },
 
+  /* ── Gramática de tela: toda página abre pelo mesmo cabeçalho ──
+
+     Antes desta regra cada tela montava o próprio: seis das vinte tinham
+     breadcrumb, quatro não tinham título nenhum, e a de Rebalanceamento
+     mandava o título para um store que nada renderizava. O `AppPageHeader`
+     é a decisão tomada uma vez — rastro, título, ações, métricas —, e o
+     que impede a divergência de voltar é a regra e não a convenção.
+
+     Vale só para as telas do produto: um componente de domínio pode ter um
+     `PageTitle` dentro (o cabeçalho de um painel), mas a página que decide
+     o layout da tela não escolhe o próprio desenho de abertura.
+
+     `src/pages/admin/**` ainda está de fora, e é dívida declarada: o admin
+     tem shell e navegação próprios (`AppShell`), e migrar os dois de uma
+     vez tornaria o diff visual ilegível. Quando ele migrar, o glob vira
+     `src/pages/**` e este parágrafo sai junto. */
+  {
+    files: ['src/pages/portfolio/**/*.tsx', 'src/pages/market/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'JSXAttribute[name.name="sx"]',
+          message: 'Estilo mora no componente, não na página. Adicione a variante em "@/components/ui".',
+        },
+        {
+          selector: 'JSXAttribute[name.name="style"]',
+          message: 'Estilo mora no componente, não na página. Adicione a variante em "@/components/ui".',
+        },
+        {
+          selector: 'JSXOpeningElement[name.name="PageTitle"]',
+          message:
+            'O cabeçalho de uma página é o "AppPageHeader": ele já traz título, breadcrumb, ações e métricas.',
+        },
+      ],
+    },
+  },
+
   /* ── Dívida existente: sai da lista conforme migra ──
      Some por inteiro quando o último arquivo for migrado. */
   ...(legacy.files.length

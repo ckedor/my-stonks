@@ -4,14 +4,13 @@ import {
   type MarketCatalogueKind,
 } from '@/api/market'
 import {
-  AppBreadcrumbs,
+  AppPageHeader,
   AppCard,
   AppSearchField,
   AppSimpleTable,
   AppStack,
   AppText,
   LoadingSpinner,
-  PageTitle,
   SectionTitle,
   type AppSimpleTableColumn,
 } from '@/components/ui'
@@ -110,13 +109,14 @@ export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKin
 
   return (
     <AppStack gap="lg">
-      <AppStack gap="xs">
-        <AppBreadcrumbs
-          items={[{ label: 'Mercado', href: '/market/overview' }, { label: config.breadcrumb }]}
-        />
-        <PageTitle>{config.pageTitle}</PageTitle>
-        <AppText variant="bodySmall" tone="secondary">{config.description}</AppText>
-      </AppStack>
+      <AppPageHeader
+        title={config.pageTitle}
+        breadcrumbs={[
+          { label: 'Mercado', href: '/market/overview' },
+          { label: config.breadcrumb },
+        ]}
+        description={config.description}
+      />
 
       <FavoriteAssets
         limit={8}

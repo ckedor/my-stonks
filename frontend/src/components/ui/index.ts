@@ -26,6 +26,8 @@ export { default as AppThemePreview } from './AppThemePreview'
 export type { AppThemePreviewProps } from './AppThemePreview'
 export { default as AppGroupHeader } from './AppGroupHeader'
 export type { AppGroupHeaderProps } from './AppGroupHeader'
+export { default as AppPageHeader } from './AppPageHeader'
+export type { AppPageHeaderBreadcrumb, AppPageHeaderProps } from './AppPageHeader'
 export { default as AppListRow } from './AppListRow'
 export type { AppListRowProps } from './AppListRow'
 export { default as AppCollapse } from './AppCollapse'
@@ -52,13 +54,6 @@ export { default as AppPageShell } from './AppPageShell'
 export type { AppPageShellProps } from './AppPageShell'
 export { default as AppNavRail } from './AppNavRail'
 export type { AppNavRailGroup, AppNavRailItem, AppNavRailProps } from './AppNavRail'
-export { default as AppNavDrawer } from './AppNavDrawer'
-export type {
-  AppNavDrawerGroup,
-  AppNavDrawerItem,
-  AppNavDrawerProps,
-  AppNavDrawerSection,
-} from './AppNavDrawer'
 export type { AppCardProps } from './AppCard'
 
 /* ── Controles e conteúdo ───────────────────── */
@@ -93,6 +88,13 @@ export type { AppEmptyStateProps } from './AppEmptyState'
 export { default as AppAlert } from './AppAlert'
 export type { AppAlertProps } from './AppAlert'
 export { default as AppAutocomplete } from './AppAutocomplete'
+export { default as AppNavDrawer } from './AppNavDrawer'
+export type {
+  AppNavDrawerGroup,
+  AppNavDrawerItem,
+  AppNavDrawerProps,
+  AppNavDrawerSection,
+} from './AppNavDrawer'
 export { default as AppMultiAutocomplete } from './AppMultiAutocomplete'
 export type {
   AppMultiAutocompleteOption,
@@ -145,8 +147,6 @@ export { default as AppStatCard } from './AppStatCard'
 export type { AppStatCardProps } from './AppStatCard'
 export { default as AppTooltip } from './AppTooltip'
 export type { AppTooltipProps } from './AppTooltip'
-export { default as AppHeroMetric } from './AppHeroMetric'
-export type { AppHeroMetricProps } from './AppHeroMetric'
 export { default as AppInlineToggle } from './AppInlineToggle'
 export type { AppInlineToggleOption, AppInlineToggleProps } from './AppInlineToggle'
 export { default as AppNumberField } from './AppNumberField'
@@ -185,11 +185,9 @@ export { default as AppPieChart } from './app-pie-chart'
 export { default as AppTable } from './app-table'
 export type { TableColumn, TableRowData } from './app-table'
 export { default as BackButton } from './BackButton'
-export { default as InformationCard } from './infomation-card'
 export { default as LoadingSpinner } from './LoadingSpinner'
 export type { LoadingSpinnerProps } from './LoadingSpinner'
 export { default as MarkdownText } from './MarkdownText'
 export { default as MiniDonut } from './MiniDonut'
-export { default as PageHeader } from './PageHeader'
 export { default as Sparkline } from './Sparkline'
 export { ThemeToggleButton } from './ThemeToggleButton'

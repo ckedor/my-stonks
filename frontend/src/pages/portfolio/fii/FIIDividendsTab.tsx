@@ -1,5 +1,5 @@
 import PortfolioDividendsChart from '@/components/PortfolioDividendsChart'
-import { AppCard, AppSimpleTable, AppStack, AppText, type AppSimpleTableColumn } from '@/components/ui'
+import { AppCard, AppMetric, AppSimpleTable, AppStack, AppText, type AppSimpleTableColumn } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
 import { getLast12MonthDividendStats } from '@/lib/utils/dividends'
 import type { Dividend } from '@/types'
@@ -30,10 +30,12 @@ export default function FIIDividendsTab({ dividends }: Props) {
 
   return (
     <AppStack gap="lg">
-      <AppStack direction="row" gap="md" wrap>
-        <AppCard minWidth={200}><AppText variant="caption" tone="secondary">Recebidos nos últimos 12 meses</AppText><AppText variant="pageHeading">{formatCurrency(total)}</AppText></AppCard>
-        <AppCard minWidth={200}><AppText variant="caption" tone="secondary">Média dos últimos 12 meses</AppText><AppText variant="pageHeading">{formatCurrency(average)}</AppText></AppCard>
-      </AppStack>
+      <AppCard>
+        <AppStack direction="row" gap="lg" wrap>
+          <AppMetric label="Recebidos nos últimos 12 meses" value={formatCurrency(total)} size="lg" />
+          <AppMetric label="Média dos últimos 12 meses" value={formatCurrency(average)} size="lg" />
+        </AppStack>
+      </AppCard>
       <AppCard><PortfolioDividendsChart dividends={dividends} selected="portfolio" size={320} /></AppCard>
       <AppCard padding="none">
         <AppSimpleTable rows={sorted} columns={columns} getRowKey={(item) => item.id} maxHeight={420} emptyMessage="Nenhum provento encontrado" />

@@ -17,7 +17,6 @@ export default function AppBreadcrumbs({ items }: Props) {
   return (
     <Breadcrumbs
       separator={<NavigateNextIcon sx={{ fontSize: 16 }} />}
-      sx={{ mb: 1 }}
     >
       {items.map((item, index) => {
         const isLast = index === items.length - 1

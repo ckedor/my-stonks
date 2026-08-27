@@ -1,9 +1,9 @@
 import {
+  AppPageHeader,
   AppStack,
   AppStackItem,
   AppToggleGroup,
   LoadingSpinner,
-  PageTitle,
   type AppToggleGroupOption,
 } from '@/components/ui'
 import { POSITION_ROUTES } from '@/constants/routes'
@@ -48,16 +48,22 @@ export default function DistributionPage() {
   }, [navigate])
 
   return (
-    <AppStack gap="md">
-      <AppStack direction="row" align="center" justify="between">
-        <PageTitle>Distribuição</PageTitle>
-        <AppToggleGroup
-          label="Métrica"
-          options={METRIC_OPTIONS}
-          value={metric}
-          onChange={setMetric}
-        />
-      </AppStack>
+    <AppStack gap="lg">
+      <AppPageHeader
+        title="Distribuição"
+        breadcrumbs={[
+          { label: 'Carteira', href: '/portfolio/overview' },
+          { label: 'Distribuição' },
+        ]}
+        actions={
+          <AppToggleGroup
+            label="Métrica"
+            options={METRIC_OPTIONS}
+            value={metric}
+            onChange={setMetric}
+          />
+        }
+      />
 
       {loading ? (
         <LoadingSpinner />

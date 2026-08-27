@@ -1,6 +1,7 @@
 import PortfolioDividendsChart from '@/components/PortfolioDividendsChart'
 import {
   AppCard,
+  AppMetric,
   AppSimpleTable,
   AppStack,
   AppText,
@@ -71,24 +72,20 @@ export default function CategoryDividendsTab({ category, dividends }: Props) {
 
   return (
     <AppStack gap="lg">
-      <AppStack direction="row" gap="md" wrap>
-        <AppCard minWidth={200}>
-          <AppStack gap="xs">
-            <AppText variant="caption" tone="secondary">
-              Recebidos nos últimos 12 meses
-            </AppText>
-            <AppText variant="pageHeading">{formatCurrency(total12m)}</AppText>
-          </AppStack>
-        </AppCard>
-        <AppCard minWidth={200}>
-          <AppStack gap="xs">
-            <AppText variant="caption" tone="secondary">
-              Média dos últimos 12 meses
-            </AppText>
-            <AppText variant="pageHeading">{formatCurrency(average12m)}</AppText>
-          </AppStack>
-        </AppCard>
-      </AppStack>
+      <AppCard>
+        <AppStack direction="row" gap="lg" wrap>
+          <AppMetric
+            label="Recebidos nos últimos 12 meses"
+            value={formatCurrency(total12m)}
+            size="lg"
+          />
+          <AppMetric
+            label="Média dos últimos 12 meses"
+            value={formatCurrency(average12m)}
+            size="lg"
+          />
+        </AppStack>
+      </AppCard>
 
       <AppCard>
         <PortfolioDividendsChart dividends={dividends} selected={category} size={320} />

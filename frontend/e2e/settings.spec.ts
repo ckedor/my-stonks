@@ -46,7 +46,7 @@ test('configurações — editor de tema', async ({ page, mockApi }) => {
   await abrirConfiguracoes(page, mockApi)
   await page.goto('/portfolio/user-configurations/theme-editor')
 
-  await expect(page.getByRole('heading', { name: 'Novo Tema Personalizado' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Novo tema personalizado' })).toBeVisible()
   await expect(page.getByText('Preview do Tema')).toBeVisible()
   await expectNothingClipped(page)
 

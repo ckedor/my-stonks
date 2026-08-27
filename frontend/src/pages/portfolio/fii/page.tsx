@@ -5,20 +5,19 @@ import {
 } from '@/api/portfolio'
 import AssetCard from '@/components/portfolio-asset/AssetCard'
 import {
-  AppBreadcrumbs,
   AppButton,
   AppCard,
   AppDivider,
   AppGrid,
   AppGridItem,
   AppMetric,
+  AppPageHeader,
   AppPieChart,
   AppStack,
   AppTabs,
   AppText,
   AppToggleGroup,
   LoadingSpinner,
-  PageTitle,
   SectionTitle,
   useAppTheme,
 } from '@/components/ui'
@@ -147,27 +146,16 @@ export default function PortfolioFIIPage() {
 
   return (
     <AppStack gap="lg">
-      <AppStack gap="xs">
-        <AppBreadcrumbs
-          items={[
-            { label: 'Carteira', href: '/portfolio/overview' },
-            { label: 'FIIs' },
-          ]}
-        />
-        <PageTitle>Fundos Imobiliários</PageTitle>
-        <AppText variant="bodySmall" tone="secondary">
-          Concentração e desempenho dos FIIs mantidos nesta carteira.
-        </AppText>
-      </AppStack>
-
-      {fiiPositions.length === 0 ? (
-        <AppCard>
-          <AppText tone="secondary">Nenhum fundo imobiliário na posição atual.</AppText>
-        </AppCard>
-      ) : (
-        <>
-          <AppCard>
-            <AppStack direction="row" gap="lg" wrap>
+      <AppPageHeader
+        title="FIIs"
+        breadcrumbs={[
+          { label: 'Carteira', href: '/portfolio/overview' },
+          { label: 'FIIs' },
+        ]}
+        description="Concentração e desempenho dos FIIs mantidos nesta carteira."
+        metrics={
+          fiiPositions.length === 0 ? undefined : (
+            <>
               <AppMetric label="Patrimônio em FIIs" value={formatCurrency(fiiValue)} size="lg" />
               <AppMetric
                 label="Rentabilidade acumulada"
@@ -185,9 +173,17 @@ export default function PortfolioFIIPage() {
               />
               <AppMetric label="Fundos" value={String(fiiPositions.length)} />
               <AppMetric label="Proventos em 12 meses" value={formatCurrency(dividend12m)} />
-            </AppStack>
-          </AppCard>
+            </>
+          )
+        }
+      />
 
+      {fiiPositions.length === 0 ? (
+        <AppCard>
+          <AppText tone="secondary">Nenhum fundo imobiliário na posição atual.</AppText>
+        </AppCard>
+      ) : (
+        <>
           <AppGrid cols={{ xs: 1, lg: 4 }} gap="lg" align="start">
             <AppGridItem>
               <AppCard>

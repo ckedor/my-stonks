@@ -1,4 +1,4 @@
-import { AppSelect, AppStack, AppTabs, PageTitle } from '@/components/ui'
+import { AppPageHeader, AppSelect, AppStack, AppTabs } from '@/components/ui'
 import { usePortfolioStore } from '@/stores/portfolio'
 import dayjs from 'dayjs'
 import { useState } from 'react'
@@ -25,20 +25,25 @@ export default function TaxIncomePage() {
   if (!selectedPortfolio?.id) return null
 
   return (
-    <AppStack gap="md">
-      <PageTitle>Declaração de Imposto de Renda</PageTitle>
+    <AppStack gap="lg">
+      <AppPageHeader
+        title="Declaração IR"
+        breadcrumbs={[
+          { label: 'Carteira', href: '/portfolio/overview' },
+          { label: 'Declaração IR' },
+        ]}
+        actions={
+          <AppSelect
+            label="Ano"
+            size="auto"
+            options={years.map((year) => ({ value: String(year), label: String(year) }))}
+            value={String(fiscalYear)}
+            onChange={(value) => setFiscalYear(Number(value))}
+          />
+        }
+      />
 
-      <AppStack direction="row" gap="md" align="center">
-        <AppSelect
-          label="Ano"
-          size="auto"
-          options={years.map((year) => ({ value: String(year), label: String(year) }))}
-          value={String(fiscalYear)}
-          onChange={(value) => setFiscalYear(Number(value))}
-        />
-
-        <AppTabs items={TABS} value={tab} onChange={setTab} label="Seções da declaração" />
-      </AppStack>
+      <AppTabs items={TABS} value={tab} onChange={setTab} label="Seções da declaração" />
 
       {tab === 'darf' && (
         <DarfSummaryTable fiscalYear={fiscalYear} portfolioId={selectedPortfolio.id} />

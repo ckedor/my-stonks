@@ -2,11 +2,11 @@
 import PortfolioReturnsChart from '@/components/PortfolioReturnsChart'
 import {
   AppCard,
+  AppPageHeader,
   AppGrid,
   AppGridItem,
   AppStack,
   LoadingSpinner,
-  PageTitle,
 } from '@/components/ui'
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useEffect, useMemo, useState } from 'react'
@@ -43,8 +43,14 @@ export default function PortfolioReturnsPage() {
   }
 
   return (
-    <AppStack gap="md">
-      <PageTitle>Rentabilidade Carteira</PageTitle>
+    <AppStack gap="lg">
+      <AppPageHeader
+        title="Rentabilidade"
+        breadcrumbs={[
+          { label: 'Carteira', href: '/portfolio/overview' },
+          { label: 'Rentabilidade' },
+        ]}
+      />
 
       <AppGrid cols={{ xs: 1, md: 2 }} gap="md">
         {/* O gráfico principal e o mapa mensal ocupam a linha inteira; os

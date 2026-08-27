@@ -5,7 +5,8 @@ import type { PortfolioPositionEntry } from '@/types'
 interface Props {
   positions: PortfolioPositionEntry[]
   portfolioId: number
-  /** Cor da categoria: o realce dos cards e a fatia do peso. */
+  /** Cor da categoria — a do anel de peso e do realce do card, que é a
+   *  mesma que os gráficos desenham para ela. */
   color: string
 }
 

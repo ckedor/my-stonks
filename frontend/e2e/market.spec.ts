@@ -60,7 +60,7 @@ test('market/visão geral', async ({ page, mockApi }) => {
   await mockApi('/portfolio/position/1', [])
 
   await page.goto('/market/overview')
-  await expect(page.getByText('Visão geral do mercado')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Visão geral' })).toBeVisible()
 
   await expect(page).toHaveScreenshot('page-market-overview.png')
 })

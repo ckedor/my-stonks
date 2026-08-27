@@ -68,7 +68,7 @@ test('main shell — a coluna continua na tela ao rolar', async ({ page, mockApi
      vazio, que cabe na viewport. Numa tela que não rola, "continua na tela"
      é verdade sozinho e o teste passaria mesmo com a coluna quebrada. */
   await page.goto('/market/overview')
-  await expect(page.getByText('Visão geral do mercado')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Visão geral' })).toBeVisible()
 
   await page.mouse.wheel(0, 1200)
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(600)

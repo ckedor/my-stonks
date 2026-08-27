@@ -1,19 +1,23 @@
-import { Box, Typography } from '@mui/material'
+import { Box } from '@mui/material'
 import type { ReactNode } from 'react'
 import { space } from '@/theme/tokens'
-import { useAppTheme } from './useAppTheme'
+import SectionLabel from './SectionLabel'
 
 /* Cabeçalho de um grupo dentro de uma lista longa — a categoria acima dos
  * ativos dela.
  *
- * Não é `SectionTitle`: aquele nomeia um bloco da página, e a régua colorida
- * daqui não é enfeite — é a cor da categoria, que amarra o grupo ao que a
- * pizza e os gráficos desenham com a mesma cor. */
+ * Não é `SectionTitle`: aquele nomeia um bloco que a pessoa lê como
+ * conteúdo; este só diz sob qual assunto caem as linhas abaixo, e por isso
+ * é o mesmo desenho do `SectionLabel`.
+ *
+ * Teve régua e borda na cor da categoria por um tempo, e é a única coisa no
+ * app que desenhava assim — a listagem de ativos não parecia do mesmo
+ * produto que o resto. Cor aqui identifica série de gráfico e nada mais; a
+ * hierarquia deste cabeçalho é tipográfica, e o divisor é neutro como
+ * qualquer outro do app. */
 
 export interface AppGroupHeaderProps {
   title: string
-  /** Cor do assunto do grupo — a da categoria. */
-  color: string
   /** Torna o título clicável: o grupo tem uma página própria. */
   onTitleClick?: () => void
   /** Ao lado direito, o total do grupo. */
@@ -22,12 +26,9 @@ export interface AppGroupHeaderProps {
 
 export default function AppGroupHeader({
   title,
-  color,
   onTitleClick,
   trailing,
 }: AppGroupHeaderProps) {
-  const theme = useAppTheme()
-
   return (
     <Box
       sx={{
@@ -35,30 +36,22 @@ export default function AppGroupHeader({
         alignItems: 'center',
         gap: space.sm,
         pb: space.xs,
-        borderBottom: `2px solid ${color}`,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
       }}
     >
       <Box
         sx={{
-          width: 6,
-          height: 20,
-          borderRadius: `${theme.radius.sm}px`,
-          backgroundColor: color,
-          flexShrink: 0,
-        }}
-      />
-      <Typography
-        variant="subtitle2"
-        onClick={onTitleClick}
-        sx={{
           flex: 1,
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          ...(onTitleClick ? { cursor: 'pointer', '&:hover': { textDecoration: 'underline' } } : null),
+          minWidth: 0,
+          ...(onTitleClick
+            ? { cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }
+            : null),
         }}
+        onClick={onTitleClick}
       >
-        {title}
-      </Typography>
+        <SectionLabel>{title}</SectionLabel>
+      </Box>
       {trailing}
     </Box>
   )
