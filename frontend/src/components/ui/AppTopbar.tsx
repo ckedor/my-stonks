@@ -1,4 +1,3 @@
-import MenuIcon from '@mui/icons-material/Menu'
 import { AppBar, Box, Button, Divider, Toolbar, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import AppIconButton from './AppIconButton'
@@ -63,6 +62,11 @@ function contrastRatio(a: string, b: string): number {
  * Sem seção na lista, nem as abas nem a régua vertical aparecem: é o que a
  * tela estreita pede, com a navegação migrada para o drawer. */
 
+/** Altura da barra. Exportada porque quem fica logo abaixo dela e também
+ *  gruda no topo — a coluna de navegação — precisa saber onde começar, e
+ *  duas cópias do número acabariam divergindo. */
+export const TOPBAR_HEIGHT = 64
+
 export interface AppTopbarSection {
   id: string
   label: string
@@ -74,8 +78,9 @@ export interface AppTopbarProps {
   onSelectSection: (id: string) => void
   /** Rótulo acessível do grupo de navegação. */
   navLabel: string
-  /** Quando presente, mostra o botão de abrir a barra lateral. */
-  onMenuClick?: () => void
+  /** Botão à esquerda da marca. Fica a cargo de quem usa dizer o que ele é:
+   *  abrir o drawer na tela estreita, recolher a coluna na larga. */
+  menuButton?: { label: string; icon: ReactNode; onClick: () => void }
   /** Nome do produto, à esquerda das abas. */
   brand?: { label: string; onClick: () => void }
   /** Padrão: `full`. */
@@ -89,7 +94,7 @@ export default function AppTopbar({
   selectedSectionId,
   onSelectSection,
   navLabel,
-  onMenuClick,
+  menuButton,
   brand,
   layout = 'full',
   children,
@@ -107,7 +112,9 @@ export default function AppTopbar({
 
   return (
     <AppBar
-      position="static"
+      /* Gruda no topo: as abas de seção são navegação, e navegação que sobe
+         junto com o conteúdo deixa de estar lá quando é mais necessária. */
+      position="sticky"
       color="transparent"
       elevation={0}
       sx={{
@@ -116,7 +123,13 @@ export default function AppTopbar({
         color: 'topbar.text',
       }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between', gap: centered ? 0 : 2 }}>
+      <Toolbar
+        sx={{
+          justifyContent: 'space-between',
+          gap: centered ? 0 : 2,
+          ...(centered ? { minHeight: TOPBAR_HEIGHT, height: TOPBAR_HEIGHT } : null),
+        }}
+      >
         <Box
           sx={{
             display: 'flex',
@@ -125,15 +138,16 @@ export default function AppTopbar({
             minWidth: 0,
           }}
         >
-          {onMenuClick && (
+          {menuButton && (
             <Box sx={{ color: 'inherit', flexShrink: 0 }}>
               <AppIconButton
-                label="Abrir menu de navegação"
-                onClick={onMenuClick}
+                label={menuButton.label}
+                onClick={menuButton.onClick}
                 tone="inherit"
                 edge="start"
+                tooltip
               >
-                <MenuIcon />
+                {menuButton.icon}
               </AppIconButton>
             </Box>
           )}

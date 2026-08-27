@@ -11,6 +11,9 @@ import { useThemeMode } from '@/theme/theme-mode'
 
 import AccountCircle from '@mui/icons-material/AccountCircle'
 import AddIcon from '@mui/icons-material/Add'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import MenuIcon from '@mui/icons-material/Menu'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import CategoryIcon from '@mui/icons-material/Category'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
@@ -48,7 +51,12 @@ const CURRENCY_OPTIONS = [
   { value: 'USD', label: 'US$' },
 ] as const
 
-export default function MainTopbar() {
+export interface MainTopbarProps {
+  railCollapsed: boolean
+  onToggleRail: () => void
+}
+
+export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarProps) {
   const user = useAuthStore((s) => s.user)
   const { portfolios, loading, selectedPortfolio, setSelectedPortfolio } = usePortfolioStore()
   const { openTradeForm } = useTradeFormStore()
@@ -134,7 +142,23 @@ export default function MainTopbar() {
           const section = navigationSections.find((s) => s.id === id)
           if (section) navigate(getSectionDefaultPath(section))
         }}
-        onMenuClick={isMobile ? () => setDrawerOpen(true) : undefined}
+        /* O mesmo lugar, à esquerda da marca, para os dois papéis: na tela
+           estreita ele abre o drawer; na larga, logo acima da coluna, recolhe
+           e expande ela. Nunca os dois ao mesmo tempo — a coluna só existe
+           onde o drawer não. */
+        menuButton={
+          isMobile
+            ? {
+                label: 'Abrir menu de navegação',
+                icon: <MenuIcon />,
+                onClick: () => setDrawerOpen(true),
+              }
+            : {
+                label: railCollapsed ? 'Expandir menu' : 'Recolher menu',
+                icon: railCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />,
+                onClick: onToggleRail,
+              }
+        }
       >
         {loading ? (
           <LoadingSpinner variant="inline" />

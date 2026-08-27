@@ -1,7 +1,7 @@
 import { AppNavRail } from '@/components/ui'
 import { useFavoritesStore } from '@/stores/favorites'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { getNavigationIcon } from './navigation-icons'
@@ -17,34 +17,9 @@ import {
    dobra. */
 const RAIL_FAVORITES = 5
 
-const COLLAPSED_KEY = 'nav-rail-collapsed'
-
-/* Recolhida ou expandida é preferência de quem usa, e uma que se percebe
-   toda vez que a tela abre: sem guardar, a coluna volta larga a cada
-   navegação com recarga e o ajuste precisa ser refeito. `localStorage` pode
-   não existir (SSR, navegador com armazenamento bloqueado), e cair para o
-   padrão é resposta suficiente — não vale derrubar a tela por causa disso. */
-function readCollapsed(): boolean {
-  try {
-    return window.localStorage.getItem(COLLAPSED_KEY) === 'true'
-  } catch {
-    return false
-  }
-}
-
-function persistCollapsed(value: boolean) {
-  try {
-    window.localStorage.setItem(COLLAPSED_KEY, String(value))
-  } catch {
-    /* Preferência é conforto, não dado: perder não muda o que a tela faz. */
-  }
-}
-
-export default function MainSidebar() {
+export default function MainSidebar({ collapsed }: { collapsed: boolean }) {
   const navigate = useNavigate()
   const location = useLocation()
-
-  const [collapsed, setCollapsed] = useState(readCollapsed)
 
   const currentSection = getNavigationSection(location.pathname)
   const section = navigationSections.find((s) => s.id === currentSection)!
@@ -67,12 +42,6 @@ export default function MainSidebar() {
     <AppNavRail
       navLabel={`Páginas de ${section.label}`}
       collapsed={collapsed}
-      onToggleCollapsed={() =>
-        setCollapsed((value) => {
-          persistCollapsed(!value)
-          return !value
-        })
-      }
       groups={groups.map((group) => ({
         title: group.title,
         items: group.items.map((item) => ({

@@ -61,7 +61,7 @@ test('main shell — coluna recolhida', async ({ page, mockApi }) => {
   await expect(page).toHaveScreenshot('main-shell-collapsed.png')
 })
 
-test('main shell — a coluna continua na tela ao rolar', async ({ page, mockApi }) => {
+test('main shell — a navegação continua na tela ao rolar', async ({ page, mockApi }) => {
   await mockApi('/portfolio', PORTFOLIOS)
 
   /* O Mercado, e não a Carteira: sem dado mockado a Carteira para no estado
@@ -79,6 +79,7 @@ test('main shell — a coluna continua na tela ao rolar', async ({ page, mockApi
      aconteceu — `overflow-x: hidden` no `body`, em `index.css`, fazia a
      coluna subir junto com o conteúdo. */
   await expect(page.getByRole('button', { name: 'Cripto' })).toBeInViewport()
+  await expect(page.getByRole('button', { name: 'Carteira', exact: true })).toBeInViewport()
 })
 
 test('main shell — a aba da seção leva à primeira página dela', async ({ page, mockApi }) => {

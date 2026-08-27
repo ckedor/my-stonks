@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth'
 
 import AccountCircle from '@mui/icons-material/AccountCircle'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import MenuIcon from '@mui/icons-material/Menu'
 
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -39,7 +40,15 @@ export default function AdminTopbar({
         const section = adminNavigationSections.find((s) => s.id === id)
         if (section) navigate(section.defaultPath)
       }}
-      onMenuClick={showMenuButton ? onMenuClick : undefined}
+      menuButton={
+        showMenuButton
+          ? {
+              label: 'Abrir menu de navegação',
+              icon: <MenuIcon />,
+              onClick: () => onMenuClick?.(),
+            }
+          : undefined
+      }
     >
       <ThemeToggleButton />
 
