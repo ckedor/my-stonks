@@ -61,6 +61,26 @@ test('main shell — coluna recolhida', async ({ page, mockApi }) => {
   await expect(page).toHaveScreenshot('main-shell-collapsed.png')
 })
 
+test('main shell — a coluna continua na tela ao rolar', async ({ page, mockApi }) => {
+  await mockApi('/portfolio', PORTFOLIOS)
+
+  /* O Mercado, e não a Carteira: sem dado mockado a Carteira para no estado
+     vazio, que cabe na viewport. Numa tela que não rola, "continua na tela"
+     é verdade sozinho e o teste passaria mesmo com a coluna quebrada. */
+  await page.goto('/market/overview')
+  await expect(page.getByText('Visão geral do mercado')).toBeVisible()
+
+  await page.mouse.wheel(0, 1200)
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(600)
+
+  /* O guarda de um bug que não se vê lendo o componente: a coluna declara
+     `position: sticky`, mas basta um `overflow` diferente de `visible` em
+     qualquer ancestral para o navegador ignorar isso em silêncio. Já
+     aconteceu — `overflow-x: hidden` no `body`, em `index.css`, fazia a
+     coluna subir junto com o conteúdo. */
+  await expect(page.getByRole('button', { name: 'Cripto' })).toBeInViewport()
+})
+
 test('main shell — a aba da seção leva à primeira página dela', async ({ page, mockApi }) => {
   await mockApi('/portfolio', PORTFOLIOS)
   await mockApi('/market_data/asset/favorites', FAVORITES)

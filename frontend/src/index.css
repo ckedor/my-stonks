@@ -10,8 +10,12 @@
   }
 }
 
-html,
-body {
+/* A trava contra rolagem horizontal fica só no `html`, e não também no
+   `body`: com ela no `body`, ele vira o contêiner de rolagem da página e
+   todo `position: sticky` de dentro para de grudar — a coluna de navegação
+   subia junto com o conteúdo em vez de ficar. O efeito é o mesmo aqui em
+   cima, onde o elemento que rola já é a viewport. */
+html {
   max-width: 100vw;
   overflow-x: hidden;
 }
