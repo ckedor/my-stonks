@@ -141,6 +141,7 @@ Do not use:
 | Target allocation | Alocação alvo | Desired percentage for a category within the portfolio or for an asset within its category. |
 | Current allocation | Alocação atual | Percentage represented by the current value of a category or asset. |
 | Rebalancing | Rebalanceamento | Comparison between current and target allocations, producing target values and positive or negative differences for categories and assets. |
+| Contribution simulation | Simulação de aporte | Distribution of a hypothetical contribution across categories and assets **by buying only**: no position is reduced, so a category already above its target allocation receives nothing. It answers where to direct new money to move the portfolio closer to its targets, not how to reach them exactly. Distinct from rebalancing, whose negative differences imply selling. |
 | Portfolio configuration | Configuração da carteira | Named, portfolio-scoped feature setting with enabled state and optional configuration data. |
 
 ## Performance and risk

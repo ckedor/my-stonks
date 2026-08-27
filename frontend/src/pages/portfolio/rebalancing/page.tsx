@@ -1,13 +1,14 @@
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import SaveIcon from '@mui/icons-material/Save'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   AppAlert,
   AppButton,
   AppCard,
-  AppColorSwatch,
+  AppGrid,
+  AppGridItem,
   AppIconButton,
   AppMetric,
   AppNumberField,
@@ -15,8 +16,10 @@ import {
   AppSimpleTable,
   AppSnackbar,
   AppStack,
+  AppSwitch,
   AppText,
   LoadingSpinner,
+  SectionTitle,
   type AppSimpleTableColumn,
 } from '@/components/ui'
 import { REBALANCING_ROUTES } from '@/constants/routes'
@@ -29,6 +32,8 @@ import type {
   CategoryRebalancingEntry,
   RebalancingResponse,
 } from '@/types'
+import AllocationPie from './AllocationPie'
+import { planContribution } from './contribution'
 
 const fmtPct = (v: number | null) =>
   v != null ? `${v.toFixed(2).replace('.', ',')}%` : '—'
@@ -37,13 +42,59 @@ const fmtPct = (v: number | null) =>
  * três níveis: quanto há, quanto se quer, quanto falta. A categoria abre e
  * fecha; o ativo só aparece com a categoria aberta; o total fecha a conta. */
 type Row =
-  | { kind: 'category'; key: string; category: CategoryRebalancingEntry }
-  | { kind: 'asset'; key: string; categoryId: number; asset: AssetRebalancingEntry; targetSet: boolean }
+  | { kind: 'category'; key: string; category: CategoryRebalancingEntry; buy: number }
+  | {
+      kind: 'asset'
+      key: string
+      categoryId: number
+      asset: AssetRebalancingEntry
+      targetSet: boolean
+      buy: number
+    }
   | { kind: 'total'; key: string }
 
 /** O sinal de uma diferença, lido como o resto do app lê retorno. */
 const diffTone = (v: number | null): 'success' | 'danger' | 'default' =>
   v == null || v === 0 ? 'default' : v > 0 ? 'success' : 'danger'
+
+const round2 = (v: number) => Math.round(v * 100) / 100
+
+/* Refaz a conta do backend sobre os alvos editados na tela.
+ *
+ * Só existe porque os alvos são editáveis: mudar um `% Alvo` tem de mover a
+ * diferença na mesma hora, antes de salvar. A base é sempre o patrimônio de
+ * hoje — o aporte simulado não entra aqui, e é justamente por ele entrar que
+ * a tela confundia antes: digitar um valor reescrevia o diagnóstico inteiro
+ * contra uma carteira que ainda não existe. */
+function withDiffs(data: RebalancingResponse): RebalancingResponse {
+  const total = data.total_value
+
+  return {
+    ...data,
+    categories: data.categories.map((cat) => {
+      const targetValue = cat.target_pct != null ? (total * cat.target_pct) / 100 : null
+
+      return {
+        ...cat,
+        target_value: targetValue != null ? round2(targetValue) : null,
+        diff_pct: cat.target_pct != null ? round2(cat.target_pct - cat.current_pct) : null,
+        diff_value: targetValue != null ? round2(targetValue - cat.current_value) : null,
+        assets: cat.assets.map((asset) => {
+          if (asset.target_pct_in_category == null || targetValue == null) {
+            return { ...asset, target_value: null, diff_value: null, diff_pct: null }
+          }
+          const assetTarget = (targetValue * asset.target_pct_in_category) / 100
+          return {
+            ...asset,
+            target_value: round2(assetTarget),
+            diff_value: round2(assetTarget - asset.current_value),
+            diff_pct: round2(asset.target_pct_in_category - asset.current_pct_in_category),
+          }
+        }),
+      }
+    }),
+  }
+}
 
 export default function RebalancingPage() {
   const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
@@ -57,6 +108,9 @@ export default function RebalancingPage() {
     { enabled: !!portfolioId },
   )
 
+  /* `data` guarda só os alvos: é o rascunho que o botão de salvar envia. Tudo
+     que é derivado — diferença, valor alvo, plano de compra — se recalcula a
+     partir dele, em vez de ser escrito de volta nele. */
   const [data, setData] = useState<RebalancingResponse | null>(null)
   const [saving, setSaving] = useState(false)
   const [snackbar, setSnackbar] = useState<{
@@ -64,66 +118,89 @@ export default function RebalancingPage() {
     message: string
     severity: 'success' | 'error'
   }>({ open: false, message: '', severity: 'success' })
+  const [simulating, setSimulating] = useState(false)
   const [contribution, setContribution] = useState<number | null>(null)
   const [openCategories, setOpenCategories] = useState<number[]>([])
 
-  // Sync fetched data into local state for editing
   useEffect(() => {
     if (fetchedData) setData(fetchedData)
   }, [fetchedData])
 
   const loading = !fetchedData && !!portfolioId
 
-  const effectiveTotal = (data?.total_value ?? 0) + (contribution ?? 0)
+  const view = useMemo(() => (data ? withDiffs(data) : null), [data])
 
-  // ── Recalculate all diffs given an effective total ─────────────────
-  const recalcAllDiffs = useCallback(
-    (d: RebalancingResponse, total: number): RebalancingResponse => ({
-      ...d,
-      categories: d.categories.map((cat) => {
-        const target_pct = cat.target_pct
-        const target_value = target_pct != null ? (total * target_pct) / 100 : null
-        const diff_pct = target_pct != null ? target_pct - cat.current_pct : null
-        const diff_value = target_value != null ? target_value - cat.current_value : null
+  /* Quanto comprar de cada categoria, e de cada ativo dentro dela. Fora da
+     simulação é tudo zero: sem aporte não há compra a sugerir. */
+  const buyPlan = useMemo(() => {
+    const empty = { byCategory: new Map<number, number>(), byAsset: new Map<number, number>() }
+    if (!view || !simulating || !contribution) return empty
 
-        const assets = cat.assets.map((a) => {
-          if (a.target_pct_in_category != null && target_value != null) {
-            const asset_target_value = (target_value * a.target_pct_in_category) / 100
-            return {
-              ...a,
-              target_value: Math.round(asset_target_value * 100) / 100,
-              diff_value: Math.round((asset_target_value - a.current_value) * 100) / 100,
-              diff_pct:
-                Math.round((a.target_pct_in_category - a.current_pct_in_category) * 100) / 100,
-            }
-          }
-          return { ...a, target_value: null, diff_value: null, diff_pct: null }
-        })
+    const categoryPlan = planContribution(
+      view.categories.map((cat) => ({ value: cat.current_value, targetPct: cat.target_pct })),
+      contribution,
+    )
 
-        return {
-          ...cat,
-          target_pct,
-          target_value: target_value != null ? Math.round(target_value * 100) / 100 : null,
-          diff_pct: diff_pct != null ? Math.round(diff_pct * 100) / 100 : null,
-          diff_value: diff_value != null ? Math.round(diff_value * 100) / 100 : null,
-          assets,
-        }
-      }),
-    }),
-    []
-  )
+    view.categories.forEach((cat, index) => {
+      const amount = categoryPlan[index]
+      empty.byCategory.set(cat.category_id, amount)
+
+      /* Dentro da categoria vale a mesma regra: o que ela recebeu é o aporte,
+         e os pesos são os alvos dos ativos dela. */
+      const assetPlan = planContribution(
+        cat.assets.map((asset) => ({
+          value: asset.current_value,
+          targetPct: asset.target_pct_in_category,
+        })),
+        amount,
+      )
+      cat.assets.forEach((asset, assetIndex) => {
+        empty.byAsset.set(asset.asset_id, assetPlan[assetIndex])
+      })
+    })
+
+    return empty
+  }, [view, simulating, contribution])
+
+  const effectiveTotal = (view?.total_value ?? 0) + (simulating ? (contribution ?? 0) : 0)
+
+  /* As duas pizzas: como a carteira está, e como ela fica. Fora da simulação
+     a segunda é a alocação alvo; dentro dela, a carteira depois do aporte —
+     que é o que torna visível o efeito de ligar o interruptor. */
+  const pies = useMemo(() => {
+    if (!view) return { current: [], suggested: [] }
+
+    const current = view.categories.map((cat) => ({
+      label: cat.category_name,
+      value: cat.current_value,
+      color: cat.color,
+    }))
+
+    const suggested = view.categories.map((cat) => ({
+      label: cat.category_name,
+      color: cat.color,
+      value: simulating
+        ? cat.current_value + (buyPlan.byCategory.get(cat.category_id) ?? 0)
+        : cat.target_pct != null
+          ? (view.total_value * cat.target_pct) / 100
+          : cat.current_value,
+    }))
+
+    return { current, suggested }
+  }, [view, simulating, buyPlan])
 
   // ── Local edits ────────────────────────────────────────────────────
   const handleCategoryTargetChange = (categoryId: number, value: number | null) => {
-    if (!data) return
-    const updated: RebalancingResponse = {
-      ...data,
-      categories: data.categories.map((cat) => {
-        if (cat.category_id !== categoryId) return cat
-        return { ...cat, target_pct: value }
-      }),
-    }
-    setData(recalcAllDiffs(updated, effectiveTotal))
+    setData((prev) =>
+      prev
+        ? {
+            ...prev,
+            categories: prev.categories.map((cat) =>
+              cat.category_id === categoryId ? { ...cat, target_pct: value } : cat,
+            ),
+          }
+        : prev,
+    )
   }
 
   const handleAssetTargetChange = (
@@ -131,28 +208,26 @@ export default function RebalancingPage() {
     assetId: number,
     value: number | null
   ) => {
-    if (!data) return
-    const updated: RebalancingResponse = {
-      ...data,
-      categories: data.categories.map((cat) => {
-        if (cat.category_id !== categoryId) return cat
-        return {
-          ...cat,
-          assets: cat.assets.map((a) =>
-            a.asset_id === assetId ? { ...a, target_pct_in_category: value } : a
-          ),
-        }
-      }),
-    }
-    setData(recalcAllDiffs(updated, effectiveTotal))
+    setData((prev) =>
+      prev
+        ? {
+            ...prev,
+            categories: prev.categories.map((cat) =>
+              cat.category_id !== categoryId
+                ? cat
+                : {
+                    ...cat,
+                    assets: cat.assets.map((asset) =>
+                      asset.asset_id === assetId
+                        ? { ...asset, target_pct_in_category: value }
+                        : asset,
+                    ),
+                  },
+            ),
+          }
+        : prev,
+    )
   }
-
-  // Recalculate diffs when contribution changes
-  useEffect(() => {
-    if (!data) return
-    setData((prev) => (prev ? recalcAllDiffs(prev, (prev.total_value) + (contribution ?? 0)) : prev))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contribution, recalcAllDiffs])
 
   // ── Save ───────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -187,8 +262,8 @@ export default function RebalancingPage() {
   }
 
   // ── Computed sums ──────────────────────────────────────────────────
-  const categoryTargetSum = data
-    ? data.categories.reduce((s, c) => s + (c.target_pct ?? 0), 0)
+  const categoryTargetSum = view
+    ? view.categories.reduce((s, c) => s + (c.target_pct ?? 0), 0)
     : 0
 
   // ── Render ─────────────────────────────────────────────────────────
@@ -196,17 +271,18 @@ export default function RebalancingPage() {
     return <LoadingSpinner />
   }
 
-  if (!data || data.categories.length === 0) {
+  if (!view || view.categories.length === 0) {
     return <AppAlert severity="info">Nenhuma posição encontrada para rebalanceamento.</AppAlert>
   }
 
   const rows: Row[] = [
-    ...data.categories.flatMap<Row>((category) => {
+    ...view.categories.flatMap<Row>((category) => {
       const open = openCategories.includes(category.category_id)
       const categoryRow: Row = {
         kind: 'category',
         key: `cat-${category.category_id}`,
         category,
+        buy: buyPlan.byCategory.get(category.category_id) ?? 0,
       }
       if (!open) return [categoryRow]
       return [
@@ -217,6 +293,7 @@ export default function RebalancingPage() {
           categoryId: category.category_id,
           asset,
           targetSet: category.target_pct != null,
+          buy: buyPlan.byAsset.get(asset.asset_id) ?? 0,
         })),
       ]
     }),
@@ -246,7 +323,11 @@ export default function RebalancingPage() {
               >
                 {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
               </AppIconButton>
-              <AppColorSwatch color={row.category.color} shape="dot" />
+              {/* Sem o ponto na cor da categoria: verde e vermelho já
+                  significam sinal nas colunas à direita, e um "Bolsa BR"
+                  verde ao lado de um número vermelho fazia a linha inteira
+                  se contradizer. A cor da categoria está nas pizzas acima,
+                  onde ela identifica uma fatia. */}
               <AppText weight="strong">{row.category.category_name}</AppText>
             </AppStack>
           )
@@ -270,7 +351,7 @@ export default function RebalancingPage() {
       align: 'right',
       render: (row) =>
         row.kind === 'total'
-          ? fmt(data.total_value)
+          ? fmt(view.total_value)
           : row.kind === 'category'
             ? fmt(row.category.current_value)
             : fmt(row.asset.current_value),
@@ -327,20 +408,48 @@ export default function RebalancingPage() {
         )
       },
     },
-    {
-      label: 'Aporte',
-      align: 'right',
-      render: (row) => {
-        if (row.kind === 'total') return '—'
-        const value = row.kind === 'category' ? row.category.diff_value : row.asset.diff_value
-        const show = (row.kind === 'category' || row.targetSet) && value != null
-        return (
-          <AppText variant="bodySmall" tone={diffTone(value)}>
-            {show ? fmt(value as number) : '—'}
-          </AppText>
-        )
-      },
-    },
+    /* A última coluna troca de pergunta com o interruptor.
+     *
+     * Desligado ela é diagnóstico: quanto falta para o alvo, negativo
+     * inclusive — quem está acima aparece como excesso. Ligado ela é a
+     * resposta ao aporte, e aporte é compra: nunca sai negativa, porque
+     * ninguém aporta pensando em vender. */
+    simulating
+      ? {
+          label: 'Comprar',
+          align: 'right' as const,
+          render: (row: Row) => {
+            if (row.kind === 'total') {
+              return <AppText weight="strong">{fmt(contribution ?? 0)}</AppText>
+            }
+            if (row.buy <= 0) {
+              return (
+                <AppText variant="bodySmall" tone="secondary">
+                  —
+                </AppText>
+              )
+            }
+            return (
+              <AppText variant="bodySmall" tone="success">
+                {fmt(row.buy)}
+              </AppText>
+            )
+          },
+        }
+      : {
+          label: 'Aporte',
+          align: 'right' as const,
+          render: (row: Row) => {
+            if (row.kind === 'total') return '—'
+            const value = row.kind === 'category' ? row.category.diff_value : row.asset.diff_value
+            const show = (row.kind === 'category' || row.targetSet) && value != null
+            return (
+              <AppText variant="bodySmall" tone={diffTone(value)}>
+                {show ? fmt(value as number) : '—'}
+              </AppText>
+            )
+          },
+        },
   ]
 
   return (
@@ -353,15 +462,23 @@ export default function RebalancingPage() {
         ]}
         actions={
           <>
-            <AppNumberField
-              label="Simular Aporte"
-              size="md"
-              allowEmpty
-              step={0.01}
-              prefix={currencySymbol}
-              value={contribution}
-              onChange={setContribution}
+            <AppSwitch
+              label="Simular aporte"
+              hint="Distribui o dinheiro novo comprando o que está mais atrasado, sem sugerir venda."
+              checked={simulating}
+              onChange={setSimulating}
             />
+            {simulating && (
+              <AppNumberField
+                label="Aporte"
+                size="md"
+                allowEmpty
+                step={0.01}
+                prefix={currencySymbol}
+                value={contribution}
+                onChange={setContribution}
+              />
+            )}
             <AppButton icon={<SaveIcon />} loading={saving} onClick={handleSave}>
               Salvar alvos
             </AppButton>
@@ -369,12 +486,13 @@ export default function RebalancingPage() {
         }
         metrics={
           <>
-            <AppMetric label="Patrimônio" value={fmt(data.total_value)} size="lg" />
-            <AppMetric
-              label="Aporte simulado"
-              value={contribution ? fmt(contribution) : '—'}
-            />
-            <AppMetric label="Base do cálculo" value={fmt(effectiveTotal)} />
+            <AppMetric label="Patrimônio" value={fmt(view.total_value)} size="lg" />
+            {simulating && (
+              <>
+                <AppMetric label="Aporte" value={contribution ? fmt(contribution) : '—'} />
+                <AppMetric label="Carteira depois" value={fmt(effectiveTotal)} />
+              </>
+            )}
             <AppMetric
               label="Soma dos alvos"
               value={categoryTargetSum > 0 ? `${categoryTargetSum.toFixed(2).replace('.', ',')}%` : '—'}
@@ -383,6 +501,25 @@ export default function RebalancingPage() {
           </>
         }
       />
+
+      <AppGrid cols={{ xs: 1, md: 2 }} gap="lg" align="stretch">
+        <AppGridItem>
+          <AppCard>
+            <AppStack gap="sm">
+              <SectionTitle>Hoje</SectionTitle>
+              <AllocationPie slices={pies.current} />
+            </AppStack>
+          </AppCard>
+        </AppGridItem>
+        <AppGridItem>
+          <AppCard>
+            <AppStack gap="sm">
+              <SectionTitle>{simulating ? 'Depois do aporte' : 'No alvo'}</SectionTitle>
+              <AllocationPie slices={pies.suggested} />
+            </AppStack>
+          </AppCard>
+        </AppGridItem>
+      </AppGrid>
 
       <AppCard padding="none">
         <AppSimpleTable

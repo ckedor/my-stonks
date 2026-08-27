@@ -34,7 +34,11 @@ export default function AppSwitch({
   if (description) {
     return (
       <AppStack direction="row" gap="sm" align="start">
-        <Switch checked={checked} onChange={(_, value) => onChange(value)} />
+        <Switch
+          checked={checked}
+          onChange={(_, value) => onChange(value)}
+          slotProps={{ input: { 'aria-label': label } }}
+        />
         <AppStack gap="none">
           <AppText weight="strong">{label}</AppText>
           <AppText variant="bodySmall" tone="secondary">
@@ -50,7 +54,15 @@ export default function AppSwitch({
       <AppText variant="bodySmall" tone="secondary">
         {label}
       </AppText>
-      <Switch size="small" checked={checked} onChange={(_, value) => onChange(value)} />
+      {/* O rótulo é texto ao lado, não um `<label>` ligado ao input: sem o
+          `aria-label` o leitor de tela anuncia um interruptor sem nome, e o
+          teste não tem como alcançá-lo. */}
+      <Switch
+        size="small"
+        checked={checked}
+        onChange={(_, value) => onChange(value)}
+        slotProps={{ input: { 'aria-label': label } }}
+      />
     </AppStack>
   )
 

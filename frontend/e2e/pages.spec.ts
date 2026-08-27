@@ -134,6 +134,17 @@ test('portfolio/rebalanceamento', async ({ page, mockApi }) => {
   await expectNothingClipped(page)
 
   await expect(page).toHaveScreenshot('page-rebalancing.png')
+
+  /* Ligado o interruptor, a última coluna deixa de ser diagnóstico e vira
+     compra: a mesma tela responde a outra pergunta, e as duas precisam de
+     linha de base. */
+  await page.getByRole('checkbox', { name: 'Simular aporte' }).check()
+  await page.getByLabel('Aporte', { exact: true }).fill('10000')
+
+  await expect(page.getByRole('columnheader', { name: 'Comprar' })).toBeVisible()
+  await expectNothingClipped(page)
+
+  await expect(page).toHaveScreenshot('page-rebalancing-contribution.png')
 })
 
 test('portfolio/categoria', async ({ page, mockApi }) => {

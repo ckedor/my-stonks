@@ -9,10 +9,15 @@ Rebalancing approach: Standard market redistribution.
   - Positive difference → buy more of that asset.
   - Negative difference → sell or redirect future contributions away.
 
-This approach assumes redistribution of the existing portfolio (no new
-contribution amount is considered). If the user wants contribution-only
-rebalancing, the same difference values can be used to decide where to
-direct new money without selling existing positions.
+This approach assumes redistribution of the existing portfolio: no
+contribution amount is considered here, and a negative difference means
+selling.
+
+Contribution-only distribution — where to direct new money without selling
+anything — is a separate reading of the same targets, and it lives in the
+frontend (`pages/portfolio/rebalancing/contribution.ts`). It stays there
+because it is interactive: the amount is typed and the answer is redrawn on
+every keystroke, and nothing about it is persisted.
 """
 
 from app.core.exceptions import BusinessRuleError

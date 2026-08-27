@@ -72,9 +72,15 @@ AppStack gap="lg"
 - **O título da tela é o rótulo dela em `src/layouts/navigation.ts`.** Se os
   dois discordam, é a tela que está errada.
 - **Cor é identidade de série de gráfico.** A cor de uma categoria pinta a
-  fatia da pizza, o anel de peso, o ponto ao lado do nome numa linha de
-  tabela — nunca um título, um cabeçalho de grupo ou uma borda decorativa.
-  O `AppPageHeader` não tem prop de cor, e a falta é a regra.
+  fatia da pizza, o anel de peso e a legenda colada ao gráfico — nunca um
+  título, um cabeçalho de grupo ou uma borda decorativa. O `AppPageHeader`
+  não tem prop de cor, e a falta é a regra.
+
+  Numa **linha de tabela ela também não entra**: as colunas de número já
+  usam verde e vermelho para sinal, e um ponto verde ao lado de "Bolsa BR"
+  faz a linha se contradizer. Foi o que aconteceu no Rebalanceamento, e a
+  saída não foi tirar a cor da tela — foi movê-la para as duas pizzas, onde
+  ela identifica uma fatia.
 - **Métrica é `AppMetric`.** Um rótulo pequeno com um número grande escrito
   à mão dentro de um card é a mesma coisa com outro nome.
 
