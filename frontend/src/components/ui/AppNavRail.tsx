@@ -1,9 +1,7 @@
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { Box, Tooltip, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { radius } from '@/theme/tokens'
-import AppIconButton from './AppIconButton'
+import { TOPBAR_HEIGHT } from './AppTopbar'
 import { useAppTheme, withOpacity } from './useAppTheme'
 
 /* Coluna de navegação do app: os destinos de dentro da seção corrente.
@@ -16,7 +14,9 @@ import { useAppTheme, withOpacity } from './useAppTheme'
  * coisa mais escura à vista.
  *
  * Recolhida, vira uma faixa de ícones e os rótulos passam para o tooltip.
- * Quem guarda esse estado é quem usa — a coluna só o recebe e o devolve.
+ * Quem guarda esse estado, e quem oferece o botão de alternar, é a moldura:
+ * o controle mora na barra superior, logo acima da coluna, onde não gasta
+ * uma linha dela nem muda de lugar conforme o tamanho da seção.
  *
  * São duas caixas, e não uma, por causa do fio da direita: quem gruda ao
  * rolar é a lista, mas o fio precisa acompanhar a página inteira. Numa caixa
@@ -46,8 +46,10 @@ export interface AppNavRailProps {
   /** Rótulo acessível da coluna. */
   navLabel: string
   groups: AppNavRailGroup[]
+  /** Recolhida, some com os rótulos. Quem guarda o estado e quem oferece o
+   *  controle é a moldura — na barra superior, onde ele não gasta uma linha
+   *  da própria coluna. */
   collapsed: boolean
-  onToggleCollapsed: () => void
   onSelect: (id: string) => void
 }
 
@@ -55,7 +57,6 @@ export default function AppNavRail({
   navLabel,
   groups,
   collapsed,
-  onToggleCollapsed,
   onSelect,
 }: AppNavRailProps) {
   const theme = useAppTheme()
@@ -80,11 +81,12 @@ export default function AppNavRail({
       <Box
         sx={{
           /* Gruda ao rolar em vez de travar a página em `100vh`: o app rola
-             inteiro, com a barra superior subindo junto, e a lista precisa
-             continuar visível sem mudar isso. */
+             inteiro e a lista precisa continuar visível sem mudar isso. Começa
+             abaixo da barra superior, que também gruda — em `top: 0` os
+             primeiros itens passariam por baixo dela. */
           position: 'sticky',
-          top: 0,
-          maxHeight: '100vh',
+          top: TOPBAR_HEIGHT,
+          maxHeight: `calc(100vh - ${TOPBAR_HEIGHT}px)`,
           overflowY: 'auto',
           overflowX: 'hidden',
           display: 'flex',
@@ -98,30 +100,6 @@ export default function AppNavRail({
           }),
         }}
       >
-        {/* No topo, e não no rodapé: encostado no fim da lista o controle
-            mudava de lugar a cada seção, e abaixo dela dependia de uma altura
-            que a faixa não tem. */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: collapsed ? 'center' : 'flex-end',
-            mb: 1,
-          }}
-        >
-          <AppIconButton
-            label={collapsed ? 'Expandir menu' : 'Recolher menu'}
-            size="sm"
-            tooltip
-            onClick={onToggleCollapsed}
-          >
-            {collapsed ? (
-              <ChevronRightIcon fontSize="small" />
-            ) : (
-              <ChevronLeftIcon fontSize="small" />
-            )}
-          </AppIconButton>
-        </Box>
-
         {groups.map((group) => (
           <Box key={group.title} sx={{ mb: 1.5 }}>
             {collapsed ? (
