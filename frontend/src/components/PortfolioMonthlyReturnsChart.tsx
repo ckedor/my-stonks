@@ -1,17 +1,18 @@
 // src/components/PortfolioMonthlyReturnsChart.tsx
-import { AppChartArea, AppInlineToggle, AppStack, SectionTitle, useAppTheme } from '@/components/ui'
+import { defaultRangeOptionsFromOldest } from '@/components/charts/app-bar-chart/helpers'
+import DateRangeMenu from '@/components/charts/shared/DateRangeMenu'
+import { baseChartOptions } from '@/components/portfolio-asset/chart'
+import { AppChartArea, AppStack, SectionTitle, useAppTheme } from '@/components/ui'
+import { getDateFromRange, type DateRangeKey } from '@/lib/utils/date'
 import dayjs from 'dayjs'
-import { useMemo, useState } from 'react'
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+    createChart,
+    HistogramSeries,
+    type HistogramData,
+    type IChartApi,
+    type Time,
+} from 'lightweight-charts'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 interface SeriesPoint {
   date: string
@@ -24,124 +25,105 @@ interface Props {
   data: SeriesPoint[]
 }
 
-interface MonthlyPoint {
-  month: string
-  monthlyChange: number
-}
-
+/** Quanto cada mês rendeu, em barras.
+ *
+ *  Desenhado com a mesma biblioteca de canvas do gráfico de rentabilidade, e
+ *  não mais com o recharts: o eixo de meses de uma carteira antiga não cabe na
+ *  largura do card, e sem poder aproximar a leitura de um trecho vira contagem
+ *  de barras. O seletor de período continua ali para o recorte grosso; o zoom e
+ *  o arraste ficam com o gráfico. */
 export default function PortfolioMonthlyReturnsChart({
   height = 260,
   defaultRange = '1y',
   data,
 }: Props) {
   const theme = useAppTheme()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const chartRef = useRef<IChartApi | null>(null)
 
-  const successColor = theme.palette.success.main
-  const warningColor = theme.palette.error.main
-  const gridColor = theme.palette.chart?.grid ?? theme.palette.divider
-  const labelColor = theme.palette.chart?.label ?? theme.palette.text.secondary
+  const [range, setRange] = useState<DateRangeKey>(defaultRange as DateRangeKey)
 
-  const [range, setRange] = useState<string>(defaultRange)
+  const baseSeries: SeriesPoint[] = useMemo(() => data || [], [data])
 
-  const baseSeries: SeriesPoint[] = useMemo(() => {
-    return data || []
-  }, [data])
-
-  // datas completas da curva selecionada (para calcular ranges possíveis)
-  const allDates = useMemo(
-    () => baseSeries.map((p) => p.date).sort(),
-    [baseSeries]
+  const fromISO = useMemo(
+    () => (range === 'max' ? null : getDateFromRange(range).format('YYYY-MM-DD')),
+    [range],
   )
 
   const filteredSeries: SeriesPoint[] = useMemo(() => {
     if (!baseSeries.length) return []
-    const today = dayjs()
-    let from: dayjs.Dayjs
+    if (!fromISO) return baseSeries
+    return baseSeries.filter((p) => p.date >= fromISO)
+  }, [baseSeries, fromISO])
 
-    switch (range) {
-      case 'ytd':
-        from = today.startOf('year')
-        break
-      case '1y':
-        from = today.subtract(1, 'year')
-        break
-      case '2y':
-        from = today.subtract(2, 'year')
-        break
-      case '3y':
-        from = today.subtract(3, 'year')
-        break
-      case '4y':
-        from = today.subtract(4, 'year')
-        break
-      case '5y':
-        from = today.subtract(5, 'year')
-        break
-      case 'max':
-      default:
-        from = dayjs('1900-01-01')
-    }
-
-    return baseSeries.filter((p) => dayjs(p.date).isSameOrAfter(from))
-  }, [baseSeries, range])
-
-  const monthlyData: MonthlyPoint[] = useMemo(() => {
-    if (filteredSeries.length === 0) return []
-
-    const sorted = [...filteredSeries].sort(
-      (a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf()
-    )
+  /** O retorno de um mês é a variação entre o primeiro ponto dele e o primeiro
+   *  do mês seguinte, e fica datado no mês a que pertence. */
+  const monthlyData = useMemo(() => {
+    if (!filteredSeries.length) return []
 
     const byMonth: Record<string, { date: string; value: number }> = {}
-
-    for (const point of sorted) {
+    for (const point of filteredSeries) {
       const monthKey = dayjs(point.date).format('YYYY-MM')
-      if (!byMonth[monthKey] || dayjs(point.date).isBefore(byMonth[monthKey].date)) {
+      if (!byMonth[monthKey] || point.date < byMonth[monthKey].date) {
         byMonth[monthKey] = { date: point.date, value: point.value }
       }
     }
 
-    const sortedMonths = Object.keys(byMonth).sort()
-    const result: MonthlyPoint[] = []
+    const months = Object.keys(byMonth).sort()
+    const result: { time: string; value: number }[] = []
 
-    for (let i = 1; i < sortedMonths.length; i++) {
-      const prev = byMonth[sortedMonths[i - 1]]
-      const curr = byMonth[sortedMonths[i]]
-      const change = (curr.value - prev.value) * 100
-
-      // o retorno é do mês do prev
+    for (let i = 1; i < months.length; i++) {
       result.push({
-        month: dayjs(prev.date).format('MM/YY'),
-        monthlyChange: change,
+        time: `${months[i - 1]}-01`,
+        value: (byMonth[months[i]].value - byMonth[months[i - 1]].value) * 100,
       })
     }
 
     return result
   }, [filteredSeries])
 
-  const values = monthlyData.map((d) => d.monthlyChange)
-  const min = values.length ? Math.min(...values, 0) : 0
-  const max = values.length ? Math.max(...values, 0) : 0
-  const padding = (max - min) * 0.2 || 5
-  const domain: [number, number] = [min - padding, max + padding]
+  const rangeOptions = useMemo(
+    () => defaultRangeOptionsFromOldest(baseSeries[0]?.date ?? null),
+    [baseSeries],
+  )
 
-  // ranges possíveis (mesma lógica do gráfico principal)
-  const currentYear = dayjs().year()
-  const totalMonths = allDates.length
-    ? dayjs(allDates.at(-1) as string).diff(dayjs(allDates[0] as string), 'month')
-    : 0
-  const totalYears = Math.floor(totalMonths / 12)
+  useEffect(() => {
+    if (!containerRef.current || !monthlyData.length) return
 
-  const ranges = useMemo(() => {
-    const base = [
-      { label: 'Max', value: 'max' },
-      { label: `${currentYear}`, value: 'ytd' },
-    ]
-    for (let y = 1; y <= 5; y++) {
-      if (y <= totalYears) base.push({ label: `${y}Y`, value: `${y}y` })
+    const chart = createChart(containerRef.current, baseChartOptions(theme, height))
+
+    const series = chart.addSeries(HistogramSeries, {
+      base: 0,
+      priceFormat: {
+        type: 'custom',
+        formatter: (value: number) => `${value.toFixed(1)}%`,
+        minMove: 0.1,
+      },
+    })
+    series.setData(
+      monthlyData.map((point) => ({
+        time: point.time as Time,
+        value: point.value,
+        color: point.value >= 0 ? theme.palette.success.main : theme.palette.error.main,
+      })) as HistogramData<Time>[],
+    )
+
+    chart.timeScale().fitContent()
+    chartRef.current = chart
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (containerRef.current) {
+        chart.applyOptions({ width: containerRef.current.clientWidth })
+      }
+    })
+    resizeObserver.observe(containerRef.current)
+
+    return () => {
+      resizeObserver.disconnect()
+      chart.remove()
+      chartRef.current = null
     }
-    return base
-  }, [totalYears, currentYear])
+  }, [monthlyData, height, theme])
 
   if (!monthlyData.length) {
     return (
@@ -154,49 +136,13 @@ export default function PortfolioMonthlyReturnsChart({
 
   return (
     <AppChartArea
-      height={height}
+      plotRef={containerRef}
       toolbar={
         <AppStack direction="row" justify="between" align="center" gap="md">
           <SectionTitle>Desempenho Mensal</SectionTitle>
-          <AppInlineToggle options={ranges} value={range} onChange={setRange} />
+          <DateRangeMenu show range={range} options={rangeOptions} onChange={setRange} />
         </AppStack>
       }
-    >
-      <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={monthlyData} margin={{ left: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-            <XAxis
-              dataKey="month"
-              stroke={labelColor}
-              tickFormatter={(v) => {
-                const value = String(v) // ex: "03/25"
-                const [mm] = value.split('/') // "03"
-                return mm === '01' ? value : mm
-              }}
-            />
-            <YAxis
-              orientation="right"
-              domain={domain}
-              tickFormatter={(v) => `${Number(v).toFixed(0)}%`}
-              stroke={labelColor}
-            />
-            <Tooltip
-              formatter={(value) => [
-                `${Number(value as number).toFixed(2)}%`,
-                'Retorno mensal',
-              ]}
-              labelFormatter={(label) => `Mês: ${label}`}
-            />
-            <Bar dataKey="monthlyChange" name="Retorno mensal">
-              {monthlyData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={entry.monthlyChange >= 0 ? successColor : warningColor}
-                />
-              ))}
-            </Bar>
-          </BarChart>
-      </ResponsiveContainer>
-    </AppChartArea>
+    />
   )
 }
