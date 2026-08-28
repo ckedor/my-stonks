@@ -10,11 +10,12 @@ import {
   AppGridItem,
   AppMetric,
   AppNumberField,
+  AppSkeleton,
   AppSnackbar,
   AppStack,
   AppSwitch,
+  AppTableSkeleton,
   AppText,
-  LoadingSpinner,
   SectionTitle,
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
@@ -43,7 +44,30 @@ export default function SliceDistributionTab({ portfolioId, categoryNames }: Pro
   const rebalancing = useRebalancing(portfolioId, { categoryNames })
   const { view, simulating, contribution, categoryTargetSum } = rebalancing
 
-  if (rebalancing.loading) return <LoadingSpinner />
+  if (rebalancing.loading) {
+    return (
+      <AppStack gap="lg">
+        <AppCard>
+          <AppSkeleton height={56} />
+        </AppCard>
+        <AppGrid cols={{ xs: 1, md: 2 }} gap="lg" align="stretch">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <AppGridItem key={index}>
+              <AppCard>
+                <AppStack gap="sm">
+                  <AppSkeleton shape="text" width={140} height={24} />
+                  <AppSkeleton height={280} />
+                </AppStack>
+              </AppCard>
+            </AppGridItem>
+          ))}
+        </AppGrid>
+        <AppCard padding="md">
+          <AppTableSkeleton columns={6} rows={8} />
+        </AppCard>
+      </AppStack>
+    )
+  }
 
   if (!view || view.categories.length === 0) {
     return (

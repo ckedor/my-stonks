@@ -2,14 +2,15 @@ import {
   AppEmptyState,
   AppGrid,
   AppPageHeader,
+  AppPageHeaderSkeleton,
   AppPagination,
   AppSearchField,
   AppSelect,
+  AppSkeleton,
   AppStack,
   AppStackItem,
   AppText,
   AppToggleGroup,
-  LoadingSpinner,
 } from '@/components/ui'
 import { ASSET_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
@@ -124,7 +125,19 @@ export default function MarketAtivosPage() {
     return assetTypes.filter((t) => t.asset_class_id === selectedClass)
   }, [assetTypes, selectedClass])
 
-  if (loading) return <LoadingSpinner />
+  if (loading) {
+    return (
+      <AppStack gap="lg">
+        <AppPageHeaderSkeleton titleWidth={120} actions={4} />
+        <AppSkeleton height={140} />
+        <AppGrid cols={{ xs: 1, sm: 2, md: 3, lg: 4 }} gap="md">
+          {Array.from({ length: 12 }).map((_, index) => (
+            <AppSkeleton key={index} height={180} />
+          ))}
+        </AppGrid>
+      </AppStack>
+    )
+  }
 
   if (error) {
     return <AppText tone="danger">{error}</AppText>

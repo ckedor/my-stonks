@@ -1,7 +1,8 @@
 import { fetchSegmentAnalysis, fetchSegmentPatrimony, fetchSegmentReturns } from '@/api/portfolio'
 import PortfolioSliceScreen from '@/components/portfolio-slice/PortfolioSliceScreen'
+import PortfolioSliceScreenSkeleton from '@/components/portfolio-slice/PortfolioSliceScreenSkeleton'
 import type { SliceTabId } from '@/components/portfolio-slice/tabs'
-import { LoadingSpinner, useAppTheme } from '@/components/ui'
+import { useAppTheme } from '@/components/ui'
 import { PORTFOLIO_SEGMENTS, type PortfolioSegmentId } from '@/constants/portfolioSegments'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
@@ -79,7 +80,7 @@ export default function PortfolioSegmentPage({ segment }: Props) {
     [segment, definition.label, returns, assetIds],
   )
 
-  if (positionsLoading) return <LoadingSpinner />
+  if (positionsLoading) return <PortfolioSliceScreenSkeleton titleWidth={180} description />
   if (!portfolioId) return null
 
   const portfolioValue = positions.reduce((sum, position) => sum + position.value, 0)

@@ -1,5 +1,6 @@
 import RiskAnalysisCards from '@/components/RiskAnalysisCards'
-import { AppPageHeader, AppStack, AppText, LoadingSpinner } from '@/components/ui'
+import RiskAnalysisCardsSkeleton from '@/components/RiskAnalysisCardsSkeleton'
+import { AppPageHeader, AppPageHeaderSkeleton, AppStack, AppText } from '@/components/ui'
 import { useAnalysisStore } from '@/stores/portfolio/analysis'
 
 export default function PortfolioRiskPage() {
@@ -8,7 +9,12 @@ export default function PortfolioRiskPage() {
   const loading = analysisLoading && !analysis
 
   if (loading) {
-    return <LoadingSpinner />
+    return (
+      <AppStack gap="lg">
+        <AppPageHeaderSkeleton titleWidth={120} />
+        <RiskAnalysisCardsSkeleton />
+      </AppStack>
+    )
   }
 
   if (!analysis) {

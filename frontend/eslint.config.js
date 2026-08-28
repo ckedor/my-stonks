@@ -35,6 +35,30 @@ const legacy = process.env.DS_BASELINE_OFF
 
 const USE_DS = 'Importe de "@/components/ui". Só o design system pode depender do MUI.'
 
+const INLINE_STYLE =
+  'Estilo mora no componente, não na página. Adicione a variante em "@/components/ui".'
+
+/* Os seletores são constantes porque `no-restricted-syntax` não soma entre
+   blocos de config: o bloco mais específico substitui a lista inteira do
+   anterior. Compor a partir daqui é o que impede uma regra de sumir sem
+   ninguém notar ao acrescentar outra. */
+const NO_INLINE_STYLE = [
+  { selector: 'JSXAttribute[name.name="sx"]', message: INLINE_STYLE },
+  { selector: 'JSXAttribute[name.name="style"]', message: INLINE_STYLE },
+]
+
+const NO_SPINNER = {
+  selector: 'JSXOpeningElement[name.name="LoadingSpinner"]',
+  message:
+    'A espera de uma tela é a reserva do que vem: use "AppSkeleton" ou um "*Skeleton" da tela. O "LoadingSpinner" é para a espera em linha de uma ação disparada por alguém.',
+}
+
+const NO_PAGE_TITLE = {
+  selector: 'JSXOpeningElement[name.name="PageTitle"]',
+  message:
+    'O cabeçalho de uma página é o "AppPageHeader": ele já traz título, breadcrumb, ações e métricas.',
+}
+
 /* As entradas do baseline são caminhos literais, mas `files` espera glob.
    Sem escapar, uma rota dinâmica como `asset/[id]/page.tsx` vira classe de
    caracteres e o arquivo nunca casa — ficando bloqueado apesar de listado. */
@@ -84,17 +108,23 @@ export default defineConfig([
           patterns: [{ group: ['@mui/material/*'], message: USE_DS }],
         },
       ],
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: 'JSXAttribute[name.name="sx"]',
-          message: 'Estilo mora no componente, não na página. Adicione a variante em "@/components/ui".',
-        },
-        {
-          selector: 'JSXAttribute[name.name="style"]',
-          message: 'Estilo mora no componente, não na página. Adicione a variante em "@/components/ui".',
-        },
-      ],
+      'no-restricted-syntax': ['error', ...NO_INLINE_STYLE],
+    },
+  },
+
+  /* ── Espera de tela: esqueleto, não spinner ──
+
+     Um disco girando no meio do vazio não diz nada sobre o que vem, e faz a
+     tela saltar quando o dado chega. A reserva do conteúdo (`AppSkeleton` e
+     os `*Skeleton` feitos com ele) diz as duas coisas. O `LoadingSpinner`
+     continua existindo para a espera em linha de uma ação que alguém acabou
+     de disparar — o botão que recalcula, a carteira trocando na barra do
+     topo —, e é por isso que a regra alcança as páginas e não o app inteiro:
+     é a página que espera por conteúdo. */
+  {
+    files: ['src/pages/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': ['error', ...NO_INLINE_STYLE, NO_SPINNER],
     },
   },
 
@@ -117,22 +147,7 @@ export default defineConfig([
   {
     files: ['src/pages/portfolio/**/*.tsx', 'src/pages/market/**/*.tsx'],
     rules: {
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: 'JSXAttribute[name.name="sx"]',
-          message: 'Estilo mora no componente, não na página. Adicione a variante em "@/components/ui".',
-        },
-        {
-          selector: 'JSXAttribute[name.name="style"]',
-          message: 'Estilo mora no componente, não na página. Adicione a variante em "@/components/ui".',
-        },
-        {
-          selector: 'JSXOpeningElement[name.name="PageTitle"]',
-          message:
-            'O cabeçalho de uma página é o "AppPageHeader": ele já traz título, breadcrumb, ações e métricas.',
-        },
-      ],
+      'no-restricted-syntax': ['error', ...NO_INLINE_STYLE, NO_SPINNER, NO_PAGE_TITLE],
     },
   },
 

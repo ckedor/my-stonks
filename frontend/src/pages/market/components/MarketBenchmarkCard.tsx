@@ -3,7 +3,7 @@ import { fetchAssetQuoteHistory } from '@/api/market'
 import PortfolioReturnsChart, {
   type ReturnsChartExternalSeries,
 } from '@/components/PortfolioReturnsChart'
-import { AppAlert, AppCard, AppStack, LoadingSpinner, SectionTitle } from '@/components/ui'
+import { AppAlert, AppCard, AppChartSkeleton, AppStack, SectionTitle } from '@/components/ui'
 import { getDateFromRange } from '@/lib/utils/date'
 import { useCurrencyStore } from '@/stores/currency'
 import { memo, useEffect, useMemo, useState } from 'react'
@@ -96,7 +96,7 @@ export default memo(function MarketBenchmarkCard({
         ) : error ? (
           <AppAlert severity="error">Não foi possível carregar {title}.</AppAlert>
         ) : (
-          <LoadingSpinner />
+          <AppChartSkeleton height={420} toolbar />
         )}
       </AppStack>
     </AppCard>

@@ -3,10 +3,10 @@ import {
   AppSimpleTable,
   AppStack,
   AppText,
-  LoadingSpinner,
   SectionTitle,
   type AppSimpleTableColumn,
 } from '@/components/ui'
+import TaxTableSkeleton from './TaxTableSkeleton'
 import { INCOME_TAX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import dayjs from 'dayjs'
@@ -64,7 +64,7 @@ export default function MonthlyGainsTable({ portfolioId, fiscalYear, scope }: Pr
     fetchData()
   }, [portfolioId, fiscalYear, scope])
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <TaxTableSkeleton columns={6} />
 
   const columns: AppSimpleTableColumn<TaxReportItem>[] = [
     { label: 'Mês', render: (item) => dayjs(item.month).format('MMM/YYYY') },

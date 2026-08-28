@@ -1,10 +1,10 @@
 import {
-    AppChartArea,
-    AppSelect,
-    AppStack,
-    LoadingSpinner,
-    SectionTitle,
-    useAppTheme,
+  AppChartArea,
+  AppChartSkeleton,
+  AppSelect,
+  AppStack,
+  SectionTitle,
+  useAppTheme,
 } from '@/components/ui'
 import { DateRangeKey, getOldestDateISO } from '@/lib/utils/date'
 import { createNumberFormatter } from '@/lib/utils/number'
@@ -240,7 +240,8 @@ export function AppBarChart({
     [tooltipLabelFormatter]
   )
 
-  if (loading) return <LoadingSpinner />
+  if (loading)
+    return <AppChartSkeleton height={height} toolbar={!!(title || showRangePicker || showGroupBySelector)} />
 
   if (!chartData.length) {
     return <AppChartArea height={height} emptyMessage={emptyMessage} />

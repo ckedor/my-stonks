@@ -12,13 +12,14 @@ import {
   AppMetric,
   AppNumberField,
   AppPageHeader,
+  AppSkeleton,
   AppSnackbar,
   AppStack,
   AppStackItem,
   AppSwitch,
+  AppTableSkeleton,
   AppText,
   AppToggleGroup,
-  LoadingSpinner,
   SectionTitle,
   type AppToggleGroupOption,
 } from '@/components/ui'
@@ -98,7 +99,14 @@ export default function DistributionPage() {
       />
 
       {loading ? (
-        <LoadingSpinner />
+        <AppStack direction="row" gap="md" collapseBelow="md">
+          <AppStackItem>
+            <AppSkeleton height={MAP_HEIGHT} />
+          </AppStackItem>
+          <AppStackItem width={BAR_COLUMN_WIDTH} offsetTop="xxl">
+            <AppSkeleton height={520} />
+          </AppStackItem>
+        </AppStack>
       ) : (
         <AppStack direction="row" gap="md" collapseBelow="md">
           <AppStackItem>
@@ -126,7 +134,26 @@ export default function DistributionPage() {
       <SectionTitle>Alvos</SectionTitle>
 
       {rebalancing.loading ? (
-        <LoadingSpinner />
+        <>
+          <AppCard>
+            <AppSkeleton height={56} />
+          </AppCard>
+          <AppGrid cols={{ xs: 1, md: 2 }} gap="lg" align="stretch">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <AppGridItem key={index}>
+                <AppCard>
+                  <AppStack gap="sm">
+                    <AppSkeleton shape="text" width={140} height={24} />
+                    <AppSkeleton height={280} />
+                  </AppStack>
+                </AppCard>
+              </AppGridItem>
+            ))}
+          </AppGrid>
+          <AppCard padding="md">
+            <AppTableSkeleton columns={6} rows={8} />
+          </AppCard>
+        </>
       ) : !view || view.categories.length === 0 ? (
         <AppText tone="secondary">Nenhuma posição encontrada para rebalancear.</AppText>
       ) : (

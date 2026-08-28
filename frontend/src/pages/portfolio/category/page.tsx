@@ -1,8 +1,9 @@
 import { fetchCategoryAnalysis } from '@/api/portfolio'
 import PortfolioSliceScreen from '@/components/portfolio-slice/PortfolioSliceScreen'
-import type { SliceTabId } from '@/components/portfolio-slice/tabs'
+import PortfolioSliceScreenSkeleton from '@/components/portfolio-slice/PortfolioSliceScreenSkeleton'
 import { CONCENTRATION_DIMENSIONS } from '@/components/portfolio-slice/concentration'
-import { AppSelect, AppText, LoadingSpinner } from '@/components/ui'
+import type { SliceTabId } from '@/components/portfolio-slice/tabs'
+import { AppSelect, AppText } from '@/components/ui'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import { usePortfolioStore } from '@/stores/portfolio'
@@ -81,7 +82,7 @@ export default function PortfolioCategoryPage() {
     { enabled: !!portfolioId && !!category && tab === 'risco' },
   )
 
-  if (positionsLoading) return <LoadingSpinner />
+  if (positionsLoading) return <PortfolioSliceScreenSkeleton titleWidth={200} actions={1} />
 
   /* Sem categoria na URL — a entrada do menu — abre a primeira, que é o que a
      tela tem a mostrar; a URL passa a nomear o que está na tela. */

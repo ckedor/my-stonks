@@ -3,12 +3,13 @@ import TradeForm from '@/components/TradeForm'
 import TradesTable from '@/components/portfolio-trades/TradesTable'
 import {
   AppButton,
-  AppPageHeader,
+  AppCard,
   AppDayField,
+  AppPageHeader,
   AppSearchField,
   AppSelect,
   AppStack,
-  LoadingSpinner,
+  AppTableSkeleton,
 } from '@/components/ui'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { useTradesStore } from '@/stores/portfolio/trades'
@@ -115,7 +116,13 @@ export default function PortfolioTransactionsPage() {
 
       {/* Sem `maxHeight`: a tabela rolava por dentro do card, dando uma
           segunda barra de rolagem ao lado da barra da própria página. */}
-      {loading ? <LoadingSpinner /> : <TradesTable trades={filteredTrades} onRowClick={handleEdit} />}
+      {loading ? (
+        <AppCard padding="md">
+          <AppTableSkeleton columns={9} rows={12} />
+        </AppCard>
+      ) : (
+        <TradesTable trades={filteredTrades} onRowClick={handleEdit} />
+      )}
 
       <TradeForm
         open={drawerOpen}

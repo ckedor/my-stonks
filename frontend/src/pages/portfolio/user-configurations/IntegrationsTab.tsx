@@ -1,10 +1,10 @@
 import {
+  AppSkeleton,
   AppSnackbar,
   AppStack,
   AppStackItem,
   AppSwitch,
   AppText,
-  LoadingSpinner,
 } from '@/components/ui'
 import { USER_CONFIGURATION_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
@@ -90,7 +90,25 @@ export default function IntegrationsTab() {
     }
   }
 
-  if (loading) return <LoadingSpinner />
+  if (loading) {
+    return (
+      <AppStack direction="row">
+        <AppStackItem width={600}>
+          <AppStack gap="lg">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <AppStack key={index} direction="row" gap="md" align="center">
+                <AppSkeleton width={44} height={24} />
+                <AppStackItem>
+                  <AppSkeleton shape="text" width={220} height={20} />
+                  <AppSkeleton shape="text" width={360} height={16} />
+                </AppStackItem>
+              </AppStack>
+            ))}
+          </AppStack>
+        </AppStackItem>
+      </AppStack>
+    )
+  }
 
   return (
     <>

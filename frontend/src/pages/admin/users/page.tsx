@@ -9,9 +9,9 @@ import {
     AppStack,
     type ColumnConfig,
     type FieldConfig,
-    LoadingSpinner,
     PageTitle,
 } from '@/components/ui'
+import CrudPageSkeleton from '../CrudPageSkeleton'
 import { AUTH_ROUTES, USER_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import AddIcon from '@mui/icons-material/Add'
@@ -168,7 +168,7 @@ export default function AdminUsersPage() {
         { name: 'is_superuser', label: 'Admin', type: 'select', options: boolOptions },
       ]
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <CrudPageSkeleton columns={columns.length + 1} />
 
   return (
     <>

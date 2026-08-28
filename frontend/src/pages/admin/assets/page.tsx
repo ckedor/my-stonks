@@ -12,9 +12,9 @@ import {
     AppStack,
     type ColumnConfig,
     type FieldConfig,
-    LoadingSpinner,
     PageTitle,
 } from '@/components/ui'
+import CrudPageSkeleton from '../CrudPageSkeleton'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 interface AssetType {
@@ -377,7 +377,7 @@ export default function AdminAssetsPage() {
     setSelectedTypeId(null)
   }
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <CrudPageSkeleton columns={columns.length + 1} />
 
   return (
     <>

@@ -5,7 +5,8 @@ import {
     AppDataTable,
     AppStack,
     AppText,
-    LoadingSpinner,
+    AppSkeleton,
+    AppTableSkeleton,
     PageTitle,
 } from '@/components/ui'
 import { ASSET_ROUTES } from '@/constants/routes'
@@ -92,7 +93,10 @@ export default function AdminMarketDataQuotesPage() {
       <PageTitle>Cotações de ativos</PageTitle>
 
       {loadingAssets ? (
-        <LoadingSpinner />
+        <AppStack gap="md">
+          <AppSkeleton height={56} />
+          <AppTableSkeleton columns={7} surface="card" />
+        </AppStack>
       ) : (
         <AppStack gap="md">
           <AppAutocomplete
@@ -111,7 +115,10 @@ export default function AdminMarketDataQuotesPage() {
           {!selected ? (
             <AppAlert severity="info">Selecione um ativo para ver as cotações persistidas.</AppAlert>
           ) : loadingQuotes ? (
-            <LoadingSpinner />
+            <AppStack gap="md">
+              <AppSkeleton shape="text" width={200} height={16} />
+              <AppTableSkeleton columns={7} surface="card" />
+            </AppStack>
           ) : (
             <>
               <AppText variant="bodySmall" tone="secondary">
