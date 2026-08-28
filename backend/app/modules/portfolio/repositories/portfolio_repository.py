@@ -465,10 +465,12 @@ class PortfolioRepository(SQLAlchemyRepository):
         stmt = (
             select(Position.asset_id)
             .join(Asset, Position.asset_id == Asset.id)
-            .join(AssetType, Asset.asset_type_id == AssetType.id)
             .outerjoin(Exchange, Asset.exchange_id == Exchange.id)
             .where(Position.portfolio_id == portfolio_id)
-            .where(AssetType.short_name.in_(definition.asset_type_names))
+            # Por id, e não por `short_name`: aquela coluna é rótulo de produto
+            # em pt-BR ("Ação", "Tesouro", "Cripto"), e casá-la com um código
+            # em inglês funcionava só para os tipos em que os dois coincidem.
+            .where(Asset.asset_type_id.in_(definition.asset_type_ids))
             .distinct()
         )
 
@@ -480,11 +482,6 @@ class PortfolioRepository(SQLAlchemyRepository):
 
         result = await self.session.execute(stmt)
         return [row[0] for row in result.all()]
-
-    async def get_asset_type_id(self, short_name: str) -> int | None:
-        stmt = select(AssetType.id).where(AssetType.short_name == short_name)
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
 
     async def get_asset_type_returns(
         self,

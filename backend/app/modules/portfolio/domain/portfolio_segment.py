@@ -7,25 +7,33 @@ position belongs to exactly one segment, or to none.
 
 Two things define a segment, and only two:
 
-- the **asset types** it covers;
+- the **asset types** it covers, by id;
 - whether it is the Brazilian or the foreign side of those types.
 
-The second exists because the same type trades in both markets: a `STOCK` is a
-B3 share or a Nasdaq one, and the two are different screens. The rule for which
+The second exists because the same type trades in both markets: a stock is a B3
+share or a Nasdaq one, and the two are different screens. The rule for which
 side an asset is on is the exchange, and it is the one the provider adapter
 already applies when it decides a quote's currency: B3 — or no exchange at all,
 which is what a Brazilian instrument registered without one looks like — is the
 Brazilian side, and anything else is abroad.
 
-Segments do not have to cover the portfolio. Pension funds and investment funds
-belong to no segment today, and a position outside every segment is simply not
-on any specialized screen.
+Membership is by **id**, never by `asset_type.short_name`. That column holds
+product copy in pt-BR — `Ação`, `Tesouro`, `Cripto`, `Debênture` — while the
+codes in `docs/domain.md` are English. Matching the two silently worked for the
+types whose label happens to equal its code (`FII`, `ETF`, `CDB`) and silently
+failed for the rest, which is how the specialized screens came up empty. The id
+is the seeded primary key and the only stable identity an asset type has.
+
+Segments do not have to cover the portfolio. Pension and investment funds
+belong to none, and a position outside every segment is simply not on any
+specialized screen.
 """
 
 from dataclasses import dataclass
 from enum import StrEnum
 
-from app.modules.market_data.domain.enums import EXCHANGE, AssetType
+from app.modules.market_data.domain.constants import ASSET_TYPE
+from app.modules.market_data.domain.enums import EXCHANGE
 
 
 class PortfolioSegment(StrEnum):
@@ -44,12 +52,12 @@ class SegmentDefinition:
     decision — an FII or a CDB has nowhere else to be.
     """
 
-    asset_types: tuple[AssetType, ...]
+    asset_types: tuple[ASSET_TYPE, ...]
     brazilian_exchange: bool | None = None
 
     @property
-    def asset_type_names(self) -> tuple[str, ...]:
-        return tuple(asset_type.value for asset_type in self.asset_types)
+    def asset_type_ids(self) -> tuple[int, ...]:
+        return tuple(int(asset_type) for asset_type in self.asset_types)
 
     @property
     def is_whole_asset_type(self) -> bool:
@@ -61,10 +69,10 @@ class SegmentDefinition:
         return len(self.asset_types) == 1 and self.brazilian_exchange is None
 
 
-_EXCHANGE_TRADED = (AssetType.STOCK, AssetType.ETF, AssetType.BDR, AssetType.REIT)
+_EXCHANGE_TRADED = (ASSET_TYPE.STOCK, ASSET_TYPE.ETF, ASSET_TYPE.BDR, ASSET_TYPE.REIT)
 
 SEGMENT_DEFINITIONS: dict[PortfolioSegment, SegmentDefinition] = {
-    PortfolioSegment.FII: SegmentDefinition(asset_types=(AssetType.FII,)),
+    PortfolioSegment.FII: SegmentDefinition(asset_types=(ASSET_TYPE.FII,)),
     PortfolioSegment.EQUITY_BR: SegmentDefinition(
         asset_types=_EXCHANGE_TRADED, brazilian_exchange=True
     ),
@@ -73,16 +81,20 @@ SEGMENT_DEFINITIONS: dict[PortfolioSegment, SegmentDefinition] = {
     ),
     PortfolioSegment.FIXED_INCOME: SegmentDefinition(
         asset_types=(
-            AssetType.TREASURY,
-            AssetType.CDB,
-            AssetType.DEB,
-            AssetType.CRI,
-            AssetType.CRA,
-            AssetType.LCA,
+            ASSET_TYPE.TREASURY,
+            ASSET_TYPE.CDB,
+            ASSET_TYPE.DEB,
+            ASSET_TYPE.CRI,
+            ASSET_TYPE.CRA,
+            ASSET_TYPE.LCA,
         )
     ),
-    PortfolioSegment.CRYPTO: SegmentDefinition(asset_types=(AssetType.CRIPTO,)),
+    PortfolioSegment.CRYPTO: SegmentDefinition(asset_types=(ASSET_TYPE.CRIPTO,)),
 }
+
+#: Asset types that belong to no specialized screen, listed on purpose so that
+#: "has no segment" is a decision and not an omission.
+UNSEGMENTED_ASSET_TYPES = (ASSET_TYPE.PREV, ASSET_TYPE.FI)
 
 
 def get_segment_definition(segment: PortfolioSegment) -> SegmentDefinition:
@@ -100,13 +112,15 @@ def is_brazilian_exchange(exchange_code: str | None) -> bool:
     return exchange_code is None or exchange_code == EXCHANGE.B3.value
 
 
-def resolve_segment(asset_type_name: str | None, exchange_code: str | None) -> str | None:
+def resolve_segment(asset_type_id: int | None, exchange_code: str | None) -> str | None:
     """The segment a position belongs to, or None when it belongs to none."""
-    if not asset_type_name:
+    if asset_type_id is None:
         return None
 
+    asset_type_id = int(asset_type_id)
+
     for segment, definition in SEGMENT_DEFINITIONS.items():
-        if asset_type_name not in definition.asset_type_names:
+        if asset_type_id not in definition.asset_type_ids:
             continue
         if definition.brazilian_exchange is None:
             return segment.value

@@ -362,13 +362,9 @@ class PortfolioPositionService:
         definition = get_segment_definition(segment)
 
         if definition.is_whole_asset_type:
-            async with self.uow as uow:
-                asset_type_id = await uow.portfolios.get_asset_type_id(
-                    definition.asset_type_names[0]
-                )
-            if asset_type_id is None:
-                return []
-            return await self.get_asset_type_returns(portfolio_id, asset_type_id, currency)
+            return await self.get_asset_type_returns(
+                portfolio_id, definition.asset_type_ids[0], currency
+            )
 
         async with self.uow as uow:
             asset_ids = await uow.portfolios.get_segment_asset_ids(portfolio_id, definition)
@@ -527,8 +523,8 @@ class PortfolioPositionService:
         # A visão por corretora não traz a bolsa e também não usa segmento.
         if 'exchange' in pos_df.columns:
             pos_df['segment'] = [
-                resolve_segment(asset_type, exchange)
-                for asset_type, exchange in zip(pos_df['type'], pos_df['exchange'], strict=True)
+                resolve_segment(type_id, exchange)
+                for type_id, exchange in zip(pos_df['type_id'], pos_df['exchange'], strict=True)
             ]
 
         return df_response(pos_df)

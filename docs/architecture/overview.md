@@ -84,8 +84,9 @@ unknown currency — are left out rather than guessed at.
 ## Portfolio segment reads
 
 A specialized screen is about one **portfolio segment** — one part of the
-portfolio, defined by asset types and, where the same type trades in two
-markets, by which market. The definition lives in one place,
+portfolio, defined by asset-type ids and, where the same type trades in two
+markets, by which market. Ids, because `asset_type.short_name` is product copy
+in pt-BR and not a code. The definition lives in one place,
 `app/modules/portfolio/domain/portfolio_segment.py`, and nothing else decides
 it:
 
