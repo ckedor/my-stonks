@@ -1,10 +1,12 @@
 import { useCurrency } from '@/hooks/useCurrency'
-import { getLast12MonthDividendStats } from '@/lib/utils/dividends'
+import {
+  getLast12MonthDividendStats,
+  groupDividendsByMonthAndYear,
+} from '@/lib/utils/dividends'
 import { Dividend } from '@/types'
 import { AppChartArea, AppStack, AppText, useAppTheme } from '@/components/ui'
-import dayjs from 'dayjs'
 import { useMemo } from 'react'
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 interface Props {
   dividends: Dividend[]
@@ -22,31 +24,10 @@ export default function OverviewDividendsChart({ dividends, selected, size = 340
   )
 
   const { currentYear, previousYear, data, average12m } = useMemo(() => {
-    const mostRecent = filtered.reduce<Dividend | undefined>(
-      (a, b) => (!a || dayjs(a.date).isBefore(b.date) ? b : a),
-      undefined
-    )
-    const currentYear = mostRecent ? dayjs(mostRecent.date).year() : dayjs().year()
-    const previousYear = currentYear - 1
-
-    const monthlyMap: Record<string, { month: string; [key: string]: string | number }> = {}
-    for (let i = 0; i < 12; i++) {
-      const m = dayjs().month(i).format('MMM')
-      monthlyMap[m] = { month: m }
-    }
-
-    for (const d of filtered) {
-      const dt = dayjs(d.date)
-      const y = dt.year()
-      if (y !== previousYear && y !== currentYear) continue
-      const m = dt.format('MMM')
-      const key = String(y)
-      monthlyMap[m][key] = ((monthlyMap[m][key] as number) || 0) + d.amount
-    }
-
+    const { currentYear, previousYear, rows } = groupDividendsByMonthAndYear(filtered)
     const { average } = getLast12MonthDividendStats(filtered)
 
-    return { currentYear, previousYear, data: Object.values(monthlyMap), average12m: average }
+    return { currentYear, previousYear, data: rows, average12m: average }
   }, [filtered])
 
   const labelColor = theme.palette.chart.label
@@ -95,19 +76,27 @@ export default function OverviewDividendsChart({ dividends, selected, size = 340
               boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
               fontSize: 13,
             }}
-            formatter={(value: number) => [formatCurrency(value)]}
+            /* O ano vem junto do valor. Sem ele, uma barra num mês que ainda
+               não chegou não tinha como ser lida pelo que é — o mesmo mês do
+               ano passado. */
+            formatter={(value: number, name: string) => [formatCurrency(value), name]}
           />
+          {/* Duas séries pedem legenda. Sem ela, e com as duas na mesma cor,
+              o gráfico dizia "houve provento em setembro" estando em agosto:
+              a barra era a de setembro do ano anterior, e nada na tela
+              contava isso. É a mesma leitura do gráfico de proventos da tela
+              de Proventos, e agora nas mesmas cores. */}
+          <Legend />
           <Bar
             dataKey={String(previousYear)}
             name={`${previousYear}`}
             fill={theme.palette.primary.main}
             radius={[4, 4, 0, 0]}
-            opacity={0.4}
           />
           <Bar
             dataKey={String(currentYear)}
             name={`${currentYear}`}
-            fill={theme.palette.primary.main}
+            fill={theme.palette.secondary.main}
             radius={[4, 4, 0, 0]}
           />
         </BarChart>

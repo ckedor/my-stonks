@@ -1,8 +1,8 @@
 
 import { useCurrency } from '@/hooks/useCurrency'
+import { groupDividendsByMonthAndYear } from '@/lib/utils/dividends'
 import { Dividend } from '@/types'
 import { AppChartArea, useAppTheme } from '@/components/ui'
-import dayjs from 'dayjs'
 import {
     Bar,
     BarChart,
@@ -29,33 +29,13 @@ export default function PortfolioDividendsChartByYear({ dividends, selected, siz
   const filtered =
     selected === 'portfolio' ? dividends : dividends.filter((d) => d.category === selected)
 
-  // anos: atual (pelo dado mais recente) e anterior
-  const mostRecent = filtered.reduce<Dividend | undefined>(
-    (a, b) => (!a || dayjs(a.date).isBefore(b.date) ? b : a),
-    undefined
-  )
-  const currentYear = mostRecent ? dayjs(mostRecent.date).year() : dayjs().year()
-  const previousYear = currentYear - 1
-
-  // monta 12 meses e acumula valores por mês/ano (somente anos prev/atual)
-  const monthlyMap: Record<string, { month: string; [year: number]: number }> = {}
-  for (let i = 0; i < 12; i++) {
-    const m = dayjs().month(i).format('MMM')
-    monthlyMap[m] = { month: m }
-  }
-
-  for (const d of filtered) {
-    const dt = dayjs(d.date)
-    const y = dt.year()
-    if (y !== previousYear && y !== currentYear) continue
-    const m = dt.format('MMM')
-    monthlyMap[m][y] = (monthlyMap[m][y] || 0) + d.amount
-  }
-
-  const data = Object.values(monthlyMap)
+  const { currentYear, previousYear, rows: data } = groupDividendsByMonthAndYear(filtered)
 
   // eixo Y e linha de referência (média simples das barras existentes)
-  const values = data.flatMap((r) => [r[previousYear] ?? 0, r[currentYear] ?? 0])
+  const values = data.flatMap((r) => [
+    (r[previousYear] as number) ?? 0,
+    (r[currentYear] as number) ?? 0,
+  ])
   const max = Math.max(...values)
   const upper = Math.ceil((max || 1) * 1.5)
   const avg = values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0
