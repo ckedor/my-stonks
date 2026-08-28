@@ -493,6 +493,17 @@ class PortfolioPositionService:
 
         pos_df['value'] = pos_df['quantity'] * pos_df['price']
 
+        # A qual tela especializada a posição pertence. Quem responde é o
+        # domínio, e não a tela: a regra que separa a ação brasileira da
+        # estrangeira mora num lugar só, e a resposta viaja com a posição.
+        # A visão por corretora é outra consulta, que não traz a bolsa e
+        # também não tem tela especializada.
+        if 'exchange' in pos_df.columns:
+            pos_df['segment'] = [
+                resolve_segment(type_id, exchange)
+                for type_id, exchange in zip(pos_df['type_id'], pos_df['exchange'], strict=True)
+            ]
+
         return df_response(pos_df)
 
     async def get_portfolio_position_history(
@@ -516,16 +527,6 @@ class PortfolioPositionService:
         pos_df['price'] = pos_df[price_col]
         pos_df['average_price'] = pos_df[avg_price_col]
         pos_df['value'] = pos_df['quantity'] * pos_df['price']
-
-        # A qual tela especializada a posição pertence. Quem responde é o
-        # domínio, e não a tela: a regra que separa a ação brasileira da
-        # estrangeira mora num lugar só, e a resposta viaja com a posição.
-        # A visão por corretora não traz a bolsa e também não usa segmento.
-        if 'exchange' in pos_df.columns:
-            pos_df['segment'] = [
-                resolve_segment(type_id, exchange)
-                for type_id, exchange in zip(pos_df['type_id'], pos_df['exchange'], strict=True)
-            ]
 
         return df_response(pos_df)
 

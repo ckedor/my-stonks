@@ -92,11 +92,17 @@ Provider calls use adapters/integrations behind the service layer.
 - Use the distinctions between `price`, `quote`, and related concepts defined in
   `docs/domain.md`.
 
-## Verification
+## Verificação
 
-From `backend/`, run the narrowest relevant tests first. For broader changes use:
+Rode o teste mais próximo do que mudou, e `ruff check` nos arquivos tocados.
+A suíte inteira é dos hooks do `.pre-commit-config.yaml`:
 
 ```bash
 poetry run task lint
 poetry run pytest
 ```
+
+Fora da máquina do mantenedor — sessão remota, agente — pare no teste
+próximo e no ruff. `pytest` inteiro e `task architecture` só quando pedidos,
+ou quando a mudança mexe numa fronteira que eles cobrem: rota publicada
+(o snapshot do OpenAPI), camada, ou mapeamento de persistência.

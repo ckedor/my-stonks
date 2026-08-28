@@ -43,7 +43,29 @@ report it and ask.
   was explicitly requested.
 - Update architecture documentation when a change alters a system boundary,
   domain term, or main data flow.
-- Before finishing, run the relevant checks for every changed application.
+- Verification is opt-in, and the ceiling is low. See **Verificação** below.
+  Do not run the full suite before finishing unless asked.
+
+## Verificação
+
+Os hooks do `.pre-commit-config.yaml` são o CI, e é neles que a suíte roda.
+Onde eles não estão instalados — sessão remota, agente, container — rode
+**apenas** o que é barato e responde na hora:
+
+- `npx tsc -b --noEmit` e `eslint` nos arquivos tocados, no frontend;
+- `ruff check` nos arquivos tocados e o teste mais próximo do que mudou, no
+  backend.
+
+`npm test`, `npm run knip`, `npm run build`, `pytest` inteiro e a regressão
+visual ficam para o push local, onde os hooks os disparam. Rodar tudo a cada
+edição custa minutos e repete o que o hook vai repetir de qualquer jeito.
+
+**Nunca rode `npm run e2e` fora da máquina do mantenedor.** O Chromium tem de
+ser a build que o `@playwright/test` do projeto pede; em qualquer outra a
+comparação sai vermelha em toda tela que tenha letra, sem que nada no código
+tenha mudado — o resultado não é um sinal, é ruído caro.
+
+Quando eu pedir a verificação completa, aí sim rode tudo.
 
 ## Main applications
 

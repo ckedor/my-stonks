@@ -151,9 +151,9 @@ A lista está vazia: nenhum arquivo viola mais. O bloco legado no fim de
 `eslint.config.js` já não produz nenhuma isenção — ele some junto com o
 arquivo de baseline quando o mantenedor decidir que a dívida não volta.
 
-## Verification
+## Verificação
 
-From `frontend/`, run:
+A suíte roda nos hooks do `.pre-commit-config.yaml`, e é lá que ela pertence:
 
 ```bash
 npm run lint      # ESLint, incluindo a fronteira do design system
@@ -164,8 +164,15 @@ npm run build     # tsc + vite build
 npm run e2e       # regressão visual (Playwright)
 ```
 
-Todos rodam no `pre-commit` — os quatro primeiros a cada commit, `build` e
-`e2e` no push. ESLint não reporta erros; as 9 warnings restantes são
+Os quatro primeiros a cada commit, `build` e `e2e` no push.
+
+**Fora da máquina do mantenedor — sessão remota, agente — rode só
+`npx tsc -b --noEmit` e `eslint` nos arquivos tocados.** O resto fica para o
+push local. E `npm run e2e` não roda ali de jeito nenhum: ver o aviso sobre a
+build do Chromium em **Regressão visual**, logo abaixo. Verificação completa
+só quando pedida.
+
+ESLint não reporta erros; as 9 warnings restantes são
 `react-hooks/exhaustive-deps` e ficam de propósito: mexer no array de
 dependências sem ler o efeito é como se cria loop de render.
 

@@ -11,6 +11,7 @@ screens for `Ação`, `Tesouro` and `Cripto` came up empty while `FII` and `ETF`
 worked by coincidence.
 """
 
+import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -273,3 +274,79 @@ async def test_only_the_market_scoped_segments_filter_by_exchange(segment, scope
     assert ('exchange.code = ' in sql and 'exchange_id IS NULL' in sql) is scoped_by_market
     # O Mundo é o complemento do Brasil, e não uma segunda lista de bolsas.
     assert ('NOT (' in sql) is (segment is PortfolioSegment.EQUITY_WORLD)
+
+
+def _current_position_row(asset_id: int, type_id: int, exchange: str | None) -> dict:
+    """Uma linha como `get_position_on_date` devolve."""
+    return {
+        'date': '2026-03-17',
+        'asset_id': asset_id,
+        'ticker': f'A{asset_id}',
+        'name': f'Ativo {asset_id}',
+        'quantity': 10,
+        'price': 100.0,
+        'twelve_months_return': 0.1,
+        'acc_return': 0.2,
+        'daily_return': 0.001,
+        'cagr': 0.1,
+        'total_invested': 900.0,
+        'dividend': None,
+        'category': 'Alguma',
+        'type': 'rótulo',
+        'type_id': type_id,
+        'class': 'classe',
+        'exchange': exchange,
+    }
+
+
+@pytest.mark.unit
+async def test_the_current_position_payload_carries_the_segment():
+    """O que a tela especializada lê, e o que faltava.
+
+    O cálculo do segmento nasceu no método errado -- o histórico de um ativo,
+    e não a posição atual, que é a resposta de `/portfolio/position/{id}` que
+    toda tela consome. A consulta do histórico nem traz a bolsa, então a
+    guarda `if 'exchange' in columns` transformou o engano em silêncio: nada
+    falhava, e as cinco telas abriam vazias. Este teste é sobre a resposta,
+    não sobre o método, justamente por isso.
+    """
+    rows = [
+        _current_position_row(1, ASSET_TYPE.STOCK, None),
+        _current_position_row(2, ASSET_TYPE.STOCK, 'NASDAQ'),
+        _current_position_row(3, ASSET_TYPE.FII, 'B3'),
+        _current_position_row(4, ASSET_TYPE.CRIPTO, None),
+        _current_position_row(5, ASSET_TYPE.TREASURY, None),
+        _current_position_row(6, ASSET_TYPE.PREV, None),
+    ]
+    service = _service(get_position_on_date=AsyncMock(return_value=rows))
+
+    response = await service.get_portfolio_position(1)
+    payload = json.loads(bytes(response.body))
+
+    assert [row['segment'] for row in payload] == [
+        'equity-br',
+        'equity-world',
+        'fii',
+        'crypto',
+        'fixed-income',
+        # Previdência não tem tela, e nulo é a resposta honesta.
+        None,
+    ]
+
+
+@pytest.mark.unit
+async def test_the_by_broker_view_has_no_segment_and_does_not_break():
+    """Ela é outra consulta, para a declaração de IR: não traz bolsa."""
+    rows = [
+        {
+            key: value
+            for key, value in _current_position_row(1, ASSET_TYPE.STOCK, None).items()
+            if key != 'exchange'
+        }
+    ]
+    service = _service(get_position_on_date_by_broker=AsyncMock(return_value=rows))
+
+    response = await service.get_portfolio_position(1, group_by_broker=True)
+    payload = json.loads(bytes(response.body))
+
+    assert 'segment' not in payload[0]
