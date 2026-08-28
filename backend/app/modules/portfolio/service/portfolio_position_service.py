@@ -17,6 +17,11 @@ from app.modules.market_data.service.market_data_service import MarketDataReadSe
 from app.modules.portfolio.domain.asset_analysis import calculate_returns_analysis
 from app.modules.portfolio.domain.asset_position import AssetPosition
 from app.modules.portfolio.domain.entities import Position
+from app.modules.portfolio.domain.portfolio_segment import (
+    PortfolioSegment,
+    get_segment_definition,
+    resolve_segment,
+)
 from app.modules.portfolio.domain.returns import (
     calculate_asset_acc_returns,
     calculate_portfolio_daily_returns,
@@ -24,6 +29,7 @@ from app.modules.portfolio.domain.returns import (
 
 PATRIMONY_EVOLUTION_CACHE_PREFIX = 'patrimony_evolution'
 ASSET_TYPE_RETURNS_CACHE_PREFIX = 'asset_type_returns'
+SEGMENT_RETURNS_CACHE_PREFIX = 'segment_returns'
 
 
 class PortfolioPositionService:
@@ -46,6 +52,7 @@ class PortfolioPositionService:
         """
         await self.cache.delete_prefix(f'{PATRIMONY_EVOLUTION_CACHE_PREFIX}:{portfolio_id}:')
         await self.cache.delete_prefix(f'{ASSET_TYPE_RETURNS_CACHE_PREFIX}:{portfolio_id}:')
+        await self.cache.delete_prefix(f'{SEGMENT_RETURNS_CACHE_PREFIX}:{portfolio_id}:')
 
     async def get_asset_details(
         self, portfolio_id: int, asset_id: int | None = None, currency: str = 'BRL'
@@ -173,14 +180,15 @@ class PortfolioPositionService:
         total_aported.rename(columns={'amount': 'aported'}, inplace=True)
         return total_aported
 
-    @cached(key_prefix='patrimony_evolution', cache=lambda self: self.cache, ttl=3600)
-    async def get_patrimony_evolution(
+    @cached(key_prefix=PATRIMONY_EVOLUTION_CACHE_PREFIX, cache=lambda self: self.cache, ttl=3600)
+    async def get_patrimony_evolution(  # noqa: PLR0913
         self,
         portfolio_id: int,
         asset_id: int | None = None,
         asset_type_id: int | None = None,
         asset_type_ids: list | None = None,
         currency: str = 'BRL',
+        segment: PortfolioSegment | None = None,
     ) -> pd.DataFrame:
         return await self.compute_patrimony_evolution(
             portfolio_id,
@@ -188,22 +196,36 @@ class PortfolioPositionService:
             asset_type_id,
             asset_type_ids,
             currency=currency,
+            segment=segment,
         )
 
-    async def compute_patrimony_evolution(
+    async def compute_patrimony_evolution(  # noqa: PLR0913
         self,
         portfolio_id: int,
         asset_id: int | None = None,
         asset_type_id: int | None = None,
         asset_type_ids: list | None = None,
         currency: str = 'BRL',
+        segment: PortfolioSegment | None = None,
     ) -> pd.DataFrame:
+        asset_ids = None
+        if segment is not None:
+            async with self.uow as uow:
+                asset_ids = await uow.portfolios.get_segment_asset_ids(
+                    portfolio_id, get_segment_definition(segment)
+                )
+            # Um segmento vazio não é a carteira inteira. Sem esta saída a
+            # lista vazia cairia fora do filtro e o gráfico mostraria tudo.
+            if not asset_ids:
+                return None
+
         async with self.uow as uow:
             position_rows = await uow.portfolios.get_portfolio_position(
                 portfolio_id,
                 asset_id=asset_id,
                 asset_type_id=asset_type_id,
                 asset_type_ids=asset_type_ids,
+                asset_ids=asset_ids,
             )
         portfolio_position_df = rows_to_df(
             position_rows,
@@ -274,7 +296,15 @@ class PortfolioPositionService:
                 portfolio_id,
                 asset_type_id=asset_type_id,
             )
+        return self._weighted_returns(rows, currency)
 
+    def _weighted_returns(self, rows: list[dict], currency: str = 'BRL') -> list[dict]:
+        """The value-weighted return series of a set of positions.
+
+        Same arithmetic the portfolio-wide series uses, over a subset: each
+        asset weighs by what it was worth the day before, so a contribution
+        made today does not read as a gain.
+        """
         position_df = rows_to_df(
             rows,
             datetime_cols=['date'],
@@ -315,13 +345,51 @@ class PortfolioPositionService:
         grouped['date'] = grouped['date'].dt.strftime('%Y-%m-%d')
         return df_to_dict_list(grouped[['date', 'daily_return', 'acc_return', 'cagr']])
 
-    async def get_asset_type_stats(
+    @cached(key_prefix=SEGMENT_RETURNS_CACHE_PREFIX, cache=lambda self: self.cache, ttl=3600)
+    async def get_segment_returns(
         self,
         portfolio_id: int,
-        asset_type_id: int,
+        segment: PortfolioSegment,
+        currency: str = 'BRL',
+    ) -> list[dict]:
+        """The return series of one segment of the portfolio.
+
+        A segment that is a whole asset type is the series the consolidator
+        already writes, so it is read from there rather than recomputed. The
+        ones that cut a type by market, or gather several types, have no
+        persisted series and are calculated over the positions they cover.
+        """
+        definition = get_segment_definition(segment)
+
+        if definition.is_whole_asset_type:
+            async with self.uow as uow:
+                asset_type_id = await uow.portfolios.get_asset_type_id(
+                    definition.asset_type_names[0]
+                )
+            if asset_type_id is None:
+                return []
+            return await self.get_asset_type_returns(portfolio_id, asset_type_id, currency)
+
+        async with self.uow as uow:
+            asset_ids = await uow.portfolios.get_segment_asset_ids(portfolio_id, definition)
+            if not asset_ids:
+                return []
+            rows = await uow.portfolios.get_portfolio_position(portfolio_id, asset_ids=asset_ids)
+
+        return self._weighted_returns(rows, currency)
+
+    async def get_segment_stats(
+        self,
+        portfolio_id: int,
+        segment: PortfolioSegment,
         currency: str = 'BRL',
     ) -> dict | None:
-        rows = await self.get_asset_type_returns(portfolio_id, asset_type_id, currency)
+        rows = await self.get_segment_returns(portfolio_id, segment, currency)
+        return await self._returns_analysis_against_cdi(rows, currency)
+
+    async def _returns_analysis_against_cdi(
+        self, rows: list[dict], currency: str = 'BRL'
+    ) -> dict | None:
         if not rows:
             return None
 
@@ -333,6 +401,15 @@ class PortfolioPositionService:
             start_date, SERIES.CDI, currency
         )
         return calculate_returns_analysis(returns_series, {'CDI': cdi_history})
+
+    async def get_asset_type_stats(
+        self,
+        portfolio_id: int,
+        asset_type_id: int,
+        currency: str = 'BRL',
+    ) -> dict | None:
+        rows = await self.get_asset_type_returns(portfolio_id, asset_type_id, currency)
+        return await self._returns_analysis_against_cdi(rows, currency)
 
     async def get_category_returns(
         self,
@@ -443,6 +520,16 @@ class PortfolioPositionService:
         pos_df['price'] = pos_df[price_col]
         pos_df['average_price'] = pos_df[avg_price_col]
         pos_df['value'] = pos_df['quantity'] * pos_df['price']
+
+        # A qual tela especializada a posição pertence. Quem responde é o
+        # domínio, e não a tela: a regra que separa a ação brasileira da
+        # estrangeira mora num lugar só, e a resposta viaja com a posição.
+        # A visão por corretora não traz a bolsa e também não usa segmento.
+        if 'exchange' in pos_df.columns:
+            pos_df['segment'] = [
+                resolve_segment(asset_type, exchange)
+                for asset_type, exchange in zip(pos_df['type'], pos_df['exchange'], strict=True)
+            ]
 
         return df_response(pos_df)
 

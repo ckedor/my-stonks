@@ -62,6 +62,12 @@ export interface CategoryReturnEntry {
   cagr: number | null
 }
 
+/** Uma posição da carteira, com o que o ativo publica sobre si.
+ *
+ *  Os campos de subtipo vêm na mesma linha para todo ativo e são nulos fora do
+ *  seu tipo: um CDB não tem segmento de FII, uma ação não tem indexador. É por
+ *  eles que as telas especializadas leem a concentração do recorte, e é por
+ *  isso que eles não moram em interfaces separadas — a linha é uma só. */
 export interface PortfolioPositionEntry {
   asset_id: number
   date: string
@@ -80,25 +86,22 @@ export interface PortfolioPositionEntry {
   type: string
   type_id?: number
   class: string
-}
-
-export interface FIIPortfolioPositionEntry extends PortfolioPositionEntry {
-  fii_type: string | null
-  fii_segment: string | null
-}
-
-export interface StockPortfolioPositionEntry extends PortfolioPositionEntry {
-  industry: string
-  sector: string
-}
-export interface FixedIncomePositionEntry extends PortfolioPositionEntry {
-  fixed_income_type: string
-  treasury_bond_type: number
-  treasury_bond_code: string
-  fixed_income_maturity_date: string
-  fixed_income_fee: number | null
-  treasury_bond_maturity_date: string | null
-  fixed_income_index_name: string | null
+  /** Bolsa em que o papel é negociado. Nula em quem não tem bolsa nenhuma. */
+  exchange?: string | null
+  /** Recorte especializado a que a posição pertence, ou nulo quando ela não
+   *  está em nenhum. Quem resolve é o backend: a regra é uma só. */
+  segment?: string | null
+  fii_type?: string | null
+  fii_segment?: string | null
+  etf_segment?: string | null
+  sector?: string | null
+  industry?: string | null
+  country?: string | null
+  /** Remuneração, só em renda fixa. */
+  index?: string | null
+  fee?: number | null
+  fixed_income_type?: string | null
+  fixed_income_type_id?: number | null
 }
 
 export interface Dividend {

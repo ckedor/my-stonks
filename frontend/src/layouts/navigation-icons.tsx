@@ -36,8 +36,11 @@ const NAVIGATION_ICONS: Record<string, ReactNode> = {
   '/portfolio/wealth': <AccountBalanceIcon />,
   '/portfolio/returns': <TrendingUpIcon />,
   '/portfolio/analysis': <SpeedIcon />,
-  '/portfolio/rebalancing': <BalanceIcon />,
   '/portfolio/fii': <ApartmentIcon />,
+  '/portfolio/equity-br': <ShowChartIcon />,
+  '/portfolio/equity-world': <PublicIcon />,
+  '/portfolio/fixed-income': <BalanceIcon />,
+  '/portfolio/crypto': <CurrencyBitcoinIcon />,
   '/portfolio/trades': <SwapHorizIcon />,
   '/portfolio/dividends': <PaidIcon />,
   '/portfolio/tax-income': <ReceiptLongIcon />,
@@ -49,8 +52,11 @@ const NAVIGATION_ICONS: Record<string, ReactNode> = {
   '/market/crypto': <CurrencyBitcoinIcon />,
 }
 
-/** Os ativos mais visitados são a única entrada montada a partir dos dados
- *  do usuário — uma rota por ativo, que não dá para listar aqui. */
+/** Os ativos mais visitados e as categorias da carteira são as entradas
+ *  montadas a partir dos dados do usuário — uma rota por item, que não dá
+ *  para listar aqui. A categoria tem ícone porque a rota dela é conhecida
+ *  até o prefixo; o ativo cai na estrela. */
 export function getNavigationIcon(path: string): ReactNode {
+  if (path.startsWith('/portfolio/category/')) return <CategoryIcon />
   return NAVIGATION_ICONS[path] ?? <StarBorderIcon />
 }

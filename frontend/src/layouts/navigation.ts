@@ -6,7 +6,16 @@
  *
  * A hierarquia é de dois níveis e cada um tem o seu lugar na tela: a seção
  * (Carteira, Mercado) são as abas da barra superior; os grupos e itens de
- * dentro dela são a coluna lateral. */
+ * dentro dela são a coluna lateral.
+ *
+ * O grupo "Análise" da Carteira é a carteira inteira vista de cada ângulo, e
+ * a lista dele é de propósito a mesma — mesmos nomes, mesma ordem — das abas
+ * de um recorte em `PortfolioSliceScreen`. Quem aprende a ler uma categoria
+ * sabe ler a carteira, e ver "Proventos" mudar de nome entre os dois níveis é
+ * o tipo de diferença que só custa. `src/layouts/navigation.test.ts` é o que
+ * prova que as duas listas não se separaram. */
+
+import { PORTFOLIO_SEGMENT_LIST } from '@/constants/portfolioSegments'
 
 export type SectionId = 'carteira' | 'mercado'
 
@@ -26,6 +35,10 @@ export interface NavigationSection {
   groups: NavigationGroup[]
 }
 
+/** O grupo que os dados do usuário preenchem. Ele fica declarado na lista
+ *  estática para ter lugar fixo na ordem; vazio, ele é retirado. */
+const CATEGORIES_GROUP_TITLE = 'Categorias'
+
 export const navigationSections: NavigationSection[] = [
   {
     id: 'carteira',
@@ -36,30 +49,30 @@ export const navigationSections: NavigationSection[] = [
         items: [
           { label: 'Resumo', path: '/portfolio/overview' },
           { label: 'Ativos', path: '/portfolio/asset' },
-          { label: 'Categorias', path: '/portfolio/category' },
-          { label: 'Distribuição', path: '/portfolio/distribution' },
-          { label: 'Patrimônio', path: '/portfolio/wealth' },
         ],
       },
       {
         title: 'Análise',
         items: [
           { label: 'Rentabilidade', path: '/portfolio/returns' },
+          { label: 'Patrimônio', path: '/portfolio/wealth' },
+          { label: 'Proventos', path: '/portfolio/dividends' },
+          { label: 'Trades', path: '/portfolio/trades' },
+          { label: 'Distribuição', path: '/portfolio/distribution' },
           { label: 'Risco', path: '/portfolio/analysis' },
-          { label: 'Rebalanceamento', path: '/portfolio/rebalancing' },
         ],
       },
       {
         title: 'Especializadas',
-        items: [{ label: 'FIIs', path: '/portfolio/fii' }],
+        items: PORTFOLIO_SEGMENT_LIST.map((segment) => ({
+          label: segment.label,
+          path: segment.path,
+        })),
       },
+      { title: CATEGORIES_GROUP_TITLE, items: [] },
       {
         title: 'Operações',
-        items: [
-          { label: 'Trades', path: '/portfolio/trades' },
-          { label: 'Proventos', path: '/portfolio/dividends' },
-          { label: 'Declaração IR', path: '/portfolio/tax-income' },
-        ],
+        items: [{ label: 'Declaração IR', path: '/portfolio/tax-income' }],
       },
     ],
   },
@@ -87,10 +100,9 @@ export const navigationSections: NavigationSection[] = [
   },
 ]
 
-/** Acrescenta ao Mercado os ativos mais visitados. É o único grupo que vem
- *  dos dados do usuário, e por isso o único que não cabe na lista estática
- *  acima: só pode ser montado depois que os favoritos carregarem. Sem
- *  nenhum, devolve a mesma referência da lista estática. */
+/** Acrescenta ao Mercado os ativos mais visitados. Vem dos dados do usuário e
+ *  por isso não cabe na lista estática: só pode ser montado depois que os
+ *  favoritos carregarem. Sem nenhum, devolve a mesma referência da lista. */
 export function withMostVisited(
   section: NavigationSection,
   favorites: NavigationItem[],
@@ -100,6 +112,34 @@ export function withMostVisited(
   /* Sem a contagem de visitas: ela ordena a lista, não é algo que se veio
      aqui para ler. */
   return [...section.groups, { title: 'Mais acessados', items: favorites }]
+}
+
+/** Preenche o grupo Categorias com as categorias da carteira.
+ *
+ *  Escolher a categoria é a navegação, e não algo que se faz depois de chegar:
+ *  o menu abre a lista, e cada categoria é um destino. Sem nenhuma, o grupo
+ *  vazio sai da coluna em vez de virar um título sem conteúdo. */
+export function withCategories(
+  section: NavigationSection,
+  categories: NavigationItem[],
+): NavigationGroup[] {
+  if (section.id !== 'carteira') return section.groups
+
+  return section.groups.flatMap((group) => {
+    if (group.title !== CATEGORIES_GROUP_TITLE) return [group]
+    return categories.length === 0 ? [] : [{ ...group, items: categories }]
+  })
+}
+
+/** Os grupos de uma seção já com o que vem dos dados do usuário. É por onde a
+ *  coluna do desktop e o drawer do mobile passam, para não divergirem. */
+export function resolveGroups(
+  section: NavigationSection,
+  data: { categories?: NavigationItem[]; favorites?: NavigationItem[] },
+): NavigationGroup[] {
+  const withUserCategories = withCategories(section, data.categories ?? [])
+  const groups = withMostVisited({ ...section, groups: withUserCategories }, data.favorites ?? [])
+  return groups
 }
 
 /** Para onde a aba da seção leva. É o primeiro item do primeiro grupo, em vez

@@ -3484,6 +3484,17 @@
     "title": "Portfolio",
     "type": "object"
    },
+   "PortfolioSegment": {
+    "enum": [
+     "fii",
+     "equity-br",
+     "equity-world",
+     "fixed-income",
+     "crypto"
+    ],
+    "title": "PortfolioSegment",
+    "type": "string"
+   },
    "PortfolioSummary": {
     "description": "Portfolio identity without its categories, for administrative listings.",
     "properties": {
@@ -8671,6 +8682,22 @@
      },
      {
       "in": "query",
+      "name": "segment",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/PortfolioSegment"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Segment"
+      }
+     },
+     {
+      "in": "query",
       "name": "currency",
       "required": false,
       "schema": {
@@ -8761,6 +8788,132 @@
      }
     ],
     "summary": "Get Portfolio Returns",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/segment/{segment}/analysis": {
+   "get": {
+    "operationId": "get_segment_analysis_portfolio_position__portfolio_id__segment__segment__analysis_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "path",
+      "name": "segment",
+      "required": true,
+      "schema": {
+       "$ref": "#/components/schemas/PortfolioSegment"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Segment Analysis",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/segment/{segment}/returns": {
+   "get": {
+    "operationId": "get_segment_returns_portfolio_position__portfolio_id__segment__segment__returns_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "path",
+      "name": "segment",
+      "required": true,
+      "schema": {
+       "$ref": "#/components/schemas/PortfolioSegment"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Segment Returns",
     "tags": [
      "Portfolio Position"
     ]

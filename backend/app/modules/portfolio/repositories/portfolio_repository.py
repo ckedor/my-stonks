@@ -3,7 +3,7 @@ from datetime import date as date_type
 from datetime import datetime, timedelta
 
 import pandas as pd
-from sqlalchemy import Date, and_, cast, desc, func, literal, select
+from sqlalchemy import Date, and_, cast, desc, func, literal, or_, select
 from sqlalchemy.orm import joinedload
 
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
@@ -14,12 +14,16 @@ from app.modules.market_data.domain.assets import (
     AssetClass,
     AssetType,
     Broker,
+    ETFSegment,
+    Exchange,
     FIISegment,
     FIIType,
     FixedIncome,
     FixedIncomeType,
+    Stock,
     TreasuryBond,
 )
+from app.modules.market_data.domain.enums import EXCHANGE
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.portfolio.domain.dividend import DividendQuery
 from app.modules.portfolio.domain.entities import (
@@ -33,6 +37,7 @@ from app.modules.portfolio.domain.entities import (
     Position,
     Transaction,
 )
+from app.modules.portfolio.domain.portfolio_segment import SegmentDefinition
 
 
 def get_custom_category_subquery(portfolio_id):
@@ -448,6 +453,39 @@ class PortfolioRepository(SQLAlchemyRepository):
         result = await self.session.execute(stmt)
         return result.mappings().all()
 
+    async def get_segment_asset_ids(
+        self, portfolio_id: int, definition: SegmentDefinition
+    ) -> list[int]:
+        """Every asset of a portfolio that belongs to a segment.
+
+        Membership is a property of the asset, not of today's position, so an
+        asset already sold stays in the list: the segment's return series is a
+        history and it has to include what was held along the way.
+        """
+        stmt = (
+            select(Position.asset_id)
+            .join(Asset, Position.asset_id == Asset.id)
+            .join(AssetType, Asset.asset_type_id == AssetType.id)
+            .outerjoin(Exchange, Asset.exchange_id == Exchange.id)
+            .where(Position.portfolio_id == portfolio_id)
+            .where(AssetType.short_name.in_(definition.asset_type_names))
+            .distinct()
+        )
+
+        if definition.brazilian_exchange is not None:
+            # Sem bolsa é brasileiro: é como ficam registrados o Tesouro, o CDB
+            # e tudo que não tem código em bolsa nenhuma.
+            in_brazil = or_(Exchange.code == EXCHANGE.B3.value, Asset.exchange_id.is_(None))
+            stmt = stmt.where(in_brazil if definition.brazilian_exchange else ~in_brazil)
+
+        result = await self.session.execute(stmt)
+        return [row[0] for row in result.all()]
+
+    async def get_asset_type_id(self, short_name: str) -> int | None:
+        stmt = select(AssetType.id).where(AssetType.short_name == short_name)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_asset_type_returns(
         self,
         portfolio_id: int,
@@ -594,8 +632,18 @@ class PortfolioRepository(SQLAlchemyRepository):
                 AssetType.short_name.label('type'),
                 AssetType.id.label('type_id'),
                 AssetClass.name.label('class'),
+                # Onde o papel é negociado. Vem junto porque é o que separa a
+                # ação brasileira da estrangeira -- mesmo tipo de ativo, telas
+                # diferentes -- e a tela não tem outro jeito de saber.
+                Exchange.code.label('exchange'),
                 FIISegment.name.label('fii_segment'),
                 FIIType.name.label('fii_type'),
+                # O que uma ação e um ETF publicam sobre si: as dimensões pelas
+                # quais a concentração da carteira é lida nas telas por tipo.
+                Stock.sector,
+                Stock.industry,
+                Stock.country,
+                ETFSegment.name.label('etf_segment'),
                 # O que remunera um papel de renda fixa: indexador, taxa e a
                 # forma de combinar os dois (prefixado, index+, %index). Nulo
                 # para todo o resto, que é a maioria das linhas.
@@ -608,6 +656,10 @@ class PortfolioRepository(SQLAlchemyRepository):
             .outerjoin(cat_assignment_subq, cat_assignment_subq.c.asset_id == Position.asset_id)
             .join(AssetType, Asset.asset_type_id == AssetType.id)
             .join(AssetClass, AssetType.asset_class_id == AssetClass.id)
+            .outerjoin(Exchange, Asset.exchange_id == Exchange.id)
+            .outerjoin(Stock, Stock.asset_id == Asset.id)
+            .outerjoin(ETF, ETF.asset_id == Asset.id)
+            .outerjoin(ETFSegment, ETFSegment.id == ETF.segment_id)
             .outerjoin(FII, FII.asset_id == Asset.id)
             .outerjoin(FIISegment, FIISegment.id == FII.segment_id)
             .outerjoin(FIIType, FIIType.id == FIISegment.type_id)

@@ -34,31 +34,35 @@ export const fetchTrades = (portfolioId: number): Promise<Trade[]> =>
 export const fetchReturns = (portfolioId: number, currency: string = 'BRL'): Promise<PortfolioReturnEntry[]> =>
   api.get<PortfolioReturnEntry[]>(POSITION_ROUTES.returns(portfolioId), { params: { currency } }).then((r) => r.data ?? [])
 
-export const fetchAssetTypeReturns = (
+// Segmento: um recorte da carteira por tipo de ativo e mercado. O
+// identificador é o que o backend publica na rota — `fii`, `equity-br`,
+// `equity-world`, `fixed-income`, `crypto`.
+
+export const fetchSegmentReturns = (
   portfolioId: number,
-  assetTypeId: number,
+  segment: string,
   currency: string = 'BRL',
 ): Promise<PortfolioReturnEntry[]> =>
-  api.get<PortfolioReturnEntry[]>(POSITION_ROUTES.assetTypeReturns(portfolioId, assetTypeId), {
+  api.get<PortfolioReturnEntry[]>(POSITION_ROUTES.segmentReturns(portfolioId, segment), {
     params: { currency },
   }).then((r) => r.data ?? [])
 
-export const fetchAssetTypeAnalysis = (
+export const fetchSegmentAnalysis = (
   portfolioId: number,
-  assetTypeId: number,
+  segment: string,
   currency: string = 'BRL',
 ): Promise<AssetAnalysis | null> =>
-  api.get<AssetAnalysis>(POSITION_ROUTES.assetTypeAnalysis(portfolioId, assetTypeId), {
+  api.get<AssetAnalysis>(POSITION_ROUTES.segmentAnalysis(portfolioId, segment), {
     params: { currency },
   }).then((r) => r.data).catch(() => null)
 
-export const fetchAssetTypePatrimony = (
+export const fetchSegmentPatrimony = (
   portfolioId: number,
-  assetTypeId: number,
+  segment: string,
   currency: string = 'BRL',
 ): Promise<PatrimonyEntry[]> =>
   api.get<PatrimonyEntry[]>(POSITION_ROUTES.patrimonyEvolution(portfolioId), {
-    params: { asset_type_id: assetTypeId, currency },
+    params: { segment, currency },
   }).then((r) => r.data ?? []).catch((err) => {
     if (err?.response?.status === 404) return []
     throw err

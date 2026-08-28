@@ -14,60 +14,55 @@ import dayjs from 'dayjs'
 import { useMemo } from 'react'
 
 interface Props {
-  /** Nome da categoria: o gráfico recorta a carteira por ele. */
-  category: string
-  /** Proventos da carteira inteira, já que o gráfico faz o próprio recorte. */
+  /** Os proventos do recorte. */
   dividends: Dividend[]
+  /** A carteira inteira: o gráfico faz o próprio recorte por categoria. */
+  allDividends: Dividend[]
+  /** Que série o gráfico desenha — o nome de uma categoria, ou a carteira. */
+  chartSelection: string
 }
 
 /** Passando disto a tabela rola por dentro, com o cabeçalho parado. */
 const TABLE_MAX_HEIGHT = 420
 
-export default function CategoryDividendsTab({ category, dividends }: Props) {
+export default function SliceDividendsTab({ dividends, allDividends, chartSelection }: Props) {
   const { format: formatCurrency } = useCurrency()
 
-  const categoryDividends = useMemo(
-    () =>
-      dividends
-        .filter((dividend) => dividend.category === category)
-        .sort((a, b) => (dayjs(b.date).isAfter(dayjs(a.date)) ? 1 : -1)),
-    [dividends, category],
+  const sorted = useMemo(
+    () => [...dividends].sort((a, b) => (dayjs(b.date).isAfter(dayjs(a.date)) ? 1 : -1)),
+    [dividends],
   )
-
-  const { total: total12m, average: average12m } = useMemo(
-    () => getLast12MonthDividendStats(categoryDividends),
-    [categoryDividends],
-  )
+  const { total, average } = useMemo(() => getLast12MonthDividendStats(dividends), [dividends])
 
   const columns: AppSimpleTableColumn<Dividend>[] = [
-    { label: 'Data', render: (dividend) => dayjs(dividend.date).format('DD/MM/YYYY') },
+    { label: 'Data', render: (item) => dayjs(item.date).format('DD/MM/YYYY') },
     {
       label: 'Ativo',
-      render: (dividend) => (
+      render: (item) => (
         <AppText variant="bodySmall" weight="strong" inline>
-          {dividend.ticker}
+          {item.ticker}
         </AppText>
       ),
     },
     {
       label: 'Valor',
       align: 'right',
-      render: (dividend) => (
+      render: (item) => (
         <AppText
           variant="bodySmall"
           weight="strong"
-          tone={dividend.amount >= 0 ? 'success' : 'danger'}
+          tone={item.amount >= 0 ? 'success' : 'danger'}
           inline
         >
-          {dividend.amount >= 0 ? '+ ' : '- '}
-          {formatCurrency(Math.abs(dividend.amount))}
+          {item.amount >= 0 ? '+ ' : '- '}
+          {formatCurrency(Math.abs(item.amount))}
         </AppText>
       ),
     },
   ]
 
-  if (categoryDividends.length === 0) {
-    return <AppText tone="secondary">Nenhum provento recebido nesta categoria.</AppText>
+  if (dividends.length === 0) {
+    return <AppText tone="secondary">Nenhum provento recebido neste recorte.</AppText>
   }
 
   return (
@@ -76,26 +71,26 @@ export default function CategoryDividendsTab({ category, dividends }: Props) {
         <AppStack direction="row" gap="lg" wrap>
           <AppMetric
             label="Recebidos nos últimos 12 meses"
-            value={formatCurrency(total12m)}
+            value={formatCurrency(total)}
             size="lg"
           />
           <AppMetric
             label="Média dos últimos 12 meses"
-            value={formatCurrency(average12m)}
+            value={formatCurrency(average)}
             size="lg"
           />
         </AppStack>
       </AppCard>
 
       <AppCard>
-        <PortfolioDividendsChart dividends={dividends} selected={category} size={320} />
+        <PortfolioDividendsChart dividends={allDividends} selected={chartSelection} size={320} />
       </AppCard>
 
       <AppCard padding="none">
         <AppSimpleTable
-          rows={categoryDividends}
+          rows={sorted}
           columns={columns}
-          getRowKey={(dividend) => dividend.id}
+          getRowKey={(item) => item.id}
           maxHeight={TABLE_MAX_HEIGHT}
           emptyMessage="Nenhum provento encontrado"
         />

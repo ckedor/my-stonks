@@ -43,6 +43,7 @@ import {
   getSectionDefaultPath,
   isNavigationItemActive,
   navigationSections,
+  resolveGroups,
   type SectionId,
 } from './navigation'
 
@@ -354,7 +355,12 @@ export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarPr
           id: section.id,
           label: section.label,
           active: section.id === currentSection,
-          groups: section.groups.map((group) => ({
+          groups: resolveGroups(section, {
+            categories: (selectedPortfolio?.custom_categories ?? []).map((category) => ({
+              label: category.name,
+              path: `/portfolio/category/${category.id}`,
+            })),
+          }).map((group) => ({
             title: group.title,
             items: group.items.map((item) => ({
               id: item.path,

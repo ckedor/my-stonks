@@ -141,6 +141,12 @@ export const POSITION_ROUTES = {
     `${PORTFOLIO}/position/${portfolioId}/asset-type/${assetTypeId}/returns`,
   assetTypeAnalysis: (portfolioId: number | string, assetTypeId: number | string) =>
     `${PORTFOLIO}/position/${portfolioId}/asset-type/${assetTypeId}/analysis`,
+  // Um segmento é um recorte da carteira por tipo de ativo e mercado. Quem
+  // decide a que segmento um ativo pertence é o backend; aqui só se nomeia.
+  segmentReturns: (portfolioId: number | string, segment: string) =>
+    `${PORTFOLIO}/position/${portfolioId}/segment/${segment}/returns`,
+  segmentAnalysis: (portfolioId: number | string, segment: string) =>
+    `${PORTFOLIO}/position/${portfolioId}/segment/${segment}/analysis`,
   patrimonyEvolution: (portfolioId: number | string) =>
     `${PORTFOLIO}/position/${portfolioId}/patrimony_evolution`,
   analysis: (portfolioId: number | string) => `${PORTFOLIO}/position/${portfolioId}/analysis`,

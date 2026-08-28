@@ -16,15 +16,20 @@ interface PortfolioHeatMapProps {
   positions: PortfolioPositionEntry[]
   metric?: DistributionMetric
   onAssetSelect?: (assetId: number) => void
+  /** Altura do mapa. O padrão é a tela inteira; uma tela que tem outro bloco
+   *  abaixo dele passa uma altura fixa, senão o mapa toma a dobra sozinho e
+   *  o resto nunca aparece sem rolar. */
+  height?: number | string
 }
 
 const NO_CATEGORY = '(Sem categoria)'
 
-/** O mapa ocupa o que sobra da tela abaixo da barra superior e do cabeçalho
- *  da página. Os 210px são a soma do que está acima dele, e mudaram quando o
- *  cabeçalho padrão trouxe o rastro de navegação — quem cobra a conta é o
- *  `expectNothingClipped` do e2e, que falha dizendo por quantos pixels. */
-const HEIGHT = 'calc(100vh - 210px)'
+/** Sozinho na tela, o mapa ocupa o que sobra abaixo da barra superior e do
+ *  cabeçalho da página. Os 210px são a soma do que está acima dele, e mudaram
+ *  quando o cabeçalho padrão trouxe o rastro de navegação — quem cobra a
+ *  conta é o `expectNothingClipped` do e2e, que falha dizendo por quantos
+ *  pixels. */
+const FULL_SCREEN_HEIGHT = 'calc(100vh - 210px)'
 
 /* Extremos da escala de cor, por métrica. Um lucro de cem mil e uma
    rentabilidade de 30% são o mesmo verde: é o teto de cada uma. */
@@ -66,6 +71,7 @@ export default function PortfolioHeatMap({
   positions,
   metric = 'twelve_months_return',
   onAssetSelect,
+  height = FULL_SCREEN_HEIGHT,
 }: PortfolioHeatMapProps) {
   const theme = useAppTheme()
   const { format: formatCurrency } = useCurrency()
@@ -134,7 +140,7 @@ export default function PortfolioHeatMap({
   return (
     <AppTreemap
       groups={groups}
-      height={HEIGHT}
+      height={height}
       onSelect={(key) => onAssetSelect?.(Number(key))}
       renderTooltip={renderTooltip}
       backgroundColor={theme.palette.background.default}

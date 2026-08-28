@@ -92,6 +92,25 @@ ainda dispara; sem esse teste a regra pode parar de casar em silêncio.
 `src/pages/admin/**` ainda está fora da regra, e é dívida declarada: o admin
 tem shell e navegação próprios. Quando migrar, o glob vira `src/pages/**`.
 
+### Recorte da carteira
+
+Uma categoria personalizada e um segmento por tipo de ativo são a mesma
+tela: só muda como o pedaço é escolhido. Ela é
+`src/components/portfolio-slice/PortfolioSliceScreen.tsx`, e as páginas em
+`pages/portfolio/segment` e `pages/portfolio/category` só buscam os dados e
+a entregam. Aba nova, métrica nova ou dimensão nova entram lá — nunca em
+uma das duas páginas, senão elas voltam a divergir.
+
+As abas dela e o grupo "Análise" de `src/layouts/navigation.ts` são a mesma
+lista, nos mesmos nomes e na mesma ordem: ler a carteira e ler um pedaço
+dela não podem ser dois aprendizados. `src/layouts/navigation.test.ts` é o
+que prova que as duas não se separaram.
+
+Quem decide a que segmento uma posição pertence é o backend, que devolve
+`segment` junto com ela. `src/constants/portfolioSegments.ts` guarda só o
+que é de tela — rótulo, rota, benchmarks, dimensões da concentração — e
+nunca a regra de pertencimento.
+
 ### The migration ratchet
 
 `eslint-ds-baseline.json` lists the files still allowed to break these

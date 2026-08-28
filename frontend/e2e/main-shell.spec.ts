@@ -49,7 +49,7 @@ test('main shell — coluna recolhida', async ({ page, mockApi }) => {
   /* Recolhida, o rótulo sai da tela e sobra o ícone — é o que distingue este
      snapshot do primeiro, e checar isso aqui é o que faz o teste falhar se a
      faixa deixar de recolher em vez de só mudar de cor. */
-  await expect(page.getByText('Rebalanceamento')).toBeHidden()
+  await expect(page.getByText('Distribuição')).toBeHidden()
   await expect(page.getByRole('button', { name: 'Expandir menu' })).toBeVisible()
 
   /* Tira o ponteiro e o foco do botão: em qualquer um dos dois o tooltip
@@ -92,7 +92,9 @@ test('main shell — a aba da seção leva à primeira página dela', async ({ p
   await expect(page).toHaveURL('/market/overview')
 })
 
-test('main shell — atalho para a tela de categorias', async ({ page, mockApi }) => {
+/* As categorias da carteira são um grupo do menu, e não uma tela que abre
+   numa delas: escolher qual é a navegação. */
+test('main shell — as categorias da carteira são um grupo do menu', async ({ page, mockApi }) => {
   await mockApi('/portfolio', [
     {
       ...PORTFOLIOS[0],
@@ -105,8 +107,10 @@ test('main shell — atalho para a tela de categorias', async ({ page, mockApi }
 
   await openShell(page)
 
-  await page.getByText('Categorias', { exact: true }).click()
-  /* A tela abre na primeira categoria da carteira, que passa a nomear a URL. */
+  await expect(page.getByText('Categorias', { exact: true })).toBeVisible()
+  /* "Ações", e não "FIIs": FIIs também é o nome de uma tela especializada, e
+     o menu passaria a ter dois destinos com o mesmo rótulo. */
+  await page.getByText('Ações', { exact: true }).click()
   await expect(page).toHaveURL('/portfolio/category/10')
 })
 
@@ -160,7 +164,7 @@ test('main shell — drawer no mobile', async ({ page, mockApi }) => {
   await expect(page.getByText('My Stonks').first()).toBeVisible()
 
   await page.getByRole('button', { name: 'Abrir menu de navegação' }).click()
-  await expect(page.getByText('Rebalanceamento')).toBeVisible()
+  await expect(page.getByText('Distribuição')).toBeVisible()
 
   await expect(page).toHaveScreenshot('main-shell-drawer.png')
 })

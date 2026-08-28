@@ -81,6 +81,29 @@ multiplies by the stored rate direction and never writes converted prices back.
 Quotes that cannot be restated faithfully — older than the rate history, or of
 unknown currency — are left out rather than guessed at.
 
+## Portfolio segment reads
+
+A specialized screen is about one **portfolio segment** — one part of the
+portfolio, defined by asset types and, where the same type trades in two
+markets, by which market. The definition lives in one place,
+`app/modules/portfolio/domain/portfolio_segment.py`, and nothing else decides
+it:
+
+- the current-position payload carries each position's `segment` and its
+  `exchange`, so the frontend filters by an answer rather than re-deriving the
+  rule;
+- `/portfolio/position/{id}/segment/{segment}/returns` and `.../analysis`
+  answer for the segment, and `patrimony_evolution` takes a `segment`
+  parameter.
+
+A segment that is exactly one asset type across every market — the funds, the
+cryptoassets — is the series the returns consolidator already writes, so it is
+read from `portfolio.asset_type_return` rather than recomputed. The segments
+that cut a type by market, or gather several types, have no persisted series
+and are calculated over the positions they cover, value weighted the same way
+the portfolio-wide series is. An empty segment answers with nothing, never
+with the whole portfolio.
+
 ## Layer boundaries
 
 - **HTTP routers:** transport concerns only; call services.

@@ -8,6 +8,7 @@ from app.modules.market_data.api.asset.schemas import (
     AssetDetailsOut,
     AssetDetailsWithPosition,
 )
+from app.modules.portfolio.domain.portfolio_segment import PortfolioSegment
 from app.modules.portfolio.service.portfolio_position_service import (
     PortfolioPositionService,
 )
@@ -60,17 +61,38 @@ async def get_asset_type_analysis(
     return await service.get_asset_type_stats(portfolio_id, asset_type_id, currency)
 
 
+@router.get('/{portfolio_id}/segment/{segment}/returns')
+async def get_segment_returns(
+    portfolio_id: int,
+    segment: PortfolioSegment,
+    currency: str = Query('BRL'),
+    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+):
+    return await service.get_segment_returns(portfolio_id, segment, currency)
+
+
+@router.get('/{portfolio_id}/segment/{segment}/analysis')
+async def get_segment_analysis(
+    portfolio_id: int,
+    segment: PortfolioSegment,
+    currency: str = Query('BRL'),
+    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+):
+    return await service.get_segment_stats(portfolio_id, segment, currency)
+
+
 @router.get('/{portfolio_id}/patrimony_evolution')
 async def get_patrimony_evolution(  # noqa: PLR0913
     portfolio_id: int,
     asset_id: int = Query(None),
     asset_type_id: int = Query(None),
     asset_type_ids: list[int] | None = Query(None),
+    segment: PortfolioSegment | None = Query(None),
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
     return await service.get_patrimony_evolution(
-        portfolio_id, asset_id, asset_type_id, asset_type_ids, currency=currency
+        portfolio_id, asset_id, asset_type_id, asset_type_ids, currency=currency, segment=segment
     )
 
 

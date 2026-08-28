@@ -1,19 +1,47 @@
 import { describe, expect, it } from 'vitest'
-import { getSectionDefaultPath, navigationSections, withMostVisited } from './navigation'
+import { SLICE_TABS } from '@/components/portfolio-slice/tabs'
+import { PORTFOLIO_SEGMENT_LIST } from '@/constants/portfolioSegments'
+import {
+  getSectionDefaultPath,
+  navigationSections,
+  resolveGroups,
+  withCategories,
+  withMostVisited,
+} from './navigation'
+
+const carteira = () => navigationSections.find((section) => section.id === 'carteira')!
+const mercado = () => navigationSections.find((section) => section.id === 'mercado')!
+
+const group = (title: string) => carteira().groups.find((item) => item.title === title)!
 
 describe('navigationSections', () => {
-  it('reaches the categories through a single page', () => {
-    const carteira = navigationSections.find((section) => section.id === 'carteira')!
-    const paths = carteira.groups.flatMap((group) => group.items.map((item) => item.path))
+  /* A promessa da reorganização: ler a carteira e ler um pedaço dela são a
+     mesma leitura. Sem este teste, uma aba nova numa tela de recorte — ou um
+     item novo no menu — separa as duas listas em silêncio, e o app volta a
+     ter dois vocabulários para a mesma coisa. */
+  it('names the portfolio-wide views exactly as a slice names its tabs', () => {
+    expect(group('Análise').items.map((item) => item.label)).toEqual(
+      SLICE_TABS.map((tab) => tab.label),
+    )
+  })
 
-    expect(paths).toContain('/portfolio/category')
-    expect(paths.filter((path) => path.startsWith('/portfolio/category'))).toHaveLength(1)
+  it('reaches every specialized screen from the menu', () => {
+    expect(group('Especializadas').items).toEqual(
+      PORTFOLIO_SEGMENT_LIST.map((segment) => ({ label: segment.label, path: segment.path })),
+    )
+  })
+
+  /* Distribuição e rebalanceamento viraram uma tela só: a rota antiga não
+     pode voltar ao menu por descuido. */
+  it('has no separate rebalancing entry', () => {
+    const paths = carteira().groups.flatMap((item) => item.items.map((entry) => entry.path))
+
+    expect(paths).not.toContain('/portfolio/rebalancing')
+    expect(paths).toContain('/portfolio/distribution')
   })
 
   it('exposes the specialized market pages', () => {
-    const mercado = navigationSections.find((section) => section.id === 'mercado')!
-
-    expect(mercado.groups).toEqual([
+    expect(mercado().groups).toEqual([
       {
         title: 'Mercado',
         items: [
@@ -34,28 +62,61 @@ describe('navigationSections', () => {
   })
 })
 
+describe('withCategories', () => {
+  const items = [{ label: 'FIIs', path: '/portfolio/category/11' }]
+
+  it('fills the Categorias group in its declared place', () => {
+    const groups = withCategories(carteira(), items)
+    const titles = groups.map((item) => item.title)
+
+    expect(groups.find((item) => item.title === 'Categorias')!.items).toEqual(items)
+    expect(titles.indexOf('Categorias')).toBe(titles.indexOf('Especializadas') + 1)
+  })
+
+  /* Um título sozinho não é navegação: sem categoria, o grupo sai. */
+  it('drops the group when the portfolio has no category', () => {
+    expect(withCategories(carteira(), []).map((item) => item.title)).not.toContain('Categorias')
+  })
+
+  it('leaves the Mercado alone', () => {
+    expect(withCategories(mercado(), items)).toBe(mercado().groups)
+  })
+})
+
 describe('withMostVisited', () => {
   it('adds the most visited assets to the Mercado menu', () => {
-    const mercado = navigationSections.find((section) => section.id === 'mercado')!
-
-    expect(withMostVisited(mercado, [{ label: 'PETR4', path: '/market/asset/11' }]).at(-1)).toEqual({
-      title: 'Mais acessados',
-      items: [{ label: 'PETR4', path: '/market/asset/11' }],
-    })
+    expect(withMostVisited(mercado(), [{ label: 'PETR4', path: '/market/asset/11' }]).at(-1)).toEqual(
+      { title: 'Mais acessados', items: [{ label: 'PETR4', path: '/market/asset/11' }] },
+    )
   })
 
   it('does not add an empty group', () => {
-    const mercado = navigationSections.find((section) => section.id === 'mercado')!
-
-    expect(withMostVisited(mercado, [])).toBe(mercado.groups)
+    expect(withMostVisited(mercado(), [])).toBe(mercado().groups)
   })
 
   it('leaves the Carteira alone', () => {
-    const carteira = navigationSections.find((section) => section.id === 'carteira')!
-
-    expect(withMostVisited(carteira, [{ label: 'PETR4', path: '/market/asset/11' }])).toBe(
-      carteira.groups,
+    expect(withMostVisited(carteira(), [{ label: 'PETR4', path: '/market/asset/11' }])).toBe(
+      carteira().groups,
     )
+  })
+})
+
+describe('resolveGroups', () => {
+  /* A coluna do desktop e o drawer do mobile passam por aqui justamente para
+     não divergirem: o que uma mostra, a outra mostra. */
+  it('is the one place the user data enters the menu', () => {
+    const groups = resolveGroups(carteira(), {
+      categories: [{ label: 'FIIs', path: '/portfolio/category/11' }],
+      favorites: [{ label: 'PETR4', path: '/market/asset/11' }],
+    })
+
+    expect(groups.map((item) => item.title)).toContain('Categorias')
+    // Favorito é do Mercado: na Carteira ele não entra.
+    expect(groups.map((item) => item.title)).not.toContain('Mais acessados')
+  })
+
+  it('leaves the empty Categorias group out when there is nothing to fill it', () => {
+    expect(resolveGroups(carteira(), {}).map((item) => item.title)).not.toContain('Categorias')
   })
 })
 

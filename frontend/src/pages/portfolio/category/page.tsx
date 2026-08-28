@@ -1,14 +1,8 @@
 import { fetchCategoryAnalysis } from '@/api/portfolio'
-import {
-  AppDivider,
-  AppMetric,
-  AppPageHeader,
-  AppSelect,
-  AppStack,
-  AppTabs,
-  AppText,
-  LoadingSpinner,
-} from '@/components/ui'
+import PortfolioSliceScreen from '@/components/portfolio-slice/PortfolioSliceScreen'
+import type { SliceTabId } from '@/components/portfolio-slice/tabs'
+import { CONCENTRATION_DIMENSIONS } from '@/components/portfolio-slice/concentration'
+import { AppSelect, AppText, LoadingSpinner } from '@/components/ui'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import { usePortfolioStore } from '@/stores/portfolio'
@@ -16,37 +10,33 @@ import { useDividendsStore } from '@/stores/portfolio/dividends'
 import { usePatrimonyStore } from '@/stores/portfolio/patrimony'
 import { usePositionsStore } from '@/stores/portfolio/positions'
 import { useReturnsStore } from '@/stores/portfolio/returns'
+import { useTradesStore } from '@/stores/portfolio/trades'
 import type { AssetAnalysis } from '@/types'
 import { useCallback, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import CategoryAssets from './CategoryAssets'
-import CategoryDividendsTab from './CategoryDividendsTab'
-import CategoryReturnsTab from './CategoryReturnsTab'
-import CategoryRiskTab from './CategoryRiskTab'
-import CategoryWealthTab from './CategoryWealthTab'
-import { categoryPositions, summarizeCategory } from './summary'
-
-type TabId = 'rentabilidade' | 'risco' | 'patrimonio' | 'proventos'
-
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'rentabilidade', label: 'Rentabilidade' },
-  { id: 'risco', label: 'Risco' },
-  { id: 'patrimonio', label: 'Patrimônio' },
-  { id: 'proventos', label: 'Proventos' },
-]
 
 /** Benchmark padrão quando a categoria não escolheu um. */
 const DEFAULT_BENCHMARK = 'CDI'
 
+/** Por onde a concentração de uma categoria é lida. Ela não tem subtipo
+ *  próprio — quem a define é o usuário —, então sobram o ativo, o tipo e a
+ *  classe do que está dentro dela. */
+const DIMENSIONS = [
+  CONCENTRATION_DIMENSIONS.asset,
+  CONCENTRATION_DIMENSIONS.assetType,
+  CONCENTRATION_DIMENSIONS.assetClass,
+]
+
 /** A carteira inteira, vista por uma categoria só.
  *
- *  Todas as categorias mostram a mesma tela, então é uma tela só: a categoria
- *  é escolhida num select e continua na URL, para o link continuar valendo.
+ *  É a mesma tela de um segmento: o que muda é só como o recorte é escolhido —
+ *  ali um tipo de ativo, aqui um agrupamento do usuário. A categoria continua
+ *  na URL, para o link continuar valendo.
  *
  *  Os dados são os mesmos que as telas da carteira já carregam — posições,
- *  rentabilidade por categoria, patrimônio e proventos estão nos stores —, e a
- *  única busca própria desta tela é a análise de risco da categoria, que o
- *  backend calcula por `/portfolio/position/{id}/category/{id}/analysis`. */
+ *  rentabilidade por categoria, patrimônio, proventos e trades estão nos
+ *  stores —, e a única busca própria desta tela é a análise de risco da
+ *  categoria. */
 export default function PortfolioCategoryPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -60,7 +50,7 @@ export default function PortfolioCategoryPage() {
   )
   const category = categories.find((item) => item.id === categoryId)
 
-  const { currency, format: formatCurrency } = useCurrency()
+  const { currency } = useCurrency()
 
   const positions = usePositionsStore((s) => s.positions)
   const positionsLoading = usePositionsStore((s) => s.loading) && positions.length === 0
@@ -68,17 +58,19 @@ export default function PortfolioCategoryPage() {
   const categoryCagr = useReturnsStore((s) => s.categoryCagr)
   const patrimony = usePatrimonyStore((s) => s.patrimony)
   const dividends = useDividendsStore((s) => s.dividends)
+  const trades = useTradesStore((s) => s.trades)
 
-  const [tab, setTab] = useState<TabId>('rentabilidade')
+  const [tab, setTab] = useState<SliceTabId>('rentabilidade')
 
   const name = category?.name ?? ''
   const returns = useMemo(() => categoryReturns[name] ?? [], [categoryReturns, name])
-
-  const summary = useMemo(
-    () => summarizeCategory(positions, returns, name),
-    [positions, returns, name],
+  const ownPositions = useMemo(
+    () =>
+      positions
+        .filter((position) => position.category === name)
+        .sort((a, b) => b.value - a.value),
+    [positions, name],
   )
-  const ownPositions = useMemo(() => categoryPositions(positions, name), [positions, name])
 
   const { data: analysis, loading: analysisLoading } = useCachedData<AssetAnalysis>(
     portfolioId && category ? `category-analysis:${portfolioId}:${category.id}:${currency}` : null,
@@ -101,73 +93,46 @@ export default function PortfolioCategoryPage() {
     return <AppText tone="secondary">Categoria não encontrada nesta carteira.</AppText>
   }
 
-  const cagr = categoryCagr[name] ?? null
-  const percent = (value: number) =>
-    `${value >= 0 ? '+' : ''}${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
+  const portfolioValue = positions.reduce((sum, position) => sum + position.value, 0)
 
   return (
-    <AppStack gap="lg">
-      <AppPageHeader
-        title={category.name}
-        breadcrumbs={[
-          { label: 'Carteira', href: '/portfolio/overview' },
-          { label: 'Categorias' },
-        ]}
-        actions={
-          <AppSelect
-            label="Categoria"
-            options={categories.map((item) => ({
-              value: String(item.id),
-              label: item.name,
-            }))}
-            value={String(category.id)}
-            onChange={(value) => navigate(`/portfolio/category/${value}`)}
-          />
-        }
-        metrics={
-          <>
-            <AppMetric label="Patrimônio" value={formatCurrency(summary.value)} size="lg" />
-            <AppMetric
-              label="Rentabilidade acumulada"
-              value={summary.accReturn == null ? '—' : percent(summary.accReturn * 100)}
-              tone={summary.accReturn != null && summary.accReturn < 0 ? 'danger' : 'success'}
-            />
-            <AppMetric
-              label="CAGR"
-              value={cagr == null ? '—' : `${percent(cagr * 100)} a.a.`}
-              tone={cagr != null && cagr < 0 ? 'danger' : 'success'}
-            />
-            <AppMetric
-              label="Peso na carteira"
-              value={summary.weight == null ? '—' : `${summary.weight.toFixed(1).replace('.', ',')}%`}
-            />
-            <AppMetric label="Ativos" value={String(summary.assetCount)} />
-          </>
-        }
-      />
-
-      <CategoryAssets
-        positions={ownPositions}
-        portfolioId={portfolioId}
-        color={category.color}
-      />
-
-      <AppDivider />
-
-      <AppTabs items={TABS} value={tab} onChange={setTab} label="Visões da categoria" />
-
-      {tab === 'rentabilidade' && (
-        <CategoryReturnsTab
-          category={name}
-          benchmark={category.benchmark?.short_name ?? DEFAULT_BENCHMARK}
-          returns={returns}
+    <PortfolioSliceScreen
+      portfolioId={portfolioId}
+      title={category.name}
+      breadcrumbs={[
+        { label: 'Carteira', href: '/portfolio/overview' },
+        { label: 'Categorias' },
+      ]}
+      actions={
+        <AppSelect
+          label="Categoria"
+          options={categories.map((item) => ({
+            value: String(item.id),
+            label: item.name,
+          }))}
+          value={String(category.id)}
+          onChange={(value) => navigate(`/portfolio/category/${value}`)}
         />
-      )}
-      {tab === 'risco' && <CategoryRiskTab analysis={analysis} loading={analysisLoading} />}
-      {tab === 'patrimonio' && (
-        <CategoryWealthTab category={name} patrimonyEvolution={patrimony} cagr={cagr} />
-      )}
-      {tab === 'proventos' && <CategoryDividendsTab category={name} dividends={dividends} />}
-    </AppStack>
+      }
+      accentColor={category.color}
+      persistKey={`category:${name}`}
+      positions={ownPositions}
+      portfolioValue={portfolioValue}
+      dimensions={DIMENSIONS}
+      emptyMessage="Nenhum ativo nesta categoria."
+      returns={returns}
+      benchmarks={[category.benchmark?.short_name ?? DEFAULT_BENCHMARK]}
+      categoryName={name}
+      cagr={categoryCagr[name] ?? null}
+      analysis={analysis ?? null}
+      analysisLoading={analysisLoading}
+      patrimony={patrimony}
+      patrimonySeriesKey={name}
+      allDividends={dividends}
+      dividendsChartSelection={name}
+      allTrades={trades}
+      tab={tab}
+      onTabChange={setTab}
+    />
   )
 }

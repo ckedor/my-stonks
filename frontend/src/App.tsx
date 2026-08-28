@@ -29,9 +29,8 @@ import PortfolioAssetPage from "./pages/portfolio/asset/[id]/page";
 import PortfolioCategoryPage from "./pages/portfolio/category/page";
 import DistributionPage from "./pages/portfolio/distribution/page";
 import PortfolioDividendsPage from "./pages/portfolio/dividends/page";
-import PortfolioFIIPage from "./pages/portfolio/fii/page";
+import PortfolioSegmentPage from "./pages/portfolio/segment/page";
 import PortfolioOverviewPage from "./pages/portfolio/overview";
-import RebalancingPage from "./pages/portfolio/rebalancing/page";
 import PortfolioReturnsPage from "./pages/portfolio/returns/page";
 import PortfolioRiskPage from "./pages/portfolio/risk/page";
 import TaxIncomePage from "./pages/portfolio/tax-income/page";
@@ -54,13 +53,19 @@ const router = createBrowserRouter([
       { path: "portfolio/category/:id", element: <PortfolioCategoryPage /> },
       { path: "portfolio/distribution", element: <DistributionPage /> },
       { path: "portfolio/dividends", element: <PortfolioDividendsPage /> },
-      { path: "portfolio/fii", element: <PortfolioFIIPage /> },
+      { path: "portfolio/fii", element: <PortfolioSegmentPage segment="fii" /> },
+      { path: "portfolio/equity-br", element: <PortfolioSegmentPage segment="equity-br" /> },
+      { path: "portfolio/equity-world", element: <PortfolioSegmentPage segment="equity-world" /> },
+      { path: "portfolio/fixed-income", element: <PortfolioSegmentPage segment="fixed-income" /> },
+      { path: "portfolio/crypto", element: <PortfolioSegmentPage segment="crypto" /> },
       { path: "portfolio/returns", element: <PortfolioReturnsPage /> },
       { path: "portfolio/analysis", element: <PortfolioRiskPage /> },
       { path: "portfolio/tax-income", element: <TaxIncomePage /> },
       { path: "portfolio/trades", element: <PortfolioTransactionsPage /> },
       { path: "portfolio/wealth", element: <PortfolioPatrimonyEvolution /> },
-      { path: "portfolio/rebalancing", element: <RebalancingPage /> },
+      // Distribuição e rebalanceamento viraram uma tela só; o link antigo
+      // continua chegando nela.
+      { path: "portfolio/rebalancing", element: <Navigate to="/portfolio/distribution" replace /> },
       { path: "portfolio/user-configurations", element: <UserConfigurationPage /> },
       { path: "portfolio/user-configurations/theme-editor", element: <ThemeEditorPage /> },
       { path: "portfolio/user-configurations/theme-editor/:id", element: <ThemeEditorPage /> },

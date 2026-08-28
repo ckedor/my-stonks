@@ -1,5 +1,6 @@
 import { AppNavRail } from '@/components/ui'
 import { useFavoritesStore } from '@/stores/favorites'
+import { usePortfolioStore } from '@/stores/portfolio'
 
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -9,7 +10,7 @@ import {
   getNavigationSection,
   isNavigationItemActive,
   navigationSections,
-  withMostVisited,
+  resolveGroups,
 } from './navigation'
 
 /* A coluna é um atalho, não a prateleira: cinco entradas mantêm o grupo
@@ -30,13 +31,18 @@ export default function MainSidebar({ collapsed }: { collapsed: boolean }) {
     if (currentSection === 'mercado') void refreshFavorites()
   }, [currentSection, refreshFavorites])
 
-  const groups = withMostVisited(
-    section,
-    favorites.map((asset) => ({
+  const categories = usePortfolioStore((state) => state.selectedPortfolio?.custom_categories)
+
+  const groups = resolveGroups(section, {
+    categories: (categories ?? []).map((category) => ({
+      label: category.name,
+      path: `/portfolio/category/${category.id}`,
+    })),
+    favorites: favorites.map((asset) => ({
       label: asset.ticker ?? asset.name,
       path: `/market/asset/${asset.id}`,
     })),
-  )
+  })
 
   return (
     <AppNavRail
