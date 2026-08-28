@@ -214,7 +214,8 @@ export default function AdminConsolidationPage() {
           <AppStack align="start">
             <AppButton
               onClick={recalculateEveryPortfolio}
-              disabled={runningAll || portfolios.length === 0}
+              disabled={portfolios.length === 0}
+              loading={runningAll}
             >
               {runningAll ? 'Recalculando…' : 'Recalcular todas as carteiras'}
             </AppButton>
@@ -284,7 +285,8 @@ export default function AdminConsolidationPage() {
             />
             <AppButton
               onClick={recalculateSingleAsset}
-              disabled={assetRunning || !selectedPortfolio || !selectedAsset}
+              disabled={!selectedPortfolio || !selectedAsset}
+              loading={assetRunning}
             >
               {assetRunning ? 'Consolidando…' : 'Consolidar'}
             </AppButton>

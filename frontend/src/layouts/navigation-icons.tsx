@@ -24,9 +24,9 @@ import type { ReactNode } from 'react'
  * como dado; e fora do `AppNavRail` porque o design system não conhece rota.
  * É o mesmo arranjo do admin (`pages/admin/Sidebar.tsx`).
  *
- * Não é decoração: recolhida, a coluna é só ícone, então um destino sem
- * ícone fica sem rótulo nenhum. Por isso há um padrão, e não um espaço
- * vazio, para as rotas que nascem dos dados do usuário. */
+ * Não é decoração: o ícone é o que dá a leitura à distância numa lista de
+ * quinze destinos. Por isso há um padrão, e não um espaço vazio, para as
+ * rotas que nascem dos dados do usuário. */
 
 const NAVIGATION_ICONS: Record<string, ReactNode> = {
   '/portfolio/overview': <DashboardIcon />,

@@ -10,6 +10,14 @@ import { CircularProgress } from '@mui/material'
  * O spinner responde por uma ação que alguém acabou de disparar; o
  * esqueleto responde pelo conteúdo que ainda não chegou. */
 
-export default function LoadingSpinner() {
-  return <CircularProgress size={24} />
+export interface LoadingSpinnerProps {
+  /** `sm` é o tamanho de um ícone de botão ou de item de menu, onde ele entra
+   *  no lugar do ícone. Padrão: `md`. */
+  size?: 'sm' | 'md'
+}
+
+const SIZES = { sm: 18, md: 24 } as const
+
+export default function LoadingSpinner({ size = 'md' }: LoadingSpinnerProps) {
+  return <CircularProgress size={SIZES[size]} color="inherit" />
 }

@@ -130,8 +130,12 @@ nem uma coisa nem outra.
   de qualquer uma das quatro tabelas) e `AppChartSkeleton` (barra de
   controles + área do gráfico).
 - **`LoadingSpinner` é espera em linha de uma ação disparada por alguém** —
-  o botão que recalcula a posição, a carteira trocando na barra do topo. Ele
-  não tem mais variante de tela cheia, e a falta é a regra.
+  a carteira trocando na barra do topo, o item de menu que recalcula enquanto
+  recalcula. Ele não tem mais variante de tela cheia, e a falta é a regra.
+  Num botão ele não aparece à mão: `AppButton` tem `loading`, que põe o disco
+  no lugar do ícone e **mantém o rótulo** — é o rótulo que diz qual ação está
+  correndo. Por isso a regra do ESLint pode reprovar `LoadingSpinner` em
+  `src/pages/**` sem tirar o spinner de nenhuma ação: ele mora no controle.
 
 A regra em `eslint.config.js` reprova `LoadingSpinner` em `src/pages/**`,
 inclusive no admin. `src/test/eslint-loading-skeleton.test.ts` prova que ela

@@ -267,7 +267,9 @@ export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarPr
           },
           {
             label: recalculating ? 'Recalculando...' : 'Recalcular Carteira',
-            icon: <RefreshIcon fontSize="small" />,
+            /* O disco entra no lugar do ícone: a ação é longa, e o menu fica
+               aberto justamente para mostrar que ela está correndo. */
+            icon: recalculating ? <LoadingSpinner size="sm" /> : <RefreshIcon fontSize="small" />,
             separatorBefore: true,
             disabled: recalculating,
             onSelect: handleRecalculate,
