@@ -1,6 +1,8 @@
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { Box, Tooltip, Typography } from '@mui/material'
-import type { ReactNode } from 'react'
+import { useState, type MouseEvent, type ReactNode } from 'react'
 import { radius } from '@/theme/tokens'
+import AppMenu from './AppMenu'
 import { TOPBAR_HEIGHT } from './AppTopbar'
 import { useAppTheme, withOpacity } from './useAppTheme'
 
@@ -35,6 +37,14 @@ export interface AppNavRailItem {
   label: string
   icon: ReactNode
   active?: boolean
+  /** Destinos que só aparecem quando o item é aberto.
+   *
+   *  É um menu suspenso, e não uma lista aninhada: a coluna é curta e uma
+   *  lista que vem de dado do usuário — as categorias da carteira — não tem
+   *  tamanho previsível. Como menu, ela abre do mesmo jeito com a coluna
+   *  aberta ou recolhida; aninhada, recolhida viraria uma pilha de ícones
+   *  iguais sem rótulo. */
+  submenu?: AppNavRailItem[]
 }
 
 export interface AppNavRailGroup {
@@ -61,6 +71,15 @@ export default function AppNavRail({
 }: AppNavRailProps) {
   const theme = useAppTheme()
   const width = collapsed ? NAV_RAIL_COLLAPSED_WIDTH : NAV_RAIL_WIDTH
+
+  /* O item aberto e o botão a que o menu está ancorado. Um de cada vez: dois
+     painéis abertos na mesma coluna se sobrepõem. */
+  const [openSubmenu, setOpenSubmenu] = useState<{ id: string; anchor: HTMLElement } | null>(
+    null,
+  )
+  const submenuItems = openSubmenu
+    ? groups.flatMap((group) => group.items).find((item) => item.id === openSubmenu.id)?.submenu
+    : undefined
 
   return (
     <Box
@@ -143,7 +162,13 @@ export default function AppNavRail({
                   component="button"
                   type="button"
                   aria-current={item.active ? 'page' : undefined}
-                  onClick={() => onSelect(item.id)}
+                  aria-haspopup={item.submenu ? 'menu' : undefined}
+                  aria-expanded={item.submenu ? openSubmenu?.id === item.id : undefined}
+                  onClick={(event: MouseEvent<HTMLElement>) =>
+                    item.submenu
+                      ? setOpenSubmenu({ id: item.id, anchor: event.currentTarget })
+                      : onSelect(item.id)
+                  }
                   sx={{
                     position: 'relative',
                     appearance: 'none',
@@ -220,12 +245,47 @@ export default function AppNavRail({
                       {item.label}
                     </Box>
                   )}
+
+                  {/* A seta é o que distingue o item que abre de um que leva
+                      direto. Recolhida, não há onde ela caber, e o tooltip
+                      já é o que diz o que o ícone é. */}
+                  {item.submenu && !collapsed && (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        ml: 'auto',
+                        color: 'inherit',
+                        '& svg': { fontSize: 18 },
+                      }}
+                    >
+                      <ChevronRightIcon />
+                    </Box>
+                  )}
                 </Box>
               </Tooltip>
             ))}
           </Box>
         ))}
       </Box>
+
+      {submenuItems && openSubmenu && (
+        <AppMenu
+          id={`nav-submenu-${openSubmenu.id}`}
+          anchorEl={openSubmenu.anchor}
+          open
+          onClose={() => setOpenSubmenu(null)}
+          placement="beside"
+          minWidth={NAV_RAIL_WIDTH}
+          options={submenuItems.map((child) => ({
+            label: child.label,
+            selected: child.active,
+            onSelect: () => {
+              setOpenSubmenu(null)
+              onSelect(child.id)
+            },
+          }))}
+        />
+      )}
     </Box>
   )
 }

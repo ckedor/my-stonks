@@ -22,6 +22,13 @@ export type SectionId = 'carteira' | 'mercado'
 export interface NavigationItem {
   path: string
   label: string
+  /** Destinos que só aparecem quando o item é aberto.
+   *
+   *  As categorias da carteira são uma lista de tamanho imprevisível, feita
+   *  pelo usuário — deitá-la na coluna empurrava o resto da navegação para
+   *  fora da dobra. Como submenu, ela é um item só até alguém querer
+   *  escolher. */
+  items?: NavigationItem[]
 }
 
 export interface NavigationGroup {
@@ -35,9 +42,9 @@ export interface NavigationSection {
   groups: NavigationGroup[]
 }
 
-/** O grupo que os dados do usuário preenchem. Ele fica declarado na lista
- *  estática para ter lugar fixo na ordem; vazio, ele é retirado. */
-const CATEGORIES_GROUP_TITLE = 'Categorias'
+/** O item que os dados do usuário preenchem. Ele fica declarado na lista
+ *  estática para ter lugar fixo na ordem; sem categoria, ele é retirado. */
+export const CATEGORIES_PATH = '/portfolio/category'
 
 export const navigationSections: NavigationSection[] = [
   {
@@ -49,6 +56,7 @@ export const navigationSections: NavigationSection[] = [
         items: [
           { label: 'Resumo', path: '/portfolio/overview' },
           { label: 'Ativos', path: '/portfolio/asset' },
+          { label: 'Categorias', path: CATEGORIES_PATH, items: [] },
         ],
       },
       {
@@ -69,7 +77,6 @@ export const navigationSections: NavigationSection[] = [
           path: segment.path,
         })),
       },
-      { title: CATEGORIES_GROUP_TITLE, items: [] },
       {
         title: 'Operações',
         items: [{ label: 'Declaração IR', path: '/portfolio/tax-income' }],
@@ -114,21 +121,24 @@ export function withMostVisited(
   return [...section.groups, { title: 'Mais acessados', items: favorites }]
 }
 
-/** Preenche o grupo Categorias com as categorias da carteira.
+/** Preenche o submenu de Categorias com as categorias da carteira.
  *
  *  Escolher a categoria é a navegação, e não algo que se faz depois de chegar:
- *  o menu abre a lista, e cada categoria é um destino. Sem nenhuma, o grupo
- *  vazio sai da coluna em vez de virar um título sem conteúdo. */
+ *  o item abre a lista, e cada categoria é um destino. Sem nenhuma, o item
+ *  sai da coluna em vez de abrir um menu vazio. */
 export function withCategories(
   section: NavigationSection,
   categories: NavigationItem[],
 ): NavigationGroup[] {
   if (section.id !== 'carteira') return section.groups
 
-  return section.groups.flatMap((group) => {
-    if (group.title !== CATEGORIES_GROUP_TITLE) return [group]
-    return categories.length === 0 ? [] : [{ ...group, items: categories }]
-  })
+  return section.groups.map((group) => ({
+    ...group,
+    items: group.items.flatMap((item) => {
+      if (item.path !== CATEGORIES_PATH) return [item]
+      return categories.length === 0 ? [] : [{ ...item, items: categories }]
+    }),
+  }))
 }
 
 /** Os grupos de uma seção já com o que vem dos dados do usuário. É por onde a

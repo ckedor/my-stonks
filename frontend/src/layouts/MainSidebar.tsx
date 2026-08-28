@@ -55,6 +55,12 @@ export default function MainSidebar({ collapsed }: { collapsed: boolean }) {
           label: item.label,
           icon: getNavigationIcon(item.path),
           active: isNavigationItemActive(location.pathname, item.path),
+          submenu: item.items?.map((child) => ({
+            id: child.path,
+            label: child.label,
+            icon: getNavigationIcon(child.path),
+            active: isNavigationItemActive(location.pathname, child.path),
+          })),
         })),
       }))}
       onSelect={(path) => navigate(path)}

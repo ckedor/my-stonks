@@ -42,6 +42,11 @@ export interface AppMenuProps {
   /** Largura mínima do painel, quando os rótulos são curtos demais para
    *  sustentar a coluna sozinhos. */
   minWidth?: number
+  /** Onde o painel abre em relação ao gatilho. `below` é o menu de barra —
+   *  cai sob o botão, alinhado à direita. `beside` é o submenu de uma coluna
+   *  de navegação: sai pelo lado, alinhado ao topo do item, para não cobrir
+   *  os destinos logo abaixo dele. Padrão: `below`. */
+  placement?: 'below' | 'beside'
 }
 
 export default function AppMenu({
@@ -51,14 +56,25 @@ export default function AppMenu({
   options,
   id,
   minWidth,
+  placement = 'below',
 }: AppMenuProps) {
+  const beside = placement === 'beside'
+
   return (
     <Menu
       id={id}
       anchorEl={anchorEl}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      anchorOrigin={
+        beside
+          ? { vertical: 'top', horizontal: 'right' }
+          : { vertical: 'bottom', horizontal: 'right' }
+      }
       keepMounted
-      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      transformOrigin={
+        beside
+          ? { vertical: 'top', horizontal: 'left' }
+          : { vertical: 'top', horizontal: 'right' }
+      }
       open={open}
       onClose={onClose}
       slotProps={minWidth ? { paper: { sx: { minWidth } } } : undefined}

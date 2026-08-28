@@ -366,6 +366,11 @@ export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarPr
               id: item.path,
               label: item.label,
               active: isNavigationItemActive(location.pathname, item.path),
+              submenu: item.items?.map((child) => ({
+                id: child.path,
+                label: child.label,
+                active: isNavigationItemActive(location.pathname, child.path),
+              })),
             })),
           })),
         }))}

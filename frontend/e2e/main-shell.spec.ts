@@ -107,10 +107,16 @@ test('main shell — as categorias da carteira são um grupo do menu', async ({ 
 
   await openShell(page)
 
-  await expect(page.getByText('Categorias', { exact: true })).toBeVisible()
+  /* Um item só, e a lista só existe depois de abri-lo: a coluna é curta e a
+     lista é do usuário. */
+  await expect(page.getByText('Ações', { exact: true })).toBeHidden()
+
+  await page.getByRole('button', { name: 'Categorias' }).click()
+  await expect(page.getByRole('menu')).toBeVisible()
+
   /* "Ações", e não "FIIs": FIIs também é o nome de uma tela especializada, e
      o menu passaria a ter dois destinos com o mesmo rótulo. */
-  await page.getByText('Ações', { exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Ações' }).click()
   await expect(page).toHaveURL('/portfolio/category/10')
 })
 

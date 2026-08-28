@@ -11,7 +11,7 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material'
-import type { ReactNode } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import AppIconButton from './AppIconButton'
 
 /* Navegação lateral do mobile: seções que abrem e fecham, cada uma com os
@@ -31,6 +31,10 @@ export interface AppNavDrawerItem {
   id: string
   label: string
   active?: boolean
+  /** Destinos que só aparecem quando o item é aberto. Aqui a lista abre no
+   *  lugar, e não num painel suspenso como na coluna do desktop: o drawer
+   *  ocupa a tela inteira e já é uma sanfona de seções. */
+  submenu?: AppNavDrawerItem[]
 }
 
 export interface AppNavDrawerGroup {
@@ -68,6 +72,10 @@ export default function AppNavDrawer({
   onToggleSection,
   onSelect,
 }: AppNavDrawerProps) {
+  /* Quais itens estão abertos. Mora aqui, e não em quem chama, porque é
+     estado de desenho: nada fora do drawer precisa saber. */
+  const [openItemIds, setOpenItemIds] = useState<string[]>([])
+
   return (
     <Drawer
       anchor="left"
@@ -141,27 +149,66 @@ export default function AppNavDrawer({
                     </Typography>
                   )}
                   {group.items.map((item) => (
-                    <ListItemButton
-                      key={item.id}
-                      onClick={() => {
-                        onSelect(item.id)
-                        onClose()
-                      }}
-                      sx={{ pl: 3, py: 0.75 }}
-                    >
-                      <ListItemText
-                        primary={item.label}
-                        slotProps={{
-                          primary: {
-                            sx: {
-                              fontSize: '0.9rem',
-                              fontWeight: item.active ? 600 : 400,
-                              color: item.active ? 'primary.main' : 'text.primary',
-                            },
-                          },
+                    <Fragment key={item.id}>
+                      <ListItemButton
+                        onClick={() => {
+                          if (item.submenu) {
+                            setOpenItemIds((current) =>
+                              current.includes(item.id)
+                                ? current.filter((id) => id !== item.id)
+                                : [...current, item.id],
+                            )
+                            return
+                          }
+                          onSelect(item.id)
+                          onClose()
                         }}
-                      />
-                    </ListItemButton>
+                        sx={{ pl: 3, py: 0.75 }}
+                      >
+                        <ListItemText
+                          primary={item.label}
+                          slotProps={{
+                            primary: {
+                              sx: {
+                                fontSize: '0.9rem',
+                                fontWeight: item.active ? 600 : 400,
+                                color: item.active ? 'primary.main' : 'text.primary',
+                              },
+                            },
+                          }}
+                        />
+                        {item.submenu &&
+                          (openItemIds.includes(item.id) ? <ExpandLess /> : <ExpandMore />)}
+                      </ListItemButton>
+
+                      {item.submenu && (
+                        <Collapse in={openItemIds.includes(item.id)} timeout="auto" unmountOnExit>
+                          {item.submenu.map((child) => (
+                            <ListItemButton
+                              key={child.id}
+                              onClick={() => {
+                                onSelect(child.id)
+                                onClose()
+                              }}
+                              sx={{ pl: 5, py: 0.75 }}
+                            >
+                              <ListItemText
+                                primary={child.label}
+                                slotProps={{
+                                  primary: {
+                                    sx: {
+                                      fontSize: '0.9rem',
+                                      fontWeight: child.active ? 600 : 400,
+                                      color: child.active ? 'primary.main' : 'text.primary',
+                                    },
+                                  },
+                                }}
+                              />
+                            </ListItemButton>
+                          ))}
+                        </Collapse>
+                      )}
+                    </Fragment>
                   ))}
                 </Box>
               ))}

@@ -62,20 +62,36 @@ describe('navigationSections', () => {
   })
 })
 
+const flatItems = (groups: ReturnType<typeof withCategories>) =>
+  groups.flatMap((group) => group.items)
+
+const categoriesItem = (groups: ReturnType<typeof withCategories>) =>
+  flatItems(groups).find((item) => item.path === '/portfolio/category')
+
 describe('withCategories', () => {
   const items = [{ label: 'FIIs', path: '/portfolio/category/11' }]
 
-  it('fills the Categorias group in its declared place', () => {
+  /* A coluna é curta e a lista de categorias é do usuário: deitá-la ali
+     empurrava o resto da navegação para fora da dobra. Um item que abre. */
+  it('hangs the categories off a single item instead of listing them', () => {
     const groups = withCategories(carteira(), items)
-    const titles = groups.map((item) => item.title)
 
-    expect(groups.find((item) => item.title === 'Categorias')!.items).toEqual(items)
-    expect(titles.indexOf('Categorias')).toBe(titles.indexOf('Especializadas') + 1)
+    expect(categoriesItem(groups)!.items).toEqual(items)
+    expect(flatItems(groups).map((item) => item.path)).not.toContain(
+      '/portfolio/category/11',
+    )
+    expect(groups.map((group) => group.title)).not.toContain('Categorias')
   })
 
-  /* Um título sozinho não é navegação: sem categoria, o grupo sai. */
-  it('drops the group when the portfolio has no category', () => {
-    expect(withCategories(carteira(), []).map((item) => item.title)).not.toContain('Categorias')
+  it('keeps the item in its declared place', () => {
+    const paths = flatItems(withCategories(carteira(), items)).map((item) => item.path)
+
+    expect(paths.indexOf('/portfolio/category')).toBe(paths.indexOf('/portfolio/asset') + 1)
+  })
+
+  /* Um item que abre um menu vazio não é navegação: sem categoria, ele sai. */
+  it('drops the item when the portfolio has no category', () => {
+    expect(categoriesItem(withCategories(carteira(), []))).toBeUndefined()
   })
 
   it('leaves the Mercado alone', () => {
@@ -110,13 +126,13 @@ describe('resolveGroups', () => {
       favorites: [{ label: 'PETR4', path: '/market/asset/11' }],
     })
 
-    expect(groups.map((item) => item.title)).toContain('Categorias')
+    expect(categoriesItem(groups)!.items).toHaveLength(1)
     // Favorito é do Mercado: na Carteira ele não entra.
     expect(groups.map((item) => item.title)).not.toContain('Mais acessados')
   })
 
-  it('leaves the empty Categorias group out when there is nothing to fill it', () => {
-    expect(resolveGroups(carteira(), {}).map((item) => item.title)).not.toContain('Categorias')
+  it('leaves the empty Categorias item out when there is nothing to fill it', () => {
+    expect(categoriesItem(resolveGroups(carteira(), {}))).toBeUndefined()
   })
 })
 
