@@ -1,9 +1,9 @@
 import {
   AppPageHeader,
+  AppSkeleton,
   AppStack,
   AppStackItem,
   AppToggleGroup,
-  LoadingSpinner,
   type AppToggleGroupOption,
 } from '@/components/ui'
 import { POSITION_ROUTES } from '@/constants/routes'
@@ -66,7 +66,14 @@ export default function DistributionPage() {
       />
 
       {loading ? (
-        <LoadingSpinner />
+        <AppStack direction="row" gap="md" collapseBelow="md">
+          <AppStackItem>
+            <AppSkeleton height={560} />
+          </AppStackItem>
+          <AppStackItem width={BAR_COLUMN_WIDTH} offsetTop="xxl">
+            <AppSkeleton height={520} />
+          </AppStackItem>
+        </AppStack>
       ) : (
         <AppStack direction="row" gap="md" collapseBelow="md">
           <AppStackItem>

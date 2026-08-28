@@ -12,12 +12,13 @@ import {
   AppGridItem,
   AppMetric,
   AppPageHeader,
+  AppPageHeaderSkeleton,
   AppPieChart,
+  AppSkeleton,
   AppStack,
   AppTabs,
   AppText,
   AppToggleGroup,
-  LoadingSpinner,
   SectionTitle,
   useAppTheme,
 } from '@/components/ui'
@@ -131,7 +132,27 @@ export default function PortfolioFIIPage() {
     })
   }, [fiiPositions, dimension, selectedGroup])
 
-  if (positionsLoading) return <LoadingSpinner />
+  if (positionsLoading) {
+    return (
+      <AppStack gap="lg">
+        <AppPageHeaderSkeleton titleWidth={120} description metrics={6} />
+        <AppGrid cols={{ xs: 1, lg: 4 }} gap="lg" align="start">
+          <AppGridItem>
+            <AppCard>
+              <AppSkeleton height={360} />
+            </AppCard>
+          </AppGridItem>
+          <AppGridItem span={{ xs: 1, lg: 3 }}>
+            <AppGrid cols={{ xs: 1, sm: 2, lg: 3 }} gap="md">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <AppSkeleton key={index} height={150} />
+              ))}
+            </AppGrid>
+          </AppGridItem>
+        </AppGrid>
+      </AppStack>
+    )
+  }
 
   const fiiValue = fiiPositions.reduce((sum, position) => sum + position.value, 0)
   const portfolioValue = positions.reduce((sum, position) => sum + position.value, 0)

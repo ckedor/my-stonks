@@ -2,7 +2,7 @@ import { Box } from '@mui/material'
 import { space } from '@/theme/tokens'
 import type { ReactNode, Ref } from 'react'
 import AppText from './AppText'
-import LoadingSpinner from './LoadingSpinner'
+import AppSkeleton from './AppSkeleton'
 
 /* Moldura de gráfico: controles em cima, desenho embaixo, altura conhecida.
  *
@@ -63,7 +63,9 @@ export default function AppChartArea({
   if (loading || emptyMessage) {
     return (
       <Box sx={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {loading ? <LoadingSpinner variant="inline" /> : <AppText tone="secondary">{emptyMessage}</AppText>}
+        {/* Carregando, a área reserva o próprio tamanho em vez de girar um
+            disco no meio dela: o gráfico que vem tem exatamente esta altura. */}
+        {loading ? <AppSkeleton height="100%" /> : <AppText tone="secondary">{emptyMessage}</AppText>}
       </Box>
     )
   }

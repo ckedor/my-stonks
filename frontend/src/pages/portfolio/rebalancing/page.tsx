@@ -13,12 +13,14 @@ import {
   AppMetric,
   AppNumberField,
   AppPageHeader,
+  AppPageHeaderSkeleton,
   AppSimpleTable,
+  AppSkeleton,
   AppSnackbar,
   AppStack,
   AppSwitch,
+  AppTableSkeleton,
   AppText,
-  LoadingSpinner,
   SectionTitle,
   type AppSimpleTableColumn,
 } from '@/components/ui'
@@ -268,7 +270,26 @@ export default function RebalancingPage() {
 
   // ── Render ─────────────────────────────────────────────────────────
   if (loading) {
-    return <LoadingSpinner />
+    return (
+      <AppStack gap="lg">
+        <AppPageHeaderSkeleton titleWidth={280} actions={3} metrics={3} />
+        <AppGrid cols={{ xs: 1, md: 2 }} gap="lg" align="stretch">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <AppGridItem key={index}>
+              <AppCard>
+                <AppStack gap="sm">
+                  <AppSkeleton shape="text" width={140} height={24} />
+                  <AppSkeleton height={280} />
+                </AppStack>
+              </AppCard>
+            </AppGridItem>
+          ))}
+        </AppGrid>
+        <AppCard padding="md">
+          <AppTableSkeleton columns={7} rows={10} />
+        </AppCard>
+      </AppStack>
+    )
   }
 
   if (!view || view.categories.length === 0) {

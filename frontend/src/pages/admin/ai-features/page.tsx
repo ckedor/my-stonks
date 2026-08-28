@@ -10,9 +10,9 @@ import {
     AppStack,
     type ColumnConfig,
     type FieldConfig,
-    LoadingSpinner,
     PageTitle,
 } from '@/components/ui'
+import CrudPageSkeleton from '../CrudPageSkeleton'
 import { useEffect, useState } from 'react'
 
 export default function AdminAIFeaturesPage() {
@@ -74,7 +74,7 @@ export default function AdminAIFeaturesPage() {
     { name: 'default_ttl_hours', label: 'TTL padrão (horas)', type: 'text', required: true },
   ]
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <CrudPageSkeleton columns={columns.length + 1} action={false} search={false} rows={6} />
 
   return (
     <>

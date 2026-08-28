@@ -1,13 +1,16 @@
 import { fetchCategoryAnalysis } from '@/api/portfolio'
 import {
+  AppChartSkeleton,
   AppDivider,
+  AppGrid,
   AppMetric,
   AppPageHeader,
+  AppPageHeaderSkeleton,
   AppSelect,
+  AppSkeleton,
   AppStack,
   AppTabs,
   AppText,
-  LoadingSpinner,
 } from '@/components/ui'
 import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
@@ -89,7 +92,23 @@ export default function PortfolioCategoryPage() {
     { enabled: !!portfolioId && !!category && tab === 'risco' },
   )
 
-  if (positionsLoading) return <LoadingSpinner />
+  if (positionsLoading) {
+    return (
+      <AppStack gap="lg">
+        <AppPageHeaderSkeleton titleWidth={200} actions={1} metrics={5} />
+        <AppStack gap="md">
+          <AppSkeleton shape="text" width={90} height={24} />
+          <AppGrid cols={{ xs: 1, sm: 2, md: 3, lg: 4 }} gap="md">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <AppSkeleton key={index} height={150} />
+            ))}
+          </AppGrid>
+        </AppStack>
+        <AppSkeleton height={40} />
+        <AppChartSkeleton height={420} toolbar surface="card" />
+      </AppStack>
+    )
+  }
 
   /* Sem categoria na URL — a entrada do menu — abre a primeira, que é o que a
      tela tem a mostrar; a URL passa a nomear o que está na tela. */

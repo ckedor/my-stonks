@@ -6,15 +6,17 @@ import {
   AppAutocomplete,
   AppButton,
   AppCard,
-  AppPageHeader,
+  AppChartSkeleton,
   AppChip,
   AppColorSwatch,
   AppDivider,
+  AppPageHeader,
   AppSelect,
   AppSimpleTable,
+  AppSkeleton,
   AppStack,
+  AppTableSkeleton,
   AppText,
-  LoadingSpinner,
   useAppTheme,
   type AppSimpleTableColumn,
 } from '@/components/ui'
@@ -148,7 +150,31 @@ export default function PortfolioDividendsPage() {
       />
 
       {loading ? (
-        <LoadingSpinner />
+        <>
+          <AppStack direction="row" gap="md" wrap>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <AppCard key={index} minWidth={200}>
+                <AppStack gap="xs">
+                  <AppSkeleton shape="text" width={180} height={16} />
+                  <AppSkeleton shape="text" width={140} height={32} />
+                </AppStack>
+              </AppCard>
+            ))}
+          </AppStack>
+
+          <AppStack direction="row" gap="md" align="center" wrap>
+            <AppSkeleton width={260} height={48} />
+            <AppSkeleton width={160} height={48} />
+            <AppSkeleton width={160} height={48} />
+            <AppSkeleton width={140} height={40} />
+          </AppStack>
+
+          <AppChartSkeleton height={320} toolbar surface="card" />
+
+          <AppCard padding="md">
+            <AppTableSkeleton columns={6} />
+          </AppCard>
+        </>
       ) : (
         <>
           <AppStack direction="row" gap="md" wrap>

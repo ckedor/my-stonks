@@ -1,11 +1,12 @@
 import PortfolioPatrimonyChart from '@/components/PortfolioPatrimonyChart'
 import {
-    AppCard,
-    AppMetric,
-    AppPageHeader,
-    AppStack,
-    LoadingSpinner,
-    type AppSelectOption,
+  AppCard,
+  AppChartSkeleton,
+  AppMetric,
+  AppPageHeader,
+  AppPageHeaderSkeleton,
+  AppStack,
+  type AppSelectOption,
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
 import { usePortfolioStore } from '@/stores/portfolio'
@@ -84,7 +85,15 @@ export default function PortfolioPatrimonyEvolution() {
     return Math.round(total / months)
   }, [patrimonyEvolution])
 
-  if (loading) return <LoadingSpinner />
+  if (loading) {
+    return (
+      <AppStack gap="lg">
+        <AppPageHeaderSkeleton titleWidth={200} metrics={4} />
+        <AppChartSkeleton height={520} toolbar surface="card" />
+        <AppChartSkeleton height={300} toolbar surface="card" />
+      </AppStack>
+    )
+  }
 
   return (
     <AppStack gap="lg">

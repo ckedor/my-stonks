@@ -10,7 +10,8 @@ import {
     AppDataTable,
     AppStack,
     AppText,
-    LoadingSpinner,
+    AppSkeleton,
+    AppTableSkeleton,
     PageTitle,
 } from '@/components/ui'
 import { formatDate, formatNumber } from '@/lib/utils/format'
@@ -65,7 +66,10 @@ export default function AdminMarketDataSeriesPage() {
       <PageTitle>Séries</PageTitle>
 
       {loadingOptions ? (
-        <LoadingSpinner />
+        <AppStack gap="md">
+          <AppSkeleton height={48} />
+          <AppTableSkeleton columns={6} surface="card" />
+        </AppStack>
       ) : (
         <AppStack gap="md">
           <AppAutocomplete
@@ -81,7 +85,10 @@ export default function AdminMarketDataSeriesPage() {
           {error && <AppAlert severity="error">{error}</AppAlert>}
 
           {loadingHistory ? (
-            <LoadingSpinner />
+            <AppStack gap="md">
+              <AppSkeleton shape="text" width={200} height={16} />
+              <AppTableSkeleton columns={6} surface="card" />
+            </AppStack>
           ) : (
             <>
               <AppText variant="bodySmall" tone="secondary">

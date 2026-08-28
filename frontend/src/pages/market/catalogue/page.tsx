@@ -4,13 +4,16 @@ import {
   type MarketCatalogueKind,
 } from '@/api/market'
 import {
-  AppPageHeader,
   AppCard,
+  AppChartSkeleton,
+  AppPageHeader,
+  AppPageHeaderSkeleton,
   AppSearchField,
   AppSimpleTable,
+  AppSkeleton,
   AppStack,
+  AppTableSkeleton,
   AppText,
-  LoadingSpinner,
   SectionTitle,
   type AppSimpleTableColumn,
 } from '@/components/ui'
@@ -105,7 +108,24 @@ export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKin
     ? data?.assets.find((asset) => asset.ticker === 'BTC')?.asset_id ?? null
     : null
 
-  if (loading && !data) return <LoadingSpinner />
+  if (loading && !data) {
+    return (
+      <AppStack gap="lg">
+        <AppPageHeaderSkeleton titleWidth={200} description />
+        <AppSkeleton height={140} />
+        <AppChartSkeleton height={420} toolbar surface="card" />
+        <AppStack gap="md">
+          <AppSkeleton shape="text" width={220} height={24} />
+          <AppCard padding="md">
+            <AppStack gap="md">
+              <AppSkeleton height={48} />
+              <AppTableSkeleton columns={6} rows={10} />
+            </AppStack>
+          </AppCard>
+        </AppStack>
+      </AppStack>
+    )
+  }
 
   return (
     <AppStack gap="lg">

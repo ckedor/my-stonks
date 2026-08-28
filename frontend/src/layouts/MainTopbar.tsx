@@ -161,7 +161,7 @@ export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarPr
         }
       >
         {loading ? (
-          <LoadingSpinner variant="inline" />
+          <LoadingSpinner />
         ) : (
           !isMobile && (
             <AppMenuButton

@@ -3,10 +3,10 @@ import {
   AppSimpleTable,
   AppStack,
   AppText,
-  LoadingSpinner,
   SectionTitle,
   type AppSimpleTableColumn,
 } from '@/components/ui'
+import TaxTableSkeleton from './TaxTableSkeleton'
 import { INCOME_TAX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import dayjs from 'dayjs'
@@ -61,7 +61,7 @@ export default function DarfSummaryTable({ portfolioId, fiscalYear }: Props) {
     fetchData()
   }, [portfolioId, fiscalYear])
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <TaxTableSkeleton columns={6} />
 
   const rows: DarfRow[] = data.flatMap((item, monthIndex) =>
     item.entries.map((entry, i) => ({

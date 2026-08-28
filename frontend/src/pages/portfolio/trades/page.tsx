@@ -3,14 +3,14 @@ import TradeForm from '@/components/TradeForm'
 import {
   AppButton,
   AppCard,
-  AppPageHeader,
   AppDayField,
+  AppPageHeader,
   AppSearchField,
   AppSelect,
   AppSimpleTable,
   AppStack,
+  AppTableSkeleton,
   AppText,
-  LoadingSpinner,
   type AppSimpleTableColumn,
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
@@ -210,7 +210,9 @@ export default function PortfolioTransactionsPage() {
       </AppStack>
 
       {loading ? (
-        <LoadingSpinner />
+        <AppCard padding="md">
+          <AppTableSkeleton columns={9} rows={12} />
+        </AppCard>
       ) : (
         <AppCard padding="none">
           {/* A venda é que recebe o fundo rebaixado, e não a compra: eram as

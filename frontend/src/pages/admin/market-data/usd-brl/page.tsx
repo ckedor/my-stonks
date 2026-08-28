@@ -4,7 +4,8 @@ import {
     AppDataTable,
     AppStack,
     AppText,
-    LoadingSpinner,
+  AppSkeleton,
+  AppTableSkeleton,
     PageTitle,
 } from '@/components/ui'
 import { formatDate, formatNumber } from '@/lib/utils/format'
@@ -37,7 +38,10 @@ export default function AdminMarketDataUsdBrlPage() {
       <PageTitle>Dólar</PageTitle>
 
       {loading ? (
-        <LoadingSpinner />
+        <AppStack gap="md">
+          <AppSkeleton shape="text" width={360} height={16} />
+          <AppTableSkeleton columns={4} surface="card" />
+        </AppStack>
       ) : error ? (
         <AppAlert severity="error">{error}</AppAlert>
       ) : (

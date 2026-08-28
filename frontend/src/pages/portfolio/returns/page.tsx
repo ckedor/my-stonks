@@ -2,11 +2,12 @@
 import PortfolioReturnsChart from '@/components/PortfolioReturnsChart'
 import {
   AppCard,
-  AppPageHeader,
+  AppChartSkeleton,
   AppGrid,
   AppGridItem,
+  AppPageHeader,
+  AppPageHeaderSkeleton,
   AppStack,
-  LoadingSpinner,
 } from '@/components/ui'
 import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useEffect, useMemo, useState } from 'react'
@@ -39,7 +40,25 @@ export default function PortfolioReturnsPage() {
   }, [categoryReturns])
 
   if (loading) {
-    return <LoadingSpinner />
+    return (
+      <AppStack gap="lg">
+        <AppPageHeaderSkeleton titleWidth={260} />
+        <AppGrid cols={{ xs: 1, md: 2 }} gap="md">
+          <AppGridItem span={{ xs: 1, md: 2 }}>
+            <AppChartSkeleton height={520} toolbar surface="card" />
+          </AppGridItem>
+          <AppGridItem span={{ xs: 1, md: 2 }}>
+            <AppChartSkeleton height={260} surface="card" />
+          </AppGridItem>
+          <AppGridItem>
+            <AppChartSkeleton height={300} toolbar surface="card" />
+          </AppGridItem>
+          <AppGridItem>
+            <AppChartSkeleton height={300} toolbar surface="card" />
+          </AppGridItem>
+        </AppGrid>
+      </AppStack>
+    )
   }
 
   return (

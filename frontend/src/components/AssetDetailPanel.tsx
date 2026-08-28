@@ -335,7 +335,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
                 disabled={recalculating}
                 onClick={handleRecalculate}
               >
-                {recalculating ? <LoadingSpinner variant="inline" /> : <RefreshIcon fontSize="small" />}
+                {recalculating ? <LoadingSpinner /> : <RefreshIcon fontSize="small" />}
               </AppIconButton>
             </AppTooltip>
           </AppStack>

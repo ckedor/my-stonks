@@ -21,10 +21,10 @@ import {
   AppStatCard,
   AppText,
   AppTooltip,
-  LoadingSpinner,
   PageTitle,
   SectionTitle,
 } from '@/components/ui'
+import DataIngestionSkeleton from './DataIngestionSkeleton'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import HistoryIcon from '@mui/icons-material/History'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
@@ -263,7 +263,7 @@ export function DataIngestionPage({
     void fetchDetail(execution.id)
   }
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <DataIngestionSkeleton />
 
   return (
     <AppStack gap="lg">

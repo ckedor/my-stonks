@@ -1,22 +1,15 @@
-import { Box, CircularProgress } from '@mui/material'
+import { CircularProgress } from '@mui/material'
 
-/* Espera.
+/* Espera em linha, no lugar exato do controle que está trabalhando — o
+ * botão de recalcular enquanto recalcula, a carteira sendo trocada na
+ * barra do topo.
  *
- * `block` ocupa a tela e centraliza — é a página que ainda não tem o que
- * mostrar. `inline` cabe numa linha, no lugar exato do conteúdo que ainda
- * não chegou, sem mover o que está em volta. */
+ * Não existe variante de tela cheia, e a falta é a regra: o que uma página
+ * mostra enquanto carrega é a reserva do que vai chegar (`AppSkeleton` e os
+ * `*Skeleton` construídos com ele), não um disco girando no meio do vazio.
+ * O spinner responde por uma ação que alguém acabou de disparar; o
+ * esqueleto responde pelo conteúdo que ainda não chegou. */
 
-export interface LoadingSpinnerProps {
-  /** Padrão: `block`. */
-  variant?: 'block' | 'inline'
-}
-
-export default function LoadingSpinner({ variant = 'block' }: LoadingSpinnerProps) {
-  if (variant === 'inline') return <CircularProgress size={24} />
-
-  return (
-    <Box minHeight="80vh" display="flex" justifyContent="center" alignItems="center">
-      <CircularProgress size={48} thickness={4} />
-    </Box>
-  )
+export default function LoadingSpinner() {
+  return <CircularProgress size={24} />
 }

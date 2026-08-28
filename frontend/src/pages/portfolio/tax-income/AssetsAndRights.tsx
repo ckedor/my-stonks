@@ -2,10 +2,10 @@ import {
   AppCard,
   AppSimpleTable,
   AppStack,
-  LoadingSpinner,
   SectionTitle,
   type AppSimpleTableColumn,
 } from '@/components/ui'
+import TaxTableSkeleton from './TaxTableSkeleton'
 import { INCOME_TAX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import { useEffect, useState } from 'react'
@@ -52,7 +52,7 @@ export default function AssetsAndRights({ fiscalYear, portfolioId }: AssetsAndRi
     fetchData()
   }, [fiscalYear, portfolioId])
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <TaxTableSkeleton columns={9} rows={10} />
 
   const columns: AppSimpleTableColumn<AssetTaxInfo>[] = [
     { label: 'Grupo', render: (item) => item.grupo },

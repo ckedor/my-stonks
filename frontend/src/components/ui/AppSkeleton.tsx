@@ -9,7 +9,9 @@ import { useAppTheme } from './useAppTheme'
 export interface AppSkeletonProps {
   /** Largura em px; omitida, ocupa a do container. */
   width?: number
-  height: number
+  /** Altura em px, ou uma medida CSS quando quem reserva não sabe o número —
+   *  a área de gráfico que ocupa a altura do pai. */
+  height: number | string
   /** `text` para linha de texto, `rounded` para bloco, `pill` para etiqueta
    *  totalmente arredondada, `circle` para o lugar de um avatar ou ícone
    *  redondo. Padrão: `rounded`. */

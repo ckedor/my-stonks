@@ -92,6 +92,31 @@ ainda dispara; sem esse teste a regra pode parar de casar em silêncio.
 `src/pages/admin/**` ainda está fora da regra, e é dívida declarada: o admin
 tem shell e navegação próprios. Quando migrar, o glob vira `src/pages/**`.
 
+### Espera de tela
+
+Enquanto o dado não chega, a tela mostra a reserva do que vem — nunca um
+disco girando no meio do vazio. O esqueleto diz o que está sendo carregado e
+ocupa o espaço final, então nada salta quando o dado chega; o spinner não diz
+nem uma coisa nem outra.
+
+- **A peça é `AppSkeleton`**, e a reserva de uma tela inteira é um
+  `*Skeleton` ao lado dela (`OverviewSkeleton`, `AssetListSkeleton`,
+  `CrudPageSkeleton`). Ele anda junto do que reserva: mudou o desenho da
+  tela, muda a reserva no mesmo commit — senão a tela volta a saltar.
+- **Três reservas são do design system**, porque a forma é a mesma em toda
+  tela: `AppPageHeaderSkeleton` (o cabeçalho), `AppTableSkeleton` (a grade
+  de qualquer uma das quatro tabelas) e `AppChartSkeleton` (barra de
+  controles + área do gráfico).
+- **`LoadingSpinner` é espera em linha de uma ação disparada por alguém** —
+  o botão que recalcula a posição, a carteira trocando na barra do topo. Ele
+  não tem mais variante de tela cheia, e a falta é a regra.
+
+A regra em `eslint.config.js` reprova `LoadingSpinner` em `src/pages/**`,
+inclusive no admin. `src/test/eslint-loading-skeleton.test.ts` prova que ela
+dispara — e que continua convivendo com a regra do cabeçalho, que divide com
+ela o mesmo `no-restricted-syntax`: um bloco de config substitui a lista
+inteira do anterior, então os seletores são compostos a partir de constantes.
+
 ### The migration ratchet
 
 `eslint-ds-baseline.json` lists the files still allowed to break these

@@ -2,8 +2,8 @@ import {
   AppButton,
   AppSimpleTable,
   AppStack,
+  AppTableSkeleton,
   AppText,
-  LoadingSpinner,
   type AppSimpleTableColumn,
 } from '@/components/ui'
 import { TRANSACTION_ROUTES } from '@/constants/routes'
@@ -152,7 +152,7 @@ export default function Trades({ assetId, assetTypes, currencyId }: TradesProps)
       </AppStack>
 
       {loading ? (
-        <LoadingSpinner />
+        <AppTableSkeleton columns={8} rows={8} />
       ) : (
         <AppSimpleTable
           rows={trades}

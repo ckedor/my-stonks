@@ -9,10 +9,10 @@ import {
   AppSimpleTable,
   AppStack,
   AppText,
-  LoadingSpinner,
   PageTitle,
   SectionTitle,
 } from '@/components/ui'
+import ConsolidationSkeleton from './ConsolidationSkeleton'
 import {
   ASSET_ROUTES,
   PORTFOLIO_ROUTES,
@@ -192,7 +192,7 @@ export default function AdminConsolidationPage() {
     }
   }
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return <ConsolidationSkeleton />
   if (loadError) return <AppAlert severity="error">{loadError}</AppAlert>
 
   const finished = runs.filter((run) => run.state === 'success' || run.state === 'failure').length

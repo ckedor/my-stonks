@@ -8,9 +8,9 @@ import {
     AppText,
     type ColumnConfig,
     type FieldConfig,
-    LoadingSpinner,
     PageTitle,
 } from '@/components/ui'
+import CrudPageSkeleton from '../CrudPageSkeleton'
 import {
     createWealthTier,
     deleteWealthTier,
@@ -155,7 +155,7 @@ export default function AdminWealthTiersPage() {
   ]
 
   if (loading) {
-    return <LoadingSpinner />
+    return <CrudPageSkeleton columns={columns.length + 1} search={false} description rows={6} />
   }
 
   return (
