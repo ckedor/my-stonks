@@ -219,17 +219,9 @@ export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', 
               name === 'portfolio' ? 'Carteira' : selectedBenchmark,
             ]}
           />
-          {/* Sem animação de propósito. O recharts reinicia o desenho da série
-              a cada render que chega até ele — o `animationId` é a identidade do
-              objeto de props — e o dado desta tela é hidratado várias vezes na
-              abertura: localStorage do store, cache do IndexedDB e resposta da
-              rede, para carteira, categorias e benchmarks. Animando, cada uma
-              dessas hidratações redesenha as curvas por cima da anterior, e o
-              que se vê é a linha do benchmark piscando. */}
           <Area
             type="monotone"
             dataKey="portfolio"
-            isAnimationActive={false}
             stroke={portfolioColor}
             strokeWidth={2.5}
             fill={`url(#${gradientId})`}
@@ -240,7 +232,6 @@ export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', 
           <Line
             type="monotone"
             dataKey="benchmark"
-            isAnimationActive={false}
             stroke={benchmarkColor}
             strokeWidth={1.8}
             dot={false}
