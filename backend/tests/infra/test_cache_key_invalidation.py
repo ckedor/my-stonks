@@ -15,9 +15,6 @@ import pytest
 
 from app.modules.portfolio.domain.portfolio_segment import PortfolioSegment
 from app.modules.portfolio.service.portfolio_position_service import PortfolioPositionService
-from app.modules.portfolio.service.portfolio_returns_consolidator_service import (
-    PortfolioReturnsConsolidatorService,
-)
 from tests.fakes import FakeCache, FakeUnitOfWork
 
 
@@ -42,7 +39,8 @@ def _position_service(portfolio_id: int = 7, cache: FakeCache | None = None):
     repository = SimpleNamespace(
         get_portfolio_position=AsyncMock(return_value=_position_rows(portfolio_id)),
         get_transactions=AsyncMock(return_value=[]),
-        get_asset_type_returns=AsyncMock(return_value=[]),
+        get_asset_type_return_series=AsyncMock(return_value=[]),
+        get_return_series=AsyncMock(return_value=[]),
         get_segment_asset_ids=AsyncMock(return_value=[]),
     )
     service = PortfolioPositionService(
@@ -114,27 +112,18 @@ async def test_invalidating_portfolio_1_leaves_portfolio_10_alone():
 
 
 @pytest.mark.asyncio
-async def test_returns_consolidation_drops_the_series_reads_it_replaced():
-    """The consolidator owns this, because it is the one that knows it committed.
+async def test_the_return_series_are_never_cached():
+    """They are selects from a consolidated table, so there is nothing to stale.
 
-    Callers only dispatch the task; invalidating from there empties the cache
-    while the old rows are still the ones in the table.
+    Caching them would put a second copy in front of a copy, and would put back
+    the invalidation this whole file exists to keep honest.
     """
-    cache = FakeCache()
-    position_service, _ = _position_service(7, cache=cache)
-    await position_service.get_asset_type_returns(7, 2)
-    await position_service.get_segment_returns(7, PortfolioSegment.FII)
-    assert len(cache.store) == 2
+    service, _ = _position_service()
 
-    consolidator = PortfolioReturnsConsolidatorService(
-        FakeUnitOfWork(
-            portfolios=SimpleNamespace(get_portfolio_position=AsyncMock(return_value=[]))
-        ),
-        cache=cache,
-    )
-    await consolidator._invalidate_return_series(7)
+    await service.get_asset_type_returns(7, 2)
+    await service.get_segment_returns(7, PortfolioSegment.FII)
 
-    assert cache.store == {}
+    assert service.cache.store == {}
 
 
 @pytest.mark.asyncio
@@ -144,9 +133,7 @@ async def test_deleting_a_portfolio_drops_every_read_of_it():
     service, _ = _position_service(7, cache=cache)
 
     await service.get_patrimony_evolution(7)
-    await service.get_asset_type_returns(7, 2)
-    await service.get_segment_returns(7, PortfolioSegment.FII)
-    assert len(cache.store) == 3
+    assert len(cache.store) == 1
 
     await service.discard_portfolio_cache(7)
 

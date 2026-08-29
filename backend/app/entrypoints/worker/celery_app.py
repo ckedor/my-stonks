@@ -17,8 +17,8 @@ celery_app.conf.imports = (
     'app.modules.market_data.tasks.maintain_data_ingestion_history',
     'app.modules.portfolio.tasks.consolidate_all_portfolios',
     'app.modules.portfolio.tasks.consolidate_fiis_dividends',
+    'app.modules.portfolio.tasks.consolidate_portfolio',
     'app.modules.portfolio.tasks.consolidate_portfolio_returns',
-    'app.modules.portfolio.tasks.consolidate_single_portfolio',
     'app.modules.portfolio.tasks.ingest_quotes_for_held_assets',
     'app.modules.portfolio.tasks.recalculate_asset_position',
 )

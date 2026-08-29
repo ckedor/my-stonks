@@ -5,6 +5,7 @@ Portfolio category service - handles custom category management.
 
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.portfolio.domain.entities import CustomCategory, CustomCategoryAssignment
+from app.modules.portfolio.domain.return_scope import ReturnScope, category_key
 
 
 class PortfolioCategoryService:
@@ -22,6 +23,15 @@ class PortfolioCategoryService:
 
     async def delete_custom_category(self, category_id: int) -> None:
         async with self.uow as uow:
+            category = await uow.repository.get(CustomCategory, id=category_id)
+            if category is not None:
+                # A série da categoria referencia o id por texto, então nada
+                # cascateia: sem esta linha ela sobrevive à categoria.
+                await uow.portfolios.delete_return_series(
+                    category.portfolio_id,
+                    scope=ReturnScope.CATEGORY,
+                    scope_key=category_key(category_id),
+                )
             await uow.repository.delete(CustomCategory, id=category_id)
             await uow.commit()
 

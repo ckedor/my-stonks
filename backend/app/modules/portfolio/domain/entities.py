@@ -137,9 +137,19 @@ class PortfolioUserConfiguration:
 
 
 @dataclass(eq=False, kw_only=True)
-class PortfolioReturn:
+class ReturnSeries:
+    """One day of one portfolio's performance, at one altitude.
+
+    `scope` and `scope_key` say which altitude and which one of them; see
+    `domain/return_scope.py`. The portfolio-wide series, the categories, the
+    asset types and the segments all live here, because they are the same
+    numbers computed over different groupings.
+    """
+
     id: int | None = None
     portfolio_id: int
+    scope: str
+    scope_key: str
     date: date
     daily_return: float
     acc_return: float
@@ -151,6 +161,8 @@ class PortfolioReturn:
 
     COLUMNS: ClassVar[list[str]] = [
         'portfolio_id',
+        'scope',
+        'scope_key',
         'date',
         'daily_return',
         'acc_return',
@@ -159,62 +171,29 @@ class PortfolioReturn:
         'acc_return_usd',
         'cagr_usd',
     ]
+
+    UNIQUE_COLUMNS: ClassVar[list[str]] = ['portfolio_id', 'scope', 'scope_key', 'date']
 
 
 @dataclass(eq=False, kw_only=True)
-class CategoryReturn:
+class PortfolioConsolidation:
+    """When a portfolio's derived data was last rebuilt, and whether it worked.
+
+    One row per portfolio, overwritten by each run: the screens ask "is this
+    number current", which is a question about the last run and not about the
+    history of runs.
+
+    `consolidated_at` is when the rebuild finished, which is not the same as the
+    date the numbers reach -- that is bounded by the last quote ingested. Two
+    different facts; this one is the cheap and honest one to start from.
+    """
+
     id: int | None = None
     portfolio_id: int
-    custom_category_id: int
-    date: date
-    daily_return: float
-    acc_return: float
-    cagr: float | None = None
-    daily_return_usd: float | None = None
-    acc_return_usd: float | None = None
-    cagr_usd: float | None = None
+    consolidated_at: datetime
+    status: str
+    error: str | None = None
     portfolio: Portfolio | None = None
-    category: CustomCategory | None = None
-
-    COLUMNS: ClassVar[list[str]] = [
-        'portfolio_id',
-        'custom_category_id',
-        'date',
-        'daily_return',
-        'acc_return',
-        'cagr',
-        'daily_return_usd',
-        'acc_return_usd',
-        'cagr_usd',
-    ]
-
-
-@dataclass(eq=False, kw_only=True)
-class AssetTypeReturn:
-    id: int | None = None
-    portfolio_id: int
-    asset_type_id: int
-    date: date
-    daily_return: float
-    acc_return: float
-    cagr: float | None = None
-    daily_return_usd: float | None = None
-    acc_return_usd: float | None = None
-    cagr_usd: float | None = None
-    portfolio: Portfolio | None = None
-    asset_type: Any | None = None
-
-    COLUMNS: ClassVar[list[str]] = [
-        'portfolio_id',
-        'asset_type_id',
-        'date',
-        'daily_return',
-        'acc_return',
-        'cagr',
-        'daily_return_usd',
-        'acc_return_usd',
-        'cagr_usd',
-    ]
 
 
 @dataclass(eq=False, kw_only=True)

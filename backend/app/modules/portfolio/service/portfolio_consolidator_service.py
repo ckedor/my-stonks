@@ -3,7 +3,7 @@ Portfolio consolidator service - handles position consolidation and recalculatio
 
 This service does not orchestrate parallel work. Fan-out across assets belongs
 to the call site (router/task), see
-``app.modules.portfolio.tasks.consolidate_single_portfolio``.
+``app.modules.portfolio.tasks.consolidate_portfolio``.
 """
 
 from datetime import datetime

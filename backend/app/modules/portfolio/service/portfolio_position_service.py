@@ -9,7 +9,6 @@ from app.core.exceptions import NotFoundError
 from app.infra.db.unit_of_work import UnitOfWork
 from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
-from app.lib.finance.performance_metrics import cagr
 from app.lib.utils.df import df_to_dict_list, rows_to_df
 from app.lib.utils.fastapi import df_response
 from app.modules.market_data.domain.constants import SERIES
@@ -22,14 +21,16 @@ from app.modules.portfolio.domain.portfolio_segment import (
     get_segment_definition,
     resolve_segment,
 )
+from app.modules.portfolio.domain.return_scope import ReturnScope, segment_key
 from app.modules.portfolio.domain.returns import (
     calculate_asset_acc_returns,
     calculate_portfolio_daily_returns,
 )
 
+#: The one derived read still computed at request time, and therefore the one
+#: still worth caching. The return series are plain selects from a consolidated
+#: table now, so caching them would be caching a cache.
 PATRIMONY_EVOLUTION_CACHE_PREFIX = 'patrimony_evolution'
-ASSET_TYPE_RETURNS_CACHE_PREFIX = 'asset_type_returns'
-SEGMENT_RETURNS_CACHE_PREFIX = 'segment_returns'
 
 
 class PortfolioPositionService:
@@ -50,23 +51,32 @@ class PortfolioPositionService:
         repopulates the cache here: the next read misses and fills it. The
         trailing separator keeps portfolio 1 from matching portfolio 10.
 
-        The return series are deliberately not dropped here. They are written by
-        the returns consolidator, which drops its own: invalidating them from a
-        caller that has only dispatched that task empties the cache before the
-        write lands, and the next read refills it with the old numbers for a
-        whole TTL.
+        The return series need no invalidation at all: they are selects from
+        the consolidated table, so the consolidator's commit is the only thing
+        that changes what a reader sees.
         """
         await self.cache.delete_prefix(f'{PATRIMONY_EVOLUTION_CACHE_PREFIX}:{portfolio_id}:')
 
     async def discard_portfolio_cache(self, portfolio_id: int) -> None:
-        """Drop every cached read of a portfolio that no longer exists.
-
-        Deletion is the one case with no write to follow, so it is also the one
-        case that drops the return series from outside the consolidator.
-        """
+        """Drop every cached read of a portfolio that no longer exists."""
         await self.cache.delete_prefix(f'{PATRIMONY_EVOLUTION_CACHE_PREFIX}:{portfolio_id}:')
-        await self.cache.delete_prefix(f'{ASSET_TYPE_RETURNS_CACHE_PREFIX}:{portfolio_id}:')
-        await self.cache.delete_prefix(f'{SEGMENT_RETURNS_CACHE_PREFIX}:{portfolio_id}:')
+
+    async def get_consolidation(self, portfolio_id: int) -> dict | None:
+        """When this portfolio's screens were last rebuilt, and whether it worked.
+
+        One answer for the whole portfolio, because that is the question the
+        screens ask: every series below is rebuilt in the same run, so a stamp
+        per series would be the same instant repeated.
+        """
+        async with self.uow as uow:
+            consolidation = await uow.portfolios.get_consolidation(portfolio_id)
+        if consolidation is None:
+            return None
+        return {
+            'consolidated_at': consolidation.consolidated_at,
+            'status': consolidation.status,
+            'error': consolidation.error,
+        }
 
     async def get_asset_details(
         self, portfolio_id: int, asset_id: int | None = None, currency: str = 'BRL'
@@ -275,118 +285,49 @@ class PortfolioPositionService:
         async with self.uow as uow:
             return await uow.portfolios.get_portfolio_returns(portfolio_id, currency) or None
 
-    @cached(key_prefix=ASSET_TYPE_RETURNS_CACHE_PREFIX, cache=lambda self: self.cache, ttl=3600)
     async def get_asset_type_returns(
         self,
         portfolio_id: int,
         asset_type_id: int,
         currency: str = 'BRL',
     ) -> list[dict]:
-        """Read the consolidated series, with an on-the-fly compatibility fallback.
-
-        The fallback keeps the page useful for portfolios that have not run the
-        new asset-type consolidator yet. The normal write path persists the same
-        series in ``portfolio.asset_type_return``.
-        """
+        """The consolidated series for one asset type."""
         async with self.uow as uow:
-            stored = await uow.portfolios.get_asset_type_returns(
+            rows = await uow.portfolios.get_asset_type_return_series(
                 portfolio_id, asset_type_id, currency
             )
-        if stored:
-            stored_df = rows_to_df(stored, datetime_cols=['date'])
-            stored_df['date'] = stored_df['date'].dt.strftime('%Y-%m-%d')
-            return df_to_dict_list(stored_df)
+        return self._series_response(rows)
 
-        return await self._calculate_asset_type_returns(portfolio_id, asset_type_id, currency)
-
-    async def _calculate_asset_type_returns(
-        self,
-        portfolio_id: int,
-        asset_type_id: int,
-        currency: str = 'BRL',
-    ) -> list[dict]:
-        async with self.uow as uow:
-            rows = await uow.portfolios.get_portfolio_position(
-                portfolio_id,
-                asset_type_id=asset_type_id,
-            )
-        return self._weighted_returns(rows, currency)
-
-    def _weighted_returns(self, rows: list[dict], currency: str = 'BRL') -> list[dict]:
-        """The value-weighted return series of a set of positions.
-
-        Same arithmetic the portfolio-wide series uses, over a subset: each
-        asset weighs by what it was worth the day before, so a contribution
-        made today does not read as a gain.
-        """
-        position_df = rows_to_df(
-            rows,
-            datetime_cols=['date'],
-            numeric_fillna_cols=['dividend', 'dividend_usd'],
-        )
-        if position_df.empty:
-            return []
-
-        returns = calculate_portfolio_daily_returns(position_df)
-        suffix = '_usd' if currency == 'USD' else ''
-        value_col = f'value{suffix}'
-        asset_return_col = f'asset_return{suffix}'
-
-        returns['base_value'] = (returns[value_col] - returns[f'contribution{suffix}']).replace(
-            0, pd.NA
-        )
-        returns['base_value_prev'] = returns.groupby('asset_id')['base_value'].shift(1)
-        returns['type_base_prev_total'] = returns.groupby('date')['base_value_prev'].transform(
-            'sum'
-        )
-        returns['type_weight'] = returns['base_value_prev'] / returns[
-            'type_base_prev_total'
-        ].replace(0, pd.NA)
-        returns['weighted_return'] = returns['type_weight'] * returns[asset_return_col]
-        returns['weighted_return'] = pd.to_numeric(
-            returns['weighted_return'], errors='coerce'
-        ).fillna(0)
-
-        grouped = returns.groupby('date')['weighted_return'].sum().reset_index()
-        grouped.rename(columns={'weighted_return': 'daily_return'}, inplace=True)
-        grouped['acc_return'] = (1 + grouped['daily_return']).cumprod() - 1
-        grouped['cagr'] = None
-
-        daily = grouped.set_index('date')['daily_return']
-        for index in range(1, len(grouped)):
-            grouped.loc[grouped.index[index], 'cagr'] = cagr(daily.iloc[: index + 1])
-
-        grouped['date'] = grouped['date'].dt.strftime('%Y-%m-%d')
-        return df_to_dict_list(grouped[['date', 'daily_return', 'acc_return', 'cagr']])
-
-    @cached(key_prefix=SEGMENT_RETURNS_CACHE_PREFIX, cache=lambda self: self.cache, ttl=3600)
     async def get_segment_returns(
         self,
         portfolio_id: int,
         segment: PortfolioSegment,
         currency: str = 'BRL',
     ) -> list[dict]:
-        """The return series of one segment of the portfolio.
+        """The consolidated series for one segment.
 
-        A segment that is a whole asset type is the series the consolidator
-        already writes, so it is read from there rather than recomputed. The
-        ones that cut a type by market, or gather several types, have no
-        persisted series and are calculated over the positions they cover.
+        Every segment has one, including the ones that cut an asset type by
+        market or gather several types: the consolidator writes them like any
+        other scope, so reading one is a select and not a second computation.
         """
-        definition = get_segment_definition(segment)
-
-        if definition.is_whole_asset_type:
-            return await self.get_asset_type_returns(
-                portfolio_id, definition.asset_type_ids[0], currency
-            )
-
         async with self.uow as uow:
-            asset_ids = await uow.portfolios.get_segment_asset_ids(portfolio_id, definition)
-            if not asset_ids:
-                return []
-            rows = await uow.portfolios.get_portfolio_position(portfolio_id, asset_ids=asset_ids)
+            rows = await uow.portfolios.get_return_series(
+                portfolio_id,
+                scope=ReturnScope.SEGMENT,
+                scope_key=segment_key(segment),
+                currency=currency,
+            )
+        return self._series_response(rows)
 
-        return self._weighted_returns(rows, currency)
+    @staticmethod
+    def _series_response(rows: list[dict]) -> list[dict]:
+        """A consolidated series as the API returns it, with ISO dates."""
+        if not rows:
+            return []
+        df = rows_to_df(rows, datetime_cols=['date'])
+        df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+        return df_to_dict_list(df)
+
 
     async def get_segment_stats(
         self,

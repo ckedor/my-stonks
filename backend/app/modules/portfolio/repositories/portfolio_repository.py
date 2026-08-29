@@ -3,7 +3,7 @@ from datetime import date as date_type
 from datetime import datetime, timedelta
 
 import pandas as pd
-from sqlalchemy import Date, and_, cast, desc, func, literal, or_, select
+from sqlalchemy import Date, Integer, and_, cast, desc, func, literal, or_, select
 from sqlalchemy.orm import joinedload
 
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
@@ -27,17 +27,17 @@ from app.modules.market_data.domain.enums import EXCHANGE
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.portfolio.domain.dividend import DividendQuery
 from app.modules.portfolio.domain.entities import (
-    AssetTypeReturn,
-    CategoryReturn,
     CustomCategory,
     CustomCategoryAssignment,
     Dividend,
     Portfolio,
-    PortfolioReturn,
+    PortfolioConsolidation,
     Position,
+    ReturnSeries,
     Transaction,
 )
 from app.modules.portfolio.domain.portfolio_segment import SegmentDefinition
+from app.modules.portfolio.domain.return_scope import WHOLE_PORTFOLIO_KEY, ReturnScope
 
 
 def get_custom_category_subquery(portfolio_id):
@@ -483,30 +483,63 @@ class PortfolioRepository(SQLAlchemyRepository):
         result = await self.session.execute(stmt)
         return [row[0] for row in result.all()]
 
-    async def get_asset_type_returns(
+    @staticmethod
+    def _return_series_columns(currency: str):
+        """The series columns, restated for the requested currency.
+
+        Every scope stores both currencies side by side, so choosing one is
+        picking three columns rather than filtering rows.
+        """
+        suffix = '_usd' if currency == 'USD' else ''
+        return (
+            ReturnSeries.date,
+            getattr(ReturnSeries, f'daily_return{suffix}').label('daily_return'),
+            getattr(ReturnSeries, f'acc_return{suffix}').label('acc_return'),
+            getattr(ReturnSeries, f'cagr{suffix}').label('cagr'),
+        )
+
+    async def get_return_series(
+        self,
+        portfolio_id: int,
+        *,
+        scope: str,
+        scope_key: str,
+        currency: str = 'BRL',
+    ) -> list[dict]:
+        """One consolidated series, whatever it is about."""
+        stmt = (
+            select(*self._return_series_columns(currency))
+            .where(ReturnSeries.portfolio_id == portfolio_id)
+            .where(ReturnSeries.scope == str(scope))
+            .where(ReturnSeries.scope_key == scope_key)
+            .order_by(ReturnSeries.date)
+        )
+        result = await self.session.execute(stmt)
+        return result.mappings().all()
+
+    async def get_asset_type_return_series(
         self,
         portfolio_id: int,
         asset_type_id: int,
         currency: str = 'BRL',
     ) -> list[dict]:
-        suffix = '_usd' if currency == 'USD' else ''
-        daily_col = getattr(AssetTypeReturn, f'daily_return{suffix}')
-        acc_col = getattr(AssetTypeReturn, f'acc_return{suffix}')
-        cagr_col = getattr(AssetTypeReturn, f'cagr{suffix}')
+        """The asset-type series, carrying the type's id and label as before.
 
+        `scope_key` is text for every scope, so reaching the asset type costs a
+        cast. The portfolio and scope predicates narrow the rows first, and the
+        cast only applies to what survives them.
+        """
         stmt = (
             select(
-                AssetTypeReturn.date,
-                AssetTypeReturn.asset_type_id,
+                *self._return_series_columns(currency),
+                cast(ReturnSeries.scope_key, Integer).label('asset_type_id'),
                 AssetType.short_name.label('asset_type'),
-                daily_col.label('daily_return'),
-                acc_col.label('acc_return'),
-                cagr_col.label('cagr'),
             )
-            .join(AssetType, AssetType.id == AssetTypeReturn.asset_type_id)
-            .where(AssetTypeReturn.portfolio_id == portfolio_id)
-            .where(AssetTypeReturn.asset_type_id == asset_type_id)
-            .order_by(AssetTypeReturn.date)
+            .join(AssetType, AssetType.id == cast(ReturnSeries.scope_key, Integer))
+            .where(ReturnSeries.portfolio_id == portfolio_id)
+            .where(ReturnSeries.scope == str(ReturnScope.ASSET_TYPE))
+            .where(ReturnSeries.scope_key == str(asset_type_id))
+            .order_by(ReturnSeries.date)
         )
         result = await self.session.execute(stmt)
         return result.mappings().all()
@@ -549,8 +582,12 @@ class PortfolioRepository(SQLAlchemyRepository):
                 dividend_subquery.c.total_dividend.label('dividend'),
                 dividend_subquery.c.total_dividend_usd.label('dividend_usd'),
                 cat_assignment_subq.c.category,
+                # O consolidador precisa dela para resolver o segmento: os dois
+                # segmentos de ação são o mesmo tipo de ativo separado por bolsa.
+                Exchange.code.label('exchange'),
             )
             .join(Asset, Position.asset_id == Asset.id)
+            .outerjoin(Exchange, Asset.exchange_id == Exchange.id)
             .outerjoin(
                 dividend_subquery,
                 and_(
@@ -816,24 +853,41 @@ class PortfolioRepository(SQLAlchemyRepository):
         result = await self.session.execute(stmt)
         return result.mappings().all()
 
-    async def get_portfolio_returns(self, portfolio_id: int, currency: str = 'BRL') -> list[dict]:
-        suffix = '_usd' if currency == 'USD' else ''
-        daily_col = getattr(PortfolioReturn, f'daily_return{suffix}')
-        acc_col = getattr(PortfolioReturn, f'acc_return{suffix}')
-        cagr_col = getattr(PortfolioReturn, f'cagr{suffix}')
+    async def delete_return_series(
+        self,
+        portfolio_id: int,
+        *,
+        scope: str | None = None,
+        scope_key: str | None = None,
+    ) -> None:
+        """Remove a portfolio's series, or just one scope of it.
 
-        stmt = (
-            select(
-                PortfolioReturn.date,
-                daily_col.label('daily_return'),
-                acc_col.label('acc_return'),
-                cagr_col.label('cagr'),
-            )
-            .where(PortfolioReturn.portfolio_id == portfolio_id)
-            .order_by(PortfolioReturn.date)
+        `scope_key` is text and points at a different table per scope, so it
+        cannot be a foreign key and nothing cascades. Deleting the row it refers
+        to has to come here, or the series outlives what it was about.
+        """
+        criteria: dict = {'portfolio_id': portfolio_id}
+        if scope is not None:
+            criteria['scope'] = str(scope)
+        if scope_key is not None:
+            criteria['scope_key'] = scope_key
+        await self.delete(ReturnSeries, by=criteria)
+
+    async def get_consolidation(self, portfolio_id: int) -> PortfolioConsolidation | None:
+        """When this portfolio's derived data was last rebuilt, if ever."""
+        return await self.get(
+            PortfolioConsolidation,
+            by={'portfolio_id': portfolio_id},
+            first=True,
         )
-        result = await self.session.execute(stmt)
-        return result.mappings().all()
+
+    async def get_portfolio_returns(self, portfolio_id: int, currency: str = 'BRL') -> list[dict]:
+        return await self.get_return_series(
+            portfolio_id,
+            scope=ReturnScope.PORTFOLIO,
+            scope_key=WHOLE_PORTFOLIO_KEY,
+            currency=currency,
+        )
 
     async def get_category_returns(
         self,
@@ -842,62 +896,44 @@ class PortfolioRepository(SQLAlchemyRepository):
         most_recent: bool = False,
         currency: str = 'BRL',
     ) -> list[dict]:
-        suffix = '_usd' if currency == 'USD' else ''
-        daily_col = getattr(CategoryReturn, f'daily_return{suffix}')
-        acc_col = getattr(CategoryReturn, f'acc_return{suffix}')
-        cagr_col = getattr(CategoryReturn, f'cagr{suffix}')
+        """Category series, carrying the category id and name as before.
 
-        if most_recent:
-            # Subquery to get the max date per category
-            max_date_sq = (
-                select(
-                    CategoryReturn.custom_category_id,
-                    func.max(CategoryReturn.date).label('max_date'),
-                )
-                .where(CategoryReturn.portfolio_id == portfolio_id)
-                .group_by(CategoryReturn.custom_category_id)
-            )
-            if custom_category_id:
-                max_date_sq = max_date_sq.where(
-                    CategoryReturn.custom_category_id == custom_category_id
-                )
-            max_date_sq = max_date_sq.subquery()
-
-            stmt = (
-                select(
-                    CategoryReturn.date,
-                    CategoryReturn.custom_category_id,
-                    CustomCategory.name.label('category'),
-                    daily_col.label('daily_return'),
-                    acc_col.label('acc_return'),
-                    cagr_col.label('cagr'),
-                )
-                .join(CustomCategory, CustomCategory.id == CategoryReturn.custom_category_id)
-                .join(
-                    max_date_sq,
-                    (CategoryReturn.custom_category_id == max_date_sq.c.custom_category_id)
-                    & (CategoryReturn.date == max_date_sq.c.max_date),
-                )
-                .where(CategoryReturn.portfolio_id == portfolio_id)
-            )
-            result = await self.session.execute(stmt)
-            return result.mappings().all()
-
+        `most_recent` keeps only each category's last day, which is what the
+        allocation screen reads: one row per category rather than a history.
+        """
+        category_id = cast(ReturnSeries.scope_key, Integer)
         stmt = (
             select(
-                CategoryReturn.date,
-                CategoryReturn.custom_category_id,
+                *self._return_series_columns(currency),
+                category_id.label('custom_category_id'),
                 CustomCategory.name.label('category'),
-                daily_col.label('daily_return'),
-                acc_col.label('acc_return'),
-                cagr_col.label('cagr'),
             )
-            .join(CustomCategory, CustomCategory.id == CategoryReturn.custom_category_id)
-            .where(CategoryReturn.portfolio_id == portfolio_id)
-            .order_by(CategoryReturn.date)
+            .join(CustomCategory, CustomCategory.id == category_id)
+            .where(ReturnSeries.portfolio_id == portfolio_id)
+            .where(ReturnSeries.scope == str(ReturnScope.CATEGORY))
         )
         if custom_category_id:
-            stmt = stmt.where(CategoryReturn.custom_category_id == custom_category_id)
+            stmt = stmt.where(ReturnSeries.scope_key == str(custom_category_id))
+
+        if most_recent:
+            last_day = (
+                select(
+                    ReturnSeries.scope_key,
+                    func.max(ReturnSeries.date).label('max_date'),
+                )
+                .where(ReturnSeries.portfolio_id == portfolio_id)
+                .where(ReturnSeries.scope == str(ReturnScope.CATEGORY))
+            )
+            if custom_category_id:
+                last_day = last_day.where(ReturnSeries.scope_key == str(custom_category_id))
+            last_day = last_day.group_by(ReturnSeries.scope_key).subquery()
+            stmt = stmt.join(
+                last_day,
+                (ReturnSeries.scope_key == last_day.c.scope_key)
+                & (ReturnSeries.date == last_day.c.max_date),
+            )
+        else:
+            stmt = stmt.order_by(ReturnSeries.date)
 
         result = await self.session.execute(stmt)
         return result.mappings().all()

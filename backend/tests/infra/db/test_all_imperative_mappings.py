@@ -47,9 +47,8 @@ PERSISTED_ENTITIES = [
     portfolio_entities.CustomCategory,
     portfolio_entities.CustomCategoryAssignment,
     portfolio_entities.PortfolioUserConfiguration,
-    portfolio_entities.PortfolioReturn,
-    portfolio_entities.CategoryReturn,
-    portfolio_entities.AssetTypeReturn,
+    portfolio_entities.ReturnSeries,
+    portfolio_entities.PortfolioConsolidation,
     portfolio_entities.WealthTier,
     portfolio_entities.ConfigurationName,
     AIFeature,
@@ -63,7 +62,7 @@ PERSISTED_ENTITIES = [
     DataIngestionExecution,
     DataIngestionAttempt,
 ]
-EXPECTED_PERSISTED_ENTITY_COUNT = 41
+EXPECTED_PERSISTED_ENTITY_COUNT = 40
 
 
 def test_every_persisted_entity_is_one_mapped_domain_dataclass():

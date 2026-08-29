@@ -95,6 +95,20 @@ Provider calls use adapters/integrations behind the service layer.
 - Treat the cache as optional: an unreachable Redis makes a read slow, not
   failed.
 
+## Consolidated portfolio reads
+
+- Every persisted return series lives in `portfolio.return_series`, told apart
+  by `scope` and `scope_key`. Do not add a table per altitude: the portfolio,
+  a category, an asset type and a segment are the same arithmetic over
+  different groupings.
+- `scope_key` cannot be a foreign key, so a delete that removes a category or a
+  portfolio removes its series explicitly.
+- Consolidating a portfolio is one run that fills every scope and then stamps
+  `portfolio.portfolio_consolidation`. One stamp per portfolio, not per series.
+- A read of a consolidated table is a select. Do not put a cache in front of
+  one — that is caching a cache, and it puts back an invalidation to keep
+  honest.
+
 ## Market data
 
 - Asset quotes and their scalar prices are central domain data. Brapi and other external sources are

@@ -27,6 +27,11 @@ is the seeded primary key and the only stable identity an asset type has.
 Segments do not have to cover the portfolio. Pension and investment funds
 belong to none, and a position outside every segment is simply not on any
 specialized screen.
+
+A segment's return series is persisted like any other scope of
+``portfolio.return_series``, so reading one is a select. It was not always: the
+segments that cut a type by market had no series and were recomputed on every
+request, which is the asymmetry the unified table removed.
 """
 
 from dataclasses import dataclass
@@ -58,15 +63,6 @@ class SegmentDefinition:
     @property
     def asset_type_ids(self) -> tuple[int, ...]:
         return tuple(int(asset_type) for asset_type in self.asset_types)
-
-    @property
-    def is_whole_asset_type(self) -> bool:
-        """True when the segment is exactly one asset type, market included.
-
-        Those are the segments the consolidated asset-type return series already
-        answers, so they are read from it instead of being recomputed.
-        """
-        return len(self.asset_types) == 1 and self.brazilian_exchange is None
 
 
 _EXCHANGE_TRADED = (ASSET_TYPE.STOCK, ASSET_TYPE.ETF, ASSET_TYPE.BDR, ASSET_TYPE.REIT)

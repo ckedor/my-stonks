@@ -8,6 +8,7 @@ from app.modules.market_data.api.asset.schemas import (
     AssetDetailsOut,
     AssetDetailsWithPosition,
 )
+from app.modules.portfolio.api.position.schemas import PortfolioConsolidation
 from app.modules.portfolio.domain.portfolio_segment import PortfolioSegment
 from app.modules.portfolio.service.portfolio_position_service import (
     PortfolioPositionService,
@@ -30,6 +31,19 @@ async def get_portfolio_position(  # noqa: PLR0913
             portfolio_id, group_by_broker=group_by_broker, currency=currency
         )
     return await service.get_portfolio_position_history(portfolio_id, asset_id, currency=currency)
+
+
+@router.get('/{portfolio_id}/consolidation', response_model=PortfolioConsolidation | None)
+async def get_consolidation(
+    portfolio_id: int,
+    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+):
+    """When this portfolio was last consolidated.
+
+    Everything else under this router is a snapshot of that run, so the screens
+    read this once and label the whole page with it.
+    """
+    return await service.get_consolidation(portfolio_id)
 
 
 @router.get('/{portfolio_id}/returns')

@@ -97,13 +97,40 @@ it:
   answer for the segment, and `patrimony_evolution` takes a `segment`
   parameter.
 
-A segment that is exactly one asset type across every market — the funds, the
-cryptoassets — is the series the returns consolidator already writes, so it is
-read from `portfolio.asset_type_return` rather than recomputed. The segments
-that cut a type by market, or gather several types, have no persisted series
-and are calculated over the positions they cover, value weighted the same way
-the portfolio-wide series is. An empty segment answers with nothing, never
-with the whole portfolio.
+Every segment has a consolidated series, including the ones that cut a type by
+market or gather several types. Those had none until the return tables were
+unified, which is why reading one used to be a computation and reading a
+whole-type segment used to be a select — one screen, two code paths. Now they
+are all scopes of `portfolio.return_series`. An empty segment answers with
+nothing, never with the whole portfolio.
+
+## Consolidated reads
+
+A portfolio's derived data is four things at four altitudes — the portfolio, a
+custom category, an asset type, a segment — and one arithmetic: each position
+weighs by what it was worth the day before, the weighted returns are summed per
+day, and the daily series is compounded and annualized. So there is one table,
+`portfolio.return_series`, discriminated by `scope` and `scope_key`, and one
+consolidation that fills every scope in a single pass.
+
+`scope_key` is text and not a foreign key, because it points at a different
+table depending on the row. That is the price of one table, and it is paid where
+rows are deleted: removing a category or a portfolio has to remove its series
+explicitly, the way the portfolio delete already clears positions and
+transactions by hand.
+
+Consolidating a portfolio is one run, `consolidate_portfolio`: it recalculates
+the positions, rebuilds every return series from them, and stamps
+`portfolio.portfolio_consolidation` with when it finished and whether it worked.
+One stamp per portfolio, because every series below is rebuilt in the same run —
+a stamp per series would be the same instant repeated.
+`/portfolio/position/{id}/consolidation` is where a screen reads it, once, to
+label the whole page.
+
+None of these reads is cached. They are selects from a consolidated table, so
+the consolidator's commit is the only thing that changes what a reader sees.
+Patrimony evolution is the exception and the only portfolio read still computed
+per request, which is why it is also the only one with a cache in front of it.
 
 ## Layer boundaries
 

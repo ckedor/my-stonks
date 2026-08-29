@@ -2,10 +2,10 @@
 
 Three things are worth pinning here. The rule that puts a position on one
 screen and not another -- it is the only place where "Brazilian" is decided,
-and getting it wrong silently moves a holding between screens. That a segment
-which is a whole asset type still reads the consolidated series instead of
-recomputing it: the fallback works, so nothing would fail if that path quietly
-stopped being taken. And that membership is by asset-type **id** -- the first
+and getting it wrong silently moves a holding between screens. That an empty
+segment answers with nothing rather than with the whole portfolio: an empty id
+list falls straight through the repository's filter. And that membership is by
+asset-type **id** -- the first
 version matched `asset_type.short_name`, which is pt-BR product copy, so the
 screens for `Ação`, `Tesouro` and `Cripto` came up empty while `FII` and `ETF`
 worked by coincidence.
@@ -15,7 +15,6 @@ import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
-import pandas as pd
 import pytest
 
 from app.modules.market_data.domain.constants import ASSET_TYPE
@@ -26,7 +25,6 @@ from app.modules.portfolio.domain.portfolio_segment import (
     get_segment_definition,
     resolve_segment,
 )
-from app.modules.portfolio.domain.returns import calculate_portfolio_daily_returns
 from app.modules.portfolio.service.portfolio_position_service import PortfolioPositionService
 from tests.fakes import FakeCache, FakeUnitOfWork
 
@@ -93,16 +91,6 @@ def test_a_position_belongs_to_at_most_one_segment():
             assert len(matches) <= 1, (asset_type, exchange, matches)
 
 
-@pytest.mark.unit
-def test_only_a_whole_asset_type_can_read_the_consolidated_series():
-    whole = {
-        segment
-        for segment in PortfolioSegment
-        if get_segment_definition(segment).is_whole_asset_type
-    }
-    assert whole == {PortfolioSegment.FII, PortfolioSegment.CRYPTO}
-
-
 def _position_history() -> list[dict]:
     rows = []
     for day, br_price, world_price in (
@@ -147,62 +135,6 @@ def _service(**repository_methods) -> PortfolioPositionService:
 
 
 @pytest.mark.unit
-async def test_whole_asset_type_segment_reads_the_consolidated_series():
-    stored = [
-        {
-            'date': pd.Timestamp('2026-01-02'),
-            'asset_type_id': int(ASSET_TYPE.FII),
-            'asset_type': 'FII',
-            'daily_return': 0.01,
-            'acc_return': 0.21,
-            'cagr': 0.21,
-        }
-    ]
-    service = _service(
-        get_asset_type_returns=AsyncMock(return_value=stored),
-        get_segment_asset_ids=AsyncMock(),
-        get_portfolio_position=AsyncMock(),
-    )
-
-    result = await service.get_segment_returns(7, PortfolioSegment.FII)
-
-    assert result[-1]['acc_return'] == pytest.approx(0.21)
-    # O id vem da constante, e não de uma busca pelo rótulo do tipo.
-    service.uow.portfolios.get_asset_type_returns.assert_awaited_once_with(
-        7, int(ASSET_TYPE.FII), 'BRL'
-    )
-    service.uow.portfolios.get_segment_asset_ids.assert_not_awaited()
-
-
-@pytest.mark.unit
-async def test_segment_cut_by_market_is_calculated_over_the_assets_it_covers():
-    covered = [row for row in _position_history() if row['asset_id'] == 10]
-    service = _service(
-        get_segment_asset_ids=AsyncMock(return_value=[10]),
-        get_portfolio_position=AsyncMock(return_value=covered),
-        get_asset_type_returns=AsyncMock(),
-    )
-
-    result = await service.get_segment_returns(7, PortfolioSegment.EQUITY_BR)
-
-    service.uow.portfolios.get_portfolio_position.assert_awaited_once_with(7, asset_ids=[10])
-    service.uow.portfolios.get_asset_type_returns.assert_not_awaited()
-    assert result[-1]['date'] == '2026-01-02'
-    assert result[-1]['acc_return'] == pytest.approx(0.21)
-
-
-@pytest.mark.unit
-async def test_a_segment_nobody_holds_answers_with_nothing():
-    service = _service(
-        get_segment_asset_ids=AsyncMock(return_value=[]),
-        get_portfolio_position=AsyncMock(),
-    )
-
-    assert await service.get_segment_returns(7, PortfolioSegment.EQUITY_WORLD) == []
-    service.uow.portfolios.get_portfolio_position.assert_not_awaited()
-
-
-@pytest.mark.unit
 async def test_empty_segment_patrimony_is_nothing_and_not_the_whole_portfolio():
     """A lista vazia cairia fora do filtro `if asset_ids:` do repositório."""
     service = _service(
@@ -214,24 +146,6 @@ async def test_empty_segment_patrimony_is_nothing_and_not_the_whole_portfolio():
 
     assert result is None
     service.uow.portfolios.get_portfolio_position.assert_not_awaited()
-
-
-@pytest.mark.unit
-def test_weighted_returns_ignores_positions_outside_the_segment():
-    """A conta é a mesma da carteira inteira, sobre um subconjunto."""
-    service = PortfolioPositionService(
-        FakeUnitOfWork(), market_data_service=SimpleNamespace(), cache=FakeCache()
-    )
-    everything = _position_history()
-    only_world = [row for row in everything if row['asset_id'] == 20]
-
-    whole = service._weighted_returns(everything)
-    segment = service._weighted_returns(only_world)
-
-    assert segment[-1]['acc_return'] == pytest.approx(-0.01)
-    assert whole[-1]['acc_return'] != pytest.approx(segment[-1]['acc_return'])
-    # A série completa continua sendo a que o consolidador escreve.
-    assert calculate_portfolio_daily_returns(pd.DataFrame(everything)).shape[0] == 6
 
 
 @pytest.mark.unit

@@ -136,7 +136,7 @@ def get_portfolio_quote_ingestion_service(
 def get_portfolio_returns_consolidator_service(
     uow: UnitOfWork = Depends(get_uow),
 ) -> PortfolioReturnsConsolidatorService:
-    return PortfolioReturnsConsolidatorService(uow, cache=RedisService())
+    return PortfolioReturnsConsolidatorService(uow)
 
 
 def get_portfolio_consolidator_service(
@@ -181,4 +181,4 @@ def build_portfolio_position_service_for_task() -> PortfolioPositionService:
 
 def build_portfolio_returns_consolidator_for_task() -> PortfolioReturnsConsolidatorService:
     """Returns consolidator for a background run, owning its UnitOfWork."""
-    return PortfolioReturnsConsolidatorService(UnitOfWork(), cache=RedisService())
+    return PortfolioReturnsConsolidatorService(UnitOfWork())

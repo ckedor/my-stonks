@@ -3484,6 +3484,37 @@
     "title": "Portfolio",
     "type": "object"
    },
+   "PortfolioConsolidation": {
+    "description": "When the portfolio's derived data was last rebuilt.\n\n`consolidated_at` is when the run finished, not the date the numbers reach:\nthat one is bounded by the last quote ingested.",
+    "properties": {
+     "consolidated_at": {
+      "format": "date-time",
+      "title": "Consolidated At",
+      "type": "string"
+     },
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "consolidated_at",
+     "status"
+    ],
+    "title": "PortfolioConsolidation",
+    "type": "object"
+   },
    "PortfolioSegment": {
     "enum": [
      "fii",
@@ -8625,6 +8656,62 @@
      }
     ],
     "summary": "Get Category Analysis",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/consolidation": {
+   "get": {
+    "description": "When this portfolio was last consolidated.\n\nEverything else under this router is a snapshot of that run, so the screens\nread this once and label the whole page with it.",
+    "operationId": "get_consolidation_portfolio_position__portfolio_id__consolidation_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/PortfolioConsolidation"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "title": "Response Get Consolidation Portfolio Position  Portfolio Id  Consolidation Get"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Consolidation",
     "tags": [
      "Portfolio Position"
     ]

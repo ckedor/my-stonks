@@ -3,34 +3,32 @@ from sqlalchemy.orm import relationship
 
 from app.infra.db.base import Base
 from app.infra.db.tables.portfolio import (
-    asset_type_return_table,
-    category_return_table,
     configuration_name_table,
     custom_category_assignment_table,
     custom_category_table,
     dividend_table,
-    portfolio_return_table,
+    portfolio_consolidation_table,
     portfolio_table,
     portfolio_user_configuration_table,
     position_table,
     return_12m_table,
+    return_series_table,
     transaction_table,
     wealth_tier_table,
 )
-from app.modules.market_data.domain.assets import Asset, AssetType, Broker
+from app.modules.market_data.domain.assets import Asset, Broker
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.portfolio.domain.entities import (
-    AssetTypeReturn,
-    CategoryReturn,
     ConfigurationName,
     CustomCategory,
     CustomCategoryAssignment,
     Dividend,
     Portfolio,
-    PortfolioReturn,
+    PortfolioConsolidation,
     PortfolioUserConfiguration,
     Position,
     Return12M,
+    ReturnSeries,
     Transaction,
     WealthTier,
 )
@@ -120,24 +118,13 @@ def map_portfolio() -> None:
         },
     )
     Base.registry.map_imperatively(
-        PortfolioReturn,
-        portfolio_return_table,
+        ReturnSeries,
+        return_series_table,
         properties={'portfolio': relationship(Portfolio)},
     )
     Base.registry.map_imperatively(
-        CategoryReturn,
-        category_return_table,
-        properties={
-            'portfolio': relationship(Portfolio),
-            'category': relationship(CustomCategory),
-        },
-    )
-    Base.registry.map_imperatively(
-        AssetTypeReturn,
-        asset_type_return_table,
-        properties={
-            'portfolio': relationship(Portfolio),
-            'asset_type': relationship(AssetType),
-        },
+        PortfolioConsolidation,
+        portfolio_consolidation_table,
+        properties={'portfolio': relationship(Portfolio)},
     )
     Base.registry.map_imperatively(WealthTier, wealth_tier_table)

@@ -11,6 +11,7 @@ from app.modules.portfolio.domain.entities import (
     CustomCategoryAssignment,
     Dividend,
     Portfolio,
+    PortfolioConsolidation,
     Position,
     Transaction,
 )
@@ -83,6 +84,12 @@ class PortfolioBaseService:
                     by={'custom_category_id': custom_category.id},
                 )
             await uow.portfolios.delete(CustomCategory, by={'portfolio_id': portfolio_id})
+            # Séries e carimbo apontam para a carteira mas nada cascateia a
+            # partir de `scope_key`, que é texto. Saem aqui, explicitamente.
+            await uow.portfolios.delete_return_series(portfolio_id)
+            await uow.portfolios.delete(
+                PortfolioConsolidation, by={'portfolio_id': portfolio_id}
+            )
             await uow.portfolios.delete(Position, by={'portfolio_id': portfolio_id})
             await uow.portfolios.delete(Transaction, by={'portfolio_id': portfolio_id})
             await uow.portfolios.delete(Dividend, by={'portfolio_id': portfolio_id})
