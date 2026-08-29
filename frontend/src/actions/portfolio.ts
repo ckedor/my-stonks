@@ -129,12 +129,12 @@ export async function syncReturns(portfolioId: number, force = false): Promise<v
 
 export async function syncBenchmarks(force = false): Promise<void> {
   const currency = useCurrencyStore.getState().currency
-  const store = useReturnsStore.getState()
 
-  if (store.benchmarkCurrency !== currency) {
-    store.setBenchmarks({}, currency)
-  }
-
+  /* A série da moeda anterior fica na tela até a nova chegar. Esvaziar aqui
+     fazia a curva do benchmark sumir e voltar a cada troca de moeda, em vez
+     de transformar de uma para a outra — e o que aparece nesse intervalo é o
+     dado que já estava lá, não um dado errado: `onHydrate` só escreve se a
+     moeda ainda for a mesma que foi pedida. */
   await staleWhileRevalidate({
     cacheKey: `benchmarks:${currency}`,
     fetcher: () => fetchBenchmarks(currency),

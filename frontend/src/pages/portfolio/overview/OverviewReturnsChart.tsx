@@ -30,11 +30,29 @@ interface Props {
 }
 
 export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', selectedCategory = 'portfolio' }: Props) {
-  const { categoryReturns, benchmarks, loading } = useReturnsStore()
+  /* Fatiado, e não `useReturnsStore()` inteiro: sem seletor, o zustand
+     reavalia esta tela a cada escrita em qualquer parte do store — inclusive
+     em `assetReturns`, que este gráfico não lê. */
+  const categoryReturns = useReturnsStore((s) => s.categoryReturns)
+  const benchmarks = useReturnsStore((s) => s.benchmarks)
+  const loading = useReturnsStore((s) => s.loading)
   const theme = useAppTheme()
 
   const portfolioColor = theme.palette.primary.main
   const benchmarkColor = theme.palette.warning.main
+
+  /* Memorizados porque o recharts embrulha `Area` e `Line` em `React.memo`, e
+     um objeto literal aqui furaria essa comparação a cada render: a série
+     seria remontada e redesenhada do zero. A animação que sobra é a que
+     interessa — a que roda quando o dado muda de verdade. */
+  const portfolioActiveDot = useMemo(
+    () => ({ r: 4, strokeWidth: 0, fill: portfolioColor }),
+    [portfolioColor],
+  )
+  const benchmarkActiveDot = useMemo(
+    () => ({ r: 3, strokeWidth: 0, fill: benchmarkColor }),
+    [benchmarkColor],
+  )
 
   const [selectedBenchmark, setSelectedBenchmark] = useState<string>('CDI')
   const [range, setRange] = useState(defaultRange)
@@ -226,7 +244,7 @@ export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', 
             strokeWidth={2.5}
             fill={`url(#${gradientId})`}
             dot={false}
-            activeDot={{ r: 4, strokeWidth: 0, fill: portfolioColor }}
+            activeDot={portfolioActiveDot}
             name="portfolio"
           />
           <Line
@@ -235,7 +253,7 @@ export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', 
             stroke={benchmarkColor}
             strokeWidth={1.8}
             dot={false}
-            activeDot={{ r: 3, strokeWidth: 0, fill: benchmarkColor }}
+            activeDot={benchmarkActiveDot}
             name="benchmark"
           />
         </ComposedChart>

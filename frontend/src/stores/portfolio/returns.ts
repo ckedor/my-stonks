@@ -19,6 +19,43 @@ export interface ReturnsState {
   setLoading: (loading: boolean) => void
 }
 
+/* Hidratar com o mesmo conteúdo não é uma mudança de estado.
+ *
+ * A mesma série chega aqui mais de uma vez na abertura da tela: o `persist`
+ * devolve o que ficou no localStorage e, logo depois, o SWR entrega o cache
+ * do IndexedDB e a resposta da rede. Sem esta comparação, cada entrega troca
+ * a identidade do objeto guardado — e o recharts decide reanimar uma série
+ * por identidade de props, então as curvas eram redesenhadas com dado
+ * idêntico, uma por cima da outra.
+ *
+ * A comparação é por conteúdo e rasa de propósito: `ReturnsEntry` é um par
+ * de primitivos, e a série mais longa da carteira tem alguns milhares de
+ * pontos — percorrer é mais barato do que repintar. */
+function sameSeries(a: ReturnsEntry[] | undefined, b: ReturnsEntry[]): boolean {
+  if (a === b) return true
+  if (!a || a.length !== b.length) return false
+  return a.every((entry, i) => entry.date === b[i].date && entry.value === b[i].value)
+}
+
+function sameSeriesMap(
+  a: Record<string, ReturnsEntry[]>,
+  b: Record<string, ReturnsEntry[]>,
+): boolean {
+  if (a === b) return true
+  const keys = Object.keys(b)
+  if (Object.keys(a).length !== keys.length) return false
+  return keys.every((key) => sameSeries(a[key], b[key]))
+}
+
+function sameCagrMap(
+  a: Record<string, number | null>,
+  b: Record<string, number | null>,
+): boolean {
+  const keys = Object.keys(b)
+  if (Object.keys(a).length !== keys.length) return false
+  return keys.every((key) => a[key] === b[key])
+}
+
 export const useReturnsStore = create<ReturnsState>()(
   persist(
     (set) => ({
@@ -30,36 +67,57 @@ export const useReturnsStore = create<ReturnsState>()(
       loading: true,
 
       setPortfolioReturns: (returns, cagr) =>
-        set((state) => ({
-          categoryReturns: { ...state.categoryReturns, portfolio: returns },
-          categoryCagr: { ...state.categoryCagr, portfolio: cagr ?? null },
-          loading: false,
-        })),
+        set((state) => {
+          const nextCagr = cagr ?? null
+          if (sameSeries(state.categoryReturns.portfolio, returns) && state.categoryCagr.portfolio === nextCagr) {
+            /* `loading` cai mesmo quando o dado repete: quem esperava a
+               resposta precisa saber que ela chegou. Devolver o próprio
+               `state` é o que faz o zustand não avisar ninguém. */
+            return state.loading ? { loading: false } : state
+          }
+          return {
+            categoryReturns: { ...state.categoryReturns, portfolio: returns },
+            categoryCagr: { ...state.categoryCagr, portfolio: nextCagr },
+            loading: false,
+          }
+        }),
       setCategoryReturns: (name, returns) =>
-        set((state) => ({
-          categoryReturns: { ...state.categoryReturns, [name]: returns },
-        })),
+        set((state) =>
+          sameSeries(state.categoryReturns[name], returns)
+            ? state
+            : { categoryReturns: { ...state.categoryReturns, [name]: returns } },
+        ),
       setAllCategoryReturns: (categories, cagrs) =>
         set((state) => {
           const portfolioReturns = state.categoryReturns.portfolio
           const portfolioCagr = state.categoryCagr.portfolio
 
-          return {
-            categoryReturns: {
-              ...(portfolioReturns ? { portfolio: portfolioReturns } : {}),
-              ...categories,
-            },
-            categoryCagr: {
-              ...(portfolioCagr !== undefined ? { portfolio: portfolioCagr } : {}),
-              ...(cagrs ?? {}),
-            },
+          const nextReturns = {
+            ...(portfolioReturns ? { portfolio: portfolioReturns } : {}),
+            ...categories,
           }
+          const nextCagr = {
+            ...(portfolioCagr !== undefined ? { portfolio: portfolioCagr } : {}),
+            ...(cagrs ?? {}),
+          }
+
+          if (sameSeriesMap(state.categoryReturns, nextReturns) && sameCagrMap(state.categoryCagr, nextCagr)) {
+            return state
+          }
+
+          return { categoryReturns: nextReturns, categoryCagr: nextCagr }
         }),
       addAssetReturns: (assetReturns) =>
-        set((state) => ({
-          assetReturns: { ...state.assetReturns, ...assetReturns },
-        })),
-      setBenchmarks: (benchmarks, benchmarkCurrency) => set({ benchmarks, benchmarkCurrency }),
+        set((state) => {
+          const next = { ...state.assetReturns, ...assetReturns }
+          return sameSeriesMap(state.assetReturns, next) ? state : { assetReturns: next }
+        }),
+      setBenchmarks: (benchmarks, benchmarkCurrency) =>
+        set((state) =>
+          state.benchmarkCurrency === benchmarkCurrency && sameSeriesMap(state.benchmarks, benchmarks)
+            ? state
+            : { benchmarks, benchmarkCurrency },
+        ),
       setLoading: (loading) => set({ loading }),
     }),
     {
