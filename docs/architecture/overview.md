@@ -72,9 +72,15 @@ funds paid, reading `/v2/fii/dividends` through the same adapter mapping the
 market page uses, so a payment is one fact on both sides. It records income
 only: an amortization returns principal, and the provider's label is the only
 thing separating the two — the job read a source that published no label at
-all, so every amortization used to land in a portfolio as income. A payment is
-attributed to the position held on the day it was paid, and never overwrites a
-dividend entered by hand.
+all, so every amortization used to land in a portfolio as income.
+
+How many shares a payment is worth is settled on its ex date, and the amount is
+recorded on the payment date. Those are different days, and using the payment
+date for both paid nothing to whoever sold between them: the position series
+stops at a full exit, so on the day the cash arrived there was no row left to
+read a quantity from. Whether a payment is already recorded is read from the
+dividends themselves rather than from that row, for the same reason. A dividend
+entered by hand is never overwritten.
 
 Provider units survive the boundary unscaled. Yields are ratios and P/VP is a
 multiple, as published; the client decides how each is written. Amounts paid per

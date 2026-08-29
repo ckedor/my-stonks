@@ -38,6 +38,11 @@ from ..domain import portfolio_consolidation
 #: com atraso sem reler a história inteira toda madrugada.
 FII_DIVIDEND_WINDOW_DAYS = 30
 
+#: Quanto antes da janela as posições são lidas, para que a data-com de um
+#: pagamento na borda ainda esteja no quadro. Um FII costuma pagar duas
+#: semanas depois da data-com; trinta dias cobre com folga.
+FII_EX_DATE_MARGIN_DAYS = 30
+
 TREASURY_INDEX_MAP = {
     1: SERIES.CDI,  # LFT  – Tesouro Selic
     2: None,  # LTN  – Tesouro Prefixado
@@ -334,9 +339,11 @@ class PortfolioConsolidatorService:
         that separates the two. The previous source published no label at all,
         so every amortization landed in the portfolio as income.
 
-        A payment is recorded against the position held on the day it was paid,
-        and only when nothing is recorded there yet -- a dividend entered by
-        hand always wins over one the provider reports.
+        How many shares a payment is worth is settled on its **ex date**, not
+        on the day the cash arrives -- that is what the date is for. Selling
+        between the two does not forfeit the payment, and the position series
+        stops at a full exit, so reading the quantity on the payment date paid
+        that holder nothing at all.
         """
         user_configuration = await repository.get(
             PortfolioUserConfiguration,
@@ -352,11 +359,14 @@ class PortfolioConsolidatorService:
             return
 
         logger.info(f'Consolidando dividendos de FIIs do portfolio {portfolio_id}')
+        window_start = pd.Timestamp.now().normalize() - pd.DateOffset(days=FII_DIVIDEND_WINDOW_DAYS)
         positions_df = rows_to_df(
             await repository.get_portfolio_position(
                 portfolio_id=portfolio_id,
                 asset_type_id=ASSET_TYPE.FII,
-                start_date=pd.Timestamp.now() - pd.DateOffset(days=FII_DIVIDEND_WINDOW_DAYS),
+                # Mais para trás do que a janela dos pagamentos: a data-com
+                # antecede o pagamento, e é ela que precisa estar no quadro.
+                start_date=window_start - pd.DateOffset(days=FII_EX_DATE_MARGIN_DAYS),
             ),
             datetime_cols=['date'],
             numeric_fillna_cols=['dividend', 'dividend_usd'],
@@ -368,34 +378,58 @@ class PortfolioConsolidatorService:
             positions_df['ticker'].unique().tolist()
         )
         payments_df = self._income_payments_df(dividends_by_ticker)
+        payments_df = payments_df[payments_df['date'] >= window_start]
         if payments_df.empty:
             logger.info(f'Nenhum provento de FII reportado para o portfolio {portfolio_id}')
             return
 
-        merged_df = positions_df.merge(payments_df, on=['ticker', 'date'], how='left')
-        merged_df['value_per_share'] = merged_df['value_per_share'].fillna(0)
-        if 'dividend' not in merged_df.columns:
-            merged_df['dividend'] = 0
-
-        already_recorded = merged_df['dividend'] != 0
-        merged_df['dividend'] = round(merged_df['quantity'] * merged_df['value_per_share'], 2)
-        new_dividends_df = merged_df[~already_recorded & (merged_df['dividend'] > 0)]
-
+        new_dividends_df = self._payments_owed(payments_df, positions_df)
         if new_dividends_df.empty:
             logger.info(f'Nenhum novo dividendo de FIIs encontrado para o portfolio {portfolio_id}')
             return
 
+        # Um provento já lançado -- à mão ou por uma corrida anterior -- não é
+        # relançado. Vem da tabela, e não da linha de posição do dia do
+        # pagamento, que pode não existir para quem vendeu depois da data-com.
+        recorded = await repository.get(
+            Dividend,
+            by={'portfolio_id': portfolio_id, 'date__gte': window_start.date()},
+        )
+        already_recorded = {(item.asset_id, pd.Timestamp(item.date)) for item in recorded}
+
         for _, row in new_dividends_df.iterrows():
+            if (row['asset_id'], row['date']) in already_recorded:
+                continue
             await repository.create(
                 Dividend,
                 {
                     'portfolio_id': portfolio_id,
                     'asset_id': row['asset_id'],
                     'date': row['date'],
-                    'amount': row['dividend'],
+                    'amount': row['amount'],
                 },
             )
             logger.info('Provento de %s em %s consolidado', row['ticker'], row['date'].date())
+
+    @staticmethod
+    def _payments_owed(payments_df: pd.DataFrame, positions_df: pd.DataFrame) -> pd.DataFrame:
+        """What each payment is worth, given what was held when it was settled.
+
+        The join is on the ex date, so a position sold before the payment
+        landed still earns it. Payments that share a payment date are summed
+        after being valued, each by the quantity held on its own ex date: the
+        portfolio receives one amount that day, from possibly two events.
+        """
+        held = positions_df[['ticker', 'date', 'asset_id', 'quantity']].rename(
+            columns={'date': 'ex_date'}
+        )
+        owed = payments_df.merge(held, on=['ticker', 'ex_date'], how='inner')
+        if owed.empty:
+            return owed.assign(amount=pd.Series(dtype=float))
+
+        owed['amount'] = (owed['quantity'] * owed['value_per_share']).round(2)
+        owed = owed.groupby(['ticker', 'asset_id', 'date'], as_index=False)['amount'].sum()
+        return owed[owed['amount'] > 0]
 
     @staticmethod
     def _income_payments_df(dividends_by_ticker: dict[str, list]) -> pd.DataFrame:
@@ -403,11 +437,14 @@ class PortfolioConsolidatorService:
 
         Amortizations are dropped here rather than downstream: past this point
         a payment is just an amount, and nothing would tell them apart again.
+        A fund that publishes no ex date falls back to the payment date, which
+        is the only day it gives us to settle the holding on.
         """
         rows = [
             {
                 'ticker': ticker,
                 'date': pd.Timestamp(dividend.payment_date),
+                'ex_date': pd.Timestamp(dividend.ex_date or dividend.payment_date),
                 'value_per_share': dividend.value_per_share,
             }
             for ticker, dividends in dividends_by_ticker.items()
@@ -415,12 +452,8 @@ class PortfolioConsolidatorService:
             if dividend.is_income
         ]
         if not rows:
-            return pd.DataFrame(columns=['ticker', 'date', 'value_per_share'])
-        # Um fundo que pagou duas vezes no mesmo dia soma: são dois eventos, e
-        # a posição daquele dia recebeu os dois.
-        return (
-            pd.DataFrame(rows).groupby(['ticker', 'date'], as_index=False)['value_per_share'].sum()
-        )
+            return pd.DataFrame(columns=['ticker', 'date', 'ex_date', 'value_per_share'])
+        return pd.DataFrame(rows)
 
     async def aclose(self) -> None:
         await self.provider.close()
