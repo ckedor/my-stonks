@@ -67,6 +67,15 @@ calculation depends on them. The two halves come from separate provider routes:
 one failing leaves the other on the page, both failing raises, so an expired
 token or a rate limit reaches the reader as itself rather than as an empty card.
 
+The same route feeds the portfolio. A daily job records what a portfolio's
+funds paid, reading `/v2/fii/dividends` through the same adapter mapping the
+market page uses, so a payment is one fact on both sides. It records income
+only: an amortization returns principal, and the provider's label is the only
+thing separating the two — the job read a source that published no label at
+all, so every amortization used to land in a portfolio as income. A payment is
+attributed to the position held on the day it was paid, and never overwrites a
+dividend entered by hand.
+
 Provider units survive the boundary unscaled. Yields are ratios and P/VP is a
 multiple, as published; the client decides how each is written. Amounts paid per
 share are read from what the provider states was paid, never derived from a

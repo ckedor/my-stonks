@@ -1,4 +1,11 @@
 # app/infra/integrations/status_invest_client.py
+"""O que ainda vem do Status Invest: o catálogo de FIIs.
+
+Os proventos saíram daqui para `/v2/fii/dividends` do Brapi, que publica o
+rótulo do evento -- e sem ele uma amortização de capital entrava na carteira
+como rendimento.
+"""
+
 import json
 from enum import IntEnum
 
@@ -19,16 +26,6 @@ class StatusInvestClient:
             timeout=30.0,
             headers={'User-Agent': 'Chrome/112.0.0.0'},
         )
-
-    async def get_provents_df(self, ticker, max=True):
-        params = {'ticker': ticker, 'chartProventsType': 2 if max else 3}
-        response = await self.http.request('GET', '/fii/companytickerprovents', params=params)
-        provents = response['assetEarningsModels']
-        provents_df = pd.DataFrame(provents)
-        provents_df.rename(columns={'pd': 'date', 'v': 'value_per_share'}, inplace=True)
-        provents_df['date'] = pd.to_datetime(provents_df['date'], format='%d/%m/%Y')
-        provents_df['ticker'] = ticker
-        return provents_df[['ticker', 'date', 'value_per_share']]
 
     async def get_fiis_df(self):
         search = {

@@ -8,7 +8,6 @@ to the call site (router/task), see
 
 from datetime import datetime
 
-import numpy as np
 import pandas as pd
 
 from app.config.logger import logger
@@ -34,6 +33,11 @@ from app.modules.portfolio.repositories import PortfolioRepository
 from ..domain import portfolio_consolidation
 
 # treasury_bond_type_id → SERIES id (None = prefixado, sem indexador)
+#: Quanto para trás o job olha a cada corrida. Ele roda todo dia, e um
+#: fundo paga uma vez por mês: trinta dias cobre um provento anunciado
+#: com atraso sem reler a história inteira toda madrugada.
+FII_DIVIDEND_WINDOW_DAYS = 30
+
 TREASURY_INDEX_MAP = {
     1: SERIES.CDI,  # LFT  – Tesouro Selic
     2: None,  # LTN  – Tesouro Prefixado
@@ -323,6 +327,17 @@ class PortfolioConsolidatorService:
         *,
         repository: PortfolioRepository,
     ):
+        """Record the payments a portfolio's real-estate funds made.
+
+        Only what the fund paid as income: an amortization returns principal
+        and is not a dividend, and the provider's own label is the only thing
+        that separates the two. The previous source published no label at all,
+        so every amortization landed in the portfolio as income.
+
+        A payment is recorded against the position held on the day it was paid,
+        and only when nothing is recorded there yet -- a dividend entered by
+        hand always wins over one the provider reports.
+        """
         user_configuration = await repository.get(
             PortfolioUserConfiguration,
             by={
@@ -331,7 +346,9 @@ class PortfolioConsolidatorService:
             },
             first=True,
         )
-        if user_configuration.enabled is False:
+        # Sem configuração é integração desligada. Ler `.enabled` de None
+        # levantava AttributeError e derrubava o loop das carteiras seguintes.
+        if user_configuration is None or user_configuration.enabled is False:
             return
 
         logger.info(f'Consolidando dividendos de FIIs do portfolio {portfolio_id}')
@@ -339,7 +356,7 @@ class PortfolioConsolidatorService:
             await repository.get_portfolio_position(
                 portfolio_id=portfolio_id,
                 asset_type_id=ASSET_TYPE.FII,
-                start_date=pd.Timestamp.now() - pd.DateOffset(days=30),
+                start_date=pd.Timestamp.now() - pd.DateOffset(days=FII_DIVIDEND_WINDOW_DAYS),
             ),
             datetime_cols=['date'],
             numeric_fillna_cols=['dividend', 'dividend_usd'],
@@ -347,24 +364,22 @@ class PortfolioConsolidatorService:
         if positions_df.empty:
             return
 
-        fii_dividends_df = await self.provider.get_fii_dividends_df(
+        dividends_by_ticker = await self.provider.fetch_fii_dividends(
             positions_df['ticker'].unique().tolist()
         )
+        payments_df = self._income_payments_df(dividends_by_ticker)
+        if payments_df.empty:
+            logger.info(f'Nenhum provento de FII reportado para o portfolio {portfolio_id}')
+            return
 
-        merged_df = positions_df.merge(fii_dividends_df, on=['ticker', 'date'], how='left')
+        merged_df = positions_df.merge(payments_df, on=['ticker', 'date'], how='left')
         merged_df['value_per_share'] = merged_df['value_per_share'].fillna(0)
         if 'dividend' not in merged_df.columns:
             merged_df['dividend'] = 0
 
-        original_dividends = merged_df['dividend'].copy()
-
-        merged_df['dividend'] = np.where(
-            merged_df['dividend'] == 0,
-            round(merged_df['quantity'] * merged_df['value_per_share'], 2),
-            merged_df['dividend'],
-        )
-
-        new_dividends_df = merged_df[(original_dividends == 0) & (merged_df['dividend'] > 0)]
+        already_recorded = merged_df['dividend'] != 0
+        merged_df['dividend'] = round(merged_df['quantity'] * merged_df['value_per_share'], 2)
+        new_dividends_df = merged_df[~already_recorded & (merged_df['dividend'] > 0)]
 
         if new_dividends_df.empty:
             logger.info(f'Nenhum novo dividendo de FIIs encontrado para o portfolio {portfolio_id}')
@@ -380,7 +395,32 @@ class PortfolioConsolidatorService:
                     'amount': row['dividend'],
                 },
             )
-        logger.info(f'Dividendos de {row["ticker"]} na data {row["date"]} consolidados com sucesso')
+            logger.info('Provento de %s em %s consolidado', row['ticker'], row['date'].date())
+
+    @staticmethod
+    def _income_payments_df(dividends_by_ticker: dict[str, list]) -> pd.DataFrame:
+        """The income payments, as a frame keyed the way positions are.
+
+        Amortizations are dropped here rather than downstream: past this point
+        a payment is just an amount, and nothing would tell them apart again.
+        """
+        rows = [
+            {
+                'ticker': ticker,
+                'date': pd.Timestamp(dividend.payment_date),
+                'value_per_share': dividend.value_per_share,
+            }
+            for ticker, dividends in dividends_by_ticker.items()
+            for dividend in dividends
+            if dividend.is_income
+        ]
+        if not rows:
+            return pd.DataFrame(columns=['ticker', 'date', 'value_per_share'])
+        # Um fundo que pagou duas vezes no mesmo dia soma: são dois eventos, e
+        # a posição daquele dia recebeu os dois.
+        return (
+            pd.DataFrame(rows).groupby(['ticker', 'date'], as_index=False)['value_per_share'].sum()
+        )
 
     async def aclose(self) -> None:
         await self.provider.close()

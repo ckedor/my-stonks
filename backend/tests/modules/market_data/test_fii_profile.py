@@ -296,3 +296,31 @@ async def test_profile_read_reports_an_unknown_asset():
 
     with pytest.raises(NotFoundError):
         await service.get_profile(asset_id=ASSET_ID)
+
+
+@pytest.mark.asyncio
+async def test_portfolio_dividends_read_the_same_route_as_the_market_page():
+    """Uma rota e um mapeamento para os dois lados.
+
+    A consolidação da carteira lia outro provedor, que não publicava o rótulo
+    do evento; ler daqui é o que faz um provento ser o mesmo fato na tela do
+    fundo e na carteira.
+    """
+    provider = _provider(_indicators_response(), _dividends_response())
+
+    # Caixa e repetição não viram requisições a mais: o ticker é normalizado
+    # uma vez, aqui, e não em cada chamador.
+    dividends = await provider.fetch_fii_dividends(['mxrf11', 'MXRF11', ''])
+
+    provider.brapi_client.get_fii_dividends.assert_awaited_once_with(
+        symbols=TICKER, sortOrder='asc'
+    )
+    assert [payment.value_per_share for payment in dividends[TICKER]] == [0.09, LAST_RATE]
+
+
+@pytest.mark.asyncio
+async def test_a_fund_whose_dividends_fail_does_not_fail_the_others():
+    provider = _provider(_indicators_response(), _dividends_response())
+    provider.brapi_client.get_fii_dividends = AsyncMock(side_effect=RuntimeError('502'))
+
+    assert await provider.fetch_fii_dividends([TICKER]) == {TICKER: []}

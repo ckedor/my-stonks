@@ -1,6 +1,7 @@
 # app/modules/market_data/service/market_data_provider.py
 import asyncio
 import math
+from collections.abc import Sequence
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
@@ -69,6 +70,11 @@ FII_INDICATOR_KEYS: dict[str, str] = {
     'total_assets': 'totalAssets',
     'shares_outstanding': 'sharesOutstanding',
 }
+
+
+#: Quantos fundos são consultados ao mesmo tempo. O mesmo teto que a
+#: ingestão de cotações usa: a cota do provedor é por minuto, não por rota.
+MAX_CONCURRENT_FII_REQUESTS = 5
 
 
 class MarketDataProvider:
@@ -242,20 +248,39 @@ class MarketDataProvider:
         )
         return fiis_df
 
-    async def get_fii_dividends_df(self, tickers: list, max: bool = True):
-        """Busca dividendos de FIIs em paralelo."""
+    async def fetch_fii_dividends(self, tickers: Sequence[str]) -> dict[str, list[FIIDividend]]:
+        """The payments each fund made, from `GET /v2/fii/dividends`.
 
-        async def fetch_provents(ticker):
-            try:
-                return await self.status_invest_client.get_provents_df(ticker, max=max)
-            except Exception:
-                raise
+        Same route and same mapping the market page reads, so a payment is the
+        same fact on both sides -- amount per share as published, and the
+        provider's own label, which is the only thing separating income from an
+        amortization of capital.
 
-        tasks = [fetch_provents(ticker) for ticker in tickers]
-        results = await asyncio.gather(*tasks)
+        One request per fund rather than one batched call: the route is asked
+        for a single symbol everywhere else here, and a fund the provider has
+        never recorded a payment for answers empty rather than failing the
+        others.
+        """
+        symbols = list(dict.fromkeys(ticker.strip().upper() for ticker in tickers if ticker))
+        if not symbols:
+            return {}
 
-        provents_df = pd.concat(results, ignore_index=True) if results else pd.DataFrame()
-        return provents_df
+        semaphore = asyncio.Semaphore(MAX_CONCURRENT_FII_REQUESTS)
+
+        async def fetch(symbol: str) -> tuple[str, list[FIIDividend]]:
+            async with semaphore:
+                try:
+                    # Ascending, so a caller reading the last payment does not
+                    # have to sort first.
+                    response = await self.brapi_client.get_fii_dividends(
+                        symbols=symbol, sortOrder='asc'
+                    )
+                except Exception as exc:
+                    logger.warning('Could not read the dividends of %s: %s', symbol, exc)
+                    return symbol, []
+                return symbol, self._fii_dividends(response, symbol)
+
+        return dict(await asyncio.gather(*(fetch(symbol) for symbol in symbols)))
 
     async def fetch_quotes(
         self,
