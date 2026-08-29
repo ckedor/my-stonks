@@ -21,7 +21,9 @@ from app.modules.portfolio.service.portfolio_returns_consolidator_service import
 from app.modules.users.views import current_superuser
 
 #: Dispatched by name, so the router does not import the task. See the note in
-#: the transaction router.
+#: the transaction router. These endpoints invalidate only the patrimony series,
+#: which is derived from the positions they just awaited; the return series are
+#: dropped by the consolidator that writes them, once it has committed.
 CONSOLIDATE_PORTFOLIO_RETURNS_TASK = 'consolidate_portfolio_returns'
 
 router = APIRouter(
@@ -49,7 +51,7 @@ async def consolidate_portfolio(
 ):
     asset_ids = await service.get_asset_ids_to_consolidate(portfolio_id)
     await _recalculate_assets_in_parallel(portfolio_id, asset_ids)
-    await position_service.invalidate_cached_analytics(portfolio_id)
+    await position_service.invalidate_patrimony_evolution(portfolio_id)
     run_task_by_name(CONSOLIDATE_PORTFOLIO_RETURNS_TASK, portfolio_id)
     return {'message': 'OK'}
 
@@ -62,7 +64,7 @@ async def consolidate_portfolio_asset(
     position_service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
     await service.recalculate_position_asset(portfolio_id, asset_id)
-    await position_service.invalidate_cached_analytics(portfolio_id)
+    await position_service.invalidate_patrimony_evolution(portfolio_id)
     run_task_by_name(CONSOLIDATE_PORTFOLIO_RETURNS_TASK, portfolio_id)
     return {'message': 'OK'}
 
@@ -75,7 +77,7 @@ async def recalculate_all_positions(
 ):
     asset_ids = await service.get_asset_ids_with_transactions(portfolio_id)
     await _recalculate_assets_in_parallel(portfolio_id, asset_ids)
-    await position_service.invalidate_cached_analytics(portfolio_id)
+    await position_service.invalidate_patrimony_evolution(portfolio_id)
     run_task_by_name(CONSOLIDATE_PORTFOLIO_RETURNS_TASK, portfolio_id)
     return {'message': 'OK'}
 

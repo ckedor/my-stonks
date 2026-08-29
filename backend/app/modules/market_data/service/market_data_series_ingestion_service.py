@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from app.config.logger import logger
 from app.core.exceptions import NotFoundError
 from app.infra.db.unit_of_work import UnitOfWork
+from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.domain.constants import SERIES
 from app.modules.market_data.domain.ingestion import DataIngestionType
@@ -16,6 +17,7 @@ from app.modules.market_data.repositories.market_data_repository import (
     SERIES_HISTORY_UPSERT_COLUMNS,
 )
 from app.modules.market_data.service.data_ingestion_service import DataIngestionService
+from app.modules.market_data.service.market_data_service import SERIES_HISTORY_CACHE_PREFIX
 
 SERIES_HISTORY_OVERLAP_DAYS = 7
 IFIX_REPAIR_LOOKBACK_DAYS = 550
@@ -29,10 +31,23 @@ class MarketDataSeriesIngestionService:
         uow_factory: Callable[[], UnitOfWork],
         ingestion_service: DataIngestionService,
         provider: MarketDataProvider,
+        cache: RedisService,
     ):
         self.uow_factory = uow_factory
         self.ingestion_service = ingestion_service
         self.provider = provider
+        self.cache = cache
+
+    async def _invalidate_series_cache(self) -> None:
+        """Drop the charted index history, after the observations have landed.
+
+        This service writes the very table that read is built from, so it is the
+        one that has to drop it. Until now only the USD/BRL ingestion did --
+        which is why a fresh CDI point could sit up to a TTL outside the chart
+        unless the exchange rate happened to be ingested too. Nothing repopulates
+        the cache: the next read misses and fills.
+        """
+        await self.cache.delete_prefix(f'{SERIES_HISTORY_CACHE_PREFIX}:')
 
     async def run(
         self,
@@ -80,6 +95,7 @@ class MarketDataSeriesIngestionService:
                 )
                 for item_id in item_ids
             ])
+            await self._invalidate_series_cache()
             await self.ingestion_service.finish(current_execution_id)
             return current_execution_id
         except Exception as exc:

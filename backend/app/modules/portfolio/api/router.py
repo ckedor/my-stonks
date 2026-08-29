@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.composition.portfolio import get_portfolio_service
+from app.composition.portfolio import get_portfolio_position_service, get_portfolio_service
 from app.modules.portfolio.api.portfolio.schemas import (
     CreatePortfolioRequest,
     Portfolio,
@@ -8,6 +8,9 @@ from app.modules.portfolio.api.portfolio.schemas import (
     UpdatePortfolioRequest,
 )
 from app.modules.portfolio.service.portfolio_base_service import PortfolioBaseService
+from app.modules.portfolio.service.portfolio_position_service import (
+    PortfolioPositionService,
+)
 from app.modules.users.domain import User
 from app.modules.users.views import current_active_user, current_superuser
 
@@ -76,8 +79,12 @@ async def update_portfolio(
 async def delete_portfolio(
     portfolio_id: int,
     service: PortfolioBaseService = Depends(get_portfolio_service),
+    position_service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
     await service.delete_portfolio(portfolio_id)
+    # Deleção é o único caminho de escrita sem consolidação depois, então é aqui
+    # que as séries derivadas saem do cache -- ninguém mais vai derrubá-las.
+    await position_service.discard_portfolio_cache(portfolio_id)
     return {'message': 'Portfolio deleted successfully.'}
 
 

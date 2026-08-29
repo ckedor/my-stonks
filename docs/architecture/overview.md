@@ -194,7 +194,34 @@ Every read of the rate goes through that reader, including the portfolio flows
 that convert transactions, dividends and positions. USD/BRL ingestion drops the
 cache after its write commits, along with the index history, which embeds the
 rate both as a charted series and as the factor converting USD-denominated
-indexes into BRL. Nothing repopulates either: the next read misses and fills.
+indexes into BRL. Series ingestion drops that same index history, since it writes
+the observations the read is built from. Nothing repopulates either: the next
+read misses and fills.
+
+### Who invalidates a cached read
+
+The service that commits the write drops the reads that write makes stale, at the
+end of its own transaction. Not the caller, because a caller that dispatched a
+background task has not waited for anything: it empties the cache while the old
+rows are still the ones in the table, the next reader refills it with them, and
+the stale answer survives a whole TTL. So the returns consolidator drops the
+asset-type and segment series it just wrote, and quote and series ingestion drop
+what they wrote.
+
+What a caller may invalidate is what it awaited. A route or task that recalculated
+positions and got the commit back drops the patrimony series derived from them.
+Deleting a portfolio is the one write with no consolidation behind it, and
+therefore the one place that drops every read of a portfolio from outside.
+
+Invalidation matches a prefix of the cached key, and that key is built from the
+call's arguments in signature order after defaults are applied — not from how the
+caller wrote the call. Keying on the call shape made `f(1)` and `f(portfolio_id=1)`
+two different entries, only one of them under the prefix that deletes them, with
+nothing raising when the other escaped. `tests/infra/test_cache_key_invalidation.py`
+holds the two sides together.
+
+A cache is optional infrastructure. A read whose cache is unreachable is slow,
+never failed, and a `None` answer is not stored, since it reads back as a miss.
 
 ## Visual architecture map
 

@@ -18,7 +18,10 @@ def build_service():
     )
     portfolios = SimpleNamespace(count_asset_references=AsyncMock(return_value={}))
     uow = FakeUnitOfWork(repository=repository, assets=repository, portfolios=portfolios)
-    service = AssetService(uow=uow, cache=SimpleNamespace(delete=AsyncMock()))
+    service = AssetService(
+        uow=uow,
+        cache=SimpleNamespace(delete=AsyncMock(), delete_prefix=AsyncMock()),
+    )
     return service, uow
 
 
@@ -44,8 +47,9 @@ async def test_update_asset_invalidates_old_and_new_ticker_cache_keys():
         'exchange_id': None,
     })
 
+    # Por prefixo: a chave literal do decorator não é contrato desta função.
+    service.cache.delete_prefix.assert_any_await('assets_list:')
     deleted_keys = {call.args[0] for call in service.cache.delete.await_args_list}
-    assert 'assets_list::' in deleted_keys
     assert 'market_data:asset:id:33' in deleted_keys
     assert 'market_data:asset:ticker:4:CPLE6' in deleted_keys
     assert 'market_data:asset:ticker:4:CPLE3' in deleted_keys

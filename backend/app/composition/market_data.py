@@ -171,6 +171,7 @@ async def series_ingestion_runner_context() -> AsyncIterator[MarketDataSeriesIng
         uow_factory=UnitOfWork,
         ingestion_service=build_data_ingestion_service(),
         provider=MarketDataProvider(),
+        cache=RedisService(),
     )
     try:
         yield service

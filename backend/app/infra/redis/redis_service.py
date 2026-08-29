@@ -1,13 +1,33 @@
 import json
+from functools import lru_cache
 
 from redis.asyncio import Redis
 
 from app.config.settings import settings
 
+#: Characters Redis reads as pattern syntax in a ``SCAN MATCH`` glob. A key
+#: carrying one of them would turn a prefix into a pattern, so ``delete_prefix``
+#: escapes them before matching.
+_GLOB_METACHARACTERS = frozenset('\\*?[]')
+
+
+@lru_cache(maxsize=1)
+def _shared_client() -> Redis:
+    """One connection pool for the process.
+
+    ``RedisService`` is constructed per request and per task, and a client per
+    instance is a pool per instance that nothing ever closes.
+    """
+    return Redis.from_url(settings.REDIS_URL, decode_responses=True)
+
+
+def _escape_glob(value: str) -> str:
+    return ''.join(f'\\{char}' if char in _GLOB_METACHARACTERS else char for char in value)
+
 
 class RedisService:
     def __init__(self):
-        self.client: Redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
+        self.client: Redis = _shared_client()
         self.prefix = 'cache'
 
     def _format_key(self, key: str) -> str:
@@ -34,9 +54,10 @@ class RedisService:
 
         Cached read keys carry the call arguments as a suffix, so invalidating
         one derived value means removing a whole family of keys. Uses ``scan``
-        rather than ``keys`` to avoid blocking Redis on large keyspaces.
+        rather than ``keys`` to avoid blocking Redis on large keyspaces, and
+        escapes the prefix so only the trailing ``*`` is pattern syntax.
         """
-        pattern = f'{self._format_key(key_prefix)}*'
+        pattern = f'{_escape_glob(self._format_key(key_prefix))}*'
         deleted = 0
         async for batch in self._scan_batches(pattern):
             deleted += await self.client.delete(*batch)

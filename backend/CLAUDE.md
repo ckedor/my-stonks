@@ -81,6 +81,20 @@ Provider calls use adapters/integrations behind the service layer.
 - Instantiate services in a named `service` variable before calling
   their methods. Do not instantiate and invoke a service in the same expression.
 
+## Cached reads and their invalidation
+
+- The service that commits a write drops the cached reads that write makes
+  stale, at the end of its own transaction. A caller that only dispatched a
+  task has not waited for the write, so invalidating from there empties the
+  cache before the new rows exist and the next read refills it with the old
+  ones.
+- A caller may drop what it awaited. Deleting an entity is the exception: there
+  is no consolidation behind it, so the caller drops everything for it.
+- Never write a decorator-produced cache key by hand. Invalidate by prefix,
+  from the same constant the `@cached` call uses.
+- Treat the cache as optional: an unreachable Redis makes a read slow, not
+  failed.
+
 ## Market data
 
 - Asset quotes and their scalar prices are central domain data. Brapi and other external sources are

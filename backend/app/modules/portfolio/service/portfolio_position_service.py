@@ -43,12 +43,26 @@ class PortfolioPositionService:
         self.market_data_service = market_data_service
         self.cache = cache or RedisService()
 
-    async def invalidate_cached_analytics(self, portfolio_id: int) -> None:
-        """Drop the derived reads a portfolio's positions feed.
+    async def invalidate_patrimony_evolution(self, portfolio_id: int) -> None:
+        """Drop the patrimony series a position write makes stale.
 
-        Called by the write paths that recalculate positions. Nothing repopulates
-        the cache here: the next read misses and fills it with fresh data. The
+        Called by whoever awaited that write, once it has committed. Nothing
+        repopulates the cache here: the next read misses and fills it. The
         trailing separator keeps portfolio 1 from matching portfolio 10.
+
+        The return series are deliberately not dropped here. They are written by
+        the returns consolidator, which drops its own: invalidating them from a
+        caller that has only dispatched that task empties the cache before the
+        write lands, and the next read refills it with the old numbers for a
+        whole TTL.
+        """
+        await self.cache.delete_prefix(f'{PATRIMONY_EVOLUTION_CACHE_PREFIX}:{portfolio_id}:')
+
+    async def discard_portfolio_cache(self, portfolio_id: int) -> None:
+        """Drop every cached read of a portfolio that no longer exists.
+
+        Deletion is the one case with no write to follow, so it is also the one
+        case that drops the return series from outside the consolidator.
         """
         await self.cache.delete_prefix(f'{PATRIMONY_EVOLUTION_CACHE_PREFIX}:{portfolio_id}:')
         await self.cache.delete_prefix(f'{ASSET_TYPE_RETURNS_CACHE_PREFIX}:{portfolio_id}:')

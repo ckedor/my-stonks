@@ -12,6 +12,7 @@ from app.modules.market_data.service.market_data_series_ingestion_service import
     MarketDataSeriesIngestionService,
 )
 from app.modules.users.domain import User  # noqa: F401
+from tests.fakes import FakeCache
 
 EXPECTED_SERIES_COUNT = 2
 
@@ -85,6 +86,7 @@ async def test_series_service_selects_all_available_ids_and_runs_in_parallel():
         uow_factory=FakeUoWFactory(repository),
         ingestion_service=tracker,
         provider=provider,
+        cache=FakeCache(),
     )
 
     await service.run(execution_id=8)
@@ -136,6 +138,7 @@ async def test_full_series_ingestion_requests_maximum_history():
         uow_factory=FakeUoWFactory(repository),
         ingestion_service=tracker,
         provider=provider,
+        cache=FakeCache(),
     )
 
     await service.run(execution_id=9)
@@ -176,6 +179,7 @@ async def test_series_with_no_new_observations_finishes_successfully_without_ups
         uow_factory=FakeUoWFactory(repository),
         ingestion_service=tracker,
         provider=provider,
+        cache=FakeCache(),
     )
 
     await service.run(execution_id=10)
@@ -229,6 +233,7 @@ async def test_ifix_incremental_ingestion_keeps_a_repair_window():
         uow_factory=FakeUoWFactory(repository),
         ingestion_service=tracker,
         provider=provider,
+        cache=FakeCache(),
     )
 
     await service.run(execution_id=11)

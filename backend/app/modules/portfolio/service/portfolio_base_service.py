@@ -5,7 +5,6 @@ Portfolio base service - handles portfolio CRUD operations.
 
 from app.core.exceptions import BusinessRuleError, NotFoundError
 from app.infra.db.unit_of_work import UnitOfWork
-from app.infra.redis.redis_service import RedisService
 from app.modules.portfolio.domain.category import NewCategory
 from app.modules.portfolio.domain.entities import (
     CustomCategory,
@@ -18,13 +17,8 @@ from app.modules.portfolio.domain.entities import (
 
 
 class PortfolioBaseService:
-    def __init__(
-        self,
-        uow: UnitOfWork,
-        cache: RedisService | None = None,
-    ):
+    def __init__(self, uow: UnitOfWork):
         self.uow = uow
-        self.cache = cache or RedisService()
 
     async def create_portfolio(self, user_id: int, *, name: str, categories: list[NewCategory]):
         async with self.uow as uow:

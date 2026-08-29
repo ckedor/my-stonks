@@ -7,6 +7,7 @@ import pandas as pd
 
 from app.config.logger import logger
 from app.infra.db.unit_of_work import UnitOfWork
+from app.infra.redis.redis_service import RedisService
 from app.lib.finance.performance_metrics import cagr
 from app.lib.utils.df import rows_to_df
 from app.modules.portfolio.domain.entities import (
@@ -17,11 +18,29 @@ from app.modules.portfolio.domain.entities import (
 )
 from app.modules.portfolio.domain.returns import calculate_portfolio_daily_returns
 from app.modules.portfolio.repositories import PortfolioRepository
+from app.modules.portfolio.service.portfolio_position_service import (
+    ASSET_TYPE_RETURNS_CACHE_PREFIX,
+    SEGMENT_RETURNS_CACHE_PREFIX,
+)
 
 
 class PortfolioReturnsConsolidatorService:
-    def __init__(self, uow: UnitOfWork):
+    def __init__(self, uow: UnitOfWork, cache: RedisService | None = None):
         self.uow = uow
+        self.cache = cache or RedisService()
+
+    async def _invalidate_return_series(self, portfolio_id: int) -> None:
+        """Drop the cached reads of the series just written, after the commit.
+
+        This service owns the invalidation because it is the only place that
+        knows the write has landed. A caller that merely dispatched the task
+        would drop the cache while the old rows are still the ones in the
+        table, and the next read would refill it with them.
+
+        Category returns are absent on purpose: no cached read serves them.
+        """
+        await self.cache.delete_prefix(f'{ASSET_TYPE_RETURNS_CACHE_PREFIX}:{portfolio_id}:')
+        await self.cache.delete_prefix(f'{SEGMENT_RETURNS_CACHE_PREFIX}:{portfolio_id}:')
 
     async def consolidate_returns(self, portfolio_id: int):
         logger.info(f'Consolidando retornos do portfolio {portfolio_id}')
@@ -53,6 +72,7 @@ class PortfolioReturnsConsolidatorService:
                 portfolio_id,
             )
             await uow.commit()
+        await self._invalidate_return_series(portfolio_id)
         logger.info(f'Retornos consolidados com sucesso para portfolio {portfolio_id}')
 
     async def consolidate_category_returns(self, portfolio_id: int):
@@ -97,6 +117,7 @@ class PortfolioReturnsConsolidatorService:
                 portfolio_id,
             )
             await uow.commit()
+        await self._invalidate_return_series(portfolio_id)
         logger.info(f'Retornos por tipo de ativo consolidados para portfolio {portfolio_id}')
 
     async def _consolidate_portfolio_returns(

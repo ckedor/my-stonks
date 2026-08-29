@@ -41,5 +41,5 @@ async def assign_category_to_assets(
     position_service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
     await service.assign_category_to_asset(payload)
-    await position_service.invalidate_cached_analytics(payload.portfolio_id)
+    await position_service.invalidate_patrimony_evolution(payload.portfolio_id)
     return {'message': 'Category assigned to assets successfully.'}

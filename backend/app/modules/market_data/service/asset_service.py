@@ -42,6 +42,8 @@ FIXED_INCOME_TYPES = {
     ASSET_TYPE.LCA,
 }
 FUND_TYPES = {ASSET_TYPE.FI, ASSET_TYPE.PREV}
+
+ASSETS_LIST_CACHE_PREFIX = 'assets_list'
 TREASURY_TYPES = {ASSET_TYPE.TREASURY}
 
 
@@ -54,7 +56,7 @@ class AssetService:
         self.uow = uow
         self.cache = cache or RedisService()
 
-    @cached(key_prefix='assets_list', cache=lambda self: self.cache, ttl=86400)
+    @cached(key_prefix=ASSETS_LIST_CACHE_PREFIX, cache=lambda self: self.cache, ttl=86400)
     async def list_assets(self):
         async with self.uow as uow:
             assets = await uow.assets.get(Asset, order_by='ticker')
@@ -235,10 +237,15 @@ class AssetService:
         ticker: str | None,
         asset_type_id: int,
     ) -> None:
-        keys = {
-            'assets_list::',
-            f'market_data:asset:id:{asset_id}',
-        }
+        # Por prefixo, e não pela chave literal que o decorator monta: escrever
+        # 'assets_list::' aqui acopla esta função ao formato de chave do
+        # decorator, e a invalidação deixa de casar em silêncio quando ele muda.
+        try:
+            await self.cache.delete_prefix(f'{ASSETS_LIST_CACHE_PREFIX}:')
+        except Exception as exc:
+            logger.warning('Asset list cache invalidation failed: %s', exc)
+
+        keys = {f'market_data:asset:id:{asset_id}'}
         if ticker:
             keys.add(f'market_data:asset:ticker:{asset_type_id}:{ticker.strip().upper()}')
         for key in keys:

@@ -15,8 +15,11 @@ async def recalculate_position_asset(portfolio_id: int, asset_id: int):
     try:
         async with portfolio_consolidator_service_context() as service:
             await service.recalculate_position_asset(portfolio_id, asset_id)
+        # A posição já commitou, então o patrimônio derivado dela é o que ficou
+        # velho. As séries de retorno não: quem as escreve é a task despachada
+        # abaixo, e é ela que derruba o cache delas quando terminar.
         position_service = build_portfolio_position_service_for_task()
-        await position_service.invalidate_cached_analytics(portfolio_id)
+        await position_service.invalidate_patrimony_evolution(portfolio_id)
         run_task(consolidate_portfolio_returns, portfolio_id)
     except Exception as e:
         logger.error(f'❌ Erro em recalculate_position_asset: {e}', exc_info=True)

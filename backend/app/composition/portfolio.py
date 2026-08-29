@@ -77,7 +77,7 @@ def get_wealth_tier_service(
 
 
 def get_portfolio_service(uow: UnitOfWork = Depends(get_uow)) -> PortfolioBaseService:
-    return PortfolioBaseService(uow=uow, cache=RedisService())
+    return PortfolioBaseService(uow=uow)
 
 
 def get_portfolio_category_service(
@@ -136,7 +136,7 @@ def get_portfolio_quote_ingestion_service(
 def get_portfolio_returns_consolidator_service(
     uow: UnitOfWork = Depends(get_uow),
 ) -> PortfolioReturnsConsolidatorService:
-    return PortfolioReturnsConsolidatorService(uow)
+    return PortfolioReturnsConsolidatorService(uow, cache=RedisService())
 
 
 def get_portfolio_consolidator_service(
@@ -171,7 +171,7 @@ def build_portfolio_service_for_task() -> PortfolioBaseService:
     the service it needs — the same reason the ingestion runners exist on the
     market-data side.
     """
-    return PortfolioBaseService(uow=UnitOfWork(), cache=RedisService())
+    return PortfolioBaseService(uow=UnitOfWork())
 
 
 def build_portfolio_position_service_for_task() -> PortfolioPositionService:
@@ -181,4 +181,4 @@ def build_portfolio_position_service_for_task() -> PortfolioPositionService:
 
 def build_portfolio_returns_consolidator_for_task() -> PortfolioReturnsConsolidatorService:
     """Returns consolidator for a background run, owning its UnitOfWork."""
-    return PortfolioReturnsConsolidatorService(UnitOfWork())
+    return PortfolioReturnsConsolidatorService(UnitOfWork(), cache=RedisService())
