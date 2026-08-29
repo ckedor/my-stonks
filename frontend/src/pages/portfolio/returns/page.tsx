@@ -1,3 +1,4 @@
+import { WHOLE_PORTFOLIO_CURVE, useReturnCurves } from '@/queries/portfolio'
 // src/pages/PortfolioReturnsPage.tsx
 import PortfolioReturnsChart from '@/components/PortfolioReturnsChart'
 import {
@@ -9,8 +10,7 @@ import {
   AppPageHeaderSkeleton,
   AppStack,
 } from '@/components/ui'
-import { useReturnsStore } from '@/stores/portfolio/returns'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import PortfolioMonthlyHeatmap from '@/components/PortfolioMonthlyHeatmap'
 import PortfolioMonthlyReturnsChart from '@/components/PortfolioMonthlyReturnsChart'
 import PortfolioRolling12mChart from '@/components/PortfolioRolling12mChart'
@@ -21,22 +21,13 @@ interface SeriesPoint {
 }
 
 export default function PortfolioReturnsPage() {
-  const { categoryReturns, loading: returnsLoading } = useReturnsStore()
-
-  const loading = returnsLoading && Object.keys(categoryReturns).length === 0
+  const { series: categoryReturns, isPending: loading } = useReturnCurves()
 
   const [range, setRange] = useState<string>('max')
 
-  useEffect(() => {
-    if (!useReturnsStore.persist.hasHydrated()) {
-      const id = setTimeout(() => useReturnsStore.persist.rehydrate(), 0)
-      return () => clearTimeout(id)
-    }
-  }, [])
-
   // Busca os dados do portfolio
   const portfolioData: SeriesPoint[] = useMemo(() => {
-    return (categoryReturns['portfolio'] || []).slice()
+    return (categoryReturns[WHOLE_PORTFOLIO_CURVE] ?? []).slice()
   }, [categoryReturns])
 
   if (loading) {

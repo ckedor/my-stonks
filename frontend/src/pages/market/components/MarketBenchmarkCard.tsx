@@ -1,4 +1,3 @@
-import { syncBenchmarks } from '@/actions/portfolio'
 import { fetchAssetQuoteHistory } from '@/api/market'
 import PortfolioReturnsChart, {
   type ReturnsChartExternalSeries,
@@ -60,8 +59,8 @@ export default memo(function MarketBenchmarkCard({
           }])
       : Promise.resolve([])
 
-    void Promise.all([syncBenchmarks(true), externalRequest])
-      .then(([, series]) => {
+    void externalRequest
+      .then((series) => {
         if (!active) return
         setExternalSeries(series)
         setReady(true)

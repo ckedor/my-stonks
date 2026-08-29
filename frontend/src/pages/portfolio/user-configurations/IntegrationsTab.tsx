@@ -1,3 +1,4 @@
+import { useSelectedPortfolio } from '@/queries/portfolio'
 import {
   AppSkeleton,
   AppSnackbar,
@@ -8,7 +9,6 @@ import {
 } from '@/components/ui'
 import { USER_CONFIGURATION_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
-import { usePortfolioStore } from '@/stores/portfolio'
 import { useEffect, useState } from 'react'
 
 /* `name` e `enabled` são o que toda configuração tem; o resto só existe depois
@@ -40,7 +40,7 @@ const CONFIG_LABELS: Record<string, { title: string; description: string }> = {
 }
 
 export default function IntegrationsTab() {
-  const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
+  const selectedPortfolio = useSelectedPortfolio()
 
   const [configurations, setConfigurations] = useState<UserConfiguration[]>([])
   const [loading, setLoading] = useState(true)

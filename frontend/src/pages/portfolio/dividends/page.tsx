@@ -1,5 +1,6 @@
+import { EMPTY_LIST } from '@/queries/empty'
+import { useDividends, useRefreshPortfolio, useSelectedPortfolio } from '@/queries/portfolio'
 
-import { syncDividends } from '@/actions/portfolio'
 import DividendForm from '@/components/DividendForm'
 import DividendsCategoryChart from '@/components/DividendsCategoryChart'
 import {
@@ -22,8 +23,6 @@ import {
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
 import { getLast12MonthDividendStats } from '@/lib/utils/dividends'
-import { usePortfolioStore } from '@/stores/portfolio'
-import { useDividendsStore } from '@/stores/portfolio/dividends'
 import type { Dividend } from '@/types'
 import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
@@ -32,11 +31,12 @@ import { useMemo, useState } from 'react'
 const TABLE_MAX_HEIGHT = 500
 
 export default function PortfolioDividendsPage() {
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const refreshPortfolio = useRefreshPortfolio()
+  const selectedPortfolio = useSelectedPortfolio()
   const userCategories = selectedPortfolio?.custom_categories ?? []
 
-  const dividends = useDividendsStore(s => s.dividends)
-  const dividendsLoading = useDividendsStore(s => s.loading) && dividends.length === 0
+  const dividends = useDividends().data ?? EMPTY_LIST
+  const dividendsLoading = useDividends().isPending
   const { format: formatCurrency } = useCurrency()
   const theme = useAppTheme()
 
@@ -297,7 +297,7 @@ export default function PortfolioDividendsPage() {
         onClose={() => setFormOpen(false)}
         onSave={() => {
           setFormOpen(false)
-          if (selectedPortfolio) syncDividends(selectedPortfolio.id, true)
+          void refreshPortfolio()
         }}
         dividend={selectedDividend ?? undefined}
       />

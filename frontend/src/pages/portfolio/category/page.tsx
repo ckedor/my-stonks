@@ -1,17 +1,13 @@
+import { EMPTY_LIST } from '@/queries/empty'
+import { useQuery } from '@tanstack/react-query'
+import { useDividends, usePatrimony, usePositions, useReturnCurves, useSelectedPortfolio, useTrades } from '@/queries/portfolio'
 import { fetchCategoryAnalysis } from '@/api/portfolio'
 import PortfolioSliceScreen from '@/components/portfolio-slice/PortfolioSliceScreen'
 import PortfolioSliceScreenSkeleton from '@/components/portfolio-slice/PortfolioSliceScreenSkeleton'
 import { CONCENTRATION_DIMENSIONS } from '@/components/portfolio-slice/concentration'
 import type { SliceTabId } from '@/components/portfolio-slice/tabs'
 import { AppSelect, AppText } from '@/components/ui'
-import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
-import { usePortfolioStore } from '@/stores/portfolio'
-import { useDividendsStore } from '@/stores/portfolio/dividends'
-import { usePatrimonyStore } from '@/stores/portfolio/patrimony'
-import { usePositionsStore } from '@/stores/portfolio/positions'
-import { useReturnsStore } from '@/stores/portfolio/returns'
-import { useTradesStore } from '@/stores/portfolio/trades'
 import type { AssetAnalysis } from '@/types'
 import { useCallback, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
@@ -43,7 +39,7 @@ export default function PortfolioCategoryPage() {
   const navigate = useNavigate()
   const categoryId = Number(id)
 
-  const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
+  const selectedPortfolio = useSelectedPortfolio()
   const portfolioId = selectedPortfolio?.id
   const categories = useMemo(
     () => selectedPortfolio?.custom_categories ?? [],
@@ -53,13 +49,13 @@ export default function PortfolioCategoryPage() {
 
   const { currency } = useCurrency()
 
-  const positions = usePositionsStore((s) => s.positions)
-  const positionsLoading = usePositionsStore((s) => s.loading) && positions.length === 0
-  const categoryReturns = useReturnsStore((s) => s.categoryReturns)
-  const categoryCagr = useReturnsStore((s) => s.categoryCagr)
-  const patrimony = usePatrimonyStore((s) => s.patrimony)
-  const dividends = useDividendsStore((s) => s.dividends)
-  const trades = useTradesStore((s) => s.trades)
+  const positions = usePositions().data ?? EMPTY_LIST
+  const positionsLoading = usePositions().isPending
+  const categoryReturns = useReturnCurves().series
+  const categoryCagr = useReturnCurves().cagr
+  const patrimony = usePatrimony().data ?? EMPTY_LIST
+  const dividends = useDividends().data ?? EMPTY_LIST
+  const trades = useTrades().data ?? EMPTY_LIST
 
   const [tab, setTab] = useState<SliceTabId>('rentabilidade')
 
@@ -73,14 +69,14 @@ export default function PortfolioCategoryPage() {
     [positions, name],
   )
 
-  const { data: analysis, loading: analysisLoading } = useCachedData<AssetAnalysis>(
-    portfolioId && category ? `category-analysis:${portfolioId}:${category.id}:${currency}` : null,
-    useCallback(
+  const { data: analysis, isPending: analysisLoading } = useQuery<AssetAnalysis>({
+    queryKey: [portfolioId && category ? `category-analysis:${portfolioId}:${category.id}:${currency}` : null],
+    queryFn: useCallback(
       () => fetchCategoryAnalysis(portfolioId!, categoryId, currency),
       [portfolioId, categoryId, currency],
     ),
-    { enabled: !!portfolioId && !!category && tab === 'risco' },
-  )
+    enabled: (portfolioId && category ? `category-analysis:${portfolioId}:${category.id}:${currency}` : null) != null && !!portfolioId && !!category && tab === 'risco',
+  })
 
   if (positionsLoading) return <PortfolioSliceScreenSkeleton titleWidth={200} actions={1} />
 

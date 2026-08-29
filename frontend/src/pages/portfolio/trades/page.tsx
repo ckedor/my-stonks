@@ -1,4 +1,5 @@
-import { syncTrades } from '@/actions/portfolio'
+import { EMPTY_LIST } from '@/queries/empty'
+import { useRefreshPortfolio, useTrades } from '@/queries/portfolio'
 import TradeForm from '@/components/TradeForm'
 import TradesTable from '@/components/portfolio-trades/TradesTable'
 import {
@@ -11,8 +12,6 @@ import {
   AppStack,
   AppTableSkeleton,
 } from '@/components/ui'
-import { usePortfolioStore } from '@/stores/portfolio'
-import { useTradesStore } from '@/stores/portfolio/trades'
 import type { Trade } from '@/types'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
@@ -26,10 +25,10 @@ const TYPE_OPTIONS = [
 ]
 
 export default function PortfolioTransactionsPage() {
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const refreshPortfolio = useRefreshPortfolio()
 
-  const trades = useTradesStore(s => s.trades)
-  const loading = useTradesStore(s => s.loading) && trades.length === 0
+  const trades = useTrades().data ?? EMPTY_LIST
+  const loading = useTrades().isPending
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedTrade, setSelectedTrade] = useState<Trade | undefined>()
@@ -127,7 +126,7 @@ export default function PortfolioTransactionsPage() {
       <TradeForm
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        onSave={() => { if (selectedPortfolio) syncTrades(selectedPortfolio.id, true) }}
+        onSave={() => void refreshPortfolio()}
         trade={selectedTrade}
         assetId={selectedAssetId}
       />

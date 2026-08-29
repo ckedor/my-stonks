@@ -1,4 +1,5 @@
-import { syncPositions } from '@/actions/portfolio'
+import { EMPTY_LIST } from '@/queries/empty'
+import { usePositions, useSelectedPortfolio } from '@/queries/portfolio'
 import { formatSpan } from '@/components/charts/candle/helpers'
 import {
   AppButton,
@@ -13,12 +14,10 @@ import {
 } from '@/components/ui'
 import { useAssetReturnWindow } from '@/hooks/useAssetReturnWindow'
 import { useCurrency } from '@/hooks/useCurrency'
-import { usePortfolioStore } from '@/stores/portfolio'
-import { usePositionsStore } from '@/stores/portfolio/positions'
 import { useTradeFormStore } from '@/stores/trade-form'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 
 interface Props {
   assetId: number
@@ -41,21 +40,17 @@ const SPARKLINE_HEIGHT = 28
  *  o ticker no título, que aqui seria repetir o cabeçalho da página. Quem não
  *  tem o ativo recebe a outra resposta possível: o botão de comprar. */
 export default function AssetPositionCard({ assetId, ticker, name, assetTypeId }: Props) {
-  const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
-  const positions = usePositionsStore((s) => s.positions)
+  const selectedPortfolio = useSelectedPortfolio()
+  const positions = usePositions().data ?? EMPTY_LIST
   const theme = useAppTheme()
-  const { currency, format: formatCurrency } = useCurrency()
+  const { format: formatCurrency } = useCurrency()
   const { openTradeForm } = useTradeFormStore()
 
-  // As posições são carregadas pelas páginas da carteira; quem entra direto na
-  // de mercado também precisa delas. A ação é cacheada, então não custa uma
-  // requisição a mais — e é cacheada *por moeda*, daí a dependência: sem ela o
-  // card seguiria exibindo os valores da moeda anterior.
   const portfolioId = selectedPortfolio?.id
-  useEffect(() => {
-    if (portfolioId) syncPositions(portfolioId)
-  }, [portfolioId, currency])
 
+  // Quem entra direto na página de mercado também precisa das posições: a
+  // query busca sozinha, e a moeda faz parte da chave, então trocar o seletor
+  // já lê outra entrada em vez de precisar de um efeito que force a releitura.
   const position = useMemo(
     () => positions.find((p) => p.asset_id === assetId),
     [positions, assetId],

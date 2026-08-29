@@ -1,4 +1,7 @@
-import { syncBenchmarks } from '@/actions/portfolio'
+import { EMPTY_LIST, EMPTY_MAP } from '@/queries/empty'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useAssetReturnsStore } from '@/stores/portfolio/asset-returns'
+import { useBenchmarks, usePositions } from '@/queries/portfolio'
 import { fetchAssetAnalysis, fetchAssetDetails, fetchAssetReturns, recalculateAssetPosition } from '@/api/portfolio'
 import AssetDetailPanelSkeleton from '@/components/AssetDetailPanelSkeleton'
 import DividendForm from '@/components/DividendForm'
@@ -12,13 +15,9 @@ import PortfolioAssetPatrimonyChart from '@/components/portfolio-asset/Portfolio
 import type { PositionHistoryEntry, TradeEntry } from '@/components/portfolio-asset/helpers'
 import Trades from '@/components/Trades'
 import { DIVIDEND_ROUTES, POSITION_ROUTES, TRANSACTION_ROUTES } from '@/constants/routes'
-import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
 import { formatFixedIncomeDescription, formatFixedIncomeFee } from '@/lib/utils/fixedIncome'
-import { useDataCacheStore } from '@/stores/data-cache'
-import { usePositionsStore } from '@/stores/portfolio/positions'
-import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useTradeFormStore } from '@/stores/trade-form'
 import { Asset, AssetAnalysis, Dividend, ReturnsEntry } from '@/types'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
@@ -37,7 +36,7 @@ import {
     AppTooltip,
     LoadingSpinner,
 } from '@/components/ui'
-import { type ReactNode, useCallback, useEffect, useState } from 'react'
+import { type ReactNode, useCallback, useState } from 'react'
 
 /** Tudo o que a página carrega de uma vez, sob uma chave de cache só, para o
  *  recálculo poder trocar o conjunto inteiro de forma atômica. */
@@ -105,9 +104,12 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
   const [dividendFormOpen, setDividendFormOpen] = useState(false)
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' })
   const { openTradeForm } = useTradeFormStore()
+  const queryClient = useQueryClient()
   const { currency, format: formatCurrency, symbol: currencySymbol } = useCurrency()
-  const positions = usePositionsStore((s) => s.positions)
-  const benchmarks = useReturnsStore((s) => s.benchmarks)
+  const positions = usePositions().data ?? EMPTY_LIST
+  /* Quem cai direto na página de um ativo também precisa deles: a query é
+     a mesma das telas da carteira, então não custa uma requisição extra. */
+  const benchmarks = useBenchmarks().data ?? EMPTY_MAP
   const formatRoundedCurrency = (value: number) =>
     formatCurrency(Math.round(value)).replace(/,\d{2}$/, '')
 
@@ -135,7 +137,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
     // fonte de `assetReturns` no store, então a injeção continua mesmo agora
     // que a página do ativo não usa mais aquele gráfico.
     if (Object.keys(assetReturnsMap).length > 0) {
-      useReturnsStore.getState().addAssetReturns(assetReturnsMap)
+      useAssetReturnsStore.getState().addAssetReturns(assetReturnsMap)
     }
 
     return {
@@ -149,21 +151,16 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
     }
   }, [portfolioId, assetId, currency])
 
-  const { data: assetBundle } = useCachedData<AssetBundle>(cacheKey, loadBundle, { enabled: true })
-
-  // Os benchmarks vivem em um store próprio, alimentado pelas páginas da
-  // carteira. Quem cai direto na página de um ativo também precisa deles, e a
-  // ação é cacheada, então chamar aqui não custa uma requisição extra.
-  useEffect(() => {
-    syncBenchmarks()
-  }, [currency])
+  const { data: assetBundle } = useQuery<AssetBundle>({
+    queryKey: [cacheKey],
+    queryFn: loadBundle,
+  })
 
   const handleRecalculate = async () => {
     setRecalculating(true)
     try {
       await recalculateAssetPosition(portfolioId, assetId)
-      const fresh = await loadBundle()
-      useDataCacheStore.getState().setData(cacheKey, fresh)
+      await queryClient.invalidateQueries({ queryKey: [cacheKey] })
       setRecalculating(false)
       setSnackbar({ open: true, message: 'Posição recalculada com sucesso.', severity: 'success' })
     } catch (err) {

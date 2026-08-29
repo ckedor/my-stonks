@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import {
   fetchMarketCatalogue,
   type MarketCatalogueAsset,
@@ -18,7 +19,6 @@ import {
   type AppSimpleTableColumn,
 } from '@/components/ui'
 import { ASSET_TYPES } from '@/constants/assetTypes'
-import { useCachedData } from '@/hooks/useCachedData'
 import FavoriteAssets from '@/pages/market/ativos/FavoriteAssets'
 import MarketBenchmarkCard from '@/pages/market/components/MarketBenchmarkCard'
 import { useCallback, useMemo, useState } from 'react'
@@ -80,7 +80,11 @@ export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKin
   const config = CONFIG[kind]
   const navigate = useNavigate()
   const fetcher = useCallback(() => fetchMarketCatalogue(kind), [kind])
-  const { data, loading } = useCachedData(`market:${kind}:catalogue`, fetcher)
+  const { data, isPending: loading } = useQuery({
+    queryKey: [`market:${kind}:catalogue`],
+    queryFn: fetcher,
+    enabled: true,
+  })
   const [search, setSearch] = useState('')
 
   const visibleAssets = useMemo(() => {

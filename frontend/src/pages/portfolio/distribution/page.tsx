@@ -1,3 +1,5 @@
+import { useQuery } from '@tanstack/react-query'
+import { useSelectedPortfolio } from '@/queries/portfolio'
 import SaveIcon from '@mui/icons-material/Save'
 
 import AllocationPie from '@/components/portfolio-rebalancing/AllocationPie'
@@ -24,12 +26,10 @@ import {
   type AppToggleGroupOption,
 } from '@/components/ui'
 import { POSITION_ROUTES } from '@/constants/routes'
-import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
 import PerformanceBarChart, { type DistributionMetric } from '@/pages/portfolio/asset/PerformanceBarChart'
 import PortfolioHeatMap from '@/pages/portfolio/asset/PortfolioHeatMap'
-import { usePortfolioStore } from '@/stores/portfolio'
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -55,21 +55,21 @@ const MAP_HEIGHT = 620
  *  quer. Separá-las obrigava a manter o mapa na cabeça enquanto se lia a
  *  tabela. */
 export default function DistributionPage() {
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const selectedPortfolio = useSelectedPortfolio()
   const navigate = useNavigate()
   const portfolioId = selectedPortfolio?.id
 
   const { format: fmt, symbol: currencySymbol } = useCurrency()
   const [metric, setMetric] = useState<DistributionMetric>('twelve_months_return')
 
-  const { data: positions } = useCachedData<any[]>(
-    portfolioId ? `distribution:positions:${portfolioId}` : null,
-    useCallback(
+  const { data: positions } = useQuery<any[]>({
+    queryKey: [portfolioId ? `distribution:positions:${portfolioId}` : null],
+    queryFn: useCallback(
       () => api.get(POSITION_ROUTES.byPortfolio(portfolioId!)).then(r => r.data),
       [portfolioId],
     ),
-    { enabled: !!portfolioId },
-  )
+    enabled: (portfolioId ? `distribution:positions:${portfolioId}` : null) != null && !!portfolioId,
+  })
 
   const rebalancing = useRebalancing(portfolioId)
   const { view, simulating, contribution, categoryTargetSum } = rebalancing

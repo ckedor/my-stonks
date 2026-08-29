@@ -1,4 +1,4 @@
-import { syncPortfolios, syncReturns } from '@/actions/portfolio'
+import { useRefreshPortfolio } from '@/queries/portfolio'
 import { CATEGORY_ROUTES, MARKET_DATA_SERIES_ROUTES, PORTFOLIO_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -40,6 +40,7 @@ interface PortfolioFormProps {
 }
 
 export default function PortfolioForm({ open, onClose, onSave, portfolio }: PortfolioFormProps) {
+  const refreshPortfolio = useRefreshPortfolio()
   const isEdit = Boolean(portfolio)
 
   const [name, setName] = useState('')
@@ -100,8 +101,7 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
           name,
           user_categories: categories,
         })
-        await syncPortfolios(true)
-        if (portfolio?.id) await syncReturns(portfolio.id, true)
+        await refreshPortfolio()
         if (onSave) onSave(portfolio?.id)
       } else {
         const { data } = await api.post(PORTFOLIO_ROUTES.create, {
@@ -153,8 +153,7 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
         await api.delete(CATEGORY_ROUTES.byId(cat.id), {
           data: { portfolio_id: portfolio?.id },
         })
-        await syncPortfolios(true)
-        if (portfolio?.id) await syncReturns(portfolio.id, true)
+        await refreshPortfolio()
       } catch (err) {
         console.error('Erro ao deletar categoria', err)
         setError('Erro ao deletar categoria.')

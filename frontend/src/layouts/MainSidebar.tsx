@@ -1,6 +1,6 @@
+import { useSelectedPortfolio } from '@/queries/portfolio'
 import { AppNavRail } from '@/components/ui'
 import { useFavoritesStore } from '@/stores/favorites'
-import { usePortfolioStore } from '@/stores/portfolio'
 
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -31,7 +31,7 @@ export default function MainSidebar({ collapsed }: { collapsed: boolean }) {
     if (currentSection === 'mercado') void refreshFavorites()
   }, [currentSection, refreshFavorites])
 
-  const categories = usePortfolioStore((state) => state.selectedPortfolio?.custom_categories)
+  const categories = useSelectedPortfolio()?.custom_categories
 
   const groups = resolveGroups(section, {
     categories: (categories ?? []).map((category) => ({

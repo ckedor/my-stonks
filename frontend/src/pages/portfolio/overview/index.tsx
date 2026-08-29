@@ -1,11 +1,7 @@
+import { EMPTY_LIST } from '@/queries/empty'
+import { useAnalysis, useDividends, usePatrimony, usePositions, useReturnCurves, useWealthTier } from '@/queries/portfolio'
 import { useCurrency } from '@/hooks/useCurrency'
-import { useAnalysisStore } from '@/stores/portfolio/analysis'
-import { useDividendsStore } from '@/stores/portfolio/dividends'
-import { usePatrimonyStore } from '@/stores/portfolio/patrimony'
-import { usePositionsStore } from '@/stores/portfolio/positions'
-import { useReturnsStore } from '@/stores/portfolio/returns'
 import { useTradeFormStore } from '@/stores/trade-form'
-import { useWealthTierStore } from '@/stores/portfolio/wealth-tier'
 import {
   AppButton,
   AppChartArea,
@@ -48,17 +44,17 @@ export default function PortfolioOverviewPage() {
   const navigate = useNavigate()
   const { openTradeForm } = useTradeFormStore()
 
-  const positions = usePositionsStore(s => s.positions)
-  const positionsLoading = usePositionsStore(s => s.loading)
-  const patrimonyEvolution = usePatrimonyStore(s => s.patrimony)
-  const dividends = useDividendsStore(s => s.dividends)
-  const returnsLoading = useReturnsStore(s => s.loading)
-  const categoryCagr = useReturnsStore(s => s.categoryCagr)
+  const positions = usePositions().data ?? EMPTY_LIST
+  const positionsLoading = usePositions().isPending
+  const patrimonyEvolution = usePatrimony().data ?? EMPTY_LIST
+  const dividends = useDividends().data ?? EMPTY_LIST
+  const returnsLoading = useReturnCurves().isPending
+  const categoryCagr = useReturnCurves().cagr
 
-  const wealthTierStanding = useWealthTierStore(s => s.standing)
+  const wealthTierStanding = useWealthTier().data ?? null
   const tier = wealthTierStanding?.current_tier ?? null
 
-  const { analysis } = useAnalysisStore()
+  const { data: analysis } = useAnalysis()
   const { format: formatCurrency } = useCurrency()
 
   const totalValue = positions.reduce((s, p) => s + p.value, 0)

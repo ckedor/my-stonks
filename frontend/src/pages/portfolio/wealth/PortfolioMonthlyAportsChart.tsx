@@ -1,8 +1,9 @@
+import { EMPTY_LIST } from '@/queries/empty'
+import { usePatrimony } from '@/queries/portfolio'
 import AppBarChart, { TimeSeriesPoint } from '@/components/charts/app-bar-chart/AppBarChart'
 import { GroupBy } from '@/components/charts/app-bar-chart/helpers'
 import { useCurrency } from '@/hooks/useCurrency'
 import { DateRangeKey } from '@/lib/utils/date'
-import { usePatrimonyStore } from '@/stores/portfolio/patrimony'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 
@@ -38,8 +39,8 @@ export default function PortfolioMonthlyAportsChart({
   title = 'Aportes Mensais',
   fitContainer = false,
 }: Props) {
-  const rows = usePatrimonyStore(s => s.patrimony) as PatrimonyEvolutionRow[]
-  const loading = usePatrimonyStore(s => s.loading)
+  const rows = usePatrimony().data ?? EMPTY_LIST as PatrimonyEvolutionRow[]
+  const loading = usePatrimony().isPending
   const { currency, locale } = useCurrency()
 
   const sourceKey = 'aported'

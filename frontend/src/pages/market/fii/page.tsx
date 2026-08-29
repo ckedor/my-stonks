@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { fetchFIIMarket, type FIIMarketFund } from '@/api/market'
 import {
   AppCard,
@@ -15,7 +16,6 @@ import {
   type AppSimpleTableColumn,
 } from '@/components/ui'
 import { ASSET_TYPES } from '@/constants/assetTypes'
-import { useCachedData } from '@/hooks/useCachedData'
 import FavoriteAssets from '@/pages/market/ativos/FavoriteAssets'
 import MarketBenchmarkCard from '@/pages/market/components/MarketBenchmarkCard'
 import { useCallback, useMemo, useState } from 'react'
@@ -42,7 +42,11 @@ const percentage = (value: number | null) =>
 export default function MarketFIIPage() {
   const navigate = useNavigate()
   const fetcher = useCallback(() => fetchFIIMarket(), [])
-  const { data, loading } = useCachedData('market:fii:catalogue', fetcher)
+  const { data, isPending: loading } = useQuery({
+    queryKey: ['market:fii:catalogue'],
+    queryFn: fetcher,
+    enabled: true,
+  })
   const [search, setSearch] = useState('')
   const [type, setType] = useState('all')
   const [segment, setSegment] = useState('all')

@@ -1,3 +1,4 @@
+import { useSelectedPortfolio } from '@/queries/portfolio'
 import AssetCard from '@/components/portfolio-asset/AssetCard'
 import {
   AppConfirmDialog,
@@ -15,7 +16,6 @@ import {
 import { CATEGORY_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
-import { usePortfolioStore } from '@/stores/portfolio'
 import type { AssetGroupBy, AssetListView } from './view-state'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -52,7 +52,7 @@ const formatPercent = (value: number) =>
   `${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
 
 export default function AssetList({ positions, groupBy, search, view }: AssetListProps) {
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const selectedPortfolio = useSelectedPortfolio()
   const navigate = useNavigate()
   const userCategories = selectedPortfolio?.custom_categories ?? []
   const [confirmDialog, setConfirmDialog] = useState<{

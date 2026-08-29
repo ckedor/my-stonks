@@ -1,4 +1,5 @@
-import { useReturnsStore } from '@/stores/portfolio/returns'
+import { EMPTY_MAP } from '@/queries/empty'
+import { useBenchmarks, useReturnCurves } from '@/queries/portfolio'
 import {
     AppChartArea,
     AppColorSwatch,
@@ -33,9 +34,9 @@ export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', 
   /* Fatiado, e não `useReturnsStore()` inteiro: sem seletor, o zustand
      reavalia esta tela a cada escrita em qualquer parte do store — inclusive
      em `assetReturns`, que este gráfico não lê. */
-  const categoryReturns = useReturnsStore((s) => s.categoryReturns)
-  const benchmarks = useReturnsStore((s) => s.benchmarks)
-  const loading = useReturnsStore((s) => s.loading)
+  const categoryReturns = useReturnCurves().series
+  const benchmarks = useBenchmarks().data ?? EMPTY_MAP
+  const loading = useReturnCurves().isPending
   const theme = useAppTheme()
 
   const portfolioColor = theme.palette.primary.main

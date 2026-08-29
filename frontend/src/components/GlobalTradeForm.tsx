@@ -1,14 +1,14 @@
-import { forceRefreshAll } from '@/actions/portfolio'
-import { usePortfolioStore } from '@/stores/portfolio'
+import { useConsolidatePortfolio, useSelectedPortfolio } from '@/queries/portfolio'
 import { useTradeFormStore } from '@/stores/trade-form'
 import TradeForm from './TradeForm'
 
 export default function GlobalTradeForm() {
   const { isOpen, preSelectedAsset, closeTradeForm } = useTradeFormStore()
-  const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
+  const selectedPortfolio = useSelectedPortfolio()
+  const consolidate = useConsolidatePortfolio()
 
   const handleSave = () => {
-    if (selectedPortfolio) forceRefreshAll(selectedPortfolio.id)
+    if (selectedPortfolio) consolidate.mutate()
   }
 
   return (

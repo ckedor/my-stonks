@@ -1,4 +1,5 @@
 import App from '@/App'
+import { QueryProvider } from '@/queries/client'
 // Auto-hospedada, sem depender de CDN em tempo de execução — a variável cobre
 // todos os pesos em um arquivo só. A pilha que a consome está em
 // `src/theme/tokens.ts`, em `fontStacks` — as pilhas de lá precisam
@@ -22,6 +23,8 @@ dayjs.locale('pt-br')
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <QueryProvider>
+      <App />
+    </QueryProvider>
   </StrictMode>,
 )

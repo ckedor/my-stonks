@@ -1,5 +1,5 @@
+import { useSelectedPortfolio } from '@/queries/portfolio'
 
-import { usePortfolioStore } from '@/stores/portfolio'
 import { PortfolioPositionEntry } from '@/types'
 import { useMemo } from 'react'
 import AppPieChart from '../../../components/ui/app-pie-chart'
@@ -13,7 +13,7 @@ interface PositionPieChartProps {
 }
 
 export default function PositionPieChart({ positions, height = 350, selectedCategory, onCategorySelect, onAssetSelect }: PositionPieChartProps) {
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const selectedPortfolio = useSelectedPortfolio()
   const userCategories = useMemo(
     () => selectedPortfolio?.custom_categories ?? [],
     [selectedPortfolio?.custom_categories],

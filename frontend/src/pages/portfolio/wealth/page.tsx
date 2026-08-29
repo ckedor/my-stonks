@@ -1,3 +1,5 @@
+import { EMPTY_LIST } from '@/queries/empty'
+import { usePatrimony, useReturnCurves, useSelectedPortfolio } from '@/queries/portfolio'
 import PortfolioPatrimonyChart from '@/components/PortfolioPatrimonyChart'
 import {
   AppCard,
@@ -9,21 +11,18 @@ import {
   type AppSelectOption,
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
-import { usePortfolioStore } from '@/stores/portfolio'
-import { usePatrimonyStore } from '@/stores/portfolio/patrimony'
-import { useReturnsStore } from '@/stores/portfolio/returns'
 import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
 import PortfolioMonthlyAportsChart from './PortfolioMonthlyAportsChart'
 
 export default function PortfolioPatrimonyEvolution() {
-  const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
+  const selectedPortfolio = useSelectedPortfolio()
   const userCategories = selectedPortfolio?.custom_categories ?? []
   const { format: formatCurrency } = useCurrency()
 
-  const patrimonyEvolution = usePatrimonyStore((s) => s.patrimony)
-  const loading = usePatrimonyStore((s) => s.loading) && patrimonyEvolution.length === 0
-  const categoryCagr = useReturnsStore((s) => s.categoryCagr)
+  const patrimonyEvolution = usePatrimony().data ?? EMPTY_LIST
+  const loading = usePatrimony().isPending
+  const categoryCagr = useReturnCurves().cagr
 
   const [selectedCategory, setSelectedCategory] = useState<string>('portfolio')
 

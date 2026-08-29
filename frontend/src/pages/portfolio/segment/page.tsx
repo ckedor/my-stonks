@@ -1,15 +1,13 @@
+import { EMPTY_LIST } from '@/queries/empty'
+import { useQuery } from '@tanstack/react-query'
+import { useDividends, usePositions, useSelectedPortfolioId, useTrades } from '@/queries/portfolio'
 import { fetchSegmentAnalysis, fetchSegmentPatrimony, fetchSegmentReturns } from '@/api/portfolio'
 import PortfolioSliceScreen from '@/components/portfolio-slice/PortfolioSliceScreen'
 import PortfolioSliceScreenSkeleton from '@/components/portfolio-slice/PortfolioSliceScreenSkeleton'
 import type { SliceTabId } from '@/components/portfolio-slice/tabs'
 import { useAppTheme } from '@/components/ui'
 import { PORTFOLIO_SEGMENTS, type PortfolioSegmentId } from '@/constants/portfolioSegments'
-import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
-import { usePortfolioStore } from '@/stores/portfolio'
-import { useDividendsStore } from '@/stores/portfolio/dividends'
-import { usePositionsStore } from '@/stores/portfolio/positions'
-import { useTradesStore } from '@/stores/portfolio/trades'
 import type { AssetAnalysis, PatrimonyEntry, PortfolioReturnEntry } from '@/types'
 import { useCallback, useMemo, useState } from 'react'
 
@@ -26,11 +24,11 @@ interface Props {
 export default function PortfolioSegmentPage({ segment }: Props) {
   const definition = PORTFOLIO_SEGMENTS[segment]
 
-  const portfolioId = usePortfolioStore((state) => state.selectedPortfolio?.id)
-  const positions = usePositionsStore((state) => state.positions)
-  const positionsLoading = usePositionsStore((state) => state.loading) && positions.length === 0
-  const dividends = useDividendsStore((state) => state.dividends)
-  const trades = useTradesStore((state) => state.trades)
+  const portfolioId = useSelectedPortfolioId()
+  const positions = usePositions().data ?? EMPTY_LIST
+  const positionsLoading = usePositions().isPending
+  const dividends = useDividends().data ?? EMPTY_LIST
+  const trades = useTrades().data ?? EMPTY_LIST
   const { currency } = useCurrency()
   const theme = useAppTheme()
 
@@ -45,31 +43,32 @@ export default function PortfolioSegmentPage({ segment }: Props) {
     [segmentPositions],
   )
 
-  const { data: segmentReturns, loading: returnsLoading } = useCachedData<PortfolioReturnEntry[]>(
-    portfolioId ? `segment-returns:${portfolioId}:${segment}:${currency}` : null,
-    useCallback(
+  const { data: segmentReturns, isPending: returnsLoading } = useQuery<PortfolioReturnEntry[]>({
+    queryKey: [`segment-returns:${portfolioId}:${segment}:${currency}`],
+    queryFn: useCallback(
       () => fetchSegmentReturns(portfolioId!, segment, currency),
       [portfolioId, segment, currency],
     ),
-  )
+    enabled: Boolean(portfolioId),
+  })
 
-  const { data: analysis, loading: analysisLoading } = useCachedData<AssetAnalysis | null>(
-    portfolioId ? `segment-analysis:${portfolioId}:${segment}:${currency}` : null,
-    useCallback(
+  const { data: analysis, isPending: analysisLoading } = useQuery<AssetAnalysis | null>({
+    queryKey: [portfolioId ? `segment-analysis:${portfolioId}:${segment}:${currency}` : null],
+    queryFn: useCallback(
       () => fetchSegmentAnalysis(portfolioId!, segment, currency),
       [portfolioId, segment, currency],
     ),
-    { enabled: tab === 'risco' },
-  )
+    enabled: (portfolioId ? `segment-analysis:${portfolioId}:${segment}:${currency}` : null) != null && tab === 'risco',
+  })
 
-  const { data: patrimony, loading: patrimonyLoading } = useCachedData<PatrimonyEntry[]>(
-    portfolioId ? `segment-patrimony:${portfolioId}:${segment}:${currency}` : null,
-    useCallback(
+  const { data: patrimony, isPending: patrimonyLoading } = useQuery<PatrimonyEntry[]>({
+    queryKey: [portfolioId ? `segment-patrimony:${portfolioId}:${segment}:${currency}` : null],
+    queryFn: useCallback(
       () => fetchSegmentPatrimony(portfolioId!, segment, currency),
       [portfolioId, segment, currency],
     ),
-    { enabled: tab === 'patrimonio' },
-  )
+    enabled: (portfolioId ? `segment-patrimony:${portfolioId}:${segment}:${currency}` : null) != null && tab === 'patrimonio',
+  })
 
   const returns = useMemo(
     () => (segmentReturns ?? []).map((entry) => ({ date: entry.date, value: entry.acc_return })),

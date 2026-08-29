@@ -1,3 +1,4 @@
+import { useReturnCurves, useSelectedPortfolio } from '@/queries/portfolio'
 import {
   AppCollapse,
   AppDivider,
@@ -10,8 +11,6 @@ import {
   useAppTheme,
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
-import { usePortfolioStore } from '@/stores/portfolio'
-import { useReturnsStore } from '@/stores/portfolio/returns'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { useMemo, useState } from 'react'
@@ -58,9 +57,9 @@ export default function PositionTable({
   const [internalCategory, setInternalCategory] = useState<string>('portfolio')
   const selectedCategory = controlledCategory ?? internalCategory
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
-  const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
+  const selectedPortfolio = useSelectedPortfolio()
   const userCategories = selectedPortfolio?.custom_categories ?? []
-  const categoryCagr = useReturnsStore((s) => s.categoryCagr)
+  const categoryCagr = useReturnCurves().cagr
 
   const theme = useAppTheme()
 

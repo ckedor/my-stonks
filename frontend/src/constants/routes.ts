@@ -137,6 +137,8 @@ export const INCOME_TAX_ROUTES = {
 export const POSITION_ROUTES = {
   byPortfolio: (portfolioId: number | string) => `${PORTFOLIO}/position/${portfolioId}`,
   returns: (portfolioId: number | string) => `${PORTFOLIO}/position/${portfolioId}/returns`,
+  consolidation: (portfolioId: number | string) =>
+    `${PORTFOLIO}/position/${portfolioId}/consolidation`,
   assetTypeReturns: (portfolioId: number | string, assetTypeId: number | string) =>
     `${PORTFOLIO}/position/${portfolioId}/asset-type/${assetTypeId}/returns`,
   assetTypeAnalysis: (portfolioId: number | string, assetTypeId: number | string) =>

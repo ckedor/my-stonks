@@ -1,5 +1,5 @@
+import { useQuery } from '@tanstack/react-query'
 import { REBALANCING_ROUTES } from '@/constants/routes'
-import { useCachedData } from '@/hooks/useCachedData'
 import api from '@/lib/api'
 import type { RebalancingResponse } from '@/types'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -64,17 +64,17 @@ export interface UseRebalancingOptions {
 export function useRebalancing(portfolioId: number | undefined, options: UseRebalancingOptions = {}) {
   const { categoryNames } = options
 
-  const { data: fetchedData } = useCachedData<RebalancingResponse>(
-    portfolioId ? `rebalancing:${portfolioId}` : null,
-    useCallback(
+  const { data: fetchedData } = useQuery<RebalancingResponse>({
+    queryKey: [portfolioId ? `rebalancing:${portfolioId}` : null],
+    queryFn: useCallback(
       () =>
         api
           .get<RebalancingResponse>(REBALANCING_ROUTES.byPortfolio(portfolioId!))
           .then((r) => r.data),
       [portfolioId],
     ),
-    { enabled: !!portfolioId },
-  )
+    enabled: (portfolioId ? `rebalancing:${portfolioId}` : null) != null && !!portfolioId,
+  })
 
   /* `data` guarda só os alvos: é o rascunho que o botão de salvar envia. Tudo
      que é derivado — diferença, valor alvo, plano de compra — se recalcula a

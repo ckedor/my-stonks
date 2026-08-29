@@ -155,6 +155,29 @@ A lista está vazia: nenhum arquivo viola mais. O bloco legado no fim de
 `eslint.config.js` já não produz nenhuma isenção — ele some junto com o
 arquivo de baseline quando o mantenedor decidir que a dívida não volta.
 
+## Dado de servidor e estado de cliente
+
+São duas coisas, e ficam em lugares diferentes.
+
+- **Dado de servidor** é TanStack Query, e só. Os hooks ficam em
+  `src/queries/`, um por leitura, com a moeda e o id da carteira dentro da
+  chave — trocar o seletor lê outra entrada, e nunca dispara uma
+  re-sincronização à mão.
+- **Estado de cliente** é Zustand: moeda, autenticação, favoritos, formulário
+  de negociação, qual carteira está aberta. Nada de resposta de API aqui.
+- Depois de uma escrita, invalide (`useRefreshPortfolio`); não copie a
+  resposta para dentro de um store.
+- Não persista dado de servidor por fora do Query. A persistência é uma só,
+  configurada em `src/queries/client.tsx`. Eram duas — o IndexedDB e o
+  `persist` de cada store —, elas hidratavam a mesma série em momentos
+  diferentes, e a identidade do objeto mudava a cada hidratação: as curvas
+  eram reanimadas com dado idêntico, e havia uma comparação de conteúdo à mão
+  só para calar isso.
+- `select` de query mora no topo do módulo, nunca inline: um `select` que muda
+  de identidade a cada render descarta a memoização e devolve um objeto novo
+  toda vez. Pelo mesmo motivo, o vazio de uma query que ainda não respondeu
+  vem de `EMPTY_LIST`/`EMPTY_MAP` (`src/queries/empty.ts`), e não de `?? []`.
+
 ## Verificação
 
 A suíte roda nos hooks do `.pre-commit-config.yaml`, e é lá que ela pertence:

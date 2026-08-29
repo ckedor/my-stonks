@@ -1,6 +1,6 @@
+import { usePortfolios, useSelectedPortfolio } from '@/queries/portfolio'
 import { BROKER_ROUTES, QUOTE_ROUTES, TRANSACTION_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
-import { usePortfolioStore } from '@/stores/portfolio'
 import { Asset, Trade } from '@/types'
 import {
     AppConfirmDialog,
@@ -50,7 +50,8 @@ interface TradeFormProps {
 
 export default function TradeForm({ open, onClose, onSave, trade, assetId, initialAsset }: TradeFormProps) {
   const isEdit = Boolean(trade)
-  const { portfolios, selectedPortfolio } = usePortfolioStore()
+  const { data: portfolios = [] } = usePortfolios()
+  const selectedPortfolio = useSelectedPortfolio()
 
   const [type, setType] = useState<'Compra' | 'Venda'>('Compra')
   const [quantity, setQuantity] = useState<number>(0)

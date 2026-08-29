@@ -1,5 +1,5 @@
+import { useSelectedPortfolio } from '@/queries/portfolio'
 import { AppPageHeader, AppSelect, AppStack, AppTabs } from '@/components/ui'
-import { usePortfolioStore } from '@/stores/portfolio'
 import dayjs from 'dayjs'
 import { useState } from 'react'
 import AssetsAndRights from './AssetsAndRights'
@@ -16,7 +16,7 @@ const TABS = [
 ]
 
 export default function TaxIncomePage() {
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const selectedPortfolio = useSelectedPortfolio()
   const [fiscalYear, setFiscalYear] = useState(dayjs().year() - 1)
   const [tab, setTab] = useState<TaxTab>('darf')
 

@@ -1,50 +1,11 @@
-import { syncAnalysis, syncBenchmarks, syncDividends, syncPatrimony, syncPortfolioData, syncPortfolios, syncPositions, syncReturns } from '@/actions/portfolio'
 import GlobalTradeForm from '@/components/GlobalTradeForm'
 import { AppPageShell, useAppTheme, useViewportMatches } from '@/components/ui'
 import { useAuthStore } from '@/stores/auth'
-import { useCurrencyStore } from '@/stores/currency'
-import { usePortfolioStore } from '@/stores/portfolio'
 
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import MainSidebar from './MainSidebar'
 import MainTopbar from './MainTopbar'
-
-/**
- * Initialises the offline-first sync pipeline:
- *  1. On mount → load portfolio list from IndexedDB then revalidate
- *  2. When selectedPortfolio changes → load domain data from IndexedDB then revalidate
- */
-function usePortfolioSync() {
-  const selectedPortfolioId = usePortfolioStore((s) => s.selectedPortfolio?.id)
-  const currency = useCurrencyStore((s) => s.currency)
-  const prevCurrency = useRef(currency)
-
-  // Sync portfolio list once on mount
-  useEffect(() => {
-    syncPortfolios()
-  }, [])
-
-  // Sync domain data whenever the active portfolio changes
-  useEffect(() => {
-    if (selectedPortfolioId) {
-      syncPortfolioData(selectedPortfolioId)
-    }
-  }, [selectedPortfolioId])
-
-  // Re-sync every currency-dependent dataset when currency changes (skip initial render)
-  useEffect(() => {
-    if (prevCurrency.current !== currency && selectedPortfolioId) {
-      syncPositions(selectedPortfolioId, true)
-      syncDividends(selectedPortfolioId, true)
-      syncPatrimony(selectedPortfolioId, true)
-      syncReturns(selectedPortfolioId, true)
-      syncBenchmarks(true)
-      syncAnalysis(selectedPortfolioId, true)
-    }
-    prevCurrency.current = currency
-  }, [currency, selectedPortfolioId])
-}
 
 const COLLAPSED_KEY = 'nav-rail-collapsed'
 
@@ -78,8 +39,6 @@ export default function MainLayout() {
       }
       return !value
     })
-
-  usePortfolioSync()
 
   if (isLoading) return null
   if (!isAuthenticated) {

@@ -1,5 +1,5 @@
+import { useQuery } from '@tanstack/react-query'
 import { fetchAssetReturns } from '@/api/portfolio'
-import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import { normalizeReturns } from '@/lib/utils/returns'
 import dayjs from 'dayjs'
@@ -36,9 +36,9 @@ export function useAssetReturnWindow(
   const { currency } = useCurrency()
   const startDate = dayjs().subtract(months, 'month').format('YYYY-MM-DD')
 
-  const { data } = useCachedData<{ date: string; value: number }[]>(
-    portfolioId ? `asset-returns-${months}m:${portfolioId}:${assetId}:${currency}` : null,
-    useCallback(async () => {
+  const { data } = useQuery<{ date: string; value: number }[]>({
+    queryKey: [portfolioId ? `asset-returns-${months}m:${portfolioId}:${assetId}:${currency}` : null],
+    queryFn: useCallback(async () => {
       // Sem `.catch` engolindo a falha: um erro aqui viraria série vazia, e a
       // série vazia viraria um espaço em branco no card — foi assim que um 500
       // do backend passou despercebido. Que a requisição falhe alto.
@@ -49,8 +49,8 @@ export function useAssetReturnWindow(
         series.map((point) => point.date),
       )
     }, [portfolioId, assetId, ticker, currency, startDate]),
-    { enabled: !!portfolioId },
-  )
+    enabled: (portfolioId ? `asset-returns-${months}m:${portfolioId}:${assetId}:${currency}` : null) != null && !!portfolioId,
+  })
 
   return useMemo(() => {
     if (!data || data.length < 2) return { values: null, period: null }

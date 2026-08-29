@@ -1,3 +1,6 @@
+import { EMPTY_LIST, EMPTY_MAP } from '@/queries/empty'
+import { useAssetReturnsStore } from '@/stores/portfolio/asset-returns'
+import { useBenchmarks, usePositions, useReturnCurves, useSelectedPortfolio, useTrades } from '@/queries/portfolio'
 import { defaultRangeOptionsFromOldest } from '@/components/charts/app-bar-chart/helpers'
 import { formatSpan, periodPerformance } from '@/components/charts/candle/helpers'
 import {
@@ -22,10 +25,6 @@ import {
 import { useCurrency } from '@/hooks/useCurrency'
 import { getDateFromRange, type DateRangeKey } from '@/lib/utils/date'
 import { rebaseWindow } from '@/lib/utils/returns'
-import { usePortfolioStore } from '@/stores/portfolio'
-import { usePositionsStore } from '@/stores/portfolio/positions'
-import { useReturnsStore } from '@/stores/portfolio/returns'
-import { useTradesStore } from '@/stores/portfolio/trades'
 import {
     AppChartArea,
     AppDivider,
@@ -128,10 +127,12 @@ export default function PortfolioReturnsChart({
   onCurveChange,
   persistKey,
 }: Props) {
-  const { categoryReturns, assetReturns, benchmarks, loading } = useReturnsStore()
-  const selectedPortfolio = usePortfolioStore((s) => s.selectedPortfolio)
-  const trades = useTradesStore((s) => s.trades)
-  const positions = usePositionsStore((s) => s.positions)
+  const { series: categoryReturns, isPending: loading } = useReturnCurves()
+  const benchmarks = useBenchmarks().data ?? EMPTY_MAP
+  const assetReturns = useAssetReturnsStore((s) => s.assetReturns)
+  const selectedPortfolio = useSelectedPortfolio()
+  const trades = useTrades().data ?? EMPTY_LIST
+  const positions = usePositions().data ?? EMPTY_LIST
   const userCategories = useMemo(
     () => selectedPortfolio?.custom_categories ?? [],
     [selectedPortfolio?.custom_categories],

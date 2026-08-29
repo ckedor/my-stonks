@@ -1,8 +1,8 @@
+import { useSelectedPortfolio } from '@/queries/portfolio'
 
 import { DIVIDEND_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
-import { usePortfolioStore } from '@/stores/portfolio'
 import { Asset } from '@/types'
 import {
     AppConfirmDialog,
@@ -32,7 +32,7 @@ interface DividendFormProps {
 }
 
 export default function DividendForm({ open, onClose, onSave, initialAsset, dividend }: DividendFormProps) {
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const selectedPortfolio = useSelectedPortfolio()
   const { symbol } = useCurrency()
 
   const [portfolioId, setPortfolioId] = useState<number | ''>('')

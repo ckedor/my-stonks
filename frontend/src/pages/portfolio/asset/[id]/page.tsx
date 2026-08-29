@@ -1,3 +1,5 @@
+import { EMPTY_LIST } from '@/queries/empty'
+import { usePositions, useSelectedPortfolio } from '@/queries/portfolio'
 import AssetDetailPanel from '@/components/AssetDetailPanel'
 import {
   AppBreadcrumbs,
@@ -10,8 +12,6 @@ import {
   AppText,
   SectionLabel,
 } from '@/components/ui'
-import { usePortfolioStore } from '@/stores/portfolio'
-import { usePositionsStore } from '@/stores/portfolio/positions'
 import type { PortfolioPositionEntry } from '@/types'
 import SearchIcon from '@mui/icons-material/Search'
 import { useMemo, useState } from 'react'
@@ -126,9 +126,9 @@ function AssetSearchDrawer({
 
 export default function PortfolioAssetPage() {
   const { id } = useParams<{ id: string }>()
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const selectedPortfolio = useSelectedPortfolio()
   const portfolioId = selectedPortfolio?.id
-  const positions = usePositionsStore(s => s.positions)
+  const positions = usePositions().data ?? EMPTY_LIST
   const assetId = id ? parseInt(id, 10) : null
   const ticker = positions.find((p) => p.asset_id === assetId)?.ticker
 

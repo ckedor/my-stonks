@@ -1,5 +1,11 @@
+import {
+  useConsolidatePortfolio,
+  useConsolidation,
+  usePortfolios,
+  useSelectedPortfolio,
+} from '@/queries/portfolio'
 import { logout } from '@/actions/auth'
-import { forceRefreshAll } from '@/actions/portfolio'
+import dayjs from 'dayjs'
 import CategoryForm from '@/components/CategoryForm'
 import DividendForm from '@/components/DividendForm'
 import PortfolioForm from '@/components/PortfolioForm'
@@ -9,6 +15,7 @@ import { usePortfolioStore } from '@/stores/portfolio'
 import { useTradeFormStore } from '@/stores/trade-form'
 import { useThemeMode } from '@/theme/theme-mode'
 
+import ScheduleIcon from '@mui/icons-material/Schedule'
 import AccountCircle from '@mui/icons-material/AccountCircle'
 import AddIcon from '@mui/icons-material/Add'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
@@ -59,7 +66,11 @@ export interface MainTopbarProps {
 
 export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarProps) {
   const user = useAuthStore((s) => s.user)
-  const { portfolios, loading, selectedPortfolio, setSelectedPortfolio } = usePortfolioStore()
+  const { data: portfolios = [], isPending: loading } = usePortfolios()
+  const selectedPortfolio = useSelectedPortfolio()
+  const setSelectedPortfolioId = usePortfolioStore((s) => s.setSelectedPortfolioId)
+  const consolidate = useConsolidatePortfolio()
+  const { data: consolidation } = useConsolidation()
   const { openTradeForm } = useTradeFormStore()
   const { mode, toggleTheme } = useThemeMode()
   const currency = useCurrencyStore((s) => s.currency)
@@ -90,11 +101,19 @@ export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarPr
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
   const [actionsAnchor, setActionsAnchor] = useState<null | HTMLElement>(null)
 
+  /* `partial` é uma corrida que perdeu algum ativo pelo caminho: o horário
+     existe, mas o retrato está incompleto, e dizer só a hora esconderia isso. */
+  const consolidationLabel = !consolidation
+    ? 'Nunca consolidada'
+    : consolidation.status === 'failure'
+      ? 'Última consolidação falhou'
+      : `${consolidation.status === 'partial' ? 'Consolidação incompleta' : 'Atualizado'} ${dayjs(consolidation.consolidated_at).format('DD/MM [às] HH:mm')}`
+
   const handleRecalculate = async () => {
     if (!selectedPortfolio) return
     setRecalculating(true)
     try {
-      await forceRefreshAll(selectedPortfolio.id)
+      await consolidate.mutateAsync()
       setSnackbarMessage('Posições recalculadas com sucesso.')
       setSnackbarSeverity('success')
       setSnackbarOpen(true)
@@ -127,8 +146,7 @@ export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarPr
 
   const selectPortfolio = (id: number) => {
     setSelected(id)
-    const portfolio = portfolios.find((p) => p.id === id)
-    if (portfolio) setSelectedPortfolio(portfolio)
+    setSelectedPortfolioId(id)
   }
 
   return (
@@ -265,12 +283,22 @@ export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarPr
               setActionsAnchor(null)
             },
           },
+          /* De quando é o que a tela mostra.
+             Tudo abaixo desta barra é o retrato de uma consolidação, e sem
+             isto não havia como saber de qual: o número de ontem e o de hoje
+             são visualmente iguais. Fica colado na ação que refaz a conta,
+             porque é ela que muda esta linha. */
+          {
+            label: consolidationLabel,
+            icon: <ScheduleIcon fontSize="small" />,
+            separatorBefore: true,
+            disabled: true,
+          },
           {
             label: recalculating ? 'Recalculando...' : 'Recalcular Carteira',
             /* O disco entra no lugar do ícone: a ação é longa, e o menu fica
                aberto justamente para mostrar que ela está correndo. */
             icon: recalculating ? <LoadingSpinner size="sm" /> : <RefreshIcon fontSize="small" />,
-            separatorBefore: true,
             disabled: recalculating,
             onSelect: handleRecalculate,
           },

@@ -1,8 +1,8 @@
+import { useQuery } from '@tanstack/react-query'
+import { useSelectedPortfolio } from '@/queries/portfolio'
 import { POSITION_ROUTES } from '@/constants/routes'
-import { useCachedData } from '@/hooks/useCachedData'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
-import { usePortfolioStore } from '@/stores/portfolio'
 import { AppPageHeader, AppStack } from '@/components/ui'
 import type { Dayjs } from 'dayjs'
 import { useCallback, useState } from 'react'
@@ -17,7 +17,7 @@ import {
 } from './view-state'
 
 export default function PortfolioAssetsPage() {
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const selectedPortfolio = useSelectedPortfolio()
   const portfolioId = selectedPortfolio?.id
   const { currency } = useCurrency()
 
@@ -33,15 +33,15 @@ export default function PortfolioAssetsPage() {
     storeAssetListView(next)
   }
 
-  const { data: positions } = useCachedData<any[]>(
-    portfolioId ? `assets:positions:${portfolioId}:${groupBy}:${currency}` : null,
-    useCallback(() => {
+  const { data: positions } = useQuery<any[]>({
+    queryKey: [portfolioId ? `assets:positions:${portfolioId}:${groupBy}:${currency}` : null],
+    queryFn: useCallback(() => {
       const params: Record<string, string> = { currency }
       if (groupBy === 'broker') params.group_by_broker = 'true'
       return api.get(POSITION_ROUTES.byPortfolio(portfolioId!), { params }).then(r => r.data)
     }, [portfolioId, groupBy, currency]),
-    { enabled: !!portfolioId },
-  )
+    enabled: (portfolioId ? `assets:positions:${portfolioId}:${groupBy}:${currency}` : null) != null && !!portfolioId,
+  })
 
   const loading = !positions && !!portfolioId
 

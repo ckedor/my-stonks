@@ -1,7 +1,6 @@
-import { syncPortfolios, syncReturns } from '@/actions/portfolio'
+import { useRefreshPortfolio, useSelectedPortfolio } from '@/queries/portfolio'
 import { CATEGORY_ROUTES, MARKET_DATA_SERIES_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
-import { usePortfolioStore } from '@/stores/portfolio'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteIcon from '@mui/icons-material/Delete'
 import {
@@ -34,7 +33,8 @@ interface CategoryFormProps {
 }
 
 export default function CategoryForm({ open, onClose, onSave }: CategoryFormProps) {
-  const selectedPortfolio = usePortfolioStore(s => s.selectedPortfolio)
+  const refreshPortfolio = useRefreshPortfolio()
+  const selectedPortfolio = useSelectedPortfolio()
   const userCategories = useMemo(
     () => selectedPortfolio?.custom_categories ?? [],
     [selectedPortfolio?.custom_categories]
@@ -97,8 +97,7 @@ export default function CategoryForm({ open, onClose, onSave }: CategoryFormProp
           data: { portfolio_id: selectedPortfolio?.id },
         })
         if (selectedPortfolio) {
-          await syncPortfolios(true)
-          await syncReturns(selectedPortfolio.id, true)
+          await refreshPortfolio()
         }
       } catch (err) {
         console.error('Erro ao deletar categoria', err)
@@ -116,8 +115,7 @@ export default function CategoryForm({ open, onClose, onSave }: CategoryFormProp
     setLoading(true)
     try {
       await api.post(CATEGORY_ROUTES.save, { categories })
-      await syncPortfolios(true)
-      if (selectedPortfolio) await syncReturns(selectedPortfolio.id, true)
+      await refreshPortfolio()
       setSuccessOpen(true)
       if (onSave) onSave()
     } catch (err) {

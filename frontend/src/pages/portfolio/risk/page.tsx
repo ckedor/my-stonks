@@ -1,10 +1,10 @@
+import { useAnalysis } from '@/queries/portfolio'
 import RiskAnalysisCards from '@/components/RiskAnalysisCards'
 import RiskAnalysisCardsSkeleton from '@/components/RiskAnalysisCardsSkeleton'
 import { AppPageHeader, AppPageHeaderSkeleton, AppStack, AppText } from '@/components/ui'
-import { useAnalysisStore } from '@/stores/portfolio/analysis'
 
 export default function PortfolioRiskPage() {
-  const { analysis, loading: analysisLoading } = useAnalysisStore()
+  const { data: analysis, isPending: analysisLoading } = useAnalysis()
 
   const loading = analysisLoading && !analysis
 

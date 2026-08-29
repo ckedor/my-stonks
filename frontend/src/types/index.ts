@@ -41,6 +41,16 @@ export interface Trade {
   currency: string
 }
 
+/** Quando a carteira foi reconstruída, e se a corrida deu certo.
+ *
+ * `consolidated_at` é quando a corrida terminou, e não a data que os números
+ * alcançam — essa é limitada pela última cotação ingerida. */
+export interface PortfolioConsolidation {
+  consolidated_at: string
+  status: 'success' | 'partial' | 'failure'
+  error: string | null
+}
+
 export interface ReturnsEntry {
   date: string
   value: number

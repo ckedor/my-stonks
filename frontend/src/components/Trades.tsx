@@ -1,3 +1,4 @@
+import { useSelectedPortfolio } from '@/queries/portfolio'
 import {
   AppButton,
   AppSimpleTable,
@@ -9,7 +10,6 @@ import {
 import { TRANSACTION_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
-import { usePortfolioStore } from '@/stores/portfolio'
 import { Trade } from '@/types'
 import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
@@ -34,7 +34,7 @@ export default function Trades({ assetId, assetTypes, currencyId }: TradesProps)
   const [loading, setLoading] = useState(true)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedTrade, setSelectedTrade] = useState<Trade | undefined>()
-  const { selectedPortfolio } = usePortfolioStore()
+  const selectedPortfolio = useSelectedPortfolio()
   const { format: formatCurrency } = useCurrency()
 
   const fetchTrades = async () => {
