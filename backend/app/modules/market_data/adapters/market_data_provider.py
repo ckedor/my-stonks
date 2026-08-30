@@ -57,6 +57,17 @@ from app.modules.market_data.domain.quote import (
     FetchedQuotes,
     Quote,
 )
+from app.modules.market_data.domain.stock import (
+    StockCashDividend,
+    StockCompany,
+    StockFundamentals,
+    StockPriceRange,
+    StockProfile,
+    StockShareDividend,
+    StockStatementPoint,
+    StockStatistics,
+    StockSubscription,
+)
 
 STATUSINVEST_TO_INTERNAL_SEGMENT = {
     'Shoppings': FII_SEGMENT.SHOPPING,
@@ -320,6 +331,77 @@ FUND_HISTORY_LIMIT = 10000
 #: janela e escolhe a maior data ela mesma.
 FII_REPORT_WINDOW = 24
 
+#: O que a rota de cotação diz sobre o preço de hoje e a faixa do ano.
+STOCK_QUOTE_KEYS: dict[str, str] = {
+    'price': 'regularMarketPrice',
+    'previous_close': 'regularMarketPreviousClose',
+    'day_low': 'regularMarketDayLow',
+    'day_high': 'regularMarketDayHigh',
+    'fifty_two_week_low': 'fiftyTwoWeekLow',
+    'fifty_two_week_high': 'fiftyTwoWeekHigh',
+    'market_cap': 'marketCap',
+    'volume': 'regularMarketVolume',
+}
+
+#: Os múltiplos, como o provedor os publica. Nenhum deles é recalculado a
+#: partir de preço e lucro: o mercado cota um número, e derivar um segundo
+#: daria à tela dois valores para a mesma pergunta.
+STOCK_STATISTICS_KEYS: dict[str, str] = {
+    'market_cap': 'marketCap',
+    'enterprise_value': 'enterpriseValue',
+    'trailing_pe': 'trailingPE',
+    'forward_pe': 'forwardPE',
+    'price_to_book': 'priceToBook',
+    'book_value_per_share': 'bookValue',
+    'earnings_per_share': 'trailingEps',
+    'forward_earnings_per_share': 'forwardEps',
+    'peg_ratio': 'pegRatio',
+    'beta': 'beta',
+    'dividend_yield': 'dividendYield',
+    'profit_margin': 'profitMargins',
+    'net_income': 'netIncomeToCommon',
+    'earnings_quarterly_growth': 'earningsQuarterlyGrowth',
+    'enterprise_to_revenue': 'enterpriseToRevenue',
+    'enterprise_to_ebitda': 'enterpriseToEbitda',
+    'shares_outstanding': 'sharesOutstanding',
+    'float_shares': 'floatShares',
+    # A chave começa com dígito e por isso nunca vira identificador em lugar
+    # nenhum -- é lida daqui, do mapa, como todas as outras.
+    'fifty_two_week_change': '52WeekChange',
+    'last_dividend_value': 'lastDividendValue',
+}
+
+#: O desempenho do negócio. `profitMargins` também aparece nas estatísticas, e
+#: é lido daqui e só daqui, para que os dois cards não divirjam num
+#: arredondamento.
+STOCK_FUNDAMENTALS_KEYS: dict[str, str] = {
+    'revenue': 'totalRevenue',
+    'gross_profit': 'grossProfits',
+    'ebitda': 'ebitda',
+    'total_cash': 'totalCash',
+    'cash_per_share': 'totalCashPerShare',
+    'total_debt': 'totalDebt',
+    'debt_to_equity': 'debtToEquity',
+    'current_ratio': 'currentRatio',
+    'quick_ratio': 'quickRatio',
+    'return_on_assets': 'returnOnAssets',
+    'return_on_equity': 'returnOnEquity',
+    'free_cash_flow': 'freeCashflow',
+    'operating_cash_flow': 'operatingCashflow',
+    'gross_margin': 'grossMargins',
+    'ebitda_margin': 'ebitdaMargins',
+    'operating_margin': 'operatingMargins',
+    'profit_margin': 'profitMargins',
+    'earnings_growth': 'earningsGrowth',
+    'revenue_growth': 'revenueGrowth',
+    'annual_earnings_growth': 'earningsGrowthAnnual',
+    'annual_revenue_growth': 'revenueGrowthAnnual',
+}
+
+#: As duas chaves que descrevem o período de um demonstrativo, e que por isso
+#: não são linhas dele.
+STOCK_STATEMENT_META_KEYS = frozenset({'type', 'endDate'})
+
 
 class MarketDataProvider:
     quote_source = 'brapi'
@@ -546,6 +628,7 @@ class MarketDataProvider:
             ASSET_TYPE.ETF: self._fetch_etf_quotes,
             ASSET_TYPE.REIT: self._fetch_etf_quotes,
             ASSET_TYPE.FII: self._fetch_fii_quotes,
+            ASSET_TYPE.FI: self._fetch_fund_quotes,
             ASSET_TYPE.CRIPTO: self._fetch_crypto_quotes,
         }
         handler = handlers.get(asset_type_id)
@@ -660,6 +743,31 @@ class MarketDataProvider:
     ) -> FetchedQuotes:
         # Kept as a distinct handler so ETF acquisition can evolve without
         # changing the service contract when a dedicated upstream feed exists.
+        return await self._fetch_stock_quotes(
+            ticker=ticker,
+            start_date=start_date,
+            exchange=exchange,
+        )
+
+    async def _fetch_fund_quotes(
+        self,
+        *,
+        ticker: str,
+        start_date: date | None,
+        exchange: str | None,
+    ) -> FetchedQuotes:
+        """Fund quotes come from the listed-asset route, not the FII one.
+
+        An FI-Infra or a Fiagro trades on B3 like any other ticker, and the
+        generic quote route answers for it. The FII route does not: its
+        universe is the real-estate catalogue, and a fund that is not in it
+        comes back empty rather than refused.
+
+        Distinct from ``_fetch_stock_quotes`` for the same reason the ETF
+        handler is: the mapping is where the asset type states its source, and
+        a fund's could move to a NAV feed without the service contract moving
+        with it.
+        """
         return await self._fetch_stock_quotes(
             ticker=ticker,
             start_date=start_date,
@@ -879,6 +987,299 @@ class MarketDataProvider:
                 self._fund_result(responses['portfolio'], symbol, subject='portfolio')
             ),
         )
+
+    async def fetch_stock_profile(self, *, ticker: str) -> StockProfile:
+        """Everything the provider publishes about one listed company.
+
+        Nine routes answer for one page, and each is read on its own. A company
+        is not a fund and the clocks are the company's: the quote moves through
+        the session, the multiples follow it, the statements land quarterly and
+        months after the quarter closes, and the payment calendar runs on the
+        board's decisions. A route failing costs the page that section and
+        nothing else.
+
+        Every route failing is not a profile at all and raises. An expired token
+        or a spent quota refuses all nine at once, and that has to reach the
+        reader as itself rather than as a page of empty cards.
+
+        The daily history is deliberately not among the nine. The application
+        ingests its own quotes and the chart is drawn from those; asking the
+        provider for the same series again would be a second source for one
+        number, and the two would disagree the first time an ingestion lagged.
+        """
+        symbol = ticker.upper()
+        statement = {'symbols': symbol, 'mode': 'history', 'period': 'quarterly'}
+        requests = {
+            'quote': lambda: self.brapi_client.get_stock_quotes(symbols=symbol),
+            'company': lambda: self.brapi_client.get_stock_profile(symbols=symbol),
+            'statistics': lambda: self.brapi_client.get_stock_statistics(
+                symbols=symbol, mode='current'
+            ),
+            'fundamentals': lambda: self.brapi_client.get_stock_financial_data(
+                symbols=symbol, mode='current'
+            ),
+            # Ascending, so the payment calendar arrives in the order it is read.
+            'dividends': lambda: self.brapi_client.get_stock_dividends(
+                symbols=symbol, sortOrder='asc'
+            ),
+            'income_statement': lambda: self.brapi_client.get_stock_income_statement(**statement),
+            'balance_sheet': lambda: self.brapi_client.get_stock_balance_sheet(**statement),
+            'cash_flow': lambda: self.brapi_client.get_stock_cash_flow(**statement),
+            # O valor adicionado é uma peça anual: a DVA não é publicada por
+            # trimestre, e pedi-la assim devolve a série vazia.
+            'value_added': lambda: self.brapi_client.get_stock_value_added(
+                symbols=symbol, mode='history', period='annual'
+            ),
+        }
+        responses = await self._gather_routes(requests)
+
+        failures = [item for item in responses.values() if isinstance(item, BaseException)]
+        if len(failures) == len(responses):
+            raise failures[0]
+
+        quote = self._stock_result(responses['quote'], symbol, subject='quote')
+        dividends = self._stock_result(responses['dividends'], symbol, subject='payments')
+
+        # Qualquer uma das nove rotas responde o renome, então a primeira que
+        # tiver respondido serve. Sem nenhuma delas, o ticker continua sendo o
+        # que se pediu -- que é o que ele é até prova em contrário.
+        resolved, renamed = self._stock_rename(responses.values(), symbol)
+
+        return StockProfile(
+            ticker=symbol,
+            resolved_ticker=resolved,
+            renamed=renamed,
+            company=self._stock_company(
+                self._stock_result(responses['company'], symbol, subject='profile')
+            ),
+            price_range=self._stock_price_range(quote),
+            statistics=self._stock_statistics(
+                self._stock_result(responses['statistics'], symbol, subject='statistics')
+            ),
+            fundamentals=self._stock_fundamentals(
+                self._stock_result(responses['fundamentals'], symbol, subject='financials')
+            ),
+            cash_dividends=self._stock_cash_dividends(dividends),
+            share_dividends=self._stock_share_dividends(dividends),
+            subscriptions=self._stock_subscriptions(dividends),
+            income_statement=self._stock_statement(
+                self._stock_result(responses['income_statement'], symbol, subject='results')
+            ),
+            balance_sheet=self._stock_statement(
+                self._stock_result(responses['balance_sheet'], symbol, subject='balance sheet')
+            ),
+            cash_flow=self._stock_statement(
+                self._stock_result(responses['cash_flow'], symbol, subject='cash flow')
+            ),
+            value_added=self._stock_statement(
+                self._stock_result(responses['value_added'], symbol, subject='added value')
+            ),
+        )
+
+    def _stock_result(self, response: object, symbol: str, *, subject: str) -> object:
+        """The one company's entry in a route that answers under `results`.
+
+        Matched on ``requestedSymbol`` and never on ``symbol``. The provider
+        resolves a renamed ticker on the way out -- ask for VVAR3 and BHIA3
+        answers -- so matching on what came back would fail to find the row that
+        was asked for, which is the only row the caller can use.
+
+        The payload under ``data`` is a dict for most routes and a list of
+        periods for the statements, so it is returned as it came and each parser
+        says which of the two it expects.
+        """
+        payload = self._provider_payload(response, symbol, key='results', subject=subject)
+        entry = next(
+            (item for item in payload if str(item.get('requestedSymbol', '')).upper() == symbol),
+            None,
+        )
+        return entry.get('data') if entry else None
+
+    def _stock_rename(self, responses: Any, symbol: str) -> tuple[str | None, bool]:
+        """What the market calls this ticker now, from whichever route answered."""
+        for response in responses:
+            payload = self._provider_payload(response, symbol, key='results', subject='rename')
+            for item in payload:
+                if str(item.get('requestedSymbol', '')).upper() != symbol:
+                    continue
+                resolved = self._text(item.get('symbol'))
+                if resolved:
+                    return resolved.upper(), resolved.upper() != symbol
+        return symbol, False
+
+    def _stock_company(self, data: object) -> StockCompany | None:
+        if not isinstance(data, dict):
+            return None
+        company = StockCompany(
+            name=self._text(data.get('name')),
+            sector=self._text(data.get('sectorDisp')) or self._text(data.get('sector')),
+            sector_key=self._text(data.get('sectorKey')),
+            industry=self._text(data.get('industryDisp')) or self._text(data.get('industry')),
+            industry_key=self._text(data.get('industryKey')),
+            website=self._text(data.get('website')),
+            city=self._text(data.get('city')),
+            state=self._text(data.get('state')),
+            country=self._text(data.get('country')),
+            employees=self._integer(data.get('fullTimeEmployees')),
+            cnpj=self._text(data.get('cnpj')),
+            founded_on=self._provider_date(data.get('startDate')),
+            logo_url=self._text(data.get('logoUrl')),
+            summary_paragraphs=self._paragraphs(data.get('longBusinessSummary')),
+        )
+        return company if any(astuple(company)) else None
+
+    @classmethod
+    def _paragraphs(cls, value: object) -> list[str]:
+        """The company's own paragraph breaks, kept as breaks.
+
+        The summary arrives as one string with blank lines in it. Splitting on
+        screen would put the decision in a component; splitting here keeps it
+        where the shape of the provider's answer is already known.
+        """
+        text = cls._text(value)
+        if not text:
+            return []
+        return [part.strip() for part in text.split('\n\n') if part.strip()]
+
+    def _stock_price_range(self, data: object) -> StockPriceRange | None:
+        if not isinstance(data, dict):
+            return None
+        price_range = StockPriceRange(
+            **{name: self._number(data.get(key)) for name, key in STOCK_QUOTE_KEYS.items()},
+            # A rota de cotação escreve a variação do dia em pontos percentuais
+            # e as outras escrevem razão. A divisão acontece aqui, uma vez, para
+            # que nada depois daqui precise saber qual rota escreveu o número.
+            day_change=self._ratio_from_points(data.get('regularMarketChangePercent')),
+            as_of=self._provider_date(data.get('regularMarketTime')),
+        )
+        return price_range if any(astuple(price_range)) else None
+
+    @classmethod
+    def _ratio_from_points(cls, value: object) -> float | None:
+        number = cls._number(value)
+        return number / 100 if number is not None else None
+
+    def _stock_statistics(self, data: object) -> StockStatistics | None:
+        if not isinstance(data, dict):
+            return None
+        statistics = StockStatistics(
+            **{name: self._number(data.get(key)) for name, key in STOCK_STATISTICS_KEYS.items()},
+            most_recent_quarter=self._provider_date(data.get('mostRecentQuarter')),
+            last_dividend_date=self._provider_date(data.get('lastDividendDate')),
+        )
+        return statistics if any(astuple(statistics)) else None
+
+    def _stock_fundamentals(self, data: object) -> StockFundamentals | None:
+        if not isinstance(data, dict):
+            return None
+        fundamentals = StockFundamentals(**{
+            name: self._number(data.get(key)) for name, key in STOCK_FUNDAMENTALS_KEYS.items()
+        })
+        return fundamentals if any(astuple(fundamentals)) else None
+
+    def _stock_cash_dividends(self, data: object) -> list[StockCashDividend]:
+        payments = [
+            StockCashDividend(
+                payment_date=self._provider_date(item.get('paymentDate')),
+                last_date_prior=self._provider_date(item.get('lastDatePrior')),
+                approved_on=self._provider_date(item.get('approvedOn')),
+                value_per_share=self._number(item.get('rate')),
+                label=self._text(item.get('label')),
+                related_to=self._text(item.get('relatedTo')),
+            )
+            for item in self._stock_events(data, 'cashDividends')
+        ]
+        # Ordenadas aqui e não confiadas ao `sortOrder`: a rota aceita o
+        # parâmetro mas não publica por qual campo ordena, e um pagamento sem
+        # data não tem lugar numa linha do tempo.
+        return sorted(
+            (payment for payment in payments if payment.payment_date),
+            key=lambda payment: payment.payment_date,
+        )
+
+    def _stock_share_dividends(self, data: object) -> list[StockShareDividend]:
+        return [
+            StockShareDividend(
+                factor=self._number(item.get('factor')),
+                complete_factor=self._text(item.get('completeFactor')),
+                last_date_prior=self._provider_date(item.get('lastDatePrior')),
+                approved_on=self._provider_date(item.get('approvedOn')),
+                label=self._text(item.get('label')),
+            )
+            for item in self._stock_events(data, 'stockDividends')
+        ]
+
+    def _stock_subscriptions(self, data: object) -> list[StockSubscription]:
+        return [
+            StockSubscription(
+                factor=self._number(item.get('factor')),
+                complete_factor=self._text(item.get('completeFactor')),
+                price=self._number(item.get('price')),
+                last_date_prior=self._provider_date(item.get('lastDatePrior')),
+                approved_on=self._provider_date(item.get('approvedOn')),
+                label=self._text(item.get('label')),
+            )
+            for item in self._stock_events(data, 'subscriptions')
+        ]
+
+    @staticmethod
+    def _stock_events(data: object, key: str) -> list[dict]:
+        """One of the three lists the payment route answers with.
+
+        They are three lists because they are three shapes: money per share, a
+        proportion of new shares, and a right to subscribe. The route keeps them
+        apart and so does this.
+        """
+        if not isinstance(data, dict):
+            return []
+        items = data.get(key)
+        return [item for item in items if isinstance(item, dict)] if isinstance(items, list) else []
+
+    def _stock_statement(self, data: object) -> list[StockStatementPoint]:
+        """A filed statement, one point per period, oldest first.
+
+        Only the lines the filer actually reported are carried. The route
+        answers every line any Brazilian filer might report -- a bank's, an
+        insurer's and an industrial company's, in one flat record -- and any one
+        company leaves most of them null. Keeping the nulls would put a hundred
+        empty fields into the contract and the client type for no reader.
+
+        The provider's line names are transliterated to snake_case, which is
+        what every other contract in this application is written in.
+        """
+        if not isinstance(data, list):
+            return []
+
+        points = [
+            StockStatementPoint(
+                end_date=self._provider_date(item.get('endDate')),
+                period=self._text(item.get('type')),
+                lines={
+                    self._snake_case(key): number
+                    for key, value in item.items()
+                    if key not in STOCK_STATEMENT_META_KEYS
+                    and (number := self._number(value)) is not None
+                },
+            )
+            for item in data
+            if isinstance(item, dict)
+        ]
+        # A rota responde do mais recente para o mais antigo e um gráfico quer o
+        # contrário. Inverter uma vez aqui é mais barato do que cada leitor
+        # lembrar de inverter.
+        return sorted(
+            (point for point in points if point.end_date),
+            key=lambda point: point.end_date,
+        )
+
+    @staticmethod
+    def _snake_case(value: str) -> str:
+        letters: list[str] = []
+        for index, char in enumerate(value):
+            if char.isupper() and index:
+                letters.append('_')
+            letters.append(char.lower())
+        return ''.join(letters)
 
     async def fetch_investment_fund_market(self) -> list[dict]:
         """The catalogue of funds that are neither real-estate funds nor ETFs.

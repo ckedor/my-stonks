@@ -1,6 +1,7 @@
 """Provider-backed market catalogues for stocks, ETFs and cryptoassets."""
 
 import math
+from datetime import date, timedelta
 
 from app.core.exceptions import ValidationError
 from app.infra.db.unit_of_work import UnitOfWork
@@ -18,6 +19,18 @@ MARKET_ASSET_TYPES = {
     'crypto': ASSET_TYPE.CRIPTO,
 }
 
+#: As classes de fora da B3. O provedor de catálogo cobre só o mercado
+#: brasileiro, então aqui o universo é o cadastro da própria aplicação — e o
+#: preço vem da série de cotações que a ingestão já mantém.
+REGISTERED_ASSET_TYPES = {
+    'stock-us': ASSET_TYPE.STOCK,
+    'etf-us': ASSET_TYPE.ETF,
+}
+
+#: Janela para achar o último fechamento e o anterior a ele. Duas semanas
+#: cobrem feriado e fim de semana sem carregar a série inteira.
+REGISTERED_QUOTE_WINDOW_DAYS = 14
+
 
 class MarketCatalogueReadService:
     """A BRAPI universe enriched with ids of assets registered in the app."""
@@ -34,6 +47,9 @@ class MarketCatalogueReadService:
         self.cache = cache or RedisService()
 
     async def list_market(self, kind: str) -> dict:
+        if kind in REGISTERED_ASSET_TYPES:
+            return await self._list_registered(kind)
+
         asset_type_id = MARKET_ASSET_TYPES.get(kind)
         if asset_type_id is None:
             raise ValidationError('Unsupported market catalogue', context={'kind': kind})
@@ -51,6 +67,57 @@ class MarketCatalogueReadService:
             'total': len(provider_assets),
             'source': 'brapi',
         }
+
+    async def _list_registered(self, kind: str) -> dict:
+        """O mercado americano, montado do cadastro em vez do provedor.
+
+        A BRAPI só fala da B3, então não há catálogo a folhear aqui: a tela
+        mostra os papéis que a aplicação conhece, com o último fechamento e a
+        variação contra o fechamento anterior.
+        """
+        asset_type_id = REGISTERED_ASSET_TYPES[kind]
+        async with self.uow as uow:
+            assets = await uow.assets.get_registered_by_market(
+                asset_type_id,
+                brazilian=False,
+            )
+            asset_ids = [asset.id for asset in assets]
+            start = date.today() - timedelta(days=REGISTERED_QUOTE_WINDOW_DAYS)
+            quotes = await uow.quotes.get_quotes(asset_ids, start_date=start)
+
+        closes: dict[int, list[float]] = {}
+        volumes: dict[int, float | None] = {}
+        for quote in quotes:
+            close = self._number(quote.close)
+            if close is None:
+                continue
+            closes.setdefault(quote.asset_id, []).append(close)
+            volumes[quote.asset_id] = self._number(quote.volume)
+
+        rows = []
+        for asset in assets:
+            series = closes.get(asset.id, [])
+            price = series[-1] if series else None
+            previous = series[-2] if len(series) > 1 else None
+            change = (
+                (price - previous) / previous * 100
+                if price is not None and previous not in (None, 0)
+                else None
+            )
+            rows.append({
+                'asset_id': asset.id,
+                'ticker': asset.ticker,
+                'name': asset.name,
+                'price': price,
+                'change_percent': change,
+                'volume': volumes.get(asset.id),
+                'market_cap': None,
+                'currency': 'USD',
+                'logo_url': asset.logo_url,
+            })
+
+        rows.sort(key=lambda row: row['ticker'] or '')
+        return {'assets': rows, 'total': len(rows), 'source': 'registry'}
 
     async def fetch_catalogue(self, kind: str) -> list[dict]:
         """O universo do provedor para uma classe, normalizado e em cache.

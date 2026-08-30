@@ -32,6 +32,7 @@ from app.modules.market_data.service.quote_service import (
     PersistedQuoteReadService,
     QuoteService,
 )
+from app.modules.market_data.service.stock_service import StockProfileReadService
 from app.modules.market_data.service.usd_brl_ingestion_service import UsdBrlIngestionService
 from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
 
@@ -148,6 +149,21 @@ async def get_investment_fund_profile_read_service(
         await service.aclose()
 
 
+async def get_stock_profile_read_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> AsyncIterator[StockProfileReadService]:
+    """The provider-backed profile of a registered listed company."""
+    service = StockProfileReadService(
+        uow=uow,
+        provider=MarketDataProvider(),
+        cache=RedisService(),
+    )
+    try:
+        yield service
+    finally:
+        await service.aclose()
+
+
 async def get_investment_fund_market_read_service(
     uow: UnitOfWork = Depends(get_uow),
 ) -> AsyncIterator[InvestmentFundMarketReadService]:
@@ -191,15 +207,32 @@ async def get_asset_catalogue_sync_service(
         provider=MarketDataProvider(),
         cache=RedisService(),
     )
+    # Fundo listado vem da rota dedicada, e não do screener: o `type=fund` do
+    # screener não traz nome e não distingue FII de FI, que é o que decide o
+    # tipo do ativo cadastrado.
+    fii_market = FIIMarketReadService(
+        uow=UnitOfWork(),
+        provider=MarketDataProvider(),
+        cache=RedisService(),
+    )
+    investment_fund = InvestmentFundMarketReadService(
+        uow=UnitOfWork(),
+        provider=MarketDataProvider(),
+        cache=RedisService(),
+    )
     service = AssetCatalogueSyncService(
         uow=uow,
         catalogue=catalogue,
+        fii_market=fii_market,
+        investment_fund=investment_fund,
         cache=RedisService(),
     )
     try:
         yield service
     finally:
         await catalogue.aclose()
+        await fii_market.aclose()
+        await investment_fund.aclose()
 
 
 def build_data_ingestion_service() -> DataIngestionService:

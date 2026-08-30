@@ -25,14 +25,27 @@ export interface AppImmersiveCaptionProps {
 
 /** Legenda sobre uma cena: largura de leitura no desktop, alinhamento que
  *  acompanha a tela estreita e sombra suficiente para continuar legível
- *  sobre fotografia. */
+ *  sobre fotografia.
+ *
+ *  A legibilidade sai do bloco, e não do cenário: escurecer a arte inteira
+ *  para conseguir ler é apagar a única coisa que a tela veio mostrar. O texto
+ *  vive num cartão translúcido, do tamanho do que ele diz — o vidro fosco
+ *  segura a letra e a paisagem continua vendo-se através dele. Sem sombra na
+ *  letra: sobre o cartão ela vira borrão, e é o cartão que faz o contraste. */
 export function AppImmersiveCaption({ children }: AppImmersiveCaptionProps) {
+  const theme = useAppTheme()
+
   return (
     <Box
       sx={{
         width: { xs: '100%', sm: 380 },
         textAlign: { xs: 'left', sm: 'right' },
-        textShadow: `0 4px 24px ${withOpacity('#000000', 0.85)}`,
+        p: 2,
+        borderRadius: `${theme.radius.md}px`,
+        backgroundColor: withOpacity('#000000', 0.26),
+        backdropFilter: 'blur(10px)',
+        border: `1px solid ${withOpacity('#ffffff', 0.12)}`,
+        boxShadow: `0 18px 48px ${withOpacity('#000000', 0.45)}`,
       }}
     >
       {children}
@@ -46,8 +59,6 @@ export default function AppImmersiveScene({
   locked = false,
   children,
 }: AppImmersiveSceneProps) {
-  const theme = useAppTheme()
-
   return (
     <>
       <Box
@@ -71,42 +82,15 @@ export default function AppImmersiveScene({
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              filter: locked ? 'grayscale(1) brightness(0.22) blur(18px)' : 'none',
-              transform: locked ? 'scale(1.08)' : 'scale(1.01)',
+              /* Bloqueado ainda é a cena, só que fora de foco: o borrão é de
+                 teaser — dá para ver que há um lugar ali e não o que ele é —, e
+                 a saturação baixa mais o leve escurecimento sustentam o texto
+                 por cima. */
+              filter: locked ? 'grayscale(0.25) brightness(0.7) blur(12px)' : 'none',
+              transform: locked ? 'scale(1.06)' : 'scale(1.01)',
               transition: 'filter 320ms ease, transform 320ms ease',
             }}
           />
-        )}
-
-        <Box
-          aria-hidden
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            background: `linear-gradient(180deg, ${withOpacity(
-              theme.palette.background.default,
-              0.72,
-            )} 0%, ${withOpacity(theme.palette.background.default, 0.1)} 28%, ${withOpacity(
-              '#000000',
-              0.3,
-            )} 62%, ${withOpacity('#000000', 0.88)} 100%)`,
-          }}
-        />
-
-        {locked && (
-          <Box
-            aria-hidden
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: withOpacity(theme.palette.golden, 0.7),
-            }}
-          >
-            <Box sx={{ fontSize: { xs: 96, md: 180 }, fontWeight: 900, lineHeight: 1 }}>?</Box>
-          </Box>
         )}
       </Box>
 

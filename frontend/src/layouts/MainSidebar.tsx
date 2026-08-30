@@ -14,7 +14,7 @@ import {
 } from './navigation'
 
 /** Quantos atalhos a coluna comporta sem virar uma segunda lista. */
-const FAVORITES_IN_RAIL = 6
+const FAVORITES_IN_RAIL = 5
 
 export default function MainSidebar({ collapsed }: { collapsed: boolean }) {
   const navigate = useNavigate()
@@ -25,7 +25,7 @@ export default function MainSidebar({ collapsed }: { collapsed: boolean }) {
 
   const categories = useSelectedPortfolio()?.custom_categories
 
-  /* Os acessados recentemente são um grupo da coluna, e não uma prateleira de
+  /* Os mais acessados são um grupo da coluna, e não uma prateleira de
      cards dentro dela: para quem olha, é mais um caminho para uma tela — e um
      caminho tem a forma dos outros caminhos. */
   const { favorites, refresh } = useFavoritesStore()
@@ -63,7 +63,7 @@ export default function MainSidebar({ collapsed }: { collapsed: boolean }) {
         ...(currentSection === 'mercado' && favorites.length
           ? [
               {
-                title: 'Acessados recentemente',
+                title: 'Mais acessados',
                 items: favorites.slice(0, FAVORITES_IN_RAIL).map((asset) => ({
                   id: `/market/asset/${asset.id}`,
                   label: asset.ticker ?? asset.name,

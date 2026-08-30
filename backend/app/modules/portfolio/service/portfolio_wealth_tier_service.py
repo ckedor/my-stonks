@@ -44,18 +44,14 @@ class PortfolioWealthTierService:
     async def get_portfolio_tier(self, portfolio_id: int) -> dict:
         """The tier a portfolio has earned, and how far the next one is.
 
-        Two different numbers answer two different questions, and mixing them up
-        is what this method exists to keep straight:
+        O degrau é o de hoje, e não o do melhor dia: a escala mede onde a
+        carteira está, então ela também desce. Uma patente presa no pico
+        deixava a tela dizendo "Escudeiro" com uma barra que media a distância
+        para o degrau seguinte a partir de um valor que a carteira já não tem —
+        o título falava de um mês e a barra de outro.
 
-        - the **peak** earns the tier. A rung is reached once and never lost, so
-          the title is decided by the highest the patrimony has ever been.
-          Reading the peak off the existing series is what makes that promise
-          hold for free — no high-water mark stored anywhere to drift out of
-          step with the history, and repricing a rung in the CRUD re-answers it
-          consistently for every portfolio instead of freezing old winners;
-        - the **current** value measures the climb. What is left to reach the
-          next rung is a question about today, not about a past high, so a
-          portfolio that fell back sees the distance it actually has to cover.
+        O pico continua a ser devolvido em `peak_patrimony`, porque é o que
+        conta a história do álbum; ele não decide mais o título.
         """
         tiers = await self.list_tiers()
         peak, current_value = await self._patrimony_peak_and_current(portfolio_id)
@@ -63,7 +59,7 @@ class PortfolioWealthTierService:
         current = None
         following = None
         for tier in tiers:
-            if tier.threshold <= peak:
+            if tier.threshold <= current_value:
                 current = tier
             elif following is None:
                 following = tier
@@ -229,11 +225,12 @@ class PortfolioWealthTierService:
         following: WealthTier | None,
         current_value: float,
     ) -> float:
-        """How far along the current rung today's value sits, as a 0-1 fraction.
+        """Quanto da travessia entre o degrau atual e o próximo já foi feito.
 
-        Clamped at the bottom because the two numbers answer different
-        questions: a portfolio that earned a rung and then fell below its floor
-        keeps the title, and an empty bar is what that looks like.
+        O trecho é o que a barra promete: o "Faltam" ao lado dela mede daqui
+        até o degrau seguinte, e a barra tem de medir a mesma distância. Sobre
+        o valor cheio do alvo, uma carteira que acabou de subir de degrau já
+        aparecia quase no fim.
         """
         if following is None:
             return 1.0

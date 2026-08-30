@@ -347,6 +347,7 @@ class AssetService:
         limit: int = 8,
         asset_type_id: int | None = None,
         asset_ids: list[int] | None = None,
+        brazilian: bool | None = None,
     ) -> list[dict]:
         """Assets the user opens most, as a shortcut back to them."""
         async with self.uow as uow:
@@ -355,6 +356,7 @@ class AssetService:
                 limit,
                 asset_type_id=asset_type_id,
                 asset_ids=asset_ids,
+                brazilian=brazilian,
             )
             return [
                 {

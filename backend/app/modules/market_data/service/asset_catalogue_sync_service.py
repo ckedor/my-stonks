@@ -21,6 +21,14 @@ padrão da rota.
 O catálogo da B3 é o único que o provedor lista, então tudo que nasce aqui
 nasce com a bolsa brasileira. É a mesma regra que decide o segmento de uma
 posição em `portfolio_segment`: sem exchange, ou com B3, o papel é local.
+
+O fundo de investimento é a exceção da fonte, e por um motivo concreto. O
+screener da B3 não o lista sob nenhum `type`: quem responde por ele é uma rota
+dedicada do provedor, a mesma que desenha a tela de fundos. Enquanto a
+sincronização percorria só o screener, o cadastro não tinha nenhum ativo do
+tipo FI, e cada linha daquela tabela aparecia sem `asset_id` — visível e não
+clicável, porque o fundo não existia aqui. Sincronizar FI pelo mesmo universo
+que a tela desenha é o que faz uma linha sempre ter para onde levar.
 """
 
 import logging
@@ -32,6 +40,10 @@ from app.modules.market_data.domain.assets import ETF, Asset, Exchange, Stock
 from app.modules.market_data.domain.constants import ASSET_TYPE
 from app.modules.market_data.domain.enums import EXCHANGE
 from app.modules.market_data.service.asset_service import ASSETS_LIST_CACHE_PREFIX
+from app.modules.market_data.service.fii_service import FIIMarketReadService
+from app.modules.market_data.service.investment_fund_service import (
+    InvestmentFundMarketReadService,
+)
 from app.modules.market_data.service.market_catalogue_service import (
     MARKET_ASSET_TYPES,
     MarketCatalogueReadService,
@@ -42,7 +54,12 @@ logger = logging.getLogger(__name__)
 #: Os catálogos que a sincronização percorre quando ninguém pede um recorte.
 #: Cripto fica de fora do padrão de propósito: o universo é grande, muda o
 #: tempo todo e cadastrar tudo encheria o app de moedas que ninguém negocia.
-DEFAULT_KINDS = ('stock', 'etf', 'fii', 'bdr')
+DEFAULT_KINDS = ('stock', 'etf', 'fii', 'bdr', 'fi')
+
+#: O que a sincronização aceita, que é mais do que o screener sabe listar:
+#: `MARKET_ASSET_TYPES` é o universo da tela de catálogo, e o fundo de
+#: investimento entra aqui porque tem fonte própria em `_catalogue_rows`.
+SYNC_ASSET_TYPES = {**MARKET_ASSET_TYPES, 'fi': ASSET_TYPE.FI}
 
 #: Tipos cuja subclasse é a tabela `stock`, que guarda país, setor e indústria.
 _STOCK_LIKE = (ASSET_TYPE.STOCK, ASSET_TYPE.BDR)
@@ -56,16 +73,20 @@ class AssetCatalogueSyncService:
         *,
         uow: UnitOfWork,
         catalogue: MarketCatalogueReadService,
+        fii_market: FIIMarketReadService | None = None,
+        investment_fund: InvestmentFundMarketReadService | None = None,
         cache: RedisService | None = None,
     ) -> None:
         self.uow = uow
         self.catalogue = catalogue
+        self.fii_market = fii_market
+        self.investment_fund = investment_fund
         self.cache = cache or RedisService()
 
     async def sync(self, kinds: list[str] | None = None, dry_run: bool = True) -> dict:
         """O merge, e o relatório do que ele fez — ou faria."""
         selected = tuple(kinds) if kinds else DEFAULT_KINDS
-        unsupported = [kind for kind in selected if kind not in MARKET_ASSET_TYPES]
+        unsupported = [kind for kind in selected if kind not in SYNC_ASSET_TYPES]
         if unsupported:
             raise ValidationError('Unsupported market catalogue', context={'kinds': unsupported})
 
@@ -87,8 +108,8 @@ class AssetCatalogueSyncService:
         return report
 
     async def _sync_kind(self, kind: str, dry_run: bool, report: dict) -> None:
-        asset_type_id = int(MARKET_ASSET_TYPES[kind])
-        rows = await self.catalogue.fetch_catalogue(kind)
+        asset_type_id = int(SYNC_ASSET_TYPES[kind])
+        rows = await self._catalogue_rows(kind)
         by_ticker = {row['ticker'].upper(): row for row in rows if row.get('ticker')}
 
         async with self.uow as uow:
@@ -128,6 +149,36 @@ class AssetCatalogueSyncService:
             if not dry_run:
                 await uow.commit()
 
+    async def _catalogue_rows(self, kind: str) -> list[dict]:
+        """O universo de uma classe, na fonte que sabe respondê-la.
+
+        O provedor é sempre o mesmo; as rotas dele, não. O screener da B3
+        responde bem por ação, ETF e BDR, mas o `type=fund` dele é um balaio:
+        devolve o próprio código no lugar do nome — 669 dos 671 vêm assim — e
+        mistura numa lista só o fundo imobiliário, o Fiagro e o FI-Infra. Um
+        catálogo sem nome e sem classe não é catálogo: era ele que reescrevia
+        "BTGP LOGISTICA FII" como "BTLG11" e cadastrava o BISE11 como FII.
+
+        As rotas dedicadas respondem o que ele não sabe. Cada uma traz nome de
+        verdade em todas as linhas, e saber de qual delas o ticker veio é o
+        que decide o tipo do ativo. Elas não trazem logo, e não precisam:
+        `_changes` ignora campo vazio, então o que falta aqui não apaga o que
+        o cadastro já tem.
+        """
+        if kind == 'fii' and self.fii_market is not None:
+            return self._tickers_and_names(await self.fii_market.list_market())
+        if kind == 'fi' and self.investment_fund is not None:
+            return self._tickers_and_names(await self.investment_fund.list_market())
+        return await self.catalogue.fetch_catalogue(kind)
+
+    @staticmethod
+    def _tickers_and_names(market: dict) -> list[dict]:
+        return [
+            {'ticker': fund['ticker'], 'name': fund['name']}
+            for fund in market['funds']
+            if fund.get('ticker')
+        ]
+
     @staticmethod
     def _changes(asset: Asset, row: dict) -> dict[str, tuple]:
         """O que o provedor sabe e o cadastro discorda, campo a campo.
@@ -135,6 +186,7 @@ class AssetCatalogueSyncService:
         Um campo vazio no provedor não é uma correção: apagar o nome de um
         ativo porque o catálogo veio sem ele seria trocar um dado velho por
         nenhum.
+
         """
         changes: dict[str, tuple] = {}
         name = (row.get('name') or '').strip()

@@ -103,6 +103,8 @@ export const navigationSections: NavigationSection[] = [
         items: [
           { label: 'Ações BR', path: '/market/stock' },
           { label: 'ETFs BR', path: '/market/etf' },
+          { label: 'Ações EUA', path: '/market/stock-us' },
+          { label: 'ETFs EUA', path: '/market/etf-us' },
           { label: 'FIIs', path: '/market/fii' },
           { label: 'Fundos', path: '/market/investment-fund' },
           { label: 'Cripto', path: '/market/crypto' },

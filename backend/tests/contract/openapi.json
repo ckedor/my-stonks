@@ -6167,7 +6167,7 @@
     "type": "object"
    },
    "PortfolioWealthTier": {
-    "description": "A portfolio's standing on the ladder, from two deliberately different numbers.\n\n`peak_patrimony` is the highest the portfolio has ever been worth, and it is\nwhat earns `current_tier`: a rung is reached once and never lost.\n\n`remaining` and `progress` are measured from `current_patrimony` instead,\nbecause how much is left to climb is a question about today. A portfolio\nthat fell back keeps its title and sees the real distance ahead of it.",
+    "description": "A portfolio's standing on the ladder, as it is today.\n\n`current_patrimony` decides everything: `current_tier`, `remaining` and\n`progress` all falam do valor de hoje, e a patente desce quando a carteira\ndesce.\n\n`peak_patrimony` é o mais alto que a carteira já valeu. Ele é história —\no álbum de cenários já visitados —, e não decide o título.",
     "properties": {
      "current_patrimony": {
       "title": "Current Patrimony",
@@ -6456,6 +6456,479 @@
     "title": "StatementScope",
     "type": "string"
    },
+   "StockCashDividendResponse": {
+    "description": "A payment in money, per share.\n\n``label`` tells a dividend from interest on own capital (``JCP``), which is\ntaxed at source. ``last_date_prior`` is the last day the share carried the\nright; the ex date is the trading day after. ``payment_date`` is regularly\nin the future, because a company announces months ahead.",
+    "properties": {
+     "approved_on": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Approved On"
+     },
+     "label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Label"
+     },
+     "last_date_prior": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Date Prior"
+     },
+     "payment_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payment Date"
+     },
+     "related_to": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Related To"
+     },
+     "value_per_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value Per Share"
+     }
+    },
+    "title": "StockCashDividendResponse",
+    "type": "object"
+   },
+   "StockCompanyResponse": {
+    "description": "The business behind the ticker.\n\nThe classification comes twice: ``sector``/``industry`` are for reading and\n``sector_key``/``industry_key`` are stable slugs meant for grouping. The\nsummary arrives already split into the paragraphs the company wrote.",
+    "properties": {
+     "city": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "City"
+     },
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "country": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Country"
+     },
+     "employees": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Employees"
+     },
+     "founded_on": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Founded On"
+     },
+     "industry": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Industry"
+     },
+     "industry_key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Industry Key"
+     },
+     "logo_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Logo Url"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "sector": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sector"
+     },
+     "sector_key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sector Key"
+     },
+     "state": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "State"
+     },
+     "summary_paragraphs": {
+      "default": [],
+      "items": {
+       "type": "string"
+      },
+      "title": "Summary Paragraphs",
+      "type": "array"
+     },
+     "website": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Website"
+     }
+    },
+    "title": "StockCompanyResponse",
+    "type": "object"
+   },
+   "StockFundamentalsResponse": {
+    "description": "How the business did, before the market had an opinion.\n\nMargins, returns and growth are ratios. ``earnings_growth`` and\n``revenue_growth`` compare a quarter to the same quarter a year earlier;\nthe ``annual_`` pair compares years, and the two are far apart enough that\na screen has to say which it is showing.",
+    "properties": {
+     "annual_earnings_growth": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Annual Earnings Growth"
+     },
+     "annual_revenue_growth": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Annual Revenue Growth"
+     },
+     "cash_per_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cash Per Share"
+     },
+     "current_ratio": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Current Ratio"
+     },
+     "debt_to_equity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Debt To Equity"
+     },
+     "earnings_growth": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Earnings Growth"
+     },
+     "ebitda": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ebitda"
+     },
+     "ebitda_margin": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ebitda Margin"
+     },
+     "free_cash_flow": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Free Cash Flow"
+     },
+     "gross_margin": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Gross Margin"
+     },
+     "gross_profit": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Gross Profit"
+     },
+     "operating_cash_flow": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Operating Cash Flow"
+     },
+     "operating_margin": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Operating Margin"
+     },
+     "profit_margin": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Profit Margin"
+     },
+     "quick_ratio": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Quick Ratio"
+     },
+     "return_on_assets": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Return On Assets"
+     },
+     "return_on_equity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Return On Equity"
+     },
+     "revenue": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Revenue"
+     },
+     "revenue_growth": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Revenue Growth"
+     },
+     "total_cash": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Cash"
+     },
+     "total_debt": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Debt"
+     }
+    },
+    "title": "StockFundamentalsResponse",
+    "type": "object"
+   },
    "StockOut": {
     "properties": {
      "asset_id": {
@@ -6503,6 +6976,678 @@
      "industry"
     ],
     "title": "StockOut",
+    "type": "object"
+   },
+   "StockPriceRangeResponse": {
+    "description": "The quote and the band the year drew around it.\n\n``day_change`` is a ratio like every other proportion here: 0.0199 is\n+1,99%. The provider states this one in percentage points and it is divided\non the way in, so that nothing downstream has to know which route wrote it.",
+    "properties": {
+     "as_of": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "As Of"
+     },
+     "day_change": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Day Change"
+     },
+     "day_high": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Day High"
+     },
+     "day_low": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Day Low"
+     },
+     "fifty_two_week_high": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fifty Two Week High"
+     },
+     "fifty_two_week_low": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fifty Two Week Low"
+     },
+     "market_cap": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Market Cap"
+     },
+     "previous_close": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Previous Close"
+     },
+     "price": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price"
+     },
+     "volume": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Volume"
+     }
+    },
+    "title": "StockPriceRangeResponse",
+    "type": "object"
+   },
+   "StockProfileResponse": {
+    "description": "Everything a listed company publishes about itself.\n\nEvery section is optional and independent: the provider answers each from a\nroute of its own, and one of them failing costs the page that section rather\nthan the whole profile. The series run oldest first.\n\n``ticker`` is what was asked for and ``resolved_ticker`` is what the market\ncalls it now; ``renamed`` says the two differ, so a reader who lands on a\npage under an unfamiliar code is told why.",
+    "properties": {
+     "balance_sheet": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/StockStatementPointResponse"
+      },
+      "title": "Balance Sheet",
+      "type": "array"
+     },
+     "cash_dividends": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/StockCashDividendResponse"
+      },
+      "title": "Cash Dividends",
+      "type": "array"
+     },
+     "cash_flow": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/StockStatementPointResponse"
+      },
+      "title": "Cash Flow",
+      "type": "array"
+     },
+     "company": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/StockCompanyResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "fundamentals": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/StockFundamentalsResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "income_statement": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/StockStatementPointResponse"
+      },
+      "title": "Income Statement",
+      "type": "array"
+     },
+     "price_range": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/StockPriceRangeResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "renamed": {
+      "default": false,
+      "title": "Renamed",
+      "type": "boolean"
+     },
+     "resolved_ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Resolved Ticker"
+     },
+     "share_dividends": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/StockShareDividendResponse"
+      },
+      "title": "Share Dividends",
+      "type": "array"
+     },
+     "statistics": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/StockStatisticsResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "subscriptions": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/StockSubscriptionResponse"
+      },
+      "title": "Subscriptions",
+      "type": "array"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     },
+     "value_added": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/StockStatementPointResponse"
+      },
+      "title": "Value Added",
+      "type": "array"
+     }
+    },
+    "required": [
+     "ticker"
+    ],
+    "title": "StockProfileResponse",
+    "type": "object"
+   },
+   "StockShareDividendResponse": {
+    "description": "A payment in shares: a bonus issue or a split.\n\nIt has a proportion and no amount, and never had a payment date -- which is\nwhy it is its own shape rather than a cash dividend with half its fields\nempty.",
+    "properties": {
+     "approved_on": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Approved On"
+     },
+     "complete_factor": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Complete Factor"
+     },
+     "factor": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Factor"
+     },
+     "label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Label"
+     },
+     "last_date_prior": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Date Prior"
+     }
+    },
+    "title": "StockShareDividendResponse",
+    "type": "object"
+   },
+   "StockStatementPointResponse": {
+    "description": "One period of one filed statement, carrying only the lines it has.\n\n``lines`` is a mapping and not a set of fields because the filers disagree\non which lines exist: the provider answers each statement with every line\nany Brazilian filer might report -- 128 for the balance sheet -- and a bank\nfills a different 31 of them than an oil company fills 65, with 16 in\ncommon. Declared as fields, three quarters of the contract would be null for\nany one company. Keys are the provider's line names in snake_case, and a\nline the company did not file is absent rather than zero.\n\n``period`` is what the filer called it -- ``quarterly``, ``yearly`` --\nechoed rather than normalized.",
+    "properties": {
+     "end_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "End Date"
+     },
+     "lines": {
+      "additionalProperties": {
+       "type": "number"
+      },
+      "default": {},
+      "title": "Lines",
+      "type": "object"
+     },
+     "period": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Period"
+     }
+    },
+    "title": "StockStatementPointResponse",
+    "type": "object"
+   },
+   "StockStatisticsResponse": {
+    "description": "What the market pays for the company.\n\nThe multiples are as the provider publishes them and are never recomputed\nfrom price and earnings. ``dividend_yield``, ``profit_margin`` and\n``fifty_two_week_change`` are ratios: 0.08 is 8%.",
+    "properties": {
+     "beta": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Beta"
+     },
+     "book_value_per_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Book Value Per Share"
+     },
+     "dividend_yield": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Dividend Yield"
+     },
+     "earnings_per_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Earnings Per Share"
+     },
+     "earnings_quarterly_growth": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Earnings Quarterly Growth"
+     },
+     "enterprise_to_ebitda": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Enterprise To Ebitda"
+     },
+     "enterprise_to_revenue": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Enterprise To Revenue"
+     },
+     "enterprise_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Enterprise Value"
+     },
+     "fifty_two_week_change": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fifty Two Week Change"
+     },
+     "float_shares": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Float Shares"
+     },
+     "forward_earnings_per_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Forward Earnings Per Share"
+     },
+     "forward_pe": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Forward Pe"
+     },
+     "last_dividend_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Dividend Date"
+     },
+     "last_dividend_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Dividend Value"
+     },
+     "market_cap": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Market Cap"
+     },
+     "most_recent_quarter": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Most Recent Quarter"
+     },
+     "net_income": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Net Income"
+     },
+     "peg_ratio": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Peg Ratio"
+     },
+     "price_to_book": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price To Book"
+     },
+     "profit_margin": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Profit Margin"
+     },
+     "shares_outstanding": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Shares Outstanding"
+     },
+     "trailing_pe": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Trailing Pe"
+     }
+    },
+    "title": "StockStatisticsResponse",
+    "type": "object"
+   },
+   "StockSubscriptionResponse": {
+    "description": "A right to subscribe new shares, which is neither of the other two.",
+    "properties": {
+     "approved_on": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Approved On"
+     },
+     "complete_factor": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Complete Factor"
+     },
+     "factor": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Factor"
+     },
+     "label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Label"
+     },
+     "last_date_prior": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Date Prior"
+     },
+     "price": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price"
+     }
+    },
+    "title": "StockSubscriptionResponse",
     "type": "object"
    },
    "Transaction": {
@@ -9837,6 +10982,54 @@
     "summary": "Get Market Data Series History",
     "tags": [
      "Market Data Series"
+    ]
+   }
+  },
+  "/market_data/stock/{asset_id}/profile": {
+   "get": {
+    "description": "Filings, multiples and payment history published for one listed company.",
+    "operationId": "get_stock_profile_market_data_stock__asset_id__profile_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StockProfileResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Stock Profile",
+    "tags": [
+     "Stock"
     ]
    }
   },

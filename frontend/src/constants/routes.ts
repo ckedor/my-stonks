@@ -87,6 +87,13 @@ export const INVESTMENT_FUND_ROUTES = {
   profile: (assetId: number | string) => `${MARKET_DATA}/investment_fund/${assetId}/profile`,
 } as const
 
+// Uma ação não tem rota de catálogo própria: a lista de ações é a genérica de
+// `MARKET_CATALOGUE_ROUTES`. O que ela tem de seu é o perfil, que reúne o que a
+// companhia arquiva com o que o mercado paga por isso.
+export const STOCK_ROUTES = {
+  profile: (assetId: number | string) => `${MARKET_DATA}/stock/${assetId}/profile`,
+} as const
+
 export const MARKET_CATALOGUE_ROUTES = {
   byKind: (kind: 'stock' | 'etf' | 'fii' | 'bdr' | 'crypto') =>
     `${MARKET_DATA}/market/${kind}`,

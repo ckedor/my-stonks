@@ -1,5 +1,7 @@
 """Asset, asset type, FII/ETF, fixed income, treasury bond, event and exchange routes."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 
 from app.composition.market_data import get_asset_catalogue_sync_service, get_asset_service
@@ -12,6 +14,7 @@ from app.modules.market_data.api.asset.schemas import (
     AssetUpdate,
     ExchangeOut,
     FavoriteAsset,
+    FavoriteAssetFilters,
     FixedIncomeAsset,
     FixedIncomeType,
     TreasuryBondTypeOut,
@@ -24,7 +27,6 @@ from app.modules.users.domain import User
 from app.modules.users.views import current_active_user, current_superuser
 
 router = APIRouter(prefix='/asset', tags=['Asset'])
-MAX_FAVORITE_ASSET_FILTER = 1000
 
 
 # ---------------------------------------------------------------------------
@@ -89,18 +91,17 @@ async def list_exchanges(
 
 @router.get('/favorites', response_model=list[FavoriteAsset])
 async def list_favorite_assets(
-    limit: int = Query(default=8, ge=1, le=24),
-    asset_type_id: int | None = Query(default=None, ge=1),
-    asset_ids: list[int] | None = Query(default=None, max_length=MAX_FAVORITE_ASSET_FILTER),
+    filters: Annotated[FavoriteAssetFilters, Query()],
     user: User = Depends(current_active_user),
     service: AssetService = Depends(get_asset_service),
 ):
     """The assets this user opens most often."""
     return await service.list_favorite_assets(
         user.id,
-        limit,
-        asset_type_id,
-        asset_ids=asset_ids,
+        filters.limit,
+        filters.asset_type_id,
+        asset_ids=filters.asset_ids,
+        brazilian=filters.brazilian,
     )
 
 

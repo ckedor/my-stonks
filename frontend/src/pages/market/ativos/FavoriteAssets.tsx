@@ -19,12 +19,16 @@ export default function FavoriteAssets({
   limit = 8,
   assetTypeId,
   assetIds,
+  brazilian,
   orientation = 'row',
 }: {
   limit?: number
   assetTypeId?: number
   /** Limits the ranking to the universe represented by the current page. */
   assetIds?: number[]
+  /** O lado da fronteira que a tela mostra — o que separa o ETF da B3 do ETF
+   *  americano, que têm o mesmo tipo de ativo. */
+  brazilian?: boolean
   /** Na coluna de navegação a prateleira empilha e ocupa a largura da coluna;
    *  na página ela é uma fileira que rola. */
   orientation?: 'row' | 'column'
@@ -34,7 +38,7 @@ export default function FavoriteAssets({
   const [filteredFavorites, setFilteredFavorites] = useState<FavoriteAsset[]>([])
 
   useEffect(() => {
-    if (assetTypeId == null && assetIds == null) {
+    if (assetTypeId == null && assetIds == null && brazilian == null) {
       void refresh()
       return
     }
@@ -42,12 +46,12 @@ export default function FavoriteAssets({
       setFilteredFavorites([])
       return
     }
-    void fetchFavoriteAssets(limit, assetTypeId, assetIds)
+    void fetchFavoriteAssets(limit, assetTypeId, assetIds, brazilian)
       .then(setFilteredFavorites)
       .catch(() => undefined)
-  }, [refresh, limit, assetTypeId, assetIds])
+  }, [refresh, limit, assetTypeId, assetIds, brazilian])
 
-  const visibleFavorites = assetTypeId == null && assetIds == null
+  const visibleFavorites = assetTypeId == null && assetIds == null && brazilian == null
     ? favorites
     : filteredFavorites
 

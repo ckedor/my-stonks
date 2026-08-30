@@ -51,6 +51,8 @@ const NAVIGATION_ICONS: Record<string, ReactNode> = {
   '/market/assets': <ManageSearchIcon />,
   '/market/stock': <ShowChartIcon />,
   '/market/etf': <LayersIcon />,
+  '/market/stock-us': <ShowChartIcon />,
+  '/market/etf-us': <LayersIcon />,
   '/market/fii': <ApartmentIcon />,
   '/market/investment-fund': <SavingsIcon />,
   '/market/crypto': <CurrencyBitcoinIcon />,

@@ -77,6 +77,8 @@ const router = createBrowserRouter([
       { path: "market/investment-fund", element: <MarketInvestmentFundPage /> },
       { path: "market/stock", element: <MarketCataloguePage kind="stock" /> },
       { path: "market/etf", element: <MarketCataloguePage kind="etf" /> },
+      { path: "market/stock-us", element: <MarketCataloguePage kind="stock-us" /> },
+      { path: "market/etf-us", element: <MarketCataloguePage kind="etf-us" /> },
       { path: "market/crypto", element: <MarketCataloguePage kind="crypto" /> },
       { path: "market/asset/:id", element: <MarketAssetPage /> },
     ],

@@ -116,9 +116,14 @@ export default function AppText({
     color: gradient ? undefined : (tint ?? TONE[tone]),
     fontWeight: VARIANT_WEIGHT[variant] ?? (weight === 'strong' ? 600 : undefined),
     whiteSpace: noWrap ? ('nowrap' as const) : undefined,
-    ...((gradient || variant === 'sceneHeading')
+    ...((gradient || variant === 'sceneHeading' || (noWrap && !inline))
       ? {
           sx: {
+            /* Não quebrar sem cortar é escrever para fora do card: o texto
+               que não pode virar duas linhas termina em reticências. */
+            ...(noWrap && !inline
+              ? { overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }
+              : {}),
             ...(variant === 'sceneHeading'
               ? { fontSize: { xs: '2.2rem', md: '3.2rem' }, lineHeight: 1.05 }
               : {}),

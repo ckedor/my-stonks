@@ -11,6 +11,7 @@ from app.modules.market_data.api.investment_fund.router import (
 )
 from app.modules.market_data.api.quote.router import router as quote_router
 from app.modules.market_data.api.series.router import router as series_router
+from app.modules.market_data.api.stock.router import router as stock_router
 from app.modules.market_data.api.usd_brl.router import router as usd_brl_router
 from app.modules.users.views import current_active_user
 
@@ -24,6 +25,7 @@ router.include_router(series_router)
 router.include_router(usd_brl_router)
 router.include_router(fii_router)
 router.include_router(investment_fund_router)
+router.include_router(stock_router)
 router.include_router(catalogue_router)
 
 __all__ = ['router']

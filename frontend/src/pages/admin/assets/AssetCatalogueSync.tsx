@@ -30,11 +30,12 @@ import { useState } from 'react'
  * ver antes. */
 
 const KIND_OPTIONS = [
-  { value: 'default', label: 'Ações, ETFs, FIIs e BDRs' },
+  { value: 'default', label: 'Ações, ETFs, FIIs, BDRs e Fundos' },
   { value: 'stock', label: 'Somente ações' },
   { value: 'etf', label: 'Somente ETFs' },
   { value: 'fii', label: 'Somente FIIs' },
   { value: 'bdr', label: 'Somente BDRs' },
+  { value: 'fi', label: 'Somente fundos de investimento' },
   { value: 'crypto', label: 'Somente cripto' },
 ]
 
@@ -47,6 +48,7 @@ const KIND_LABEL: Record<string, string> = {
   etf: 'ETF',
   fii: 'FII',
   bdr: 'BDR',
+  fi: 'Fundo',
   crypto: 'Cripto',
 }
 

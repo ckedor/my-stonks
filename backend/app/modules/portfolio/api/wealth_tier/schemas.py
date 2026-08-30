@@ -36,14 +36,14 @@ class WealthTierProjection(BaseModel):
 
 
 class PortfolioWealthTier(BaseModel):
-    """A portfolio's standing on the ladder, from two deliberately different numbers.
+    """A portfolio's standing on the ladder, as it is today.
 
-    `peak_patrimony` is the highest the portfolio has ever been worth, and it is
-    what earns `current_tier`: a rung is reached once and never lost.
+    `current_patrimony` decides everything: `current_tier`, `remaining` and
+    `progress` all falam do valor de hoje, e a patente desce quando a carteira
+    desce.
 
-    `remaining` and `progress` are measured from `current_patrimony` instead,
-    because how much is left to climb is a question about today. A portfolio
-    that fell back keeps its title and sees the real distance ahead of it.
+    `peak_patrimony` é o mais alto que a carteira já valeu. Ele é história —
+    o álbum de cenários já visitados —, e não decide o título.
     """
 
     peak_patrimony: float

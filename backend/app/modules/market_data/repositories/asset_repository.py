@@ -2,12 +2,14 @@ from sqlalchemy import select, text, update
 
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.modules.market_data.domain.asset_visit import AssetVisit
-from app.modules.market_data.domain.assets import Asset
+from app.modules.market_data.domain.assets import Asset, Exchange
+from app.modules.market_data.domain.enums import EXCHANGE
 from app.modules.market_data.domain.ingestion import (
     DataIngestionAttempt,
     DataIngestionExecution,
     DataIngestionType,
 )
+from app.modules.market_data.domain.market_scope import B3_TICKER_PATTERN
 
 
 class AssetRepository(SQLAlchemyRepository):
@@ -40,13 +42,17 @@ class AssetRepository(SQLAlchemyRepository):
         limit: int,
         asset_type_id: int | None = None,
         asset_ids: list[int] | None = None,
+        brazilian: bool | None = None,
     ) -> list[tuple]:
-        """The user's opened assets, most recently opened first.
+        """The user's opened assets, most visited first.
 
-        A contagem ordenava por hábito antigo: o papel aberto trinta vezes no
-        mês passado ficava à frente do que acabou de ser aberto. A prateleira
-        serve para voltar ao que se estava olhando, então quem manda é a
-        última visita."""
+        O critério é o hábito, e não a última aba aberta: a prateleira é o
+        atalho para o que a pessoa mais volta a ver. A última visita entra só
+        como desempate.
+
+        `brazilian` recorta a prateleira pelo lado da fronteira que a tela
+        mostra: ETF da B3 e ETF americano têm o mesmo tipo de ativo, e sem esse
+        corte a tela de um mostrava os dois."""
         if asset_ids is not None and not asset_ids:
             return []
 
@@ -54,15 +60,55 @@ class AssetRepository(SQLAlchemyRepository):
             select(Asset, AssetVisit.visit_count, AssetVisit.last_visited_at)
             .join(AssetVisit, AssetVisit.asset_id == Asset.id)
             .where(AssetVisit.user_id == user_id)
-            .order_by(AssetVisit.last_visited_at.desc().nulls_last())
+            .order_by(
+                AssetVisit.visit_count.desc(),
+                AssetVisit.last_visited_at.desc().nulls_last(),
+            )
             .limit(limit)
         )
         if asset_type_id is not None:
             statement = statement.where(Asset.asset_type_id == asset_type_id)
         if asset_ids is not None:
             statement = statement.where(Asset.id.in_(asset_ids))
+        if brazilian is not None:
+            condition = self._b3_condition()
+            statement = statement.where(condition if brazilian else ~condition)
         result = await self.session.execute(statement)
         return list(result.all())
+
+    @staticmethod
+    def _b3_condition():
+        """O papel é da B3 — pela bolsa quando ela existe, pelo ticker quando não.
+
+        O cadastro tem `exchange_id` nulo em quase todo ETF americano e em
+        alguns da B3, então a bolsa sozinha não separa os dois lados. O formato
+        do ticker separa: ver `domain.market_scope`.
+        """
+        b3 = select(Exchange.id).where(Exchange.code == EXCHANGE.B3.value).scalar_subquery()
+        return (Asset.exchange_id == b3) | (
+            Asset.exchange_id.is_(None) & Asset.ticker.op('~')(B3_TICKER_PATTERN)
+        )
+
+    async def get_registered_by_market(
+        self,
+        asset_type_id: int,
+        *,
+        brazilian: bool,
+    ) -> list[Asset]:
+        """Ativos cadastrados de uma classe, de um lado só da fronteira.
+
+        Fora da B3 não há catálogo de provedor para folhear: o universo é o que
+        já está no cadastro, e é dele que a tela de mercado americana é feita.
+        """
+        condition = self._b3_condition()
+        statement = (
+            select(Asset)
+            .where(Asset.asset_type_id == asset_type_id)
+            .where(condition if brazilian else ~condition)
+            .order_by(Asset.ticker)
+        )
+        result = await self.session.execute(statement)
+        return list(result.scalars().all())
 
     async def detach_ingestion_attempts(self, asset_id: int) -> None:
         quote_execution_ids = select(DataIngestionExecution.id).where(

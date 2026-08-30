@@ -59,8 +59,8 @@ const CONFIG: Record<MarketCatalogueKind, MarketPageConfig> = {
     kind: 'etf',
     pageTitle: 'BR · Mercado de ETFs',
     sectionTitle: 'Todos os ETFs',
-    benchmarkTitle: 'IBOVESPA e S&P 500 contra CDI',
-    benchmarks: ['IBOVESPA', 'S&P500', 'CDI'],
+    benchmarkTitle: 'IBOVESPA contra CDI',
+    benchmarks: ['IBOVESPA', 'CDI'],
   },
   fii: {
     assetTypeId: ASSET_TYPES.FII,
@@ -86,6 +86,29 @@ const CONFIG: Record<MarketCatalogueKind, MarketPageConfig> = {
     benchmarkTitle: 'S&P 500 contra IBOVESPA',
     benchmarks: ['S&P500', 'IBOVESPA'],
     showMarketCap: true,
+  },
+  'stock-us': {
+    assetTypeId: ASSET_TYPES.STOCK,
+    breadcrumb: 'Ações EUA',
+    description:
+      'Cotações das ações negociadas fora da B3 que o cadastro acompanha, em dólar.',
+    itemLabel: 'ação',
+    kind: 'stock-us',
+    pageTitle: 'EUA · Mercado de Ações',
+    sectionTitle: 'Todas as ações',
+    benchmarkTitle: 'S&P 500 contra CDI',
+    benchmarks: ['S&P500', 'CDI'],
+  },
+  'etf-us': {
+    assetTypeId: ASSET_TYPES.ETF,
+    breadcrumb: 'ETFs EUA',
+    description: 'Cotações dos ETFs negociados fora da B3 que o cadastro acompanha, em dólar.',
+    itemLabel: 'ETF',
+    kind: 'etf-us',
+    pageTitle: 'EUA · Mercado de ETFs',
+    sectionTitle: 'Todos os ETFs',
+    benchmarkTitle: 'S&P 500 contra CDI',
+    benchmarks: ['S&P500', 'CDI'],
   },
   crypto: {
     assetTypeId: ASSET_TYPES.CRIPTO,
@@ -163,7 +186,11 @@ export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKin
       {/* O recorte é o tipo de ativo, e não a lista de ids da página: mandar
           o catálogo inteiro na query string dava URLs de dezenas de milhares
           de caracteres a cada render. */}
-      <FavoriteAssets limit={8} assetTypeId={config.assetTypeId} />
+      <FavoriteAssets
+        limit={8}
+        assetTypeId={config.assetTypeId}
+        brazilian={kind === 'crypto' ? undefined : !kind.endsWith('-us')}
+      />
 
       <MarketBenchmarkCard
         title={config.benchmarkTitle}
@@ -212,7 +239,11 @@ export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKin
 function catalogueColumns(config: MarketPageConfig): AppSimpleTableColumn<MarketCatalogueAsset>[] {
   const columns: AppSimpleTableColumn<MarketCatalogueAsset>[] = [
     {
-      label: config.kind === 'crypto' ? 'Criptoativo' : config.kind === 'etf' ? 'ETF' : 'Ação',
+      label: config.kind === 'crypto'
+        ? 'Criptoativo'
+        : config.kind.startsWith('etf')
+          ? 'ETF'
+          : 'Ação',
       sortValue: (asset) => asset.ticker,
       render: (asset) => (
         <AppStack gap="none">

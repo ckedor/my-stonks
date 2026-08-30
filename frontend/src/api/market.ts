@@ -1,5 +1,5 @@
 import type { CandleDataPoint } from '@/components/charts/CandleChart'
-import { ASSET_ROUTES, CURRENCY_ROUTES, FII_ROUTES, INVESTMENT_FUND_ROUTES, MARKET_CATALOGUE_ROUTES, MARKET_DATA_SERIES_ROUTES, QUOTE_ROUTES, USD_BRL_ROUTES } from '@/constants/routes'
+import { ASSET_ROUTES, CURRENCY_ROUTES, FII_ROUTES, INVESTMENT_FUND_ROUTES, MARKET_CATALOGUE_ROUTES, MARKET_DATA_SERIES_ROUTES, QUOTE_ROUTES, STOCK_ROUTES, USD_BRL_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import type { ReturnsEntry } from '@/types'
 
@@ -660,10 +660,221 @@ export const fetchInvestmentFundMarket = (): Promise<InvestmentFundMarket> =>
   api.get<InvestmentFundMarket>(INVESTMENT_FUND_ROUTES.market).then((r) => r.data)
 
 // ---------------------------------------------------------------------------
+// Stock profile
+//
+// Uma ação não é um fundo. O que um fundo publica de si é valor de cota e
+// carteira; o que uma companhia publica é resultado, balanço e caixa — e o
+// mercado precifica isso num múltiplo. As duas metades vêm juntas porque a
+// leitura que a tela faz é a delas duas: caro ou barato contra o quanto o
+// negócio é bom.
+//
+// Toda proporção aqui é razão: 0,08 é 8%. O provedor manda a variação do dia
+// em ponto percentual e as margens em fração, e a divisão acontece no backend
+// para que nada aqui precise lembrar de qual rota o número veio.
+// ---------------------------------------------------------------------------
+
+/** O negócio por trás do ticker.
+ *
+ *  A classificação vem duas vezes de propósito: `sector` e `industry` são de
+ *  leitura, `sector_key` e `industry_key` são slugs estáveis e é neles que se
+ *  agrupa — um rótulo é reescrito, um slug não.
+ *
+ *  O bloco de administradora que o provedor carrega para fundos não existe
+ *  aqui: numa companhia ele vem inteiro nulo, e catorze linhas vazias são
+ *  piores do que seção nenhuma. */
+export interface StockCompany {
+  name: string | null
+  sector: string | null
+  sector_key: string | null
+  industry: string | null
+  industry_key: string | null
+  website: string | null
+  city: string | null
+  state: string | null
+  country: string | null
+  employees: number | null
+  cnpj: string | null
+  founded_on: string | null
+  logo_url: string | null
+  /** Os parágrafos que a companhia escreveu, já separados. */
+  summary_paragraphs: string[]
+}
+
+/** A cotação e a faixa que o ano desenhou em volta dela.
+ *
+ *  Um preço sozinho não diz se está alto: o mesmo número é teto para uma
+ *  companhia e piso para outra. `day_change` é razão como todo o resto. */
+export interface StockPriceRange {
+  price: number | null
+  previous_close: number | null
+  day_change: number | null
+  day_low: number | null
+  day_high: number | null
+  fifty_two_week_low: number | null
+  fifty_two_week_high: number | null
+  market_cap: number | null
+  volume: number | null
+  as_of: string | null
+}
+
+/** O que o mercado paga pela companhia.
+ *
+ *  Os múltiplos vêm como o provedor os publica e nunca são recalculados a
+ *  partir de preço e lucro: recalcular produziria um terceiro número que
+ *  discorda dos dois já na tela. */
+export interface StockStatistics {
+  market_cap: number | null
+  enterprise_value: number | null
+  trailing_pe: number | null
+  forward_pe: number | null
+  price_to_book: number | null
+  book_value_per_share: number | null
+  earnings_per_share: number | null
+  forward_earnings_per_share: number | null
+  peg_ratio: number | null
+  beta: number | null
+  dividend_yield: number | null
+  profit_margin: number | null
+  net_income: number | null
+  earnings_quarterly_growth: number | null
+  enterprise_to_revenue: number | null
+  enterprise_to_ebitda: number | null
+  shares_outstanding: number | null
+  float_shares: number | null
+  fifty_two_week_change: number | null
+  most_recent_quarter: string | null
+  last_dividend_value: number | null
+  last_dividend_date: string | null
+}
+
+/** Como o negócio foi, antes de o mercado ter opinião.
+ *
+ *  `earnings_growth` e `revenue_growth` comparam um trimestre com o mesmo
+ *  trimestre do ano anterior; o par `annual_` compara anos. Os números são
+ *  bem diferentes, e a tela tem de dizer qual está mostrando. */
+export interface StockFundamentals {
+  revenue: number | null
+  gross_profit: number | null
+  ebitda: number | null
+  total_cash: number | null
+  cash_per_share: number | null
+  total_debt: number | null
+  debt_to_equity: number | null
+  current_ratio: number | null
+  quick_ratio: number | null
+  return_on_assets: number | null
+  return_on_equity: number | null
+  free_cash_flow: number | null
+  operating_cash_flow: number | null
+  gross_margin: number | null
+  ebitda_margin: number | null
+  operating_margin: number | null
+  profit_margin: number | null
+  earnings_growth: number | null
+  revenue_growth: number | null
+  annual_earnings_growth: number | null
+  annual_revenue_growth: number | null
+}
+
+/** Um pagamento em dinheiro, por ação.
+ *
+ *  `label` separa dividendo de JCP, e os dois não são intercambiáveis: o
+ *  segundo tem retenção na fonte, então quem soma renda recebida precisa saber
+ *  qual é qual. `last_date_prior` é o último dia com direito; a data ex é o
+ *  pregão seguinte. `payment_date` no futuro é normal — a companhia anuncia
+ *  com meses de antecedência. */
+export interface StockCashDividend {
+  payment_date: string | null
+  last_date_prior: string | null
+  approved_on: string | null
+  value_per_share: number | null
+  label: string | null
+  related_to: string | null
+}
+
+/** Um pagamento em ações: bonificação ou desdobramento.
+ *
+ *  Tem proporção e não tem valor, e nunca teve data de pagamento — é por isso
+ *  que é uma forma própria, e não um dividendo com metade dos campos vazios. */
+export interface StockShareDividend {
+  factor: number | null
+  complete_factor: string | null
+  last_date_prior: string | null
+  approved_on: string | null
+  label: string | null
+}
+
+/** Um direito de subscrever ações novas, que não é nenhum dos outros dois. */
+export interface StockSubscription {
+  factor: number | null
+  complete_factor: string | null
+  price: number | null
+  last_date_prior: string | null
+  approved_on: string | null
+  label: string | null
+}
+
+/** Um período de um demonstrativo, com só as linhas que a companhia arquivou.
+ *
+ *  `lines` é um mapa e não campos porque os arquivantes discordam sobre quais
+ *  linhas existem: a rota devolve toda linha que qualquer companhia brasileira
+ *  poderia reportar — 128 no balanço — e um banco preenche 31 delas enquanto
+ *  uma petroleira preenche 65, com 16 em comum. Declaradas como campos, três
+ *  quartos do tipo seriam nulos para qualquer companhia.
+ *
+ *  As chaves são os nomes de linha em snake_case, e uma linha que a companhia
+ *  não arquivou está ausente — nunca zero. Quais delas viram tela, e em que
+ *  ordem, é o que `labels.ts` decide. */
+export interface StockStatementPoint {
+  end_date: string | null
+  /** O que o arquivante chamou o período: `quarterly`, `yearly`. */
+  period: string | null
+  lines: Record<string, number>
+}
+
+/** Tudo o que uma companhia listada publica sobre si, numa leitura só.
+ *
+ *  Cada seção vem de uma rota própria e qualquer uma pode faltar: uma rota que
+ *  falha custa à página aquela seção, e não a página. As séries vêm da mais
+ *  antiga para a mais recente.
+ *
+ *  `ticker` é o que se pediu e `resolved_ticker` é como o mercado chama hoje;
+ *  `renamed` diz que os dois diferem, para que quem cai numa página sob um
+ *  código que não reconhece seja avisado em vez de ficar em dúvida. */
+export interface StockProfile {
+  ticker: string
+  resolved_ticker: string | null
+  renamed: boolean
+  company: StockCompany | null
+  price_range: StockPriceRange | null
+  statistics: StockStatistics | null
+  fundamentals: StockFundamentals | null
+  cash_dividends: StockCashDividend[]
+  share_dividends: StockShareDividend[]
+  subscriptions: StockSubscription[]
+  income_statement: StockStatementPoint[]
+  balance_sheet: StockStatementPoint[]
+  cash_flow: StockStatementPoint[]
+  value_added: StockStatementPoint[]
+}
+
+export const fetchStockProfile = (assetId: number): Promise<StockProfile> =>
+  api.get<StockProfile>(STOCK_ROUTES.profile(assetId)).then((r) => r.data)
+
+// ---------------------------------------------------------------------------
 // Market catalogues
 // ---------------------------------------------------------------------------
 
-export type MarketCatalogueKind = 'stock' | 'etf' | 'fii' | 'bdr' | 'crypto'
+/** `-us` são as classes de fora da B3: lá o universo é o cadastro da própria
+ *  aplicação, e não o catálogo do provedor, que só cobre o mercado brasileiro. */
+export type MarketCatalogueKind =
+  | 'stock'
+  | 'etf'
+  | 'fii'
+  | 'bdr'
+  | 'crypto'
+  | 'stock-us'
+  | 'etf-us'
 
 export interface MarketCatalogueAsset {
   asset_id: number | null
@@ -764,10 +975,16 @@ export const fetchFavoriteAssets = (
   limit = 8,
   assetTypeId?: number,
   assetIds?: number[],
+  brazilian?: boolean,
 ): Promise<FavoriteAsset[]> =>
   api
     .get<FavoriteAsset[]>(ASSET_ROUTES.favorites, {
-      params: { limit, asset_type_id: assetTypeId, asset_ids: assetIds },
+      params: {
+        limit,
+        asset_type_id: assetTypeId,
+        asset_ids: assetIds,
+        brazilian,
+      },
     })
     .then((r) => r.data)
 

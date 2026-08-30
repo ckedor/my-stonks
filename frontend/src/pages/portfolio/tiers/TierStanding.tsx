@@ -19,10 +19,15 @@ import type { PortfolioWealthTier, WealthTier } from '@/types'
  * onde estou e este é o dia em que saio dele". Juntos, viram um bloco de
  * texto só.
  *
- * E texto, não cartão: uma superfície de vidro sobre a arte é uma janela de
- * app pousada numa paisagem, e o que se quer é uma legenda escrita nela. O que
- * dá legibilidade é a sombra sob as letras e o escurecimento do próprio
- * cenário, que já existe para isso. */
+ * O bloco pousa num cartão de vidro bem translúcido, do tamanho do que diz: a
+ * arte fica inteira e visível através dele, e a legibilidade vem do vidro em
+ * vez de sombra sob cada letra — sombra sobre pintura vira borrão.
+ *
+ * Nenhuma linha de texto aqui é cinza, e nenhuma é dourada — o dourado é da
+ * barra, onde ele é conquista e não letra a ser lida. Sobre uma interface,
+ * `secondary` é o que separa o apoio do principal; sobre o vidro, é contraste
+ * jogado fora, e o dourado sobre a paisagem clara some do mesmo jeito. A
+ * hierarquia é feita por tamanho e peso, e a cor fica branca em todas elas. */
 
 /** Anos e meses, e não trinta e sete meses: quem lê a barra quer saber se a
  *  espera é de meses ou de anos, e o número cru esconde justamente isso. */
@@ -59,8 +64,10 @@ function formatTargetDate(iso: string): string {
 
 export type TierState = 'done' | 'current' | 'locked'
 
+/* O degrau aberto não se anuncia: a barra e o "Hoje" logo abaixo já dizem que
+   é aqui que se está. A tarja é para os outros dois estados. */
 const EYEBROW: Record<TierState, string> = {
-  current: 'Você é isto hoje',
+  current: '',
   done: 'Já foi isto',
   locked: 'Ainda bloqueado',
 }
@@ -102,9 +109,11 @@ export default function TierStanding({
   return (
     <AppImmersiveCaption>
       <AppStack gap="xs">
-        <AppText variant="caption" tone={locked ? 'secondary' : 'caution'}>
-          {EYEBROW[state]}
-        </AppText>
+        {EYEBROW[state] && (
+          <AppText variant="caption" tone="inverse">
+            {EYEBROW[state]}
+          </AppText>
+        )}
 
         {/* As setas ladeiam o nome: virar a página do álbum é a mesma ação de
             ler onde se está. */}
@@ -138,13 +147,13 @@ export default function TierStanding({
         {tier && (
           <AppStack direction="row" gap="xs" align="center" justify="end">
             {locked && (
-              <AppText variant="caption" tone="secondary" inline>
+              <AppText variant="caption" tone="inverse" inline>
                 <LockIcon fontSize="inherit" />
               </AppText>
             )}
-            <AppText variant="bodySmall" tone="secondary">
+            <AppText variant="bodySmall" tone="inverse">
               {locked ? 'Desbloqueia em ' : 'Alcançada em '}
-              <AppText variant="bodySmall" weight="strong" tone="caution" inline>
+              <AppText variant="bodySmall" weight="strong" inline>
                 {formatCurrency(tier.threshold)}
               </AppText>
             </AppText>
@@ -163,23 +172,23 @@ export default function TierStanding({
           showsProgress &&
           standing && (
             <AppStack gap="xs">
-              <AppProgressBar value={standing.progress * 100} tone="golden" thickness={12} glow />
+              <AppProgressBar value={standing.progress * 100} tone="golden" thickness={12} />
 
               <AppStack direction="row" gap="sm" justify="between" align="baseline" wrap>
-                <AppText variant="caption" tone="secondary">
+                <AppText variant="caption" tone="inverse">
                   Hoje{' '}
                   <AppText variant="caption" weight="strong" inline>
                     {formatCurrency(standing.current_patrimony)}
                   </AppText>
                 </AppText>
                 {standing.remaining != null && next && (
-                  <AppText variant="caption" tone="secondary" noWrap>
+                  <AppText variant="caption" tone="inverse" noWrap>
                     Faltam{' '}
                     <AppText variant="caption" weight="strong" inline>
                       {formatCurrency(standing.remaining)}
                     </AppText>{' '}
                     para{' '}
-                    <AppText variant="caption" weight="strong" tone="caution" inline>
+                    <AppText variant="caption" weight="strong" inline>
                       {next.name}
                     </AppText>
                   </AppText>
@@ -195,9 +204,9 @@ export default function TierStanding({
                   <AppText variant="cardValue">
                     {formatTargetDate(projection.target_date)}
                   </AppText>
-                  <AppText variant="caption" tone="secondary">
+                  <AppText variant="caption" tone="inverse">
                     em{' '}
-                    <AppText variant="caption" weight="strong" tone="caution" inline>
+                    <AppText variant="caption" weight="strong" inline>
                       {formatMonths(projection.months)}
                     </AppText>
                     , no ritmo da carteira: aportes de{' '}

@@ -33,25 +33,38 @@ export default function AppProgressBar({
   const theme = useAppTheme()
 
   /* `golden` não é uma cor de paleta do MUI, então ela é pintada à mão. As
-     outras duas continuam vindo do `color`, que já trata o trilho. */
-  const goldenSx =
-    tone === 'golden'
-      ? {
-          backgroundColor: withOpacity(theme.palette.golden, 0.18),
-          '& .MuiLinearProgress-bar': { backgroundColor: theme.palette.golden },
-        }
-      : {}
+     outras duas continuam vindo do `color`, que já trata o trilho.
 
-  const glowSx = glow
-    ? {
-        '& .MuiLinearProgress-bar': {
+     Cor e brilho caem os dois sobre `.MuiLinearProgress-bar`, e por isso são
+     montados num objeto só: espalhados como dois `sx` irmãos, o segundo
+     substituía a chave inteira do primeiro e levava junto a cor. */
+  const golden = tone === 'golden'
+
+  const barSx = {
+    ...(golden ? { backgroundColor: theme.palette.golden } : {}),
+    ...(glow
+      ? {
           boxShadow: `0 0 14px ${withOpacity(
-            tone === 'golden' ? theme.palette.golden : theme.palette.primary.main,
+            golden ? theme.palette.golden : theme.palette.primary.main,
             0.55,
           )}`,
-        },
-      }
-    : {}
+        }
+      : {}),
+  }
+
+  /* O trilho escuro é só de quem está sobre a arte, e `glow` é o que marca
+     essa tela. Aplicado a toda barra dourada, ele virava uma faixa cinza
+     dentro de um card claro — e uma barra escura parada lê como carregando,
+     não como progresso. */
+  const trackSx =
+    golden && glow
+      ? {
+          backgroundColor: withOpacity('#000000', 0.55),
+          boxShadow: `inset 0 0 0 1px ${withOpacity(theme.palette.golden, 0.35)}`,
+        }
+      : golden
+        ? { backgroundColor: withOpacity(theme.palette.golden, 0.18) }
+        : {}
 
   return (
     <LinearProgress
@@ -61,8 +74,8 @@ export default function AppProgressBar({
       sx={{
         borderRadius: `${theme.radius.sm}px`,
         ...(thickness ? { height: thickness } : {}),
-        ...goldenSx,
-        ...glowSx,
+        ...trackSx,
+        '& .MuiLinearProgress-bar': barSx,
       }}
     />
   )

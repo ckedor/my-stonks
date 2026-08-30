@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AssetClass(BaseModel):
@@ -293,6 +293,13 @@ class FavoriteAssetType(BaseModel):
     name: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class FavoriteAssetFilters(BaseModel):
+    limit: int = Field(default=8, ge=1, le=24)
+    asset_type_id: int | None = Field(default=None, ge=1)
+    asset_ids: list[int] | None = Field(default=None, max_length=1000)
+    brazilian: bool | None = None
 
 
 class FavoriteAsset(BaseModel):
