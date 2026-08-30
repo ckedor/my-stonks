@@ -84,7 +84,8 @@ export const architectureNodes: ArchitectureNode[] = [
     'Somente provider · cache 2 min',
   ]),
   node('fii-profile-service', 'service', 'FIIProfileReadService', 'SERVIÇO', [
-    'Indicadores e rendimentos do FII',
+    'Perfil do FII em sete rotas do provedor',
+    'Uma falha custa só a seção dela',
     'Somente provider · cache 6 h',
   ]),
   node('portfolio-service', 'service', 'PortfolioConsolidatorService', 'SERVIÇO', [

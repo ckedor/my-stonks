@@ -52,6 +52,20 @@ export const formatPercent = (value: number | null | undefined) =>
 export const formatMultiple = (value: number | null | undefined) =>
   nullish(value) ? EMPTY : `${RATIO.format(value!)}x`
 
+/** Areas are square metres and are published to the centimetre. Nobody reads a
+ *  warehouse to two decimals, so the fraction goes. */
+export const formatArea = (value: number | null | undefined) =>
+  nullish(value) ? EMPTY : `${COUNT.format(Math.round(value!))} m²`
+
+/** The fund's own registration, written the way a document is.
+ *  Anything that is not the fourteen digits is shown as it came. */
+export const formatCNPJ = (value: string | null | undefined) => {
+  if (!value) return EMPTY
+  const digits = value.replace(/\D/g, '')
+  if (digits.length !== 14) return value
+  return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
+}
+
 export const formatDate = (value: string | null | undefined) =>
   value ? dayjs(value).format('DD/MM/YYYY') : EMPTY
 

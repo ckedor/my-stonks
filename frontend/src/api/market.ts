@@ -212,10 +212,183 @@ export interface FIIIndicators {
   shareholders: number | null
 }
 
+/** Who runs the fund and under which mandate. Published beside the indicators
+ *  and kept apart from them: none of it is a measurement. */
+export interface FIIManagement {
+  cnpj: string | null
+  mandate: string | null
+  management_type: string | null
+  administrator_name: string | null
+  administrator_website: string | null
+}
+
+/** The monthly filing: what the fund's equity is made of, in reais.
+ *
+ *  The rates are ratios like everywhere else here, and the monetary fields are
+ *  absolute amounts — not per share. */
+export interface FIIMonthlyReport {
+  reference_date: string | null
+  admin_fee_rate: number | null
+  monthly_patrimonial_return: number | null
+  amortization_rate: number | null
+  equity: number | null
+  total_assets: number | null
+  total_invested: number | null
+  cash: number | null
+  liquidity_needs: number | null
+  government_bonds: number | null
+  private_bonds: number | null
+  fixed_income_funds: number | null
+  real_estate: number | null
+  real_estate_company_shares: number | null
+  real_estate_company_units: number | null
+  cri: number | null
+  lci: number | null
+  fii_holdings: number | null
+  receivables: number | null
+  rental_receivables: number | null
+  other_receivables: number | null
+  distributions_payable: number | null
+  admin_fees_payable: number | null
+  real_estate_obligations: number | null
+  total_liabilities: number | null
+}
+
+/** The fund's buildings added up, as of one quarter.
+ *
+ *  `vacancy_rate` is consolidated and `average_vacancy_rate` is the plain
+ *  average across buildings: one empty warehouse among thirty moves the second
+ *  far more than the first. Areas are square metres. */
+export interface FIIPropertySummary {
+  count: number | null
+  total_area: number | null
+  vacancy_rate: number | null
+  average_vacancy_rate: number | null
+  properties_with_vacancy: number | null
+}
+
+/** One building, as the fund described it in the quarterly filing.
+ *
+ *  The construction and sale fields are filled only by funds still building or
+ *  selling what they built; a finished income property leaves them null. */
+export interface FIIProperty {
+  name: string | null
+  identifier: string | null
+  address: string | null
+  property_class: string | null
+  area: number | null
+  unit_count: number | null
+  vacancy_rate: number | null
+  delinquency_rate: number | null
+  revenue_share: number | null
+  leased_rate: number | null
+  sold_rate: number | null
+  construction_progress_actual: number | null
+  construction_progress_expected: number | null
+  construction_cost_actual: number | null
+  construction_cost_expected: number | null
+  invested_share: number | null
+  confidential: boolean | null
+}
+
+/** One financial asset the fund holds: a CRI, a share in another fund. */
+export interface FIIHolding {
+  asset_class: string | null
+  name: string | null
+  issuer: string | null
+  issuer_cnpj: string | null
+  identifier: string | null
+  quantity: number | null
+  value: number | null
+  issue: string | null
+  series: string | null
+  ticker: string | null
+  maturity_date: string | null
+  confidential: boolean | null
+}
+
+export interface FIILand {
+  name: string | null
+  identifier: string | null
+  address: string | null
+  area: number | null
+  invested_share: number | null
+  equity_share: number | null
+  confidential: boolean | null
+}
+
+export interface FIIRight {
+  name: string | null
+  identifier: string | null
+  value: number | null
+  description: string | null
+  confidential: boolean | null
+}
+
+/** How much of one asset class the fund held.
+ *
+ *  `value` is absent for the buildings: the quarterly filing counts and
+ *  describes them, but declares no price for them. */
+export interface FIIAllocation {
+  asset_class: string
+  count: number | null
+  value: number | null
+}
+
+export interface FIICompositionSummary {
+  total_items: number | null
+  declared_value: number | null
+  properties: FIIPropertySummary | null
+  financial_assets_count: number | null
+  financial_assets_value: number | null
+  lands_count: number | null
+  lands_area: number | null
+  rights_count: number | null
+  rights_value: number | null
+}
+
+/** What the fund held at the end of the last quarter it filed for.
+ *
+ *  Filed quarterly and published months later, so `reference_date` is not
+ *  decoration: this is the most recent picture available, not the current one. */
+export interface FIIComposition {
+  reference_date: string | null
+  summary: FIICompositionSummary | null
+  allocations: FIIAllocation[]
+  properties: FIIProperty[]
+  financial_assets: FIIHolding[]
+  fund_holdings: FIIHolding[]
+  lands: FIILand[]
+  rights: FIIRight[]
+}
+
+export interface FIICompositionPoint {
+  reference_date: string | null
+  summary: FIICompositionSummary | null
+  allocations: FIIAllocation[]
+}
+
+export interface FIIPropertiesPoint {
+  reference_date: string | null
+  summary: FIIPropertySummary | null
+}
+
+/** Everything the fund publishes about itself.
+ *
+ *  Every section is independent: the backend reads each from a route of its
+ *  own and one of them failing costs the page that section, not the profile.
+ *  The monthly sections and the quarterly ones also carry different dates,
+ *  which is why each states its own. */
 export interface FIIProfile {
   ticker: string
+  management: FIIManagement | null
   indicators: FIIIndicators | null
+  indicators_history: FIIIndicators[]
   dividends: FIIDividend[]
+  monthly_report: FIIMonthlyReport | null
+  composition: FIIComposition | null
+  composition_history: FIICompositionPoint[]
+  properties_history: FIIPropertiesPoint[]
 }
 
 export const fetchFIIProfile = (assetId: number): Promise<FIIProfile> =>

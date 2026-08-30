@@ -1,8 +1,17 @@
-import type { FIIIndicators } from '@/api/market'
-import { AppCard, AppGrid, AppMetric, AppStack, AppText, SectionTitle } from '@/components/ui'
+import type { FIIIndicators, FIIManagement } from '@/api/market'
+import {
+  AppCard,
+  AppGrid,
+  AppLink,
+  AppMetric,
+  AppStack,
+  AppText,
+  SectionTitle,
+} from '@/components/ui'
 import {
   EMPTY,
   formatBRL,
+  formatCNPJ,
   formatCompactBRL,
   formatCompactCount,
   formatDate,
@@ -33,13 +42,22 @@ function classify(indicators: FIIIndicators): string {
   return [...new Set(parts)].join(' · ')
 }
 
+interface Props {
+  indicators: FIIIndicators
+  management: FIIManagement | null
+}
+
 /** What the fund reports about itself.
  *
- *  What kind of fund it is and when it last reported sit above the numbers
- *  rather than among them: they are the frame the numbers are read in, not
- *  measurements, and a segment laid out as a statistic reads as one. */
-export default function FIIIndicatorsCard({ indicators }: { indicators: FIIIndicators }) {
+ *  What kind of fund it is, who runs it and when it last reported sit above
+ *  the numbers rather than among them: they are the frame the numbers are read
+ *  in, not measurements, and a segment laid out as a statistic reads as one. */
+export default function FIIIndicatorsCard({ indicators, management }: Props) {
   const classification = classify(indicators)
+  const mandate = [management?.mandate, management?.management_type]
+    .filter((part): part is string => Boolean(part))
+    .map((part) => sentenceCase(part.trim()))
+    .join(' · ')
 
   const stats: Stat[] = [
     {
@@ -89,6 +107,34 @@ export default function FIIIndicatorsCard({ indicators }: { indicators: FIIIndic
             <AppText variant="bodySmall" tone="secondary">
               {classification}
             </AppText>
+          )}
+
+          {/* Who runs the fund, under which mandate, and its registration.
+              None of it is a measurement, so it reads as a line and not as
+              four more tiles competing with the numbers below. */}
+          {management && (
+            <AppStack direction="row" align="baseline" gap="xs" wrap>
+              <AppText variant="caption" tone="secondary">
+                {[mandate, management.cnpj && `CNPJ ${formatCNPJ(management.cnpj)}`]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </AppText>
+              {management.administrator_name && (
+                <AppText variant="caption" tone="secondary">
+                  ·
+                </AppText>
+              )}
+              {management.administrator_name &&
+                (management.administrator_website ? (
+                  <AppLink href={`https://${management.administrator_website.replace(/^https?:\/\//, '')}`}>
+                    {management.administrator_name}
+                  </AppLink>
+                ) : (
+                  <AppText variant="caption" tone="secondary">
+                    {management.administrator_name}
+                  </AppText>
+                ))}
+            </AppStack>
           )}
         </AppStack>
 

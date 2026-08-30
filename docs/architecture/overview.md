@@ -59,13 +59,23 @@ on-demand path holds provider responses briefly so that reopening the same
 ticker does not spend provider quota again.
 
 `/market_data/fii/{asset_id}/profile` answers the market page of a real-estate
-fund with what only a fund has: the indicators it publishes and the payments it
-has made. It resolves the asset from storage to reject anything that is not a
-registered FII, then reads the provider and holds the answer for a few hours —
-a fund republishes those numbers once a month, so nothing is persisted and no
-calculation depends on them. The two halves come from separate provider routes:
-one failing leaves the other on the page, both failing raises, so an expired
-token or a rate limit reaches the reader as itself rather than as an empty card.
+fund with what only a fund has: who runs it, the indicators it publishes and
+their history, the payments it has made, its latest monthly filing, and the
+composition of what it holds — properties, CRI, shares in other funds, land and
+rights — with the history of that composition and of its vacancy. It resolves
+the asset from storage to reject anything that is not a registered FII, then
+reads the provider and holds the answer for a few hours — a fund republishes
+those numbers monthly at best, so nothing is persisted and no calculation
+depends on them.
+
+Seven provider routes answer for that one read, asked for together under the
+same concurrency cap the dividend ingestion uses, and read independently: one
+failing leaves the other sections on the page, and only all of them failing
+raises, so an expired token or a spent quota reaches the reader as itself
+rather than as a page of empty cards. They also answer on different clocks —
+the indicators and the filing monthly, the composition quarterly and months
+late — which is why every section carries the date it refers to instead of the
+page carrying one.
 
 The same route feeds the portfolio. A daily job records what a portfolio's
 funds paid, reading `/v2/fii/dividends` through the same adapter mapping the
