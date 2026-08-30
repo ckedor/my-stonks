@@ -11,6 +11,7 @@ import MilitaryTechIcon from '@mui/icons-material/MilitaryTech'
 import PaidIcon from '@mui/icons-material/Paid'
 import PublicIcon from '@mui/icons-material/Public'
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
+import SavingsIcon from '@mui/icons-material/Savings'
 import ShowChartIcon from '@mui/icons-material/ShowChart'
 import SpeedIcon from '@mui/icons-material/Speed'
 import StarBorderIcon from '@mui/icons-material/StarBorder'
@@ -51,6 +52,7 @@ const NAVIGATION_ICONS: Record<string, ReactNode> = {
   '/market/stock': <ShowChartIcon />,
   '/market/etf': <LayersIcon />,
   '/market/fii': <ApartmentIcon />,
+  '/market/investment-fund': <SavingsIcon />,
   '/market/crypto': <CurrencyBitcoinIcon />,
 }
 

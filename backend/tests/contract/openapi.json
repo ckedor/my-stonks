@@ -349,6 +349,17 @@
       "title": "Id",
       "type": "integer"
      },
+     "logo_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Logo Url"
+     },
      "name": {
       "title": "Name",
       "type": "string"
@@ -479,6 +490,17 @@
      "id": {
       "title": "Id",
       "type": "integer"
+     },
+     "logo_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Logo Url"
      },
      "name": {
       "title": "Name",
@@ -797,6 +819,137 @@
      "diff_value"
     ],
     "title": "AssetRebalancingEntry",
+    "type": "object"
+   },
+   "AssetSyncChange": {
+    "description": "Um ativo que o catálogo corrige, com o antes e o depois de cada campo.",
+    "properties": {
+     "changes": {
+      "additionalProperties": {
+       "maxItems": 2,
+       "minItems": 2,
+       "prefixItems": [
+        {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        }
+       ],
+       "type": "array"
+      },
+      "title": "Changes",
+      "type": "object"
+     },
+     "kind": {
+      "title": "Kind",
+      "type": "string"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "kind",
+     "ticker",
+     "changes"
+    ],
+    "title": "AssetSyncChange",
+    "type": "object"
+   },
+   "AssetSyncEntry": {
+    "properties": {
+     "kind": {
+      "title": "Kind",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     }
+    },
+    "required": [
+     "kind",
+     "name"
+    ],
+    "title": "AssetSyncEntry",
+    "type": "object"
+   },
+   "AssetSyncReport": {
+    "description": "O que a sincronização fez — ou faria, quando `dry_run`.",
+    "properties": {
+     "created": {
+      "items": {
+       "$ref": "#/components/schemas/AssetSyncEntry"
+      },
+      "title": "Created",
+      "type": "array"
+     },
+     "dry_run": {
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "kept_local": {
+      "items": {
+       "$ref": "#/components/schemas/AssetSyncEntry"
+      },
+      "title": "Kept Local",
+      "type": "array"
+     },
+     "kinds": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Kinds",
+      "type": "array"
+     },
+     "unchanged": {
+      "title": "Unchanged",
+      "type": "integer"
+     },
+     "updated": {
+      "items": {
+       "$ref": "#/components/schemas/AssetSyncChange"
+      },
+      "title": "Updated",
+      "type": "array"
+     }
+    },
+    "required": [
+     "dry_run",
+     "kinds",
+     "created",
+     "updated",
+     "unchanged",
+     "kept_local"
+    ],
+    "title": "AssetSyncReport",
     "type": "object"
    },
    "AssetTargetRequest": {
@@ -3864,6 +4017,17 @@
       ],
       "title": "Last Visited At"
      },
+     "logo_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Logo Url"
+     },
      "name": {
       "title": "Name",
       "type": "string"
@@ -4227,6 +4391,911 @@
     "title": "IndexOut",
     "type": "object"
    },
+   "InvestmentFundDividendResponse": {
+    "description": "One payment per share, as published.\n\n``event_type`` is what the fund called it — an ordinary distribution or an\namortization of capital. It is carried so that a reader meaning income can\ntell the two apart instead of adding them up.\n\nThe provider does not estimate a payment date from a fixed interval, since\nfunds of these kinds have none, so no periodicity may be read into the\nseries either.",
+    "properties": {
+     "declared_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Declared Date"
+     },
+     "event_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Event Type"
+     },
+     "ex_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ex Date"
+     },
+     "payment_date": {
+      "format": "date",
+      "title": "Payment Date",
+      "type": "string"
+     },
+     "value_per_share": {
+      "title": "Value Per Share",
+      "type": "number"
+     }
+    },
+    "required": [
+     "payment_date",
+     "value_per_share"
+    ],
+    "title": "InvestmentFundDividendResponse",
+    "type": "object"
+   },
+   "InvestmentFundHoldingResponse": {
+    "description": "One line of the quarterly portfolio filing.\n\n``bucket`` says which group the line came from — ``public_bonds``,\n``fund_holdings``, ``credit_assets``, ``listed_securities``, ``receivables``\nor ``payables``. The last two are claims and obligations rather than things\nowned, which is why the group travels with the line: added up blindly, a\npayable would inflate what the fund holds.\n\n``details`` is whatever else the filing said. Its keys vary by group and by\nfund, so it is served as filed rather than promoted into fields that would\nbe absent for most rows.",
+    "properties": {
+     "asset_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Name"
+     },
+     "asset_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Type"
+     },
+     "bucket": {
+      "title": "Bucket",
+      "type": "string"
+     },
+     "confidential": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confidential"
+     },
+     "cost_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cost Value"
+     },
+     "details": {
+      "default": {},
+      "title": "Details",
+      "type": "object"
+     },
+     "isin": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Isin"
+     },
+     "issuer_cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Issuer Cnpj"
+     },
+     "issuer_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Issuer Name"
+     },
+     "market_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Market Value"
+     },
+     "maturity_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Maturity Date"
+     },
+     "quantity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Quantity"
+     },
+     "selic_code": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Selic Code"
+     }
+    },
+    "required": [
+     "bucket"
+    ],
+    "title": "InvestmentFundHoldingResponse",
+    "type": "object"
+   },
+   "InvestmentFundIdentityResponse": {
+    "description": "What the fund is, on paper: its registration and who runs it.\n\n``kind`` is the family the fund belongs to — ``fiagro``, ``fidc``,\n``fiinfra``, ``fif``, ``fip`` — and it decides what the rest of the profile\ncan contain: a FIDC files monthly share values and no daily ones, a FIP\nfiles neither. The three classifications come from three different bodies\nand disagree on purpose, so none stands for the others.",
+    "properties": {
+     "administrator_cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Administrator Cnpj"
+     },
+     "administrator_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Administrator Name"
+     },
+     "anbima_classification": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Anbima Classification"
+     },
+     "b3_classification": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "B3 Classification"
+     },
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "cvm_class_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cvm Class Type"
+     },
+     "cvm_classification": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cvm Classification"
+     },
+     "isin": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Isin"
+     },
+     "kind": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Kind"
+     },
+     "legal_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Legal Name"
+     },
+     "manager_cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Manager Cnpj"
+     },
+     "manager_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Manager Name"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     }
+    },
+    "title": "InvestmentFundIdentityResponse",
+    "type": "object"
+   },
+   "InvestmentFundIndicatorsResponse": {
+    "description": "The fund's own numbers, as of the filing they came from.\n\nThe returns and the yield are ratios: 0.0142 is 1.42%. ``price_to_nav`` is\nthe published P/VP, a multiple around 1 — below it the share trades for less\nthan the fund says it is worth. None of them is scaled here; the client\ndecides how each is written.\n\n``daily_applications`` and ``daily_redemptions`` are the money that came in\nand went out on the reference day, in reais. A closed-end fund files zero\nfor both because nobody can subscribe or redeem.",
+    "properties": {
+     "as_of_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "As Of Date"
+     },
+     "daily_applications": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Daily Applications"
+     },
+     "daily_redemptions": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Daily Redemptions"
+     },
+     "dividend_yield_monthly": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Dividend Yield Monthly"
+     },
+     "equity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Equity"
+     },
+     "monthly_return": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Monthly Return"
+     },
+     "nav_per_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Nav Per Share"
+     },
+     "patrimonial_monthly_return": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Patrimonial Monthly Return"
+     },
+     "price": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price"
+     },
+     "price_to_nav": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price To Nav"
+     },
+     "shareholders": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Shareholders"
+     },
+     "shares_outstanding": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Shares Outstanding"
+     },
+     "total_assets": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Assets"
+     }
+    },
+    "title": "InvestmentFundIndicatorsResponse",
+    "type": "object"
+   },
+   "InvestmentFundInvestorBreakdownResponse": {
+    "description": "Who holds the fund, in the monthly filing.\n\nCounts and shares are both served: one feeder fund is one investor and the\nwhole of the equity, and either number alone tells half of that.",
+    "properties": {
+     "funds_or_clubs": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Funds Or Clubs"
+     },
+     "funds_or_clubs_percent": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Funds Or Clubs Percent"
+     },
+     "individual_retail": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Individual Retail"
+     },
+     "individual_retail_percent": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Individual Retail Percent"
+     },
+     "legal_entities": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Legal Entities"
+     },
+     "legal_entities_percent": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Legal Entities Percent"
+     },
+     "non_residents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Non Residents"
+     },
+     "non_residents_percent": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Non Residents Percent"
+     },
+     "other": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Other"
+     },
+     "other_percent": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Other Percent"
+     }
+    },
+    "title": "InvestmentFundInvestorBreakdownResponse",
+    "type": "object"
+   },
+   "InvestmentFundMarketFundResponse": {
+    "description": "One fund in the catalogue, summarized.\n\n``asset_id`` is filled only for funds registered in the application, and it\nis what makes a row open a page — the rest of the catalogue is readable but\nhas nothing to open.",
+    "properties": {
+     "administrator": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Administrator"
+     },
+     "anbima_classification": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Anbima Classification"
+     },
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "b3_classification": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "B3 Classification"
+     },
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "equity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Equity"
+     },
+     "investors": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Investors"
+     },
+     "kind": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Kind"
+     },
+     "manager": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Manager"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "nav_per_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Nav Per Share"
+     },
+     "price": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price"
+     },
+     "price_to_nav": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Price To Nav"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     },
+     "total_assets": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Assets"
+     }
+    },
+    "required": [
+     "ticker",
+     "name"
+    ],
+    "title": "InvestmentFundMarketFundResponse",
+    "type": "object"
+   },
+   "InvestmentFundMarketResponse": {
+    "properties": {
+     "funds": {
+      "items": {
+       "$ref": "#/components/schemas/InvestmentFundMarketFundResponse"
+      },
+      "title": "Funds",
+      "type": "array"
+     },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
+     "total": {
+      "title": "Total",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "funds",
+     "total",
+     "source"
+    ],
+    "title": "InvestmentFundMarketResponse",
+    "type": "object"
+   },
+   "InvestmentFundNavPointResponse": {
+    "description": "One filing of the share value, with the equity behind it.\n\nIt is the fund's own accounting and not its market price: a share that has\nnot traded in a week still has a share value filed every day. A FIDC files\nper class or series, so ``class_or_series`` is part of what identifies a row.",
+    "properties": {
+     "class_or_series": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Class Or Series"
+     },
+     "daily_applications": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Daily Applications"
+     },
+     "daily_redemptions": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Daily Redemptions"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "equity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Equity"
+     },
+     "monthly_return": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Monthly Return"
+     },
+     "nav_per_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Nav Per Share"
+     },
+     "shareholders": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Shareholders"
+     },
+     "total_assets": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Assets"
+     }
+    },
+    "required": [
+     "date"
+    ],
+    "title": "InvestmentFundNavPointResponse",
+    "type": "object"
+   },
    "InvestmentFundOut": {
     "properties": {
      "anbima_category": {
@@ -4286,6 +5355,331 @@
      "anbima_category"
     ],
     "title": "InvestmentFundOut",
+    "type": "object"
+   },
+   "InvestmentFundPortfolioResponse": {
+    "description": "What the fund held at the end of the last quarter it filed for.",
+    "properties": {
+     "holdings": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/InvestmentFundHoldingResponse"
+      },
+      "title": "Holdings",
+      "type": "array"
+     },
+     "reference_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reference Date"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InvestmentFundPortfolioSummaryResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "title": "InvestmentFundPortfolioResponse",
+    "type": "object"
+   },
+   "InvestmentFundPortfolioSummaryResponse": {
+    "description": "The quarterly filing added up, by group.\n\n``market_value`` is the filing's own total and is not the sum of the six\ngroups below it: receivables add to it and payables subtract from it.",
+    "properties": {
+     "credit_assets_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Credit Assets Value"
+     },
+     "fund_holdings_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fund Holdings Value"
+     },
+     "holdings_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Holdings Count"
+     },
+     "listed_securities_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Listed Securities Value"
+     },
+     "market_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Market Value"
+     },
+     "payables_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payables Value"
+     },
+     "public_bonds_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Public Bonds Value"
+     },
+     "receivables_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Receivables Value"
+     }
+    },
+    "title": "InvestmentFundPortfolioSummaryResponse",
+    "type": "object"
+   },
+   "InvestmentFundProfileResponse": {
+    "description": "Everything the fund publishes about itself.\n\nEvery section is optional and independent: the provider answers each from a\nroute of its own, and one of them failing costs the page that section rather\nthan the whole profile. The sections also arrive on different clocks — the\nshare value daily or monthly, the regulatory profile monthly, the portfolio\nquarterly and months late — which is why each states its own date.",
+    "properties": {
+     "dividends": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/InvestmentFundDividendResponse"
+      },
+      "title": "Dividends",
+      "type": "array"
+     },
+     "identity": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InvestmentFundIdentityResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "indicators": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InvestmentFundIndicatorsResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "nav_history": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/InvestmentFundNavPointResponse"
+      },
+      "title": "Nav History",
+      "type": "array"
+     },
+     "portfolio": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InvestmentFundPortfolioResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "regulatory_profile": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InvestmentFundRegulatoryProfileResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "ticker"
+    ],
+    "title": "InvestmentFundProfileResponse",
+    "type": "object"
+   },
+   "InvestmentFundRegulatoryProfileResponse": {
+    "description": "The most recent monthly filing with the regulator.\n\nOnly the funds the regulator asks it of file one, so an absent profile is a\nfact about the fund's kind rather than a failure to read it.",
+    "properties": {
+     "investors": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InvestmentFundInvestorBreakdownResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "private_credit_exposure_percent": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Private Credit Exposure Percent"
+     },
+     "reference_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reference Date"
+     },
+     "risk": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InvestmentFundRiskResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "top_investor_percent": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Top Investor Percent"
+     }
+    },
+    "title": "InvestmentFundRegulatoryProfileResponse",
+    "type": "object"
+   },
+   "InvestmentFundRiskResponse": {
+    "description": "How the fund measures its own risk, in the monthly filing.\n\n``risk_model`` is what makes the numbers beside it comparable or not: a VaR\nfrom a non-parametric model and one from a parametric model are not the same\nquantity, so the model travels with them.",
+    "properties": {
+     "daily_quota_variation_percent": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Daily Quota Variation Percent"
+     },
+     "portfolio_var": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Portfolio Var"
+     },
+     "private_credit_exposure_percent": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Private Credit Exposure Percent"
+     },
+     "risk_model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Risk Model"
+     },
+     "stressed_daily_quota_variation_percent": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Stressed Daily Quota Variation Percent"
+     }
+    },
+    "title": "InvestmentFundRiskResponse",
     "type": "object"
    },
    "MarketCatalogueAssetResponse": {
@@ -4806,6 +6200,16 @@
      "progress": {
       "title": "Progress",
       "type": "number"
+     },
+     "projection": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/WealthTierProjection"
+       },
+       {
+        "type": "null"
+       }
+      ]
      },
      "remaining": {
       "anyOf": [
@@ -5597,10 +7001,6 @@
    "WealthTier": {
     "description": "Um degrau da escala: um título e o preço dele.\n\nO cenário do degrau não viaja aqui. Ele é um arquivo do repositório,\nescolhido pela posição na escala, então a imagem não é dado de API: nem\nsobe, nem é guardada, nem engorda a resposta que lista a escala inteira.",
     "properties": {
-     "id": {
-      "title": "Id",
-      "type": "integer"
-     },
      "name": {
       "title": "Name",
       "type": "string"
@@ -5615,12 +7015,40 @@
      }
     },
     "required": [
-     "id",
      "rank",
      "name",
      "threshold"
     ],
     "title": "WealthTier",
+    "type": "object"
+   },
+   "WealthTierProjection": {
+    "description": "Quando o degrau seguinte chega, no ritmo atual.\n\nAs duas entradas viajam junto com a resposta porque a data sozinha não se\ndefende: ela vale o que valem o aporte médio e a taxa que a produziram.",
+    "properties": {
+     "annual_rate": {
+      "title": "Annual Rate",
+      "type": "number"
+     },
+     "monthly_contribution": {
+      "title": "Monthly Contribution",
+      "type": "number"
+     },
+     "months": {
+      "title": "Months",
+      "type": "integer"
+     },
+     "target_date": {
+      "title": "Target Date",
+      "type": "string"
+     }
+    },
+    "required": [
+     "monthly_contribution",
+     "annual_rate",
+     "months",
+     "target_date"
+    ],
+    "title": "WealthTierProjection",
     "type": "object"
    },
    "app__modules__portfolio__api__category__schema__CustomCategory": {
@@ -6594,6 +8022,74 @@
      }
     ],
     "summary": "List Fixed Income Types",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/sync": {
+   "post": {
+    "description": "Casar o cadastro local com o catálogo do provedor.\n\nNomes e logos vêm do provedor, tickers que faltam viram ativos novos, e o\nque só existe aqui continua existindo. `dry_run` é o padrão porque a rota\nreescreve dado que a tela mostra: primeiro se olha o relatório, depois se\nrepete com `dry_run=false`.",
+    "operationId": "sync_assets_with_catalogue_market_data_asset_sync_post",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "kinds",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Kinds"
+      }
+     },
+     {
+      "in": "query",
+      "name": "dry_run",
+      "required": false,
+      "schema": {
+       "default": true,
+       "title": "Dry Run",
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AssetSyncReport"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Sync Assets With Catalogue",
     "tags": [
      "Asset"
     ]
@@ -7749,6 +9245,81 @@
     ]
    }
   },
+  "/market_data/investment_fund/market": {
+   "get": {
+    "description": "Catalogue of funds that are neither real-estate funds nor ETFs.",
+    "operationId": "get_investment_fund_market_market_data_investment_fund_market_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/InvestmentFundMarketResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Investment Fund Market",
+    "tags": [
+     "Investment fund"
+    ]
+   }
+  },
+  "/market_data/investment_fund/{asset_id}/profile": {
+   "get": {
+    "description": "Registration, indicators, share value, payments and portfolio of one fund.",
+    "operationId": "get_investment_fund_profile_market_data_investment_fund__asset_id__profile_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/InvestmentFundProfileResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Investment Fund Profile",
+    "tags": [
+     "Investment fund"
+    ]
+   }
+  },
   "/market_data/market/{kind}": {
    "get": {
     "description": "Complete BRAPI catalogue for one market class.",
@@ -7762,6 +9333,8 @@
        "enum": [
         "stock",
         "etf",
+        "fii",
+        "bdr",
         "crypto"
        ],
        "title": "Kind",

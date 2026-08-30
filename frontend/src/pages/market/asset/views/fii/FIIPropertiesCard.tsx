@@ -11,8 +11,8 @@ import {
   type AppSimpleTableColumn,
 } from '@/components/ui'
 import { useMemo } from 'react'
-import FIISeriesChart, { type FIISeriesMetric } from './FIISeriesChart'
-import { EMPTY, formatArea, formatCompactBRL, formatCount, formatDate, formatPercent } from './format'
+import PublishedSeriesChart, { type PublishedSeriesMetric } from '../PublishedSeriesChart'
+import { EMPTY, formatArea, formatCompactBRL, formatCount, formatDate, formatPercent } from '../format'
 
 /** What a building the fund chose not to name is called. */
 const CONFIDENTIAL = 'Confidencial'
@@ -109,7 +109,7 @@ const filledDevelopmentColumns = (properties: FIIProperty[]) => {
   return DEVELOPMENT_COLUMNS.filter((column) => filled[column.label as keyof typeof filled])
 }
 
-const VACANCY_METRICS: FIISeriesMetric<FIIPropertiesPoint>[] = [
+const VACANCY_METRICS: PublishedSeriesMetric<FIIPropertiesPoint>[] = [
   {
     key: 'vacancy_rate',
     label: 'Vacância consolidada',
@@ -203,7 +203,7 @@ export default function FIIPropertiesCard({
 
         <AppStack gap="xs">
           <SectionLabel>Evolução por trimestre</SectionLabel>
-          <FIISeriesChart
+          <PublishedSeriesChart
             points={history}
             dateOf={quarterOf}
             metrics={VACANCY_METRICS}

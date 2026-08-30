@@ -38,6 +38,20 @@ from app.modules.market_data.domain.fii import (
     FIIPropertySummary,
     FIIRight,
 )
+from app.modules.market_data.domain.investment_fund import (
+    EXCLUDED_FUND_KINDS,
+    InvestmentFundDividend,
+    InvestmentFundHolding,
+    InvestmentFundIdentity,
+    InvestmentFundIndicators,
+    InvestmentFundInvestorBreakdown,
+    InvestmentFundNavPoint,
+    InvestmentFundPortfolio,
+    InvestmentFundPortfolioSummary,
+    InvestmentFundProfile,
+    InvestmentFundRegulatoryProfile,
+    InvestmentFundRisk,
+)
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.domain.quote import (
     FetchedQuotes,
@@ -183,9 +197,123 @@ FII_RIGHT_FIELDS: dict[str, dict[str, str]] = {
     'flag': {'confidential': 'confidential'},
 }
 
+#: Provider field behind each figure an investment fund reports about itself.
+#: Same rule as the FII indicators above: a figure the provider does not publish
+#: for a fund stays None, because these routes leave most of them blank for most
+#: fund kinds and a zero there would read as a measured nil.
+FUND_INDICATOR_KEYS: dict[str, str] = {
+    'price': 'price',
+    'nav_per_share': 'navPerShare',
+    'price_to_nav': 'priceToNav',
+    'equity': 'equity',
+    'total_assets': 'totalAssets',
+    'daily_applications': 'dailyApplications',
+    'daily_redemptions': 'dailyRedemptions',
+    'shares_outstanding': 'sharesOutstanding',
+    'monthly_return': 'monthlyReturn',
+    'patrimonial_monthly_return': 'patrimonialMonthlyReturn',
+    'dividend_yield_monthly': 'dividendYieldMonthly',
+}
+
+#: The numbers one filing of the share value carries. The route repeats the
+#: indicator names, which is why the two lists overlap and neither is derived
+#: from the other: the history may stop publishing a column the current
+#: indicators still fill.
+FUND_NAV_KEYS: dict[str, str] = {
+    'nav_per_share': 'navPerShare',
+    'equity': 'equity',
+    'total_assets': 'totalAssets',
+    'daily_applications': 'dailyApplications',
+    'daily_redemptions': 'dailyRedemptions',
+    'monthly_return': 'monthlyReturn',
+}
+
+#: What the catalogue says a fund is. All text: none of it is measured, and the
+#: three classifications come from three bodies that disagree on purpose.
+FUND_IDENTITY_KEYS: dict[str, str] = {
+    'cnpj': 'cnpj',
+    'legal_name': 'legalName',
+    'isin': 'isin',
+    'cvm_class_type': 'cvmClassType',
+    'cvm_classification': 'cvmClassification',
+    'anbima_classification': 'anbimaClassification',
+    'b3_classification': 'b3Classification',
+    'administrator_name': 'administratorName',
+    'administrator_cnpj': 'administratorCnpj',
+    'manager_name': 'managerName',
+    'manager_cnpj': 'managerCnpj',
+    'status': 'status',
+}
+
+#: How many people of each kind hold the fund, and how much of it they hold.
+#: Both are filed and both are kept: one feeder fund is one investor and the
+#: whole of the equity, and either number alone tells half of that.
+FUND_INVESTOR_KEYS: dict[str, str] = {
+    'individual_retail': 'individualRetail',
+    'legal_entities': 'legalEntities',
+    'funds_or_clubs': 'fundsOrClubs',
+    'non_residents': 'nonResidents',
+    'other': 'other',
+}
+
+FUND_RISK_KEYS: dict[str, str] = {
+    'portfolio_var': 'portfolioVar',
+    'daily_quota_variation_percent': 'dailyQuotaVariationPercent',
+    'stressed_daily_quota_variation_percent': 'stressedDailyQuotaVariationPercent',
+    'private_credit_exposure_percent': 'privateCreditExposurePercent',
+}
+
+FUND_PORTFOLIO_SUMMARY_KEYS: dict[str, str] = {
+    'market_value': 'marketValue',
+    'public_bonds_value': 'publicBondsValue',
+    'fund_holdings_value': 'fundHoldingsValue',
+    'credit_assets_value': 'creditAssetsValue',
+    'listed_securities_value': 'listedSecuritiesValue',
+    'receivables_value': 'receivablesValue',
+    'payables_value': 'payablesValue',
+}
+
+#: The groups the quarterly portfolio filing arrives in, and what each is called
+#: once it is one line of one list. The provider gives all six the same item
+#: shape, so the group is the only thing telling a bond the fund owns from an
+#: obligation it owes -- which is why it is carried on every line.
+FUND_PORTFOLIO_BUCKETS: dict[str, str] = {
+    'publicBonds': 'public_bonds',
+    'fundHoldings': 'fund_holdings',
+    'creditAssets': 'credit_assets',
+    'listedSecurities': 'listed_securities',
+    'receivables': 'receivables',
+    'payables': 'payables',
+}
+
+#: One line of that filing, read field by field as declared.
+FUND_HOLDING_FIELDS: dict[str, dict[str, str]] = {
+    'text': {
+        'asset_type': 'assetType',
+        'asset_name': 'assetName',
+        'issuer_name': 'issuerName',
+        'issuer_cnpj': 'issuerCnpj',
+        'isin': 'isin',
+        'selic_code': 'selicCode',
+    },
+    'number': {
+        'quantity': 'quantity',
+        'market_value': 'marketValue',
+        'cost_value': 'costValue',
+    },
+    'date': {'maturity_date': 'maturityDate'},
+    'flag': {'confidential': 'confidential'},
+}
+
 #: Quantos fundos são consultados ao mesmo tempo. O mesmo teto que a
 #: ingestão de cotações usa: a cota do provedor é por minuto, não por rota.
-MAX_CONCURRENT_FII_REQUESTS = 5
+MAX_CONCURRENT_FUND_REQUESTS = 5
+
+#: Quantas filas de cada rota paginada de fundos são pedidas de uma vez. As
+#: rotas do provedor paginam com 20 por página por omissão, e uma série diária
+#: de anos não cabe nisso -- nem numa página só, que é por isso que o limite é
+#: alto e não infinito.
+FUND_HISTORY_LIMIT = 10000
 
 #: Quantos informes mensais são pedidos para achar o mais recente. O provedor
 #: aceita ordenação, mas não publica por qual campo, então a página lê uma
@@ -381,7 +509,7 @@ class MarketDataProvider:
         if not symbols:
             return {}
 
-        semaphore = asyncio.Semaphore(MAX_CONCURRENT_FII_REQUESTS)
+        semaphore = asyncio.Semaphore(MAX_CONCURRENT_FUND_REQUESTS)
 
         async def fetch(symbol: str) -> tuple[str, list[FIIDividend]]:
             async with semaphore:
@@ -614,7 +742,7 @@ class MarketDataProvider:
                 symbols=symbol, sortOrder='asc'
             ),
         }
-        responses = await self._gather_fii_routes(requests)
+        responses = await self._gather_routes(requests)
 
         failures = [item for item in responses.values() if isinstance(item, BaseException)]
         if len(failures) == len(responses):
@@ -657,7 +785,7 @@ class MarketDataProvider:
         )
 
     @staticmethod
-    async def _gather_fii_routes(
+    async def _gather_routes(
         requests: dict[str, Callable[[], Awaitable[Any]]],
     ) -> dict[str, Any]:
         """Every route of one profile, answered or failed, under its own name.
@@ -666,7 +794,7 @@ class MarketDataProvider:
         what a missing section costs, which is what reading the sections
         independently means.
         """
-        semaphore = asyncio.Semaphore(MAX_CONCURRENT_FII_REQUESTS)
+        semaphore = asyncio.Semaphore(MAX_CONCURRENT_FUND_REQUESTS)
 
         async def call(request: Callable[[], Awaitable[Any]]) -> Any:
             async with semaphore:
@@ -691,6 +819,301 @@ class MarketDataProvider:
             sortOrder='asc',
         )
         return response.get('fiis', [])
+
+    async def fetch_investment_fund_profile(self, *, ticker: str) -> InvestmentFundProfile:
+        """Everything the provider publishes about one investment fund.
+
+        Six routes answer for one page, and each is read on its own. They are
+        also on six clocks: the catalogue entry and the current indicators are
+        refreshed as often as the fund files, the share value daily for an FI
+        and monthly for a FIDC, the payments on the fund's own calendar, the
+        regulatory profile monthly, and the portfolio quarterly and months late.
+        A fund the provider has never profiled still has a share value worth
+        charting, so one route failing costs the page that section and nothing
+        else.
+
+        Every route failing is not a profile at all and raises. An expired token
+        or a spent quota refuses all six at once, and that has to reach the
+        reader as itself rather than as a page of empty cards.
+
+        The fan-out is bounded by the same limit the FII profile and the
+        dividend ingestion use, for the same reason: the provider counts its
+        quota per minute, not per route.
+        """
+        symbol = ticker.upper()
+        requests = {
+            'identity': lambda: self.brapi_client.list_funds(symbols=symbol),
+            'indicators': lambda: self.brapi_client.get_fund_indicators(symbols=symbol),
+            # Ascending, so every series arrives in the order it is charted in.
+            'nav_history': lambda: self.brapi_client.get_fund_nav_history(
+                symbols=symbol, sortOrder='asc', limit=FUND_HISTORY_LIMIT
+            ),
+            'dividends': lambda: self.brapi_client.get_fund_dividends(
+                symbols=symbol, sortOrder='asc', limit=FUND_HISTORY_LIMIT
+            ),
+            # Without a reference date, both filing routes answer with the most
+            # recent one the fund has filed.
+            'regulatory_profile': lambda: self.brapi_client.get_fund_profile(symbols=symbol),
+            'portfolio': lambda: self.brapi_client.get_fund_portfolio(symbols=symbol),
+        }
+        responses = await self._gather_routes(requests)
+
+        failures = [item for item in responses.values() if isinstance(item, BaseException)]
+        if len(failures) == len(responses):
+            raise failures[0]
+
+        return InvestmentFundProfile(
+            ticker=symbol,
+            identity=self._fund_identity(
+                self._fund_result(responses['identity'], symbol, subject='registration')
+            ),
+            indicators=self._fund_indicators(
+                self._fund_result(responses['indicators'], symbol, subject='indicators')
+            ),
+            nav_history=self._fund_nav_history(responses['nav_history'], symbol),
+            dividends=self._fund_dividends(responses['dividends'], symbol),
+            regulatory_profile=self._fund_regulatory_profile(
+                responses['regulatory_profile'], symbol
+            ),
+            portfolio=self._fund_portfolio(
+                self._fund_result(responses['portfolio'], symbol, subject='portfolio')
+            ),
+        )
+
+    async def fetch_investment_fund_market(self) -> list[dict]:
+        """The catalogue of funds that are neither real-estate funds nor ETFs.
+
+        One listing call for the universe rather than a fan-out of indicator
+        requests in batches of twenty, exactly as the FII catalogue is read.
+
+        The route answers for every fund it knows, FIIs and ETFs included, and
+        those two are filtered out here: a FII is answered by a profile built
+        from buildings and vacancy, and an ETF is read like any listed asset.
+        The filter is on the kind the provider states and never on the ticker --
+        a code ending in 11 says nothing about which of them a fund is, and
+        JURO11 is an FI-Infra.
+        """
+        response = await self.brapi_client.list_funds(
+            page=1,
+            limit=FUND_HISTORY_LIMIT,
+            sortBy='symbol',
+            sortOrder='asc',
+        )
+        funds = response.get('funds', [])
+        return [
+            fund
+            for fund in funds
+            if isinstance(fund, dict)
+            and str(fund.get('assetType') or '').strip().lower() not in EXCLUDED_FUND_KINDS
+        ]
+
+    def _fund_result(self, response: object, symbol: str, *, subject: str) -> dict | None:
+        """The one fund's entry in a route that answers under `funds`."""
+        payload = self._provider_payload(response, symbol, key='funds', subject=subject)
+        return next((item for item in payload if self._is_symbol(item, symbol)), None)
+
+    def _fund_identity(self, result: dict | None) -> InvestmentFundIdentity | None:
+        """What the catalogue says the fund is.
+
+        A fund the provider knows nothing about beyond its ticker has no
+        registration to show, and an object of thirteen empty fields would still
+        draw the section. So nothing at all reads as nothing.
+        """
+        if result is None:
+            return None
+
+        kind = self._text(result.get('assetType'))
+        identity = InvestmentFundIdentity(
+            kind=kind.lower() if kind else None,
+            **{name: self._text(result.get(key)) for name, key in FUND_IDENTITY_KEYS.items()},
+        )
+        return identity if any(astuple(identity)) else None
+
+    def _fund_indicators(self, result: dict | None) -> InvestmentFundIndicators | None:
+        """The fund's current numbers, from `GET /v2/funds/indicators`."""
+        if result is None:
+            return None
+
+        return InvestmentFundIndicators(
+            as_of_date=self._provider_date(result.get('asOfDate')),
+            shareholders=self._integer(result.get('totalInvestors')),
+            **{name: self._number(result.get(key)) for name, key in FUND_INDICATOR_KEYS.items()},
+        )
+
+    def _fund_nav_history(self, response: object, symbol: str) -> list[InvestmentFundNavPoint]:
+        """The share value as filed, oldest first.
+
+        The order is imposed here rather than trusted: the route accepts a sort
+        direction but does not publish which field it sorts by. A FIDC files per
+        class or series, so a date alone does not identify a row -- two classes
+        of the same fund file the same day and both belong on the page.
+        """
+        payload = self._provider_payload(response, symbol, key='history', subject='share values')
+
+        points: dict[tuple[date, str], InvestmentFundNavPoint] = {}
+        for item in payload:
+            if not self._is_symbol(item, symbol):
+                continue
+            filed_on = self._provider_date(item.get('date'))
+            if filed_on is None:
+                continue
+            series = self._text(item.get('classOrSeries'))
+            points[(filed_on, series or '')] = InvestmentFundNavPoint(
+                date=filed_on,
+                class_or_series=series,
+                shareholders=self._integer(item.get('totalInvestors')),
+                **{name: self._number(item.get(key)) for name, key in FUND_NAV_KEYS.items()},
+            )
+        return [points[key] for key in sorted(points)]
+
+    def _fund_dividends(self, response: object, symbol: str) -> list[InvestmentFundDividend]:
+        """Payments from `GET /v2/funds/dividends`, a flat list under `dividends`.
+
+        Each entry names its own fund, so the list is filtered rather than
+        assumed to hold one. `rate` is the amount paid per share and is taken as
+        published -- never derived from a yield.
+
+        Keyed by payment date, like the FII payments: the provider states it
+        removes duplicates across a rename by ISIN, and a fund that paid twice
+        on one day after a correction must not be charted twice.
+        """
+        payload = self._provider_payload(response, symbol, key='dividends', subject='dividends')
+
+        dividends: dict[date, InvestmentFundDividend] = {}
+        for payment in payload:
+            if not self._is_symbol(payment, symbol):
+                continue
+            paid_on = self._provider_date(payment.get('paymentDate'))
+            value = self._number(payment.get('rate'))
+            if paid_on is None or value is None:
+                continue
+            dividends[paid_on] = InvestmentFundDividend(
+                payment_date=paid_on,
+                value_per_share=value,
+                ex_date=self._provider_date(payment.get('lastDatePrior')),
+                declared_date=self._provider_date(payment.get('declaredDate')),
+                event_type=self._text(payment.get('label')),
+            )
+        return [dividends[paid_on] for paid_on in sorted(dividends)]
+
+    def _fund_regulatory_profile(
+        self, response: object, symbol: str
+    ) -> InvestmentFundRegulatoryProfile | None:
+        """The most recent monthly filing with the regulator.
+
+        The route answers a list under `profiles` and is asked without a
+        reference date, so it returns the latest -- but the newest filing is
+        taken as the highest reference date rather than as the first row, for
+        the same reason the FII monthly report is: the route sorts without
+        saying by what.
+        """
+        payload = self._provider_payload(
+            response, symbol, key='profiles', subject='regulatory profile'
+        )
+
+        profiles: dict[date, InvestmentFundRegulatoryProfile] = {}
+        for item in payload:
+            if not self._is_symbol(item, symbol):
+                continue
+            filed_on = self._provider_date(item.get('referenceDate'))
+            if filed_on is None:
+                continue
+            concentration = item.get('concentration')
+            private_credit = item.get('privateCredit')
+            profiles[filed_on] = InvestmentFundRegulatoryProfile(
+                reference_date=filed_on,
+                investors=self._fund_investors(item.get('investorBreakdown')),
+                risk=self._fund_risk(item.get('risk')),
+                top_investor_percent=self._number(
+                    concentration.get('topCotistaPercent')
+                    if isinstance(concentration, dict)
+                    else None
+                ),
+                private_credit_exposure_percent=self._number(
+                    private_credit.get('exposurePercent')
+                    if isinstance(private_credit, dict)
+                    else None
+                ),
+            )
+        return profiles[max(profiles)] if profiles else None
+
+    def _fund_investors(self, value: object) -> InvestmentFundInvestorBreakdown | None:
+        if not isinstance(value, dict):
+            return None
+
+        return InvestmentFundInvestorBreakdown(
+            **{name: self._integer(value.get(key)) for name, key in FUND_INVESTOR_KEYS.items()},
+            **{
+                f'{name}_percent': self._number(value.get(f'{key}Percent'))
+                for name, key in FUND_INVESTOR_KEYS.items()
+            },
+        )
+
+    def _fund_risk(self, value: object) -> InvestmentFundRisk | None:
+        if not isinstance(value, dict):
+            return None
+
+        return InvestmentFundRisk(
+            risk_model=self._text(value.get('riskModel')),
+            **{name: self._number(value.get(key)) for name, key in FUND_RISK_KEYS.items()},
+        )
+
+    def _fund_portfolio(self, result: dict | None) -> InvestmentFundPortfolio | None:
+        """One quarter of what the fund holds, line by line.
+
+        The six groups arrive as six lists of one shape, and they are flattened
+        into one list whose lines each name the group they came from. Six lists
+        would have to be threaded through the schema and the screen unchanged
+        just to be regrouped there; one list plus the group answers the same
+        questions and lets a group the provider adds arrive without a migration
+        of the shape.
+        """
+        if result is None:
+            return None
+
+        return InvestmentFundPortfolio(
+            reference_date=self._provider_date(result.get('referenceDate')),
+            summary=self._fund_portfolio_summary(result.get('summary')),
+            holdings=[
+                InvestmentFundHolding(
+                    bucket=bucket,
+                    details=self._fund_holding_details(item.get('details')),
+                    **self._mapped(item, FUND_HOLDING_FIELDS),
+                )
+                for provider_bucket, bucket in FUND_PORTFOLIO_BUCKETS.items()
+                for item in self._items(result.get(provider_bucket))
+            ],
+        )
+
+    def _fund_portfolio_summary(self, value: object) -> InvestmentFundPortfolioSummary | None:
+        if not isinstance(value, dict):
+            return None
+
+        return InvestmentFundPortfolioSummary(
+            holdings_count=self._integer(value.get('holdingsCount')),
+            **{
+                name: self._number(value.get(key))
+                for name, key in FUND_PORTFOLIO_SUMMARY_KEYS.items()
+            },
+        )
+
+    @staticmethod
+    def _fund_holding_details(value: object) -> dict[str, Any]:
+        """Whatever else the filing said about one line.
+
+        The keys vary by group and by fund, so they are carried as filed rather
+        than promoted into fields that would be absent for most rows. Only
+        values a JSON cache can hold survive: the profile is cached as JSON, and
+        a value that cannot be written there would fail the whole read for the
+        sake of one label.
+        """
+        if not isinstance(value, dict):
+            return {}
+        return {
+            str(key): item
+            for key, item in value.items()
+            if isinstance(item, str | int | float | bool | type(None))
+        }
 
     async def fetch_market_catalogue(self, kind: str) -> list[dict]:
         """A current, comparable snapshot of one exchange-traded universe.
@@ -755,7 +1178,7 @@ class MarketDataProvider:
 
     def _fii_result(self, response: object, symbol: str, *, subject: str) -> dict | None:
         """The one fund's entry in a route that answers under `fiis`."""
-        payload = self._fii_payload(response, symbol, key='fiis', subject=subject)
+        payload = self._provider_payload(response, symbol, key='fiis', subject=subject)
         return next((item for item in payload if self._is_symbol(item, symbol)), None)
 
     def _fii_history(
@@ -775,7 +1198,7 @@ class MarketDataProvider:
         publish which field they sort by, and a month filed twice after a
         correction must not be charted twice.
         """
-        payload = self._fii_payload(response, symbol, key='history', subject=subject)
+        payload = self._provider_payload(response, symbol, key='history', subject=subject)
 
         points: dict[date, HistoryPoint] = {}
         for item in payload:
@@ -836,7 +1259,7 @@ class MarketDataProvider:
         newest filing is the one with the highest reference date and not the
         one that came first.
         """
-        payload = self._fii_payload(response, symbol, key='reports', subject='monthly reports')
+        payload = self._provider_payload(response, symbol, key='reports', subject='monthly reports')
 
         reports: dict[date, FIIMonthlyReport] = {}
         for item in payload:
@@ -968,7 +1391,7 @@ class MarketDataProvider:
         assumed to hold one. `rate` is the amount paid per share and is taken
         as published -- never derived from a yield.
         """
-        payload = self._fii_payload(response, symbol, key='dividends', subject='dividends')
+        payload = self._provider_payload(response, symbol, key='dividends', subject='dividends')
 
         dividends: dict[date, FIIDividend] = {}
         for payment in payload:
@@ -987,8 +1410,8 @@ class MarketDataProvider:
         return [dividends[paid_on] for paid_on in sorted(dividends)]
 
     @staticmethod
-    def _fii_payload(response: object, symbol: str, *, key: str, subject: str) -> list[dict]:
-        """The list a FII route answers with, or an empty one.
+    def _provider_payload(response: object, symbol: str, *, key: str, subject: str) -> list[dict]:
+        """The list a fund route answers with, or an empty one.
 
         A failed request arrives here as the exception `asyncio.gather`
         collected. It is logged and read as an empty half of the profile; the

@@ -7,7 +7,7 @@ import type {
 } from '@/api/market'
 import { describe, expect, it } from 'vitest'
 
-import { formatBRLPerShare, formatPercentagePoints } from './format'
+import { formatBRLPerShare, formatPercentagePoints } from '../format'
 import {
   compositionHistoryWithCurrentReport,
   incomeTrend,

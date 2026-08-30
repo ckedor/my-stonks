@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { formatCompactBRL, formatDate, formatMonth } from './format'
+import { formatCompactBRL, formatDate, formatMonth } from '../format'
 import { assetClassLabel } from './labels'
 import { compositionHistoryWithCurrentReport } from './readings'
 

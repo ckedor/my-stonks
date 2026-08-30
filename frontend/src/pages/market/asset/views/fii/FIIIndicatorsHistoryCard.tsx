@@ -1,6 +1,6 @@
 import type { FIIIndicators } from '@/api/market'
 import { AppCard, AppStack, AppText, SectionTitle } from '@/components/ui'
-import FIISeriesChart, { type FIISeriesMetric } from './FIISeriesChart'
+import PublishedSeriesChart, { type PublishedSeriesMetric } from '../PublishedSeriesChart'
 import {
   formatBRL,
   formatCompactBRL,
@@ -8,7 +8,7 @@ import {
   formatDate,
   formatMultiple,
   formatPercent,
-} from './format'
+} from '../format'
 
 /** The same indicators the card above shows, month by month.
  *
@@ -16,7 +16,7 @@ import {
  *  number says the share trades above or below what the fund says it is worth,
  *  and only the series says whether that is where it usually trades.
  */
-const METRICS: FIISeriesMetric<FIIIndicators>[] = [
+const METRICS: PublishedSeriesMetric<FIIIndicators>[] = [
   { key: 'price_to_nav', label: 'P/VP', read: (m) => m.price_to_nav, format: formatMultiple },
   {
     key: 'dividend_yield_12m',
@@ -88,7 +88,7 @@ export default function FIIIndicatorsHistoryCard({ history }: { history: FIIIndi
           )}
         </AppStack>
 
-        <FIISeriesChart
+        <PublishedSeriesChart
           points={history}
           dateOf={monthOf}
           metrics={METRICS}

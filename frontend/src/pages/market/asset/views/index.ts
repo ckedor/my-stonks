@@ -2,6 +2,7 @@ import { ASSET_TYPES } from '@/constants/assetTypes'
 import type { ComponentType } from 'react'
 import DefaultAssetMarketView from './DefaultAssetMarketView'
 import FIIMarketView from './fii/FIIMarketView'
+import InvestmentFundMarketView from './investment-fund/InvestmentFundMarketView'
 import type { AssetMarketViewProps } from './types'
 
 /** Which market view an asset type gets.
@@ -14,6 +15,7 @@ import type { AssetMarketViewProps } from './types'
  */
 const VIEWS: Partial<Record<number, ComponentType<AssetMarketViewProps>>> = {
   [ASSET_TYPES.FII]: FIIMarketView,
+  [ASSET_TYPES.FI]: InvestmentFundMarketView,
 }
 
 export function assetMarketView(assetTypeId: number | undefined) {

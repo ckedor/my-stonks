@@ -1,30 +1,34 @@
-import type { FIIDividend } from '@/api/market'
+import type { InvestmentFundDividend } from '@/api/market'
 import AppBarChart from '@/components/charts/app-bar-chart'
 import { AppCard, AppChartArea, AppStack, AppText, SectionTitle } from '@/components/ui'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 import { formatBRL, formatDate, formatMonth } from '../format'
 // A mesma regra que a faixa de decisão usa para achar o último rendimento:
-// duas leituras do que é renda e o que é devolução de principal divergiriam
-// no dia em que o provedor mudasse o rótulo.
+// duas leituras do que é renda e o que é devolução de principal divergiriam no
+// dia em que o provedor mudasse o rótulo.
 import { isIncome } from './readings'
 
 const CHART_HEIGHT = 280
 const MONTHS_IN_A_YEAR = 12
 
-interface Props {
-  dividends: FIIDividend[]
-}
-
-/** What the fund has paid per share, month by month.
+/** O que o fundo pagou por cota, ao longo do tempo.
  *
- *  Bars rather than a line: each one is a payment that happened, not a sample
- *  of something continuous, and the gap left by a month without a distribution
- *  is itself the point.
+ *  Barras e não linha: cada uma é um pagamento que aconteceu, não a amostra de
+ *  algo contínuo, e o vão deixado por um período sem distribuição é ele próprio
+ *  a informação.
  *
- *  Grouped by month because that is the fund's own rhythm — one payment a
- *  month, dated by when it reached the holder. */
-export default function FIIDividendsCard({ dividends }: Props) {
+ *  Agrupadas por mês, que é a granularidade em que esses pagamentos se
+ *  comparam — mas sem afirmar periodicidade: o provedor não estima data de
+ *  pagamento por intervalo fixo porque fundos desses tipos não têm um, e dois
+ *  pagamentos no mesmo mês são somados em vez de lidos como o dobro do mês
+ *  anterior.
+ */
+export default function FundDividendsCard({
+  dividends,
+}: {
+  dividends: InvestmentFundDividend[]
+}) {
   const income = useMemo(() => dividends.filter(isIncome), [dividends])
   const amortizations = useMemo(() => dividends.filter((item) => !isIncome(item)), [dividends])
 
@@ -35,9 +39,9 @@ export default function FIIDividendsCard({ dividends }: Props) {
 
   const last = income.at(-1)
 
-  /** The trailing year of payments, counted from the last one rather than from
-   *  today: a fund that stopped paying six months ago should not have its
-   *  history silently halved by the calendar. */
+  /** O último ano de pagamentos, contado a partir do último e não de hoje: um
+   *  fundo que parou de pagar há seis meses não pode ter o histórico cortado
+   *  pela metade pelo calendário. */
   const lastTwelveMonths = useMemo(() => {
     if (!last) return null
     const from = dayjs(last.payment_date).subtract(MONTHS_IN_A_YEAR, 'month')

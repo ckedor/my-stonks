@@ -1,5 +1,5 @@
 import type { CandleDataPoint } from '@/components/charts/CandleChart'
-import { ASSET_ROUTES, CURRENCY_ROUTES, FII_ROUTES, MARKET_CATALOGUE_ROUTES, MARKET_DATA_SERIES_ROUTES, QUOTE_ROUTES, USD_BRL_ROUTES } from '@/constants/routes'
+import { ASSET_ROUTES, CURRENCY_ROUTES, FII_ROUTES, INVESTMENT_FUND_ROUTES, MARKET_CATALOGUE_ROUTES, MARKET_DATA_SERIES_ROUTES, QUOTE_ROUTES, USD_BRL_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import type { ReturnsEntry } from '@/types'
 
@@ -420,6 +420,244 @@ export interface FIIMarket {
 export const fetchFIIMarket = (): Promise<FIIMarket> =>
   api.get<FIIMarket>(FII_ROUTES.market).then((r) => r.data)
 
+
+// ---------------------------------------------------------------------------
+// Investment-fund profile
+//
+// Um fundo de investimento aqui é o que não é FII nem ETF: FIAGRO, FI-Infra,
+// FIDC, FIP e FIF. Um FII publica prédios e vacância e tem perfil próprio; um
+// ETF se lê como qualquer ativo listado.
+// ---------------------------------------------------------------------------
+
+/** O que o fundo é, no papel: cadastro e quem o administra.
+ *
+ *  `kind` é a família a que ele pertence — `fiagro`, `fidc`, `fiinfra`, `fif`,
+ *  `fip` — e decide o que o resto do perfil pode conter: um FIDC arquiva valor
+ *  de cota mensal e nenhum diário, um FIP não arquiva nenhum dos dois.
+ *
+ *  As três classificações vêm de três órgãos que discordam de propósito, então
+ *  nenhuma vale pelas outras. */
+export interface InvestmentFundIdentity {
+  cnpj: string | null
+  legal_name: string | null
+  kind: string | null
+  isin: string | null
+  cvm_class_type: string | null
+  cvm_classification: string | null
+  anbima_classification: string | null
+  b3_classification: string | null
+  administrator_name: string | null
+  administrator_cnpj: string | null
+  manager_name: string | null
+  manager_cnpj: string | null
+  status: string | null
+}
+
+/** Os números do fundo, na data do informe de onde vieram.
+ *
+ *  Os retornos e o yield são razões — 0,0142 é 1,42% — e `price_to_nav` é o
+ *  P/VP publicado, um múltiplo em torno de 1: abaixo dele a cota negocia por
+ *  menos do que o fundo diz valer. Nada é escalado aqui.
+ *
+ *  `daily_applications` e `daily_redemptions` são o dinheiro que entrou e saiu
+ *  no dia de referência, em reais. Um fundo fechado arquiva zero nos dois
+ *  porque ninguém pode aplicar nem resgatar — o que é um fato sobre o fundo, e
+ *  não uma lacuna no dado.
+ *
+ *  Todo campo é opcional: o provedor deixa a maioria em branco para a maioria
+ *  dos tipos de fundo, e ausente é `null` e nunca zero. */
+export interface InvestmentFundIndicators {
+  as_of_date: string | null
+  price: number | null
+  nav_per_share: number | null
+  price_to_nav: number | null
+  equity: number | null
+  total_assets: number | null
+  shareholders: number | null
+  daily_applications: number | null
+  daily_redemptions: number | null
+  shares_outstanding: number | null
+  monthly_return: number | null
+  patrimonial_monthly_return: number | null
+  dividend_yield_monthly: number | null
+}
+
+/** Um arquivamento do valor da cota, com o patrimônio por trás dele.
+ *
+ *  É a contabilidade do fundo, não o preço de mercado: uma cota que não negocia
+ *  há uma semana continua tendo valor patrimonial arquivado todo dia. Um FIDC
+ *  arquiva por classe ou série, então `class_or_series` faz parte do que
+ *  identifica uma linha. */
+export interface InvestmentFundNavPoint {
+  date: string
+  class_or_series: string | null
+  nav_per_share: number | null
+  equity: number | null
+  total_assets: number | null
+  shareholders: number | null
+  daily_applications: number | null
+  daily_redemptions: number | null
+  monthly_return: number | null
+}
+
+/** Um pagamento por cota, como publicado. Sempre em reais.
+ *
+ *  `event_type` é o rótulo do próprio fundo — distribuição comum ou amortização
+ *  de capital. Quem quer dizer renda filtra por ele em vez de somar os dois.
+ *
+ *  O provedor não estima data de pagamento por intervalo fixo, já que fundos
+ *  desses tipos não têm um: nenhuma periodicidade se lê da série. */
+export interface InvestmentFundDividend {
+  payment_date: string
+  ex_date: string | null
+  declared_date: string | null
+  value_per_share: number
+  event_type: string | null
+}
+
+/** Quem detém o fundo, no informe mensal.
+ *
+ *  Contagem e participação vêm as duas: um fundo alimentado por outro é um
+ *  cotista e o patrimônio inteiro, e cada número sozinho conta metade disso. */
+export interface InvestmentFundInvestorBreakdown {
+  individual_retail: number | null
+  individual_retail_percent: number | null
+  legal_entities: number | null
+  legal_entities_percent: number | null
+  funds_or_clubs: number | null
+  funds_or_clubs_percent: number | null
+  non_residents: number | null
+  non_residents_percent: number | null
+  other: number | null
+  other_percent: number | null
+}
+
+/** Como o fundo mede o próprio risco, no informe mensal.
+ *
+ *  `risk_model` é o que torna os números ao lado comparáveis ou não: um VaR de
+ *  modelo não-paramétrico e um de modelo paramétrico não são a mesma grandeza,
+ *  então o modelo viaja com eles. */
+export interface InvestmentFundRisk {
+  risk_model: string | null
+  portfolio_var: number | null
+  daily_quota_variation_percent: number | null
+  stressed_daily_quota_variation_percent: number | null
+  private_credit_exposure_percent: number | null
+}
+
+/** O informe mensal que o administrador entrega ao regulador.
+ *
+ *  Só os fundos de quem o regulador exige entregam um, então a ausência é um
+ *  fato sobre o tipo do fundo e não uma falha de leitura. */
+export interface InvestmentFundRegulatoryProfile {
+  reference_date: string | null
+  investors: InvestmentFundInvestorBreakdown | null
+  risk: InvestmentFundRisk | null
+  top_investor_percent: number | null
+  private_credit_exposure_percent: number | null
+}
+
+/** Uma linha do informe trimestral da carteira.
+ *
+ *  `bucket` diz de que grupo a linha veio. Os dois últimos — `receivables` e
+ *  `payables` — são direitos e obrigações, não coisas possuídas, e é por isso
+ *  que o grupo anda junto da linha: somadas às cegas, uma conta a pagar
+ *  inflaria o que o fundo tem.
+ *
+ *  `details` é o que mais o informe disse daquela linha. As chaves variam por
+ *  grupo e por fundo, então vêm como arquivadas. */
+export interface InvestmentFundHolding {
+  bucket: string
+  asset_type: string | null
+  asset_name: string | null
+  issuer_name: string | null
+  issuer_cnpj: string | null
+  isin: string | null
+  selic_code: string | null
+  quantity: number | null
+  market_value: number | null
+  cost_value: number | null
+  maturity_date: string | null
+  confidential: boolean | null
+  details: Record<string, unknown>
+}
+
+/** O informe trimestral somado, por grupo.
+ *
+ *  `market_value` é o total do próprio informe e não é a soma dos seis grupos
+ *  abaixo dele: os recebíveis somam e as obrigações subtraem. */
+export interface InvestmentFundPortfolioSummary {
+  market_value: number | null
+  holdings_count: number | null
+  public_bonds_value: number | null
+  fund_holdings_value: number | null
+  credit_assets_value: number | null
+  listed_securities_value: number | null
+  receivables_value: number | null
+  payables_value: number | null
+}
+
+/** O que o fundo tinha no fim do último trimestre que arquivou.
+ *
+ *  Arquivado trimestralmente e publicado meses depois, então `reference_date`
+ *  não é enfeite: é o retrato mais recente disponível, não o de hoje. */
+export interface InvestmentFundPortfolio {
+  reference_date: string | null
+  summary: InvestmentFundPortfolioSummary | null
+  holdings: InvestmentFundHolding[]
+}
+
+/** Tudo o que o fundo publica sobre si mesmo.
+ *
+ *  Cada seção é independente: o backend lê cada uma de uma rota própria e uma
+ *  falhando custa à página aquela seção, não o perfil. As seções também chegam
+ *  em relógios diferentes — o valor da cota diário ou mensal, o informe do
+ *  regulador mensal, a carteira trimestral e com meses de atraso —, e é por
+ *  isso que cada uma declara a própria data. */
+export interface InvestmentFundProfile {
+  ticker: string
+  identity: InvestmentFundIdentity | null
+  indicators: InvestmentFundIndicators | null
+  nav_history: InvestmentFundNavPoint[]
+  dividends: InvestmentFundDividend[]
+  regulatory_profile: InvestmentFundRegulatoryProfile | null
+  portfolio: InvestmentFundPortfolio | null
+}
+
+export const fetchInvestmentFundProfile = (assetId: number): Promise<InvestmentFundProfile> =>
+  api.get<InvestmentFundProfile>(INVESTMENT_FUND_ROUTES.profile(assetId)).then((r) => r.data)
+
+/** Um fundo do catálogo, resumido.
+ *
+ *  `asset_id` só vem preenchido para fundos registrados na aplicação, e é ele
+ *  que faz uma linha abrir uma página — o resto do catálogo se lê, mas não tem
+ *  o que abrir. */
+export interface InvestmentFundMarketFund {
+  asset_id: number | null
+  ticker: string
+  name: string
+  cnpj: string | null
+  kind: string | null
+  b3_classification: string | null
+  anbima_classification: string | null
+  administrator: string | null
+  manager: string | null
+  price: number | null
+  nav_per_share: number | null
+  price_to_nav: number | null
+  equity: number | null
+  total_assets: number | null
+  investors: number | null
+}
+
+export interface InvestmentFundMarket {
+  funds: InvestmentFundMarketFund[]
+  total: number
+  source: string
+}
+
+export const fetchInvestmentFundMarket = (): Promise<InvestmentFundMarket> =>
+  api.get<InvestmentFundMarket>(INVESTMENT_FUND_ROUTES.market).then((r) => r.data)
 
 // ---------------------------------------------------------------------------
 // Market catalogues
