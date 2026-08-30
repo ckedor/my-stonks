@@ -28,7 +28,7 @@ import {
   formatCount,
   formatDate,
   formatPercent,
-} from './format'
+} from '../format'
 import { assetClassLabel } from './labels'
 import { patrimonySlices } from './readings'
 

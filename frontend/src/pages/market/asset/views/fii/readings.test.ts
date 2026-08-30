@@ -6,7 +6,7 @@ import type {
 } from '@/api/market'
 import { describe, expect, it } from 'vitest'
 
-import { formatBRLPerShare, formatPercentagePoints } from './format'
+import { formatBRLPerShare, formatPercentagePoints } from '../format'
 import { incomeTrend, navReading, patrimonySlices, vacancyReading } from './readings'
 
 const indicators = (overrides: Partial<FIIIndicators> = {}): FIIIndicators => ({

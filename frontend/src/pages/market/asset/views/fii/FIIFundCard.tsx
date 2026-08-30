@@ -1,6 +1,6 @@
 import type { FIIIndicators, FIIManagement } from '@/api/market'
 import { AppCard, AppGrid, AppLink, AppStack, AppText, SectionTitle } from '@/components/ui'
-import { EMPTY, formatCNPJ, formatDate } from './format'
+import { EMPTY, formatCNPJ, formatDate } from '../format'
 
 interface Entry {
   label: string

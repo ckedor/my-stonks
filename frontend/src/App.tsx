@@ -23,6 +23,7 @@ import MarketAssetPage from "./pages/market/asset/page";
 import MarketAtivosPage from "./pages/market/ativos/page";
 import MarketCataloguePage from "./pages/market/catalogue/page";
 import MarketFIIPage from "./pages/market/fii/page";
+import MarketInvestmentFundPage from "./pages/market/investment-fund/page";
 import MarketOverviewPage from "./pages/market/overview/page";
 import PortfolioAssetsPage from "./pages/portfolio/asset";
 import PortfolioAssetPage from "./pages/portfolio/asset/[id]/page";
@@ -72,6 +73,7 @@ const router = createBrowserRouter([
       { path: "market/assets", element: <MarketAtivosPage /> },
       { path: "market/overview", element: <MarketOverviewPage /> },
       { path: "market/fii", element: <MarketFIIPage /> },
+      { path: "market/investment-fund", element: <MarketInvestmentFundPage /> },
       { path: "market/stock", element: <MarketCataloguePage kind="stock" /> },
       { path: "market/etf", element: <MarketCataloguePage kind="etf" /> },
       { path: "market/crypto", element: <MarketCataloguePage kind="crypto" /> },

@@ -11,7 +11,7 @@ import {
   type AppSimpleTableColumn,
 } from '@/components/ui'
 import { useMemo } from 'react'
-import { EMPTY, formatBRL, formatCompactBRL, formatDate, formatPercent } from './format'
+import { EMPTY, formatBRL, formatCompactBRL, formatDate, formatPercent } from '../format'
 import { PATRIMONY_LINES } from './labels'
 
 interface Line {

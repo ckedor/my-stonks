@@ -55,6 +55,7 @@ describe('navigationSections', () => {
           { label: 'Ações BR', path: '/market/stock' },
           { label: 'ETFs BR', path: '/market/etf' },
           { label: 'FIIs', path: '/market/fii' },
+          { label: 'Fundos', path: '/market/investment-fund' },
           { label: 'Cripto', path: '/market/crypto' },
         ],
       },

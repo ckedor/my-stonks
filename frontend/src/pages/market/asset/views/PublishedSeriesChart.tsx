@@ -12,9 +12,12 @@ import {
 } from 'recharts'
 import { formatMonth } from './format'
 
+/** O dia, curto, para o eixo: a data cheia repetida em cada marca não cabe. */
+const formatDay = (value: string) => dayjs(value).format('DD/MM/YY')
+
 const CHART_HEIGHT = 260
 
-export interface FIISeriesMetric<Point> {
+export interface PublishedSeriesMetric<Point> {
   /** Identity of the metric in the picker. */
   key: string
   label: string
@@ -26,10 +29,14 @@ interface Props<Point> {
   points: Point[]
   /** When the filing each point came from refers to. */
   dateOf: (point: Point) => string | null
-  metrics: FIISeriesMetric<Point>[]
+  metrics: PublishedSeriesMetric<Point>[]
   /** What the picker chooses, for whoever cannot see the chart. */
   label: string
   emptyMessage: string
+  /** Como o eixo do tempo se escreve. Mensal por omissão, que é o ritmo de um
+   *  informe; um fundo que arquiva o valor da cota todo dia precisa do dia,
+   *  senão o eixo repete o mesmo mês em cada marca. */
+  granularity?: 'month' | 'day'
 }
 
 /** One published series at a time, chosen from a list.
@@ -43,12 +50,13 @@ interface Props<Point> {
  *  A filing that omits the chosen number is left out of the line rather than
  *  read as zero, which would draw a fall that never happened.
  */
-export default function FIISeriesChart<Point>({
+export default function PublishedSeriesChart<Point>({
   points,
   dateOf,
   metrics,
   label,
   emptyMessage,
+  granularity = 'month',
 }: Props<Point>) {
   const theme = useAppTheme()
   const [selected, setSelected] = useState(metrics[0].key)
@@ -97,7 +105,7 @@ export default function FIISeriesChart<Point>({
             <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.chart.grid} />
             <XAxis
               dataKey="date"
-              tickFormatter={formatMonth}
+              tickFormatter={granularity === 'day' ? formatDay : formatMonth}
               stroke={theme.palette.chart.label}
               minTickGap={24}
             />

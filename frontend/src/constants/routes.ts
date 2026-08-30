@@ -78,6 +78,14 @@ export const FII_ROUTES = {
   profile: (assetId: number | string) => `${MARKET_DATA}/fii/${assetId}/profile`,
 } as const
 
+// Um fundo de investimento aqui é o que não é FII nem ETF: FIAGRO, FI-Infra,
+// FIDC, FIP e FIF. Os dois de fora têm leitura própria — o FII publica prédios
+// e vacância, e o ETF se lê como qualquer ativo listado.
+export const INVESTMENT_FUND_ROUTES = {
+  market: `${MARKET_DATA}/investment_fund/market`,
+  profile: (assetId: number | string) => `${MARKET_DATA}/investment_fund/${assetId}/profile`,
+} as const
+
 export const MARKET_CATALOGUE_ROUTES = {
   byKind: (kind: 'stock' | 'etf' | 'crypto') => `${MARKET_DATA}/market/${kind}`,
 } as const

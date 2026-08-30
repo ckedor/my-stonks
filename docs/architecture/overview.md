@@ -77,6 +77,39 @@ the indicators and the filing monthly, the composition quarterly and months
 late — which is why every section carries the date it refers to instead of the
 page carrying one.
 
+`/market_data/investment_fund/{asset_id}/profile` answers the market page of
+every other kind of fund — a FIAGRO, an FI-Infra, a FIDC, a FIP, an ordinary
+FIF — with what those publish instead of buildings: their registration, the
+figures they report about themselves, the share value they file, the payments
+they have made, the monthly picture the regulator asks of some of them, and the
+quarterly filing of what they hold. It resolves the asset from storage to reject
+anything that is not a registered investment fund, then reads the provider and
+holds the answer for a few hours, on the same terms as the real-estate profile
+and for the same reason.
+
+Six provider routes answer for that one read, under the same concurrency cap and
+read independently: one failing leaves the other sections on the page, and only
+all of them failing raises. They also answer on different clocks — the
+registration and the indicators as often as the fund files, the share value
+daily for an FI and monthly for a FIDC, the regulatory profile monthly, the
+portfolio quarterly and months late — which is why every section carries the
+date it refers to.
+
+The two profiles are separate because the funds are. A real-estate fund is read
+through vacancy and buildings and has provider routes of its own; the rest are
+read through share value, equity and the credit they carry. So
+`/market_data/investment_fund/market` serves the catalogue minus real-estate
+funds and ETFs, filtered on the kind the provider states and never on the
+ticker: a code ending in 11 says nothing about which of them a fund is, and
+JURO11 is an FI-Infra.
+
+The six groups of the quarterly filing — public bonds, shares in other funds,
+credit assets, listed securities, receivables and payables — arrive in one
+shape and are served as one list whose lines name their own group. Receivables
+and payables are a claim and an obligation rather than things owned, so the
+group has to travel with the line: summed blindly, a payable would inflate what
+the fund holds.
+
 The same route feeds the portfolio. A daily job records what a portfolio's
 funds paid, reading `/v2/fii/dividends` through the same adapter mapping the
 market page uses, so a payment is one fact on both sides. It records income

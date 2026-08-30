@@ -88,6 +88,11 @@ export const architectureNodes: ArchitectureNode[] = [
     'Uma falha custa só a seção dela',
     'Somente provider · cache 6 h',
   ]),
+  node('fund-profile-service', 'service', 'InvestmentFundProfileReadService', 'SERVIÇO', [
+    'Perfil do fundo em seis rotas do provedor',
+    'FIAGRO, FI-Infra, FIDC, FIP, FIF',
+    'Somente provider · cache 6 h',
+  ]),
   node('portfolio-service', 'service', 'PortfolioConsolidatorService', 'SERVIÇO', [
     'Lê cotações persistidas',
     'Recalcula posições e retornos',
@@ -105,7 +110,7 @@ export const architectureNodes: ArchitectureNode[] = [
   ]),
 
   node('brapi', 'external', 'Brapi', 'EXTERNO · v2', [
-    'Ações, BDR, ETF, FII',
+    'Ações, BDR, ETF, FII, fundos',
     'Séries e moeda do ativo',
   ]),
   node('cryptocompare', 'external', 'CryptoCompare', 'EXTERNO', [
@@ -136,6 +141,7 @@ export const architectureEdges: ArchitectureEdge[] = [
   edge('market-module-quote-service', 'market-module', 'quote-service', 'calls'),
   edge('market-module-history', 'market-module', 'history-service', 'calls'),
   edge('market-module-fii-profile', 'market-module', 'fii-profile-service', 'calls'),
+  edge('market-module-fund-profile', 'market-module', 'fund-profile-service', 'calls'),
   edge('history-persisted', 'history-service', 'persisted-read-service', 'calls'),
   edge('history-on-demand', 'history-service', 'on-demand-read-service', 'calls'),
   edge('portfolio-module-service', 'portfolio-module', 'portfolio-service', 'calls'),
@@ -147,6 +153,9 @@ export const architectureEdges: ArchitectureEdge[] = [
   edge('fii-profile-brapi', 'fii-profile-service', 'brapi', 'reads'),
   edge('fii-profile-uow', 'fii-profile-service', 'uow', 'reads'),
   edge('fii-profile-cache', 'fii-profile-service', 'queue', 'caches'),
+  edge('fund-profile-brapi', 'fund-profile-service', 'brapi', 'reads'),
+  edge('fund-profile-uow', 'fund-profile-service', 'uow', 'reads'),
+  edge('fund-profile-cache', 'fund-profile-service', 'queue', 'caches'),
   edge('usd-task-bcb', 'usd-task', 'bcb', 'reads'),
   edge('series-task-bcb', 'series-task', 'bcb', 'reads'),
   edge('series-task-brapi', 'series-task', 'brapi', 'reads'),

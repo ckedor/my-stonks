@@ -1,5 +1,13 @@
 import dayjs from 'dayjs'
 
+/* Como uma tela de mercado escreve o que um fundo publica.
+ *
+ * Fica acima de `fii/` e de `investment-fund/` porque as duas telas escrevem as
+ * mesmas grandezas, e duas cópias divergiriam na primeira casa decimal que
+ * alguém mudasse — o mesmo P/VP apareceria como "0,98x" numa e "0,977x" na
+ * outra.
+ */
+
 /** A fund's own numbers are published in reais, and the backend serves them as
  *  published -- no exchange rate is applied to them. So they are formatted in
  *  BRL here whatever currency the reader chose for the price chart, and the
@@ -67,6 +75,16 @@ export const formatRatio = (value: number | null | undefined) =>
  *  presentation's job precisely so that the number stays comparable upstream. */
 export const formatPercent = (value: number | null | undefined) =>
   nullish(value) ? EMPTY : `${RATIO.format(value! * 100)}%`
+
+/** Um percentual que já chega escalado, e não como razão.
+ *
+ *  O informe do regulador publica participação e variação em pontos de 0 a 100
+ *  — `fundsOrClubsPercent: 100` são 100% —, ao contrário dos rendimentos e
+ *  retornos, que são razões. Multiplicar estes por cem escreveria "10000%", e
+ *  escrever aqueles sem multiplicar escreveria "0,12%" onde há 12%. São duas
+ *  grandezas e por isso são dois formatadores. */
+export const formatFiledPercent = (value: number | null | undefined) =>
+  nullish(value) ? EMPTY : `${RATIO.format(value!)}%`
 
 /** A diferença entre duas razões, que é uma diferença em pontos percentuais e
  *  não uma variação percentual: de 2,91% para 3,28% de vacância são 0,37 p.p.,
