@@ -36,7 +36,10 @@ export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', 
      em `assetReturns`, que este gráfico não lê. */
   const categoryReturns = useReturnCurves().series
   const benchmarks = useBenchmarks().data ?? EMPTY_MAP
-  const loading = useReturnCurves().isPending
+  /* Esqueleto só quando não há o que desenhar. Com a cache quente a série já
+     está aqui na primeira pintura, e trocá-la por um esqueleto enquanto a
+     revalidação corre é piscar sobre um dado que continua bom. */
+  const loading = useReturnCurves().isPending && !categoryReturns[selectedCategory || 'portfolio']?.length
   const theme = useAppTheme()
 
   const portfolioColor = theme.palette.primary.main

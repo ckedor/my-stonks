@@ -164,6 +164,7 @@ class AssetDetailsOut(BaseModel):
     name: str
     asset_type_id: int
     exchange_id: int | None = None
+    logo_url: str | None = None
 
     asset_type: AssetTypeOut
 
@@ -254,6 +255,31 @@ class AssetUpdate(AssetCreate):
     id: int
 
 
+class AssetSyncChange(BaseModel):
+    """Um ativo que o catálogo corrige, com o antes e o depois de cada campo."""
+
+    kind: str
+    ticker: str
+    changes: dict[str, tuple[str | None, str | None]]
+
+
+class AssetSyncEntry(BaseModel):
+    kind: str
+    ticker: str | None = None
+    name: str
+
+
+class AssetSyncReport(BaseModel):
+    """O que a sincronização fez — ou faria, quando `dry_run`."""
+
+    dry_run: bool
+    kinds: list[str]
+    created: list[AssetSyncEntry]
+    updated: list[AssetSyncChange]
+    unchanged: int
+    kept_local: list[AssetSyncEntry]
+
+
 class ExchangeOut(BaseModel):
     id: int
     code: str
@@ -276,6 +302,7 @@ class FavoriteAsset(BaseModel):
     ticker: str | None
     name: str
     asset_type_id: int
+    logo_url: str | None = None
     asset_type: FavoriteAssetType
     visit_count: int
     last_visited_at: datetime | None

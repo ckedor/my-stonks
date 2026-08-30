@@ -1,5 +1,6 @@
 import type {
   FIIAllocation,
+  FIICompositionPoint,
   FIIDividend,
   FIIIndicators,
   FIIMonthlyReport,
@@ -153,6 +154,76 @@ export interface PatrimonySlices {
   /** De onde a fatia veio: o informe mensal precifica tudo, inclusive os
    *  imóveis; o trimestral só precifica o que não é prédio. */
   source: 'report' | 'quarter'
+}
+
+const SAME_POSITION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
+
+/** Série trimestral com a posição corrente completada pelo informe mensal.
+ *
+ * O endpoint trimestral pode publicar a linha do trimestre antes de todas as
+ * classes estarem disponíveis. Ausência ali não significa posição zerada: o
+ * HABT11, por exemplo, omitiu CRI em 30/06 enquanto o informe mensal do dia
+ * seguinte ainda declarou essa classe. O mensal é a fonte que já desenha a
+ * composição atual, então a última barra deve contar a mesma história.
+ *
+ * Quando as datas estão a até uma semana, são a mesma posição operacional e o
+ * mensal substitui o último ponto, preservando a data trimestral no eixo. Se o
+ * mensal é realmente posterior, ele entra como um ponto novo. Um mensal mais
+ * antigo nunca reescreve o histórico. */
+export function compositionHistoryWithCurrentReport({
+  history,
+  report,
+}: {
+  history: FIICompositionPoint[]
+  report: FIIMonthlyReport | null
+}): FIICompositionPoint[] {
+  if (!report?.reference_date) return history
+
+  const reportTime = Date.parse(report.reference_date)
+  if (!Number.isFinite(reportTime)) return history
+
+  /* Imóveis ficam fora para a série continuar comparável: o mensal lhes dá
+     preço, mas o trimestral histórico só os conta. Duas linhas mensais podem
+     pertencer à mesma classe trimestral (ações e cotas de companhias), então
+     são somadas antes de virar um segmento. */
+  const values = new Map<string, number>()
+  for (const { assetClass, read } of PATRIMONY_LINES) {
+    const value = read(report) ?? 0
+    if (assetClass !== 'real_estate' && value > 0) {
+      values.set(assetClass, (values.get(assetClass) ?? 0) + value)
+    }
+  }
+  const allocations = [...values].map(([asset_class, value]) => ({
+    asset_class,
+    count: null,
+    value,
+  }))
+
+  if (!allocations.length) return history
+
+  const dated = history
+    .filter((point) => point.reference_date)
+    .slice()
+    .sort((a, b) => (a.reference_date as string).localeCompare(b.reference_date as string))
+  const latest = dated.at(-1)
+  const latestTime = latest?.reference_date ? Date.parse(latest.reference_date) : Number.NaN
+
+  if (Number.isFinite(latestTime) && reportTime < latestTime) return history
+
+  const replacesLatest =
+    latest != null &&
+    Number.isFinite(latestTime) &&
+    reportTime - latestTime <= SAME_POSITION_WINDOW_MS
+  const current: FIICompositionPoint = {
+    reference_date: replacesLatest ? latest.reference_date : report.reference_date,
+    summary: null,
+    allocations,
+  }
+  const previous = replacesLatest ? history.filter((point) => point !== latest) : history
+
+  return [...previous, current].sort((a, b) =>
+    (a.reference_date ?? '').localeCompare(b.reference_date ?? '')
+  )
 }
 
 /** De que é feita a carteira, em reais, para ser desenhada.

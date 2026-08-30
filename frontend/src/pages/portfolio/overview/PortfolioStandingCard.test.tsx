@@ -22,9 +22,6 @@ const tier = (rank: number, name: string, threshold: number): WealthTier => ({
   rank,
   name,
   threshold,
-  artwork: null,
-  artwork_offset: 0,
-  artwork_height: null,
 })
 
 function renderCard(standing: PortfolioWealthTier | null, patrimony = 219_018.63) {
@@ -50,6 +47,7 @@ describe('PortfolioStandingCard', () => {
       next_tier: tier(4, 'Mercador', 200_000),
       remaining: 80_000,
       progress: 0.2,
+      projection: null,
     })
 
     expect(screen.getByText('Camponês')).toBeInTheDocument()
@@ -69,6 +67,7 @@ describe('PortfolioStandingCard', () => {
       next_tier: tier(4, 'Mercador', 200_000),
       remaining: 170_000,
       progress: 0,
+      projection: null,
     })
 
     expect(screen.getByText('Camponês')).toBeInTheDocument()
@@ -83,6 +82,7 @@ describe('PortfolioStandingCard', () => {
       next_tier: null,
       remaining: null,
       progress: 1,
+      projection: null,
     })
 
     expect(screen.getByText('Imperador')).toBeInTheDocument()
@@ -107,6 +107,7 @@ describe('PortfolioStandingCard', () => {
       next_tier: tier(5, 'Escudeiro', 300_000),
       remaining: 80_981.37,
       progress: 0.19,
+      projection: null,
     })
 
     expect(screen.getByText('R$ 219.018,63')).toBeInTheDocument()

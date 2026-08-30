@@ -344,7 +344,13 @@ class PortfolioRepository(SQLAlchemyRepository):
     ) -> list[dict]:
         cat_assignment_subq = get_custom_category_subquery(portfolio_id)
 
-        amount_col = Dividend.amount_usd.label('amount') if currency == 'USD' else Dividend.amount
+        # `amount_usd` fica nulo em provento sem conversão, e o schema da rota
+        # exige um número: sem o coalesce a lista inteira falha na visão dólar.
+        amount_col = (
+            func.coalesce(Dividend.amount_usd, 0.0).label('amount')
+            if currency == 'USD'
+            else Dividend.amount
+        )
 
         stmt = (
             select(

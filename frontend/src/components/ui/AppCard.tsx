@@ -28,6 +28,10 @@ export interface AppCardProps extends Omit<BoxProps, 'padding'> {
   /** Piso de largura, em px — o card que não pode espremer o que mostra
    *  quando divide a linha com um vizinho elástico. */
   minWidth?: number
+  /** Largura fixa, em px — a régua de uma fileira de cards que precisa ter
+   *  passo constante, como uma prateleira que rola na horizontal. Cards que
+   *  se dimensionam pelo conteúdo ali viram um ritmo irregular. */
+  width?: number
   /** Levanta a superfície com sombra, para o que flutua sobre o conteúdo —
    *  o balão de um gráfico. */
   raised?: boolean
@@ -59,6 +63,7 @@ export default function AppCard({
   padding,
   noPadding = false,
   minWidth,
+  width,
   height,
   raised = false,
   interactive = false,
@@ -88,6 +93,7 @@ export default function AppCard({
             : { borderTop: '3px solid', borderTopColor: accentEdge }
           : null),
         ...(minWidth ? { minWidth } : null),
+        ...(width ? { width, flexShrink: 0 } : null),
         ...(height ? { height, overflow: 'hidden' } : null),
         ...(raised ? { boxShadow: 3 } : null),
         ...(interactive

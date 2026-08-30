@@ -11,3 +11,5 @@ backend/app/domain/finance/main.py
 # Artefatos do Playwright quando ele roda a partir da raiz do repositório: o
 # `frontend/.gitignore` só alcança os que ficam dentro de `frontend/`.
 test-results/
+
+.ruff_cache

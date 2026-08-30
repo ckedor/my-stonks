@@ -10,15 +10,24 @@ import { TypeBadge } from './AssetCard'
  *  there the moment the page is, and refreshed behind what is on screen.
  *  Hidden entirely until there is a history to rank, so a new account sees no
  *  empty shelf. */
+/** Passo fixo da prateleira. Com largura livre, um nome comprido esticava o
+ *  seu card e a fileira ficava com cards de tamanhos diferentes — o olho lê
+ *  isso como desalinhamento, não como conteúdo. */
+const FAVORITE_CARD_WIDTH = 190
+
 export default function FavoriteAssets({
   limit = 8,
   assetTypeId,
   assetIds,
+  orientation = 'row',
 }: {
   limit?: number
   assetTypeId?: number
   /** Limits the ranking to the universe represented by the current page. */
   assetIds?: number[]
+  /** Na coluna de navegação a prateleira empilha e ocupa a largura da coluna;
+   *  na página ela é uma fileira que rola. */
+  orientation?: 'row' | 'column'
 }) {
   const navigate = useNavigate()
   const { favorites, refresh } = useFavoritesStore()
@@ -48,16 +57,20 @@ export default function FavoriteAssets({
     <AppStack gap="sm">
       <AppStack direction="row" gap="xs" align="center">
         <StarIcon color="warning" fontSize="small" />
-        <SectionLabel>Mais acessados</SectionLabel>
+        <SectionLabel>Acessados recentemente</SectionLabel>
       </AppStack>
 
-      <AppStack direction="row" gap="sm" scrollX>
+      <AppStack
+        direction={orientation}
+        gap="sm"
+        scrollX={orientation === 'row'}
+      >
         {visibleFavorites.slice(0, limit).map((asset) => (
           <AppCard
             key={asset.id}
             padding="sm"
             interactive
-            minWidth={150}
+            width={orientation === 'row' ? FAVORITE_CARD_WIDTH : undefined}
             onClick={() => navigate(`/market/asset/${asset.id}`)}
           >
             <AppStack gap="none">

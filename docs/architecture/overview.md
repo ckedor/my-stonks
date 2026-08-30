@@ -106,6 +106,22 @@ multiplies by the stored rate direction and never writes converted prices back.
 Quotes that cannot be restated faithfully — older than the rate history, or of
 unknown currency — are left out rather than guessed at.
 
+`/market_data/market/{kind}` answers a market catalogue — the provider's whole
+universe for one class of instrument, one class per call: `stock`, `etf`, `fii`,
+`bdr` and `crypto`. It is a provider read held in cache for six hours, enriched
+with the id of the asset the application already has registered for each ticker,
+so a screen can link a listed instrument to a registered one without a second
+round trip.
+
+`POST /market_data/asset/sync` is the write that pairs with it, and the only
+place the registry takes dictated data from a provider. It is a merge, not a
+replacement: a ticker in both sides has its name and logo corrected from the
+catalogue, a ticker only in the catalogue becomes a registered asset on the
+Brazilian exchange, and a ticker only in the registry is left alone — fixed
+income, Treasury bonds and pension funds are in no catalogue, and they carry
+portfolio history. It is manual and defaults to `dry_run`, because it rewrites
+names screens display: the report says what would change before anything does.
+
 ## Portfolio segment reads
 
 A specialized screen is about one **portfolio segment** — one part of the

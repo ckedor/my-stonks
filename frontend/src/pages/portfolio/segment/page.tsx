@@ -92,7 +92,6 @@ export default function PortfolioSegmentPage({ segment }: Props) {
         { label: 'Carteira', href: '/portfolio/overview' },
         { label: definition.label },
       ]}
-      description={definition.description}
       accentColor={theme.palette.primary.main}
       persistKey={`segment:${segment}`}
       positions={segmentPositions}

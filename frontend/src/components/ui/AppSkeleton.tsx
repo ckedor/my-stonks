@@ -8,7 +8,7 @@ import { useAppTheme } from './useAppTheme'
 
 export interface AppSkeletonProps {
   /** Largura em px; omitida, ocupa a do container. */
-  width?: number
+  width?: number | string
   /** Altura em px, ou uma medida CSS quando quem reserva não sabe o número —
    *  a área de gráfico que ocupa a altura do pai. */
   height: number | string

@@ -699,8 +699,18 @@ class MarketDataProvider:
         separate symbol dictionary and quote endpoint, so its universe is
         quoted in bounded batches and then returned as the same flat list.
         """
-        if kind in {'stock', 'etf'}:
-            filters = {'type': 'stock'} if kind == 'stock' else {'subType': 'etf'}
+        # O screener da B3 responde por tipo: ação, fundo listado e BDR são
+        # recortes do mesmo endpoint, e o ETF é um subtipo da ação. Cada
+        # recorte vira um catálogo, porque é assim que o app já separa os
+        # ativos — e sem o de fundos os FIIs não teriam catálogo nenhum.
+        b3_filters = {
+            'stock': {'type': 'stock'},
+            'etf': {'subType': 'etf'},
+            'fii': {'type': 'fund'},
+            'bdr': {'type': 'bdr'},
+        }
+        if kind in b3_filters:
+            filters = b3_filters[kind]
             response = await self.brapi_client.list_stocks(
                 page=1,
                 limit=10000,

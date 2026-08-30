@@ -9,7 +9,7 @@ import {
 } from '@/components/ui'
 import { USER_CONFIGURATION_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 /* `name` e `enabled` são o que toda configuração tem; o resto só existe depois
    que a carteira gravou uma escolha. Uma opção nunca tocada não tem linha no
@@ -32,15 +32,11 @@ const CONFIG_LABELS: Record<string, { title: string; description: string }> = {
     title: 'Dividendos de FIIs',
     description: 'Atualização automática dos dividendos pagos pelos FIIs em carteira',
   },
-  wealth_tier_artwork: {
-    title: 'Personagem da patente',
-    description:
-      'Mostra a ilustração da patente ao lado do patrimônio. A patente e a barra de progresso aparecem de qualquer jeito',
-  },
 }
 
 export default function IntegrationsTab() {
   const selectedPortfolio = useSelectedPortfolio()
+  const portfolioId = selectedPortfolio?.id
 
   const [configurations, setConfigurations] = useState<UserConfiguration[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,15 +44,15 @@ export default function IntegrationsTab() {
     null
   )
 
-  useEffect(() => {
-    if (!selectedPortfolio?.id) return
-    fetchConfigurations()
-  }, [selectedPortfolio])
-
-  const fetchConfigurations = async () => {
+  const fetchConfigurations = useCallback(async () => {
+    if (!portfolioId) {
+      setConfigurations([])
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
-      const res = await api.get(USER_CONFIGURATION_ROUTES.byPortfolio(selectedPortfolio?.id ?? ''))
+      const res = await api.get(USER_CONFIGURATION_ROUTES.byPortfolio(portfolioId))
       /* A lista sai de `nameOptions`, não das linhas gravadas: uma configuração
          que a carteira nunca tocou não tem linha no banco, e antes disso ela
          simplesmente não aparecia — não havia como ligar o que nunca foi
@@ -73,11 +69,15 @@ export default function IntegrationsTab() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [portfolioId])
+
+  useEffect(() => {
+    void fetchConfigurations()
+  }, [fetchConfigurations])
 
   const handleToggle = async (name: string, enabled: boolean) => {
     try {
-      await api.put(USER_CONFIGURATION_ROUTES.byPortfolio(selectedPortfolio?.id ?? ''), {
+      await api.put(USER_CONFIGURATION_ROUTES.byPortfolio(portfolioId ?? ''), {
         configuration: name,
         enabled: !enabled,
       })

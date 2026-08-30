@@ -14,7 +14,6 @@ from app.infra.db.tables.portfolio import (
     return_12m_table,
     return_series_table,
     transaction_table,
-    wealth_tier_table,
 )
 from app.modules.market_data.domain.assets import Asset, Broker
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
@@ -30,7 +29,6 @@ from app.modules.portfolio.domain.entities import (
     Return12M,
     ReturnSeries,
     Transaction,
-    WealthTier,
 )
 from app.modules.users.domain import User
 
@@ -127,4 +125,3 @@ def map_portfolio() -> None:
         portfolio_consolidation_table,
         properties={'portfolio': relationship(Portfolio)},
     )
-    Base.registry.map_imperatively(WealthTier, wealth_tier_table)

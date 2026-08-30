@@ -23,8 +23,8 @@ import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined'
  * tem, nem qual é o primeiro ou o último: `next_tier` ausente é o topo.
  *
  * Sem superfície própria: o bloco abre a página e é lido como o cabeçalho
- * dela, não como um cartão pousado ali. A arte do personagem também não mora
- * aqui — ela é desenhada sobre o gráfico, e quem posiciona é a página. */
+ * dela, não como um cartão pousado ali. A arte do personagem não mora aqui —
+ * ela tem uma página só dela, a Jornada do Herói. */
 
 const BAR_THICKNESS = 10
 const BAR_WIDTH = 300
@@ -41,6 +41,7 @@ export interface PortfolioStandingCardProps {
   /** A formatação de moeda da tela, para o card não escolher a sua. */
   formatCurrency: (value: number) => string
 }
+
 
 export default function PortfolioStandingCard({
   patrimony,

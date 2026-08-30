@@ -6,7 +6,6 @@ import {
   navigationSections,
   resolveGroups,
   withCategories,
-  withMostVisited,
 } from './navigation'
 
 const carteira = () => navigationSections.find((section) => section.id === 'carteira')!
@@ -99,35 +98,18 @@ describe('withCategories', () => {
   })
 })
 
-describe('withMostVisited', () => {
-  it('adds the most visited assets to the Mercado menu', () => {
-    expect(withMostVisited(mercado(), [{ label: 'PETR4', path: '/market/asset/11' }]).at(-1)).toEqual(
-      { title: 'Mais acessados', items: [{ label: 'PETR4', path: '/market/asset/11' }] },
-    )
-  })
-
-  it('does not add an empty group', () => {
-    expect(withMostVisited(mercado(), [])).toBe(mercado().groups)
-  })
-
-  it('leaves the Carteira alone', () => {
-    expect(withMostVisited(carteira(), [{ label: 'PETR4', path: '/market/asset/11' }])).toBe(
-      carteira().groups,
-    )
-  })
-})
-
 describe('resolveGroups', () => {
   /* A coluna do desktop e o drawer do mobile passam por aqui justamente para
      não divergirem: o que uma mostra, a outra mostra. */
   it('is the one place the user data enters the menu', () => {
     const groups = resolveGroups(carteira(), {
       categories: [{ label: 'FIIs', path: '/portfolio/category/11' }],
-      favorites: [{ label: 'PETR4', path: '/market/asset/11' }],
     })
 
     expect(categoriesItem(groups)!.items).toHaveLength(1)
-    // Favorito é do Mercado: na Carteira ele não entra.
+    /* Os mais acessados saíram da coluna: eles são a prateleira da tela de
+       Ativos, onde cada um vem com nome e tipo. Aqui não entra nenhum grupo
+       que não seja destino fixo ou categoria da carteira. */
     expect(groups.map((item) => item.title)).not.toContain('Mais acessados')
   })
 

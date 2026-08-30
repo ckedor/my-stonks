@@ -27,7 +27,6 @@ export interface PortfolioSegmentDefinition {
   /** O rótulo da tela, que é o mesmo de `src/layouts/navigation.ts`. */
   label: string
   path: string
-  description: string
   /** Séries contra as quais o segmento se compara por padrão. */
   benchmarks: string[]
   dimensions: ConcentrationDimension[]
@@ -40,7 +39,6 @@ export const PORTFOLIO_SEGMENTS: Record<PortfolioSegmentId, PortfolioSegmentDefi
     id: 'fii',
     label: 'FIIs',
     path: '/portfolio/fii',
-    description: 'Concentração e desempenho dos FIIs mantidos nesta carteira.',
     benchmarks: ['IFIX', 'CDI'],
     dimensions: [D.asset, D.fiiType, D.fiiSegment],
   },
@@ -48,7 +46,6 @@ export const PORTFOLIO_SEGMENTS: Record<PortfolioSegmentId, PortfolioSegmentDefi
     id: 'equity-br',
     label: 'Ações/ETFs BR',
     path: '/portfolio/equity-br',
-    description: 'O que esta carteira tem na B3 fora dos fundos imobiliários.',
     benchmarks: ['IBOVESPA', 'CDI'],
     dimensions: [D.asset, D.assetType, D.sector, D.industry],
   },
@@ -56,7 +53,6 @@ export const PORTFOLIO_SEGMENTS: Record<PortfolioSegmentId, PortfolioSegmentDefi
     id: 'equity-world',
     label: 'Ações/ETFs Mundo',
     path: '/portfolio/equity-world',
-    description: 'O que esta carteira tem em bolsa fora do Brasil.',
     benchmarks: ['S&P500', 'NASDAQ'],
     dimensions: [D.asset, D.assetType, D.sector, D.country],
   },
@@ -64,7 +60,6 @@ export const PORTFOLIO_SEGMENTS: Record<PortfolioSegmentId, PortfolioSegmentDefi
     id: 'fixed-income',
     label: 'Renda Fixa',
     path: '/portfolio/fixed-income',
-    description: 'Tesouro, CDB, debêntures e recebíveis desta carteira.',
     benchmarks: ['CDI', 'IPCA'],
     dimensions: [D.asset, D.assetType, D.fixedIncomeIndex],
   },
@@ -72,7 +67,6 @@ export const PORTFOLIO_SEGMENTS: Record<PortfolioSegmentId, PortfolioSegmentDefi
     id: 'crypto',
     label: 'Cripto',
     path: '/portfolio/crypto',
-    description: 'Os criptoativos mantidos nesta carteira.',
     benchmarks: ['CDI'],
     dimensions: [D.asset, D.category],
   },

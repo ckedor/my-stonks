@@ -63,15 +63,12 @@ def get_portfolio_position_service(
     return build_portfolio_position_service(uow)
 
 
-def get_wealth_tier_service(
-    uow: UnitOfWork = Depends(get_uow),
-) -> PortfolioWealthTierService:
-    # The tier is read off the patrimony series, so the position service comes
-    # in already built: the peak is not a second way of computing patrimony.
-    # It gets its own UnitOfWork, since one instance cannot be entered by both
-    # services.
+def get_wealth_tier_service() -> PortfolioWealthTierService:
+    # A escala é fixa em código, então o serviço não fala com o banco por conta
+    # própria: o que ele lê é a série de patrimônio, e ela vem pronta do
+    # serviço de posição — o pico não é um segundo jeito de calcular
+    # patrimônio.
     return PortfolioWealthTierService(
-        uow=uow,
         position_service=build_portfolio_position_service(UnitOfWork()),
     )
 

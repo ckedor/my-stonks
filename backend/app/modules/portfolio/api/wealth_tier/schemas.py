@@ -1,45 +1,38 @@
 """Wealth-tier schemas."""
 
-from pydantic import BaseModel, ConfigDict, Field
-
-# Placement is bounded so a typo cannot push the drawing off the screen or blow
-# up the band it sits in. The range is wide enough to nudge any illustration.
-OFFSET_LIMIT = 400
-MIN_HEIGHT = 16
-MAX_HEIGHT = 600
-
-
-class WealthTierCreate(BaseModel):
-    rank: int = Field(ge=1)
-    name: str = Field(min_length=1, max_length=50)
-    threshold: float = Field(ge=0)
-    artwork: str | None = None
-    artwork_offset: int = Field(default=0, ge=-OFFSET_LIMIT, le=OFFSET_LIMIT)
-    artwork_height: int | None = Field(default=None, ge=MIN_HEIGHT, le=MAX_HEIGHT)
-
-
-class WealthTierUpdate(BaseModel):
-    rank: int | None = Field(default=None, ge=1)
-    name: str | None = Field(default=None, min_length=1, max_length=50)
-    threshold: float | None = Field(default=None, ge=0)
-    artwork: str | None = None
-    artwork_offset: int | None = Field(default=None, ge=-OFFSET_LIMIT, le=OFFSET_LIMIT)
-    artwork_height: int | None = Field(default=None, ge=MIN_HEIGHT, le=MAX_HEIGHT)
+from pydantic import BaseModel, ConfigDict
 
 
 class WealthTier(BaseModel):
-    id: int
+    """Um degrau da escala: um título e o preço dele.
+
+    O cenário do degrau não viaja aqui. Ele é um arquivo do repositório,
+    escolhido pela posição na escala, então a imagem não é dado de API: nem
+    sobe, nem é guardada, nem engorda a resposta que lista a escala inteira.
+    """
+
     rank: int
     name: str
     threshold: float
-    artwork: str | None = None
-    #: Vertical nudge in px, so the character's feet land on the layout's
-    #: baseline. Belongs to the drawing: no single value fits every file.
-    artwork_offset: int = 0
-    #: Drawn height in px. Absent means the screen's default.
-    artwork_height: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class WealthTierProjection(BaseModel):
+    """Quando o degrau seguinte chega, no ritmo atual.
+
+    As duas entradas viajam junto com a resposta porque a data sozinha não se
+    defende: ela vale o que valem o aporte médio e a taxa que a produziram.
+    """
+
+    #: Média mensal de aporte na janela recente, na moeda base.
+    monthly_contribution: float
+    #: Taxa anual da carteira, como fração — 0.12 é 12% ao ano.
+    annual_rate: float
+    #: Meses até o degrau seguinte.
+    months: int
+    #: Primeiro dia do mês projetado de chegada, ISO.
+    target_date: str
 
 
 class PortfolioWealthTier(BaseModel):
@@ -59,3 +52,5 @@ class PortfolioWealthTier(BaseModel):
     next_tier: WealthTier | None = None
     remaining: float | None = None
     progress: float
+    #: Ausente quando não há degrau seguinte, histórico, ou ritmo que chegue lá.
+    projection: WealthTierProjection | None = None

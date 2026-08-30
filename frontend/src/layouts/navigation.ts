@@ -78,6 +78,10 @@ export const navigationSections: NavigationSection[] = [
         })),
       },
       {
+        title: 'Jornada',
+        items: [{ label: 'Jornada do Herói', path: '/portfolio/tiers' }],
+      },
+      {
         title: 'Operações',
         items: [{ label: 'Declaração IR', path: '/portfolio/tax-income' }],
       },
@@ -107,20 +111,6 @@ export const navigationSections: NavigationSection[] = [
   },
 ]
 
-/** Acrescenta ao Mercado os ativos mais visitados. Vem dos dados do usuário e
- *  por isso não cabe na lista estática: só pode ser montado depois que os
- *  favoritos carregarem. Sem nenhum, devolve a mesma referência da lista. */
-export function withMostVisited(
-  section: NavigationSection,
-  favorites: NavigationItem[],
-): NavigationGroup[] {
-  if (section.id !== 'mercado' || favorites.length === 0) return section.groups
-
-  /* Sem a contagem de visitas: ela ordena a lista, não é algo que se veio
-     aqui para ler. */
-  return [...section.groups, { title: 'Mais acessados', items: favorites }]
-}
-
 /** Preenche o submenu de Categorias com as categorias da carteira.
  *
  *  Escolher a categoria é a navegação, e não algo que se faz depois de chegar:
@@ -142,14 +132,17 @@ export function withCategories(
 }
 
 /** Os grupos de uma seção já com o que vem dos dados do usuário. É por onde a
- *  coluna do desktop e o drawer do mobile passam, para não divergirem. */
+ *  coluna do desktop e o drawer do mobile passam, para não divergirem.
+ *
+ *  Os mais acessados não entram aqui: eles são uma prateleira dentro da tela
+ *  de Ativos, onde cada um vem com nome, tipo e o que fazer com ele. Repetidos
+ *  na coluna viravam uma lista de tickers soltos — a mesma informação, com
+ *  menos contexto e ocupando a altura que os destinos fixos precisam. */
 export function resolveGroups(
   section: NavigationSection,
-  data: { categories?: NavigationItem[]; favorites?: NavigationItem[] },
+  data: { categories?: NavigationItem[] },
 ): NavigationGroup[] {
-  const withUserCategories = withCategories(section, data.categories ?? [])
-  const groups = withMostVisited({ ...section, groups: withUserCategories }, data.favorites ?? [])
-  return groups
+  return withCategories(section, data.categories ?? [])
 }
 
 /** Para onde a aba da seção leva. É o primeiro item do primeiro grupo, em vez

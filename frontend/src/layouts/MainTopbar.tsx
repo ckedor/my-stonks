@@ -66,7 +66,7 @@ export interface MainTopbarProps {
 
 export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarProps) {
   const user = useAuthStore((s) => s.user)
-  const { data: portfolios = [], isPending: loading } = usePortfolios()
+  const { data: portfolios = [] } = usePortfolios()
   const selectedPortfolio = useSelectedPortfolio()
   const setSelectedPortfolioId = usePortfolioStore((s) => s.setSelectedPortfolioId)
   const consolidate = useConsolidatePortfolio()
@@ -179,17 +179,16 @@ export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarPr
               }
         }
       >
-        {loading ? (
-          <LoadingSpinner />
-        ) : (
-          !isMobile && (
-            <AppMenuButton
-              open={Boolean(portfolioAnchor)}
-              onClick={(event) => setPortfolioAnchor(event.currentTarget)}
-            >
-              {selectedPortfolio?.name ?? 'Carteira'}
-            </AppMenuButton>
-          )
+        {/* Sem spinner: qual carteira está aberta é escolha guardada, e o nome
+            ou já veio da cache ou aparece quando a lista chega. Um spinner aqui
+            pisca a cada recarga sem informar nada. */}
+        {!isMobile && (
+          <AppMenuButton
+            open={Boolean(portfolioAnchor)}
+            onClick={(event) => setPortfolioAnchor(event.currentTarget)}
+          >
+            {selectedPortfolio?.name ?? 'Carteira'}
+          </AppMenuButton>
         )}
 
         <AppSegmentedToggle

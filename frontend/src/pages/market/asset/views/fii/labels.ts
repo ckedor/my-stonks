@@ -13,6 +13,12 @@ const ASSET_CLASS_LABELS: Record<string, string> = {
   lci: 'LCI',
   fii: 'Cotas de FII',
   real_estate_company: 'Companhias imobiliárias',
+  rental_receivables: 'Recebíveis de aluguel',
+  other_receivables: 'Outros recebíveis',
+  fund_share: 'Fundos de renda fixa',
+  government_bonds: 'Títulos públicos',
+  private_bonds: 'Títulos privados',
+  cash: 'Caixa',
 }
 
 export const assetClassLabel = (assetClass: string) =>
@@ -27,19 +33,48 @@ export const assetClassLabel = (assetClass: string) =>
  *  tela mostraria composições diferentes em duas abas.
  */
 export const PATRIMONY_LINES: {
+  assetClass: string
   label: string
   read: (report: FIIMonthlyReport) => number | null
 }[] = [
-  { label: 'Imóveis', read: (report) => report.real_estate },
-  { label: 'CRI', read: (report) => report.cri },
-  { label: 'LCI', read: (report) => report.lci },
-  { label: 'Cotas de FII', read: (report) => report.fii_holdings },
-  { label: 'Ações de companhias imobiliárias', read: (report) => report.real_estate_company_shares },
-  { label: 'Cotas de companhias imobiliárias', read: (report) => report.real_estate_company_units },
-  { label: 'Recebíveis de aluguel', read: (report) => report.rental_receivables },
-  { label: 'Outros recebíveis', read: (report) => report.other_receivables },
-  { label: 'Fundos de renda fixa', read: (report) => report.fixed_income_funds },
-  { label: 'Títulos públicos', read: (report) => report.government_bonds },
-  { label: 'Títulos privados', read: (report) => report.private_bonds },
-  { label: 'Caixa', read: (report) => report.cash },
+  { assetClass: 'real_estate', label: 'Imóveis', read: (report) => report.real_estate },
+  { assetClass: 'cri', label: 'CRI', read: (report) => report.cri },
+  { assetClass: 'lci', label: 'LCI', read: (report) => report.lci },
+  { assetClass: 'fii', label: 'Cotas de FII', read: (report) => report.fii_holdings },
+  {
+    assetClass: 'real_estate_company',
+    label: 'Ações de companhias imobiliárias',
+    read: (report) => report.real_estate_company_shares,
+  },
+  {
+    assetClass: 'real_estate_company',
+    label: 'Cotas de companhias imobiliárias',
+    read: (report) => report.real_estate_company_units,
+  },
+  {
+    assetClass: 'rental_receivables',
+    label: 'Recebíveis de aluguel',
+    read: (report) => report.rental_receivables,
+  },
+  {
+    assetClass: 'other_receivables',
+    label: 'Outros recebíveis',
+    read: (report) => report.other_receivables,
+  },
+  {
+    assetClass: 'fund_share',
+    label: 'Fundos de renda fixa',
+    read: (report) => report.fixed_income_funds,
+  },
+  {
+    assetClass: 'government_bonds',
+    label: 'Títulos públicos',
+    read: (report) => report.government_bonds,
+  },
+  {
+    assetClass: 'private_bonds',
+    label: 'Títulos privados',
+    read: (report) => report.private_bonds,
+  },
+  { assetClass: 'cash', label: 'Caixa', read: (report) => report.cash },
 ]

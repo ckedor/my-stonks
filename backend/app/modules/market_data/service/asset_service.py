@@ -65,6 +65,7 @@ class AssetService:
                     'id': a.id,
                     'ticker': a.ticker,
                     'name': a.name,
+                    'logo_url': a.logo_url,
                     'asset_type_id': a.asset_type_id,
                     'asset_type': {
                         'id': a.asset_type.id,
@@ -361,6 +362,7 @@ class AssetService:
                     'ticker': asset.ticker,
                     'name': asset.name,
                     'asset_type_id': asset.asset_type_id,
+                    'logo_url': asset.logo_url,
                     'asset_type': {
                         'id': asset.asset_type.id,
                         'short_name': asset.asset_type.short_name,

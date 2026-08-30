@@ -13,6 +13,8 @@ MARKET_CATALOGUE_TTL_SECONDS = 21600
 MARKET_ASSET_TYPES = {
     'stock': ASSET_TYPE.STOCK,
     'etf': ASSET_TYPE.ETF,
+    'fii': ASSET_TYPE.FII,
+    'bdr': ASSET_TYPE.BDR,
     'crypto': ASSET_TYPE.CRIPTO,
 }
 
@@ -49,6 +51,16 @@ class MarketCatalogueReadService:
             'total': len(provider_assets),
             'source': 'brapi',
         }
+
+    async def fetch_catalogue(self, kind: str) -> list[dict]:
+        """O universo do provedor para uma classe, normalizado e em cache.
+
+        Público porque a sincronização do cadastro lê o mesmo catálogo que a
+        tela: duas leituras do provedor para a mesma pergunta seriam duas
+        chances de discordar — e a segunda pagaria de novo por um dado que o
+        cache já tem.
+        """
+        return await self._fetch_market(kind)
 
     @cached(
         key_prefix='market_catalogue',

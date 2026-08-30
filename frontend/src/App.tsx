@@ -5,7 +5,6 @@ import MainLayout from "./layouts/MainLayout";
 import AdminAIFeaturesPage from "./pages/admin/ai-features/page";
 import AdminAssetsPage from "./pages/admin/assets/page";
 import AdminBrokersPage from "./pages/admin/brokers/page";
-import AdminWealthTiersPage from "./pages/admin/wealth-tiers/page";
 import AdminConsolidationPage from "./pages/admin/consolidation/page";
 import ArchitecturePage from "./pages/admin/architecture/ArchitecturePage";
 import DesignSystemPage from "./pages/admin/design-system/page";
@@ -21,6 +20,7 @@ import AdminUsersPage from "./pages/admin/users/page";
 import LoginPage from "./pages/login";
 import MarketAssetPage from "./pages/market/asset/page";
 import MarketAtivosPage from "./pages/market/ativos/page";
+import PortfolioTiersPage from "./pages/portfolio/tiers/page";
 import MarketCataloguePage from "./pages/market/catalogue/page";
 import MarketFIIPage from "./pages/market/fii/page";
 import MarketOverviewPage from "./pages/market/overview/page";
@@ -61,6 +61,7 @@ const router = createBrowserRouter([
       { path: "portfolio/returns", element: <PortfolioReturnsPage /> },
       { path: "portfolio/analysis", element: <PortfolioRiskPage /> },
       { path: "portfolio/tax-income", element: <TaxIncomePage /> },
+      { path: "portfolio/tiers", element: <PortfolioTiersPage /> },
       { path: "portfolio/trades", element: <PortfolioTransactionsPage /> },
       { path: "portfolio/wealth", element: <PortfolioPatrimonyEvolution /> },
       // Distribuição e rebalanceamento viraram uma tela só; o link antigo
@@ -84,7 +85,6 @@ const router = createBrowserRouter([
     children: [
       { path: "assets", element: <AdminAssetsPage /> },
       { path: "brokers", element: <AdminBrokersPage /> },
-      { path: "wealth-tiers", element: <AdminWealthTiersPage /> },
       { path: "events", element: <AdminEventsPage /> },
       { path: "users", element: <AdminUsersPage /> },
       { path: "design-system", element: <DesignSystemPage /> },

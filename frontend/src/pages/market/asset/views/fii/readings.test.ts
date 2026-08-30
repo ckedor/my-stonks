@@ -1,5 +1,6 @@
 import type {
   FIIDividend,
+  FIICompositionPoint,
   FIIIndicators,
   FIIMonthlyReport,
   FIIPropertiesPoint,
@@ -7,7 +8,13 @@ import type {
 import { describe, expect, it } from 'vitest'
 
 import { formatBRLPerShare, formatPercentagePoints } from './format'
-import { incomeTrend, navReading, patrimonySlices, vacancyReading } from './readings'
+import {
+  compositionHistoryWithCurrentReport,
+  incomeTrend,
+  navReading,
+  patrimonySlices,
+  vacancyReading,
+} from './readings'
 
 const indicators = (overrides: Partial<FIIIndicators> = {}): FIIIndicators => ({
   as_of_date: '2025-12-01',
@@ -259,5 +266,63 @@ describe('patrimonySlices', () => {
       }),
     ).toBeNull()
     expect(patrimonySlices({ report: null, allocations: [] })).toBeNull()
+  })
+})
+
+const compositionPoint = (
+  reference_date: string,
+  allocations: FIICompositionPoint['allocations'],
+): FIICompositionPoint => ({ reference_date, summary: null, allocations })
+
+describe('compositionHistoryWithCurrentReport', () => {
+  it('completes an omitted CRI in the current quarter from the monthly report', () => {
+    const history = [
+      compositionPoint('2026-03-31', [
+        { asset_class: 'cri', count: 98, value: 683_324_870.21 },
+      ]),
+      compositionPoint('2026-06-30', [
+        { asset_class: 'fii', count: 13, value: 90_536_183.63 },
+        { asset_class: 'fund_share', count: 1, value: 23_116_074 },
+      ]),
+    ]
+
+    const completed = compositionHistoryWithCurrentReport({
+      history,
+      report: report({
+        reference_date: '2026-07-01',
+        cri: 617_677_400,
+        fii_holdings: 88_106_896,
+        fixed_income_funds: 64_961_860,
+      }),
+    })
+
+    expect(completed).toHaveLength(2)
+    expect(completed.at(-1)?.reference_date).toBe('2026-06-30')
+    expect(completed.at(-1)?.allocations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ asset_class: 'cri', value: 617_677_400 }),
+        expect.objectContaining({ asset_class: 'fii', value: 88_106_896 }),
+        expect.objectContaining({ asset_class: 'fund_share', value: 64_961_860 }),
+      ]),
+    )
+    expect(completed.at(-1)?.allocations).not.toContainEqual(
+      expect.objectContaining({ asset_class: 'real_estate' }),
+    )
+    expect(history.at(-1)?.allocations).toHaveLength(2)
+  })
+
+  it('does not let an older monthly report rewrite a newer quarter', () => {
+    const history = [
+      compositionPoint('2026-06-30', [
+        { asset_class: 'cri', count: 98, value: 683_324_870.21 },
+      ]),
+    ]
+
+    expect(
+      compositionHistoryWithCurrentReport({
+        history,
+        report: report({ reference_date: '2026-05-01', cri: 1 }),
+      }),
+    ).toBe(history)
   })
 })

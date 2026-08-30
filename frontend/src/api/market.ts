@@ -425,7 +425,7 @@ export const fetchFIIMarket = (): Promise<FIIMarket> =>
 // Market catalogues
 // ---------------------------------------------------------------------------
 
-export type MarketCatalogueKind = 'stock' | 'etf' | 'crypto'
+export type MarketCatalogueKind = 'stock' | 'etf' | 'fii' | 'bdr' | 'crypto'
 
 export interface MarketCatalogueAsset {
   asset_id: number | null
@@ -448,10 +448,52 @@ export interface MarketCatalogue {
 export const fetchMarketCatalogue = (kind: MarketCatalogueKind): Promise<MarketCatalogue> =>
   api.get<MarketCatalogue>(MARKET_CATALOGUE_ROUTES.byKind(kind)).then((r) => r.data)
 
+// ---------------------------------------------------------------------------
+// Asset registry sync
+// ---------------------------------------------------------------------------
+
+/** Um ativo que o catálogo corrige, com o antes e o depois de cada campo. */
+export interface AssetSyncChange {
+  kind: string
+  ticker: string
+  changes: Record<string, [string | null, string | null]>
+}
+
+export interface AssetSyncEntry {
+  kind: string
+  ticker: string | null
+  name: string
+}
+
+export interface AssetSyncReport {
+  dry_run: boolean
+  kinds: string[]
+  created: AssetSyncEntry[]
+  updated: AssetSyncChange[]
+  unchanged: number
+  kept_local: AssetSyncEntry[]
+}
+
+/** Casa o cadastro de ativos com o catálogo do provedor.
+ *
+ *  `dryRun` é o padrão da rota e o padrão daqui: a chamada devolve o relatório
+ *  do que mudaria sem escrever nada. */
+export const syncAssetCatalogue = (
+  kinds: string[] | undefined,
+  dryRun: boolean,
+): Promise<AssetSyncReport> =>
+  api
+    .post<AssetSyncReport>(ASSET_ROUTES.sync, null, {
+      params: { kinds, dry_run: dryRun },
+      paramsSerializer: { indexes: null },
+    })
+    .then((r) => r.data)
+
 export interface MarketAssetDetails {
   id: number
   ticker: string | null
   name: string
+  logo_url?: string | null
   asset_type_id: number
   asset_type: {
     id: number
@@ -474,6 +516,7 @@ export interface FavoriteAsset {
   ticker: string | null
   name: string
   asset_type_id: number
+  logo_url: string | null
   asset_type: { id: number; short_name: string; name: string }
   visit_count: number
   last_visited_at: string | null

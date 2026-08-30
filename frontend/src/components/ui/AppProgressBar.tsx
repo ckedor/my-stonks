@@ -18,12 +18,17 @@ export interface AppProgressBarProps {
   /** Espessura em px. Padrão: `4`, a do MUI. Uma barra que é o assunto do
    *  card, e não um detalhe de rodapé, pede mais peso. */
   thickness?: number
+  /** Acende a barra com um halo da própria cor. É para a tela em que o
+   *  progresso é a conquista, e não a medida de uma espera — a trilha de
+   *  patentes. Fora dela, uma barra que brilha é ruído. */
+  glow?: boolean
 }
 
 export default function AppProgressBar({
   value,
   tone = 'primary',
   thickness,
+  glow = false,
 }: AppProgressBarProps) {
   const theme = useAppTheme()
 
@@ -37,6 +42,17 @@ export default function AppProgressBar({
         }
       : {}
 
+  const glowSx = glow
+    ? {
+        '& .MuiLinearProgress-bar': {
+          boxShadow: `0 0 14px ${withOpacity(
+            tone === 'golden' ? theme.palette.golden : theme.palette.primary.main,
+            0.55,
+          )}`,
+        },
+      }
+    : {}
+
   return (
     <LinearProgress
       variant={value === undefined ? 'indeterminate' : 'determinate'}
@@ -46,6 +62,7 @@ export default function AppProgressBar({
         borderRadius: `${theme.radius.sm}px`,
         ...(thickness ? { height: thickness } : {}),
         ...goldenSx,
+        ...glowSx,
       }}
     />
   )

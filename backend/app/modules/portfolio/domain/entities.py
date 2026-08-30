@@ -200,27 +200,3 @@ class PortfolioConsolidation:
 class ConfigurationName:
     id: int | None = None
     name: str
-
-
-@dataclass(eq=False, kw_only=True)
-class WealthTier:
-    """One rung of the wealth ladder: a title earned by reaching a patrimony.
-
-    The ladder is data, not an enum. Its length, names, and thresholds are
-    edited through the admin CRUD, so nothing in the domain may assume a fixed
-    number of tiers or hardcode a title.
-    """
-
-    id: int | None = None
-    rank: int
-    name: str
-    threshold: float
-    artwork: str | None = None
-    #: Vertical nudge in px, so the character's feet land on the layout's
-    #: baseline. It belongs to the drawing: no single value fits every file.
-    artwork_offset: int = 0
-    #: Drawn height in px. Absent means the screen's default.
-    artwork_height: int | None = None
-
-    def __repr__(self) -> str:
-        return self.name

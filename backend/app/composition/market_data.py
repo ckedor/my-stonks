@@ -6,6 +6,9 @@ from fastapi import Depends
 from app.infra.db.unit_of_work import UnitOfWork, get_uow
 from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
+from app.modules.market_data.service.asset_catalogue_sync_service import (
+    AssetCatalogueSyncService,
+)
 from app.modules.market_data.service.asset_service import AssetService
 from app.modules.market_data.service.brokers_service import BrokersService
 from app.modules.market_data.service.data_ingestion_service import (
@@ -138,6 +141,31 @@ async def get_market_catalogue_read_service(
         yield service
     finally:
         await service.aclose()
+
+
+async def get_asset_catalogue_sync_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> AsyncIterator[AssetCatalogueSyncService]:
+    """A sincronização e o catálogo que ela lê, cada um com sua UoW.
+
+    Duas porque uma não pode ser aberta duas vezes: a sincronização abre a sua
+    para escrever, e o catálogo abriria a mesma para resolver os ids que a tela
+    de mercado pede.
+    """
+    catalogue = MarketCatalogueReadService(
+        uow=UnitOfWork(),
+        provider=MarketDataProvider(),
+        cache=RedisService(),
+    )
+    service = AssetCatalogueSyncService(
+        uow=uow,
+        catalogue=catalogue,
+        cache=RedisService(),
+    )
+    try:
+        yield service
+    finally:
+        await catalogue.aclose()
 
 
 def build_data_ingestion_service() -> DataIngestionService:

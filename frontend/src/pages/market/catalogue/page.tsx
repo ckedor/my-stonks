@@ -62,6 +62,31 @@ const CONFIG: Record<MarketCatalogueKind, MarketPageConfig> = {
     benchmarkTitle: 'IBOVESPA e S&P 500 contra CDI',
     benchmarks: ['IBOVESPA', 'S&P500', 'CDI'],
   },
+  fii: {
+    assetTypeId: ASSET_TYPES.FII,
+    breadcrumb: 'FIIs',
+    description:
+      'Cotações dos fundos imobiliários negociados na B3 e comparação com os benchmarks da classe.',
+    itemLabel: 'FII',
+    kind: 'fii',
+    pageTitle: 'BR · Mercado de FIIs',
+    sectionTitle: 'Todos os FIIs',
+    benchmarkTitle: 'IFIX contra CDI',
+    benchmarks: ['IFIX', 'CDI'],
+  },
+  bdr: {
+    assetTypeId: ASSET_TYPES.BDR,
+    breadcrumb: 'BDRs',
+    description:
+      'Cotações dos BDRs negociados na B3 — ações estrangeiras em reais — e os benchmarks da classe.',
+    itemLabel: 'BDR',
+    kind: 'bdr',
+    pageTitle: 'BR · Mercado de BDRs',
+    sectionTitle: 'Todos os BDRs',
+    benchmarkTitle: 'S&P 500 contra IBOVESPA',
+    benchmarks: ['S&P500', 'IBOVESPA'],
+    showMarketCap: true,
+  },
   crypto: {
     assetTypeId: ASSET_TYPES.CRIPTO,
     breadcrumb: 'Cripto',
@@ -96,13 +121,6 @@ export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKin
         asset.name.toLocaleLowerCase('pt-BR').includes(query),
     )
   }, [data?.assets, search])
-  const catalogueAssetIds = useMemo(
-    () => (data?.assets ?? [])
-      .map((asset) => asset.asset_id)
-      .filter((assetId): assetId is number => assetId != null),
-    [data?.assets],
-  )
-
   const columns = useMemo(
     () => catalogueColumns(config),
     [config],
@@ -142,11 +160,10 @@ export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKin
         description={config.description}
       />
 
-      <FavoriteAssets
-        limit={8}
-        assetTypeId={config.assetTypeId}
-        assetIds={catalogueAssetIds}
-      />
+      {/* O recorte é o tipo de ativo, e não a lista de ids da página: mandar
+          o catálogo inteiro na query string dava URLs de dezenas de milhares
+          de caracteres a cada render. */}
+      <FavoriteAssets limit={8} assetTypeId={config.assetTypeId} />
 
       <MarketBenchmarkCard
         title={config.benchmarkTitle}

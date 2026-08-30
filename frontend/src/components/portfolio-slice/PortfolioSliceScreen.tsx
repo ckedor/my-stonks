@@ -245,18 +245,14 @@ export default function PortfolioSliceScreen(props: PortfolioSliceScreenProps) {
 
             <AppGridItem span={{ xs: 1, lg: 3 }}>
               <AppStack gap="md">
-                <AppStack direction="row" align="center" justify="between" gap="sm" wrap>
-                  <SectionTitle>
-                    {activeGroup
-                      ? `${activeGroup} · ${visiblePositions.length}`
-                      : `Ativos · ${positions.length}`}
-                  </SectionTitle>
-                  {activeGroup && (
+                {activeGroup && (
+                  <AppStack direction="row" align="center" justify="between" gap="sm" wrap>
+                    <SectionTitle>{`${activeGroup} · ${visiblePositions.length}`}</SectionTitle>
                     <AppButton emphasis="ghost" size="sm" onClick={() => setSelectedGroup(null)}>
                       Limpar filtro
                     </AppButton>
-                  )}
-                </AppStack>
+                  </AppStack>
+                )}
 
                 <AppGrid cols={{ xs: 1, sm: 2, lg: 3 }} gap="md">
                   {visiblePositions.map((position) => (

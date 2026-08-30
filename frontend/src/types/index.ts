@@ -258,15 +258,8 @@ export interface WealthTier {
   rank: number
   name: string
   threshold: number
-  /** A ilustração do personagem, como data URI — a própria imagem, e não um
-      caminho ou chave de storage. PNG e SVG são igualmente aceitos. */
-  artwork: string | null
-  /** Ajuste vertical em px, para o pé do personagem encostar na linha de base
-      do layout. É dado da arte, não da tela: cada arquivo põe o personagem
-      numa altura diferente, então nenhum valor único serve para todos. */
-  artwork_offset: number
-  /** Altura desenhada em px. Ausente usa o padrão da tela. */
-  artwork_height: number | null
+  /* O cenário do degrau não vem daqui: é arquivo do repositório, escolhido
+     pela posição na escala. Ver `constants/tierScenes`. */
 }
 
 /* A posição da carteira na escala, a partir de dois números propositalmente
@@ -278,6 +271,20 @@ export interface WealthTier {
    `remaining` e `progress` saem de `current_patrimony`, porque quanto falta
    para subir é pergunta sobre hoje. Quem caiu mantém o título e enxerga a
    distância real que tem pela frente. */
+/* Quando o degrau seguinte chega, no ritmo atual: o aporte médio recente
+   somado ao que o patrimônio de hoje rende na taxa anual da carteira. As duas
+   entradas vêm junto com a data porque é delas que a data tira o crédito. */
+export interface WealthTierProjection {
+  /** Média mensal de aporte na janela recente. */
+  monthly_contribution: number
+  /** Taxa anual como fração: 0.12 é 12% ao ano. */
+  annual_rate: number
+  /** Meses até o degrau seguinte. */
+  months: number
+  /** Primeiro dia do mês projetado de chegada, ISO. */
+  target_date: string
+}
+
 export interface PortfolioWealthTier {
   peak_patrimony: number
   current_patrimony: number
@@ -285,4 +292,6 @@ export interface PortfolioWealthTier {
   next_tier: WealthTier | null
   remaining: number | null
   progress: number
+  /** Ausente sem degrau seguinte, sem histórico, ou quando o ritmo não chega. */
+  projection: WealthTierProjection | null
 }

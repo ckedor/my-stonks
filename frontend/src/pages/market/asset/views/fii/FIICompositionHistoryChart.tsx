@@ -1,4 +1,4 @@
-import type { FIICompositionPoint } from '@/api/market'
+import type { FIICompositionPoint, FIIMonthlyReport } from '@/api/market'
 import { AppChartArea, useAppTheme } from '@/components/ui'
 import { useMemo } from 'react'
 import {
@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import { formatCompactBRL, formatDate, formatMonth } from './format'
 import { assetClassLabel } from './labels'
+import { compositionHistoryWithCurrentReport } from './readings'
 
 const CHART_HEIGHT = 260
 
@@ -32,19 +33,21 @@ interface Row {
  */
 export default function FIICompositionHistoryChart({
   history,
+  report,
 }: {
   history: FIICompositionPoint[]
+  report: FIIMonthlyReport | null
 }) {
   const theme = useAppTheme()
 
   const priced = useMemo(
     () =>
-      history.filter(
+      compositionHistoryWithCurrentReport({ history, report }).filter(
         (quarter) =>
           quarter.reference_date &&
           quarter.allocations.some((allocation) => allocation.value != null)
       ),
-    [history]
+    [history, report]
   )
 
   /* One bar segment per class that is priced somewhere in the series. A class

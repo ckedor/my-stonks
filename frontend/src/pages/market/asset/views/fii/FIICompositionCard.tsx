@@ -210,7 +210,7 @@ export default function FIICompositionCard({ composition, history, report }: Pro
   const evolutionBlock = (
     <AppStack gap="xs">
       <SectionLabel>Evolução por classe</SectionLabel>
-      <FIICompositionHistoryChart history={history} />
+      <FIICompositionHistoryChart history={history} report={report} />
     </AppStack>
   )
 

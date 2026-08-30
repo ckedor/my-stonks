@@ -14,6 +14,7 @@ import {
     type FieldConfig,
     PageTitle,
 } from '@/components/ui'
+import AssetCatalogueSync from './AssetCatalogueSync'
 import CrudPageSkeleton from '../CrudPageSkeleton'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -388,6 +389,18 @@ export default function AdminAssetsPage() {
             Novo Ativo
           </AppButton>
         </AppStack>
+
+        <AssetCatalogueSync
+          onApplied={(report) => {
+            void fetchData()
+            setSnackbar({
+              open: true,
+              message: `Catálogo aplicado: ${report.created.length} cadastrados, ${report.updated.length} corrigidos`,
+              severity: 'success',
+            })
+          }}
+          onError={(message) => setSnackbar({ open: true, message, severity: 'error' })}
+        />
 
         <AppStack gap="md">
           <AppSearchField

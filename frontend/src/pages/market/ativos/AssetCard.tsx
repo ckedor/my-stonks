@@ -1,10 +1,22 @@
-import { AppCard, AppChip, AppIconButton, AppStack, AppStackItem, AppText } from '@/components/ui'
+import {
+  AppAssetLogo,
+  AppCard,
+  AppChip,
+  AppIconButton,
+  AppStack,
+  AppStackItem,
+  AppText,
+} from '@/components/ui'
+import { formatBRL } from '@/lib/utils/format'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
+import AssetChange from './AssetChange'
+import type { MarketQuote } from './useMarketQuotes'
 
 export interface MarketAsset {
   id: number
   ticker: string | null
   name: string
+  logo_url?: string | null
   asset_type_id: number
   asset_type?: { id: number; short_name: string; name: string; asset_class_id?: number }
 }
@@ -17,17 +29,22 @@ export function TypeBadge({ label }: { label: string }) {
 
 export default function AssetCard({
   asset,
+  quote,
   onOpen,
   onBuy,
 }: {
   asset: MarketAsset
+  quote?: MarketQuote
   onOpen: () => void
   onBuy: () => void
 }) {
+  const logo = asset.logo_url ?? quote?.logoUrl
+
   return (
     <AppCard interactive onClick={onOpen}>
       <AppStack gap="xs">
         <AppStack direction="row" gap="sm" align="center">
+          <AppAssetLogo src={logo} size={28} />
           <AppText variant="cardValue" noWrap>
             {asset.ticker ?? asset.name}
           </AppText>
@@ -40,7 +57,21 @@ export default function AssetCard({
           </AppText>
         </AppStackItem>
 
-        <AppStack direction="row" justify="end">
+        {/* Preço e variação na mesma linha da ação: é o que faz o cartão valer
+            a área que ocupa. Sem cotação, a linha some em vez de mostrar dois
+            travessões. */}
+        <AppStack direction="row" justify="between" align="center">
+          {quote?.price != null ? (
+            <AppStack direction="row" gap="sm" align="baseline">
+              <AppText variant="bodySmall" weight="strong" inline>
+                {formatBRL(quote.price)}
+              </AppText>
+              <AssetChange value={quote.changePercent} />
+            </AppStack>
+          ) : (
+            <span />
+          )}
+
           <AppIconButton
             size="sm"
             tone="primary"

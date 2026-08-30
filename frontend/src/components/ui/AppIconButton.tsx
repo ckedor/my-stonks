@@ -1,5 +1,6 @@
 import { IconButton, Tooltip } from '@mui/material'
 import type { MouseEvent, ReactNode } from 'react'
+import { withOpacity } from './useAppTheme'
 
 /* Botão de ícone.
  *
@@ -33,6 +34,9 @@ export interface AppIconButtonProps {
    *  Sem ela, um ícone solto na mesma linha de dois botões parece
    *  decoração. */
   bordered?: boolean
+  /** Seta discreta sobre fotografia: clara, sem fundo em repouso e invisível
+   *  quando desabilitada nas pontas de uma galeria. */
+  immersive?: boolean
 }
 
 export default function AppIconButton({
@@ -45,7 +49,19 @@ export default function AppIconButton({
   tooltip = false,
   edge = false,
   bordered = false,
+  immersive = false,
 }: AppIconButtonProps) {
+  const sx = immersive
+    ? {
+        flexShrink: 0,
+        color: withOpacity('#ffffff', 0.75),
+        '&.Mui-disabled': { opacity: 0 },
+        '&:hover': { color: '#fff', backgroundColor: withOpacity('#000000', 0.35) },
+      }
+    : bordered
+      ? { border: '1px solid', borderColor: 'divider', borderRadius: 1 }
+      : undefined
+
   const button = (
     <IconButton
       aria-label={label}
@@ -54,7 +70,7 @@ export default function AppIconButton({
       size={SIZE[size]}
       disabled={disabled}
       edge={edge}
-      sx={bordered ? { border: '1px solid', borderColor: 'divider', borderRadius: 1 } : undefined}
+      sx={sx}
     >
       {children}
     </IconButton>

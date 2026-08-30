@@ -63,6 +63,7 @@ class Asset:
     name: str
     asset_type_id: int
     exchange_id: int | None = None
+    logo_url: str | None = None
     asset_type: AssetType | None = None
     exchange: Exchange | None = None
     stock: Stock | None = None

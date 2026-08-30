@@ -104,6 +104,18 @@ svg[tabindex]:focus:not(:focus-visible) {
   background: transparent;
 }
 
+/* A barra da janela some, e só ela: a página rola do mesmo jeito, mas a faixa
+   colada na borda direita não divide a moldura com o conteúdo. As barras de
+   dentro dos cards continuam visíveis — ali elas dizem que há mais para ver. */
+html {
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 /* O mapa de arquitetura não é editável: as pontas de ligação que o react-flow
    desenha em cada nó existem para arrastar uma aresta nova, e ali só poluem o
    desenho. Fica aqui, e não num `style` no nó, porque a regra é do react-flow

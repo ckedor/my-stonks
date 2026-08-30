@@ -11,7 +11,7 @@ router = APIRouter(prefix='/market', tags=['Market Catalogue'])
 
 @router.get('/{kind}', response_model=MarketCatalogueResponse)
 async def get_market_catalogue(
-    kind: Literal['stock', 'etf', 'crypto'],
+    kind: Literal['stock', 'etf', 'fii', 'bdr', 'crypto'],
     service: MarketCatalogueReadService = Depends(get_market_catalogue_read_service),
 ):
     """Complete BRAPI catalogue for one market class."""

@@ -25,6 +25,7 @@ describe('FavoriteAssets', () => {
       name: 'iShares Ibovespa',
       asset_type_id: 1,
       asset_type: { id: 1, short_name: 'ETF', name: 'Exchange Traded Fund' },
+      logo_url: null,
       visit_count: 5,
       last_visited_at: '2026-08-22T12:00:00Z',
     }])

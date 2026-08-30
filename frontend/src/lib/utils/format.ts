@@ -17,3 +17,13 @@ export const formatNumber = (value: number | string | null, digits = 2) => {
       })
     : '—'
 }
+
+/* Preço de mercado, sempre em reais.
+ *
+ * Não segue o seletor de moeda da carteira de propósito: o que o catálogo
+ * devolve é cotação da B3, e convertê-la para dólar diria que o papel é
+ * negociado numa moeda em que ele não é. */
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+
+export const formatBRL = (value: number | null | undefined) =>
+  value == null ? '—' : BRL.format(value)

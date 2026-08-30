@@ -19,7 +19,6 @@ export const adminNavigationSections: AdminNavigationSection[] = [
       { label: 'Ativos', path: '/admin/assets' },
       { label: 'Eventos', path: '/admin/events' },
       { label: 'Corretoras', path: '/admin/brokers' },
-      { label: 'Patentes', path: '/admin/wealth-tiers' },
     ],
   },
   {

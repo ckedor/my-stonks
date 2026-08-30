@@ -8,7 +8,6 @@ import { useRebalancing } from '@/components/portfolio-rebalancing/useRebalancin
 import {
   AppButton,
   AppCard,
-  AppDivider,
   AppGrid,
   AppGridItem,
   AppMetric,
@@ -19,6 +18,7 @@ import {
   AppStack,
   AppStackItem,
   AppSwitch,
+  AppTabs,
   AppTableSkeleton,
   AppText,
   AppToggleGroup,
@@ -32,6 +32,18 @@ import PerformanceBarChart, { type DistributionMetric } from '@/pages/portfolio/
 import PortfolioHeatMap from '@/pages/portfolio/asset/PortfolioHeatMap'
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+
+/* Duas leituras, e não uma pilha: o mapa responde "como a carteira ficou" e
+   os alvos, "o quanto isso difere do que eu quero". Empilhadas, a segunda
+   ficava a uma rolagem inteira da primeira e o mapa saía da tela justamente
+   quando os alvos precisavam dele. Como abas, cada uma ocupa a dobra sozinha
+   e a troca custa um clique. */
+const TABS = [
+  { id: 'map' as const, label: 'Distribuição' },
+  { id: 'targets' as const, label: 'Alvos' },
+]
+
+type DistributionTab = (typeof TABS)[number]['id']
 
 const METRIC_OPTIONS: AppToggleGroupOption<DistributionMetric>[] = [
   { value: 'twelve_months_return', label: 'Rent. 12M' },
@@ -61,6 +73,7 @@ export default function DistributionPage() {
 
   const { format: fmt, symbol: currencySymbol } = useCurrency()
   const [metric, setMetric] = useState<DistributionMetric>('twelve_months_return')
+  const [tab, setTab] = useState<DistributionTab>('map')
 
   const { data: positions } = useQuery<any[]>({
     queryKey: [portfolioId ? `distribution:positions:${portfolioId}` : null],
@@ -89,16 +102,21 @@ export default function DistributionPage() {
           { label: 'Distribuição' },
         ]}
         actions={
-          <AppToggleGroup
-            label="Métrica"
-            options={METRIC_OPTIONS}
-            value={metric}
-            onChange={setMetric}
-          />
+          /* A métrica é do mapa: fora dele, o controle não tem o que mudar. */
+          tab === 'map' ? (
+            <AppToggleGroup
+              label="Métrica"
+              options={METRIC_OPTIONS}
+              value={metric}
+              onChange={setMetric}
+            />
+          ) : undefined
         }
       />
 
-      {loading ? (
+      <AppTabs items={TABS} value={tab} onChange={setTab} label="Visões da distribuição" />
+
+      {tab === 'map' && (loading ? (
         <AppStack direction="row" gap="md" collapseBelow="md">
           <AppStackItem>
             <AppSkeleton height={MAP_HEIGHT} />
@@ -127,13 +145,9 @@ export default function DistributionPage() {
             />
           </AppStackItem>
         </AppStack>
-      )}
+      ))}
 
-      <AppDivider />
-
-      <SectionTitle>Alvos</SectionTitle>
-
-      {rebalancing.loading ? (
+      {tab === 'targets' && (rebalancing.loading ? (
         <>
           <AppCard>
             <AppSkeleton height={56} />
@@ -243,7 +257,7 @@ export default function DistributionPage() {
             categoryTargetSum={categoryTargetSum}
           />
         </>
-      )}
+      ))}
 
       <AppSnackbar
         open={rebalancing.snackbar.open}

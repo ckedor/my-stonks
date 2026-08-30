@@ -56,6 +56,9 @@ asset_table = Table(
     Column('name', String(200), nullable=False),
     Column('asset_type_id', Integer, ForeignKey('asset.asset_type.id'), nullable=False),
     Column('exchange_id', Integer, ForeignKey('asset.exchange.id'), nullable=True),
+    # A URL do logo, e não a imagem: quem serve o arquivo é o provedor, e o
+    # navegador já sabe guardá-lo.
+    Column('logo_url', String(500), nullable=True),
     UniqueConstraint(
         'ticker',
         'exchange_id',

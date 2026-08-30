@@ -2,11 +2,12 @@
 
 from fastapi import APIRouter, Depends, Query
 
-from app.composition.market_data import get_asset_service
+from app.composition.market_data import get_asset_catalogue_sync_service, get_asset_service
 from app.modules.market_data.api.asset.schemas import (
     AssetCreate,
     AssetDetailsOut,
     AssetEvent,
+    AssetSyncReport,
     AssetType,
     AssetUpdate,
     ExchangeOut,
@@ -14,6 +15,9 @@ from app.modules.market_data.api.asset.schemas import (
     FixedIncomeAsset,
     FixedIncomeType,
     TreasuryBondTypeOut,
+)
+from app.modules.market_data.service.asset_catalogue_sync_service import (
+    AssetCatalogueSyncService,
 )
 from app.modules.market_data.service.asset_service import AssetService
 from app.modules.users.domain import User
@@ -153,6 +157,25 @@ async def delete_event(
     """Delete an asset event."""
     await service.delete_event(event_id)
     return {'message': 'OK'}
+
+
+# ---------------------------------------------------------------------------
+# Catalogue sync
+# ---------------------------------------------------------------------------
+@router.post('/sync', response_model=AssetSyncReport, dependencies=[Depends(current_superuser)])
+async def sync_assets_with_catalogue(
+    kinds: list[str] | None = Query(default=None),
+    dry_run: bool = Query(default=True),
+    service: AssetCatalogueSyncService = Depends(get_asset_catalogue_sync_service),
+):
+    """Casar o cadastro local com o catálogo do provedor.
+
+    Nomes e logos vêm do provedor, tickers que faltam viram ativos novos, e o
+    que só existe aqui continua existindo. `dry_run` é o padrão porque a rota
+    reescreve dado que a tela mostra: primeiro se olha o relatório, depois se
+    repete com `dry_run=false`.
+    """
+    return await service.sync(kinds=kinds, dry_run=dry_run)
 
 
 # ---------------------------------------------------------------------------

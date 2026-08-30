@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import AppBreadcrumbs from './AppBreadcrumbs'
 import AppCard from './AppCard'
 import AppStack from './AppStack'
-import AppText from './AppText'
 import PageTitle from './PageTitle'
 
 /* Cabeçalho de uma tela de conteúdo — a mesma abertura em toda página.
@@ -30,7 +29,11 @@ export interface AppPageHeaderProps {
   /** O que a tela mostra. */
   title: string
   /** O caminho até aqui, terminando na própria página. Ausente na raiz de
-   *  uma seção, que não está dentro de nada. */
+   *  uma seção, que não está dentro de nada.
+   *
+   *  Só é desenhado quando há profundidade de verdade: `Carteira >
+   *  Rentabilidade` repete a seção que a coluna de navegação já marca e o
+   *  título logo abaixo já diz — dois níveis não são um caminho. */
   breadcrumbs?: AppPageHeaderBreadcrumb[]
   /** Uma linha sob o título, para a tela cujo nome não basta — o que o
    *  catálogo de mercado cobre, do que a visão de FIIs é feita. */
@@ -47,13 +50,14 @@ export interface AppPageHeaderProps {
 export default function AppPageHeader({
   title,
   breadcrumbs,
-  description,
   actions,
   metrics,
 }: AppPageHeaderProps) {
+  const trail = breadcrumbs && breadcrumbs.length > 2 ? breadcrumbs : null
+
   return (
     <AppStack gap="sm">
-      {breadcrumbs && <AppBreadcrumbs items={breadcrumbs} />}
+      {trail && <AppBreadcrumbs items={trail} />}
 
       {/* Alinhado pelo topo, e não pelo centro: a tela com muitos filtros
           quebra as ações em duas linhas, e centralizar deixava o título
@@ -66,12 +70,6 @@ export default function AppPageHeader({
           </AppStack>
         )}
       </AppStack>
-
-      {description && (
-        <AppText variant="bodySmall" tone="secondary">
-          {description}
-        </AppText>
-      )}
 
       {metrics && (
         <AppCard>

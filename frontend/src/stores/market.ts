@@ -16,6 +16,8 @@ interface MarketAsset {
   id: number
   ticker: string
   name: string
+  /** URL do logo, guardada no cadastro pela sincronização com o catálogo. */
+  logo_url?: string | null
   asset_type_id: number
   asset_type: AssetType
 }

@@ -1,5 +1,5 @@
 import { EMPTY_LIST } from '@/queries/empty'
-import { useAnalysis, useDividends, usePatrimony, usePositions, useReturnCurves, useWealthTier } from '@/queries/portfolio'
+import { useAnalysis, useBenchmarks, useDividends, usePatrimony, usePositions, useReturnCurves, useWealthTier } from '@/queries/portfolio'
 import { useCurrency } from '@/hooks/useCurrency'
 import { useTradeFormStore } from '@/stores/trade-form'
 import {
@@ -8,10 +8,7 @@ import {
   AppEmptyState,
   AppGrid,
   AppGridItem,
-  AppIllustration,
-  AppPageHeader,
   AppStack,
-  AppStackItem,
   AppTabs,
 } from '@/components/ui'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -26,11 +23,6 @@ import PositionTable from './PositionTable'
 import PortfolioStandingCard from './PortfolioStandingCard'
 
 const OVERVIEW_PANEL_HEIGHT = 360
-/* Só o padrão de quem ainda não tem altura própria cadastrada. A altura real e
-   o ajuste vertical são por arte, no CRUD de patentes. */
-const TIER_ARTWORK_HEIGHT = 220
-/* Onde o bloco de patrimônio termina e a arte começa. */
-const STANDING_CARD_WIDTH = 320
 
 type BottomTab = 'dividends' | 'patrimony' | 'aports'
 
@@ -44,17 +36,20 @@ export default function PortfolioOverviewPage() {
   const navigate = useNavigate()
   const { openTradeForm } = useTradeFormStore()
 
-  const positions = usePositions().data ?? EMPTY_LIST
-  const positionsLoading = usePositions().isPending
-  const patrimonyEvolution = usePatrimony().data ?? EMPTY_LIST
-  const dividends = useDividends().data ?? EMPTY_LIST
-  const returnsLoading = useReturnCurves().isPending
-  const categoryCagr = useReturnCurves().cagr
+  const positionsQuery = usePositions()
+  const patrimonyQuery = usePatrimony()
+  const dividendsQuery = useDividends()
+  const wealthTierQuery = useWealthTier()
+  const benchmarksQuery = useBenchmarks()
+  const analysisQuery = useAnalysis()
+  const returnCurves = useReturnCurves()
 
-  const wealthTierStanding = useWealthTier().data ?? null
-  const tier = wealthTierStanding?.current_tier ?? null
-
-  const { data: analysis } = useAnalysis()
+  const positions = positionsQuery.data ?? EMPTY_LIST
+  const patrimonyEvolution = patrimonyQuery.data ?? EMPTY_LIST
+  const dividends = dividendsQuery.data ?? EMPTY_LIST
+  const categoryCagr = returnCurves.cagr
+  const wealthTierStanding = wealthTierQuery.data ?? null
+  const analysis = analysisQuery.data
   const { format: formatCurrency } = useCurrency()
 
   const totalValue = positions.reduce((s, p) => s + p.value, 0)
@@ -66,8 +61,22 @@ export default function PortfolioOverviewPage() {
     ? ((cagr / cdiCagr) * 100)
     : null
 
-  const hasCagr = Object.keys(categoryCagr).length > 0
-  const loading = (positionsLoading && positions.length === 0) || (returnsLoading && !hasCagr)
+  /* A tela inteira aparece de uma vez.
+   *
+   * Antes o portão olhava só posições e séries, e o resto entrava conforme
+   * chegava: o cabeçalho e as listas pintavam primeiro e o gráfico de
+   * rentabilidade ficava sozinho no esqueleto, o que se lê como travamento e
+   * não como carregamento. Enquanto qualquer uma das buscas da página não
+   * respondeu, o que se vê é o esqueleto dela — e com a cache quente nenhuma
+   * está pendente, então a página abre montada. */
+  const loading =
+    positionsQuery.isPending ||
+    patrimonyQuery.isPending ||
+    dividendsQuery.isPending ||
+    wealthTierQuery.isPending ||
+    benchmarksQuery.isPending ||
+    analysisQuery.isPending ||
+    returnCurves.isPending
 
   const [selectedCategory, setSelectedCategory] = useState<string>('portfolio')
   const [bottomTab, setBottomTab] = useState<BottomTab>('dividends')
@@ -75,6 +84,12 @@ export default function PortfolioOverviewPage() {
   // The chart matches the height the category list has with its drawers closed.
   // Measured from the data, never from interaction, so expanding a category
   // grows the list without dragging the chart along with it.
+  //
+  // `loading` is a dependency because of the early return below: while it is
+  // true the page renders the skeleton and the ref points at nothing. The list
+  // arriving is not what puts it on screen — leaving the loading state is, and
+  // with the query cache warm the positions are already there by then, so
+  // `positions.length` alone never changes again and the measure never runs.
   const positionListRef = useRef<HTMLDivElement>(null)
   const [chartHeight, setChartHeight] = useState(OVERVIEW_PANEL_HEIGHT)
 
@@ -82,7 +97,7 @@ export default function PortfolioOverviewPage() {
     const node = positionListRef.current
     if (!node) return
     setChartHeight(Math.max(node.offsetHeight, OVERVIEW_PANEL_HEIGHT))
-  }, [positions.length])
+  }, [positions.length, loading])
 
   if (loading) {
     return <OverviewSkeleton />
@@ -100,31 +115,16 @@ export default function PortfolioOverviewPage() {
 
   return (
     <AppStack gap="lg">
-      <AppPageHeader title="Resumo" />
-
       {/* ── Hero: patrimônio e patente, um bloco só ── */}
-      {/* A arte fica à direita do bloco e fora do fluxo: assim ela desce sobre
-          o gráfico pelo `artwork_offset` sem empurrar nada, e a altura da faixa
-          continua sendo a do texto. */}
-      <AppStack anchor>
-        <AppStackItem width={STANDING_CARD_WIDTH}>
-          <PortfolioStandingCard
-            patrimony={totalValue}
-            cagr={cagr}
-            cdiPct={cdiPct}
-            standing={wealthTierStanding}
-            formatCurrency={formatCurrency}
-          />
-        </AppStackItem>
-
-        {tier?.artwork && (
-          <AppIllustration
-            src={tier.artwork}
-            height={tier.artwork_height ?? TIER_ARTWORK_HEIGHT}
-            pinned={{ left: STANDING_CARD_WIDTH, top: tier.artwork_offset }}
-          />
-        )}
-      </AppStack>
+      {/* A arte do personagem não mora aqui: ela vive no pé da coluna de
+          navegação, onde tem largura fixa e não disputa espaço com o gráfico. */}
+      <PortfolioStandingCard
+        patrimony={totalValue}
+        cagr={cagr}
+        cdiPct={cdiPct}
+        standing={wealthTierStanding}
+        formatCurrency={formatCurrency}
+      />
 
       {/* ── Linha 1: rentabilidade (70%) + pizza (30%) ── */}
       <AppGrid cols={{ xs: 1, lg: 12 }} gap="md">

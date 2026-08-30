@@ -41,7 +41,12 @@ class AssetRepository(SQLAlchemyRepository):
         asset_type_id: int | None = None,
         asset_ids: list[int] | None = None,
     ) -> list[tuple]:
-        """The user's most opened assets, most visited first."""
+        """The user's opened assets, most recently opened first.
+
+        A contagem ordenava por hábito antigo: o papel aberto trinta vezes no
+        mês passado ficava à frente do que acabou de ser aberto. A prateleira
+        serve para voltar ao que se estava olhando, então quem manda é a
+        última visita."""
         if asset_ids is not None and not asset_ids:
             return []
 
@@ -49,7 +54,7 @@ class AssetRepository(SQLAlchemyRepository):
             select(Asset, AssetVisit.visit_count, AssetVisit.last_visited_at)
             .join(AssetVisit, AssetVisit.asset_id == Asset.id)
             .where(AssetVisit.user_id == user_id)
-            .order_by(AssetVisit.visit_count.desc(), AssetVisit.last_visited_at.desc())
+            .order_by(AssetVisit.last_visited_at.desc().nulls_last())
             .limit(limit)
         )
         if asset_type_id is not None:

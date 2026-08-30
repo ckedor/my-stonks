@@ -36,7 +36,9 @@ export interface AppNavRailItem {
   /** Identifica o item e é o que volta em `onSelect`. */
   id: string
   label: string
-  icon: ReactNode
+  /** Alguns grupos, como os ativos acessados recentemente, são listas de
+   *  texto e não precisam reservar espaço para um ícone. */
+  icon?: ReactNode
   active?: boolean
   /** Destinos que só aparecem quando o item é aberto.
    *
@@ -72,6 +74,27 @@ export default function AppNavRail({
 }: AppNavRailProps) {
   const theme = useAppTheme()
 
+  /* Nos temas claros a coluna veste a cor da barra superior, e não a da
+     página: as duas se encontram no canto, e uma faixa clara encostada numa
+     barra escura lia-se como duas molduras concorrentes em vez de uma só. No
+     escuro isso não acontece — barra e página já são vizinhas próximas — e a
+     coluna continua acompanhando o conteúdo. Vestindo a barra, os textos vêm
+     dela também: sobre esse fundo, `text.secondary` da página some. */
+  const wearsTopbar = theme.palette.mode === 'light'
+  const bar = theme.palette.topbar
+  const idleText = wearsTopbar ? withOpacity(bar.text, 0.72) : theme.palette.text.secondary
+  const strongText = wearsTopbar ? bar.activeText : theme.palette.text.primary
+  const hoverBg = wearsTopbar ? withOpacity(bar.activeBg, 0.55) : theme.palette.action.hover
+  /* O ativo não pode ser o `primary` da página: ele foi escolhido para
+     contrastar com o papel claro e, sobre o fundo da barra, apaga. Vestindo a
+     barra, o destaque também vem dela — fundo do item ativo e o texto mais
+     claro que ela tem. */
+  const activeText = wearsTopbar ? bar.activeText : theme.palette.primary.main
+  const activeBg = wearsTopbar ? bar.activeBg : withOpacity(theme.palette.primary.main, 0.12)
+  const activeHoverBg = wearsTopbar
+    ? bar.activeBg
+    : withOpacity(theme.palette.primary.main, 0.16)
+
   /* O item aberto e o botão a que o menu está ancorado. Um de cada vez: dois
      painéis abertos na mesma coluna se sobrepõem. */
   const [openSubmenu, setOpenSubmenu] = useState<{ id: string; anchor: HTMLElement } | null>(
@@ -97,6 +120,12 @@ export default function AppNavRail({
         flexDirection: 'column',
         borderRight: '1px solid',
         borderColor: 'divider',
+        /* Fundo próprio e acima do conteúdo: a trilha de patentes sangra até a
+           borda da janela e passa por baixo daqui. Sem uma superfície opaca a
+           arte subiria por cima da navegação. */
+        bgcolor: wearsTopbar ? bar.background : 'background.default',
+        position: 'relative',
+        zIndex: 1,
       }}
     >
       <Box
@@ -126,7 +155,7 @@ export default function AppNavRail({
                 display: 'block',
                 px: 1.5,
                 pb: 0.5,
-                color: 'text.secondary',
+                color: idleText,
                 fontWeight: 700,
                 fontSize: '0.68rem',
                 letterSpacing: '0.08em',
@@ -168,18 +197,14 @@ export default function AppNavRail({
                   lineHeight: 1.3,
                   textAlign: 'left',
                   fontWeight: item.active ? 600 : 400,
-                  color: item.active ? 'primary.main' : 'text.secondary',
-                  bgcolor: item.active
-                    ? withOpacity(theme.palette.primary.main, 0.12)
-                    : 'transparent',
+                  color: item.active ? activeText : idleText,
+                  bgcolor: item.active ? activeBg : 'transparent',
                   transition: theme.transitions.create(['background-color', 'color'], {
                     duration: theme.transitions.duration.shortest,
                   }),
                   '&:hover': {
-                    bgcolor: item.active
-                      ? withOpacity(theme.palette.primary.main, 0.16)
-                      : 'action.hover',
-                    color: item.active ? 'primary.main' : 'text.primary',
+                    bgcolor: item.active ? activeHoverBg : hoverBg,
+                    color: item.active ? activeText : strongText,
                   },
                   '&:focus-visible': {
                     outline: '2px solid',
@@ -198,21 +223,23 @@ export default function AppNavRail({
                         height: MARKER_HEIGHT,
                         width: '3px',
                         borderRadius: `${radius.pill}px`,
-                        bgcolor: 'primary.main',
+                        bgcolor: activeText,
                       }
                     : undefined,
                 }}
               >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexShrink: 0,
-                    color: 'inherit',
-                    '& svg': { fontSize: 20 },
-                  }}
-                >
-                  {item.icon}
-                </Box>
+                {item.icon != null && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexShrink: 0,
+                      color: 'inherit',
+                      '& svg': { fontSize: 20 },
+                    }}
+                  >
+                    {item.icon}
+                  </Box>
+                )}
 
                 <Box
                   component="span"

@@ -38,6 +38,7 @@ export const ASSET_ROUTES = {
   exchange: `${MARKET_DATA}/asset/exchange`,
   favorites: `${MARKET_DATA}/asset/favorites`,
   visit: (assetId: number | string) => `${MARKET_DATA}/asset/${assetId}/visit`,
+  sync: `${MARKET_DATA}/asset/sync`,
   event: `${MARKET_DATA}/asset/event`,
   eventById: (eventId: number | string) => `${MARKET_DATA}/asset/event/${eventId}`,
 } as const
@@ -79,7 +80,8 @@ export const FII_ROUTES = {
 } as const
 
 export const MARKET_CATALOGUE_ROUTES = {
-  byKind: (kind: 'stock' | 'etf' | 'crypto') => `${MARKET_DATA}/market/${kind}`,
+  byKind: (kind: 'stock' | 'etf' | 'fii' | 'bdr' | 'crypto') =>
+    `${MARKET_DATA}/market/${kind}`,
 } as const
 
 export const DATA_INGESTION_ROUTES = {
@@ -107,8 +109,6 @@ export const PORTFOLIO_ROUTES = {
 
 export const WEALTH_TIER_ROUTES = {
   list: `${PORTFOLIO}/wealth_tier`,
-  create: `${PORTFOLIO}/wealth_tier`,
-  byId: (tierId: number | string) => `${PORTFOLIO}/wealth_tier/${tierId}`,
   status: (portfolioId: number | string) => `${PORTFOLIO}/wealth_tier/status/${portfolioId}`,
 } as const
 

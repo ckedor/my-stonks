@@ -1,5 +1,6 @@
 import { Typography } from '@mui/material'
 import type { ReactNode } from 'react'
+import { useAppTheme } from './useAppTheme'
 
 /* Texto corrido.
  *
@@ -12,14 +13,30 @@ import type { ReactNode } from 'react'
  * (Escrevi este componente uma vez antes e apaguei: na época nenhuma tela
  * precisava dele.) */
 
-type Variant = 'display' | 'pageHeading' | 'cardValue' | 'body' | 'bodySmall' | 'caption'
-type Tone = 'default' | 'secondary' | 'primary' | 'success' | 'caution' | 'danger'
+type Variant =
+  | 'display'
+  | 'pageHeading'
+  | 'sceneHeading'
+  | 'cardValue'
+  | 'body'
+  | 'bodySmall'
+  | 'caption'
+type Tone =
+  | 'default'
+  | 'secondary'
+  | 'primary'
+  | 'success'
+  | 'caution'
+  | 'danger'
+  | 'inverse'
+  | 'disabled'
 
 /* Os títulos têm peso próprio: um `display` fino não é título, e deixar
  * isso a cargo de quem chama é como reaparecem cinco pesos diferentes. */
 const VARIANT_WEIGHT: Partial<Record<Variant, number | 'bold'>> = {
   display: 700,
   pageHeading: 'bold',
+  sceneHeading: 900,
   cardValue: 700,
 }
 
@@ -31,6 +48,8 @@ const VARIANT: Record<Variant, 'h3' | 'h4' | 'h6' | 'body1' | 'body2' | 'caption
    *  o `PageTitle` de propósito: ali o título nomeia a tela, aqui nomeia o
    *  assunto dela. */
   pageHeading: 'h4',
+  /** Nome grande escrito diretamente sobre uma cena imersiva. */
+  sceneHeading: 'h3',
   /** O número que um card existe para mostrar — o valor da posição num card
    *  de ativo. Menor que o `pageHeading`: o card é um item de uma grade, e
    *  não o assunto da tela. */
@@ -47,6 +66,8 @@ const TONE: Record<Tone, string | undefined> = {
   success: 'success.main',
   caution: 'warning.main',
   danger: 'error.main',
+  inverse: '#fff',
+  disabled: 'text.disabled',
 }
 
 export interface AppTextProps {
@@ -67,6 +88,11 @@ export interface AppTextProps {
    *  `tone`: quando a cor é a identidade daquilo, um tom semântico por cima
    *  só confunde. */
   tint?: string
+  /** Pinta o texto com o degradê da conquista — do tom do texto ao dourado.
+   *  É para o título da tela que celebra algo, e é uma variante e não um
+   *  estilo de página justamente porque a tentação de repeti-la é grande:
+   *  um app com cinco títulos em degradê não tem nenhum. Ignora `tone`. */
+  gradient?: boolean
   /** Renderiza como `span`, para o trecho destacado dentro de uma frase.
    *  Sem isto o texto vira um parágrafo dentro de outro, que o navegador
    *  desfaz quebrando a linha no meio. */
@@ -80,13 +106,32 @@ export default function AppText({
   weight = 'regular',
   noWrap = false,
   inline = false,
+  gradient = false,
   tint,
 }: AppTextProps) {
+  const theme = useAppTheme()
+
   const common = {
     variant: VARIANT[variant],
-    color: tint ?? TONE[tone],
+    color: gradient ? undefined : (tint ?? TONE[tone]),
     fontWeight: VARIANT_WEIGHT[variant] ?? (weight === 'strong' ? 600 : undefined),
     whiteSpace: noWrap ? ('nowrap' as const) : undefined,
+    ...((gradient || variant === 'sceneHeading')
+      ? {
+          sx: {
+            ...(variant === 'sceneHeading'
+              ? { fontSize: { xs: '2.2rem', md: '3.2rem' }, lineHeight: 1.05 }
+              : {}),
+            ...(gradient
+              ? {
+            background: `linear-gradient(90deg, ${theme.palette.text.primary}, ${theme.palette.golden})`,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+                }
+              : {}),
+          },
+        }
+      : {}),
   }
 
   return inline ? (
