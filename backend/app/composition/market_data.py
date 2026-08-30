@@ -13,6 +13,10 @@ from app.modules.market_data.service.data_ingestion_service import (
     DataIngestionService,
 )
 from app.modules.market_data.service.fii_service import FIIMarketReadService, FIIProfileReadService
+from app.modules.market_data.service.investment_fund_service import (
+    InvestmentFundMarketReadService,
+    InvestmentFundProfileReadService,
+)
 from app.modules.market_data.service.market_catalogue_service import MarketCatalogueReadService
 from app.modules.market_data.service.market_data_series_ingestion_service import (
     MarketDataSeriesIngestionService,
@@ -116,6 +120,36 @@ async def get_fii_market_read_service(
 ) -> AsyncIterator[FIIMarketReadService]:
     """The BRAPI FII universe enriched with registered asset ids."""
     service = FIIMarketReadService(
+        uow=uow,
+        provider=MarketDataProvider(),
+        cache=RedisService(),
+    )
+    try:
+        yield service
+    finally:
+        await service.aclose()
+
+
+async def get_investment_fund_profile_read_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> AsyncIterator[InvestmentFundProfileReadService]:
+    """The provider-backed profile of a registered investment fund."""
+    service = InvestmentFundProfileReadService(
+        uow=uow,
+        provider=MarketDataProvider(),
+        cache=RedisService(),
+    )
+    try:
+        yield service
+    finally:
+        await service.aclose()
+
+
+async def get_investment_fund_market_read_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> AsyncIterator[InvestmentFundMarketReadService]:
+    """The BRAPI fund universe, minus FIIs and ETFs, with registered asset ids."""
+    service = InvestmentFundMarketReadService(
         uow=uow,
         provider=MarketDataProvider(),
         cache=RedisService(),

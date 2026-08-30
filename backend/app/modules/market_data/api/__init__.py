@@ -6,6 +6,9 @@ from app.modules.market_data.api.catalogue.router import router as catalogue_rou
 from app.modules.market_data.api.currency.router import router as currency_router
 from app.modules.market_data.api.fii.router import router as fii_router
 from app.modules.market_data.api.ingestion.router import router as ingestion_router
+from app.modules.market_data.api.investment_fund.router import (
+    router as investment_fund_router,
+)
 from app.modules.market_data.api.quote.router import router as quote_router
 from app.modules.market_data.api.series.router import router as series_router
 from app.modules.market_data.api.usd_brl.router import router as usd_brl_router
@@ -20,6 +23,7 @@ router.include_router(ingestion_router)
 router.include_router(series_router)
 router.include_router(usd_brl_router)
 router.include_router(fii_router)
+router.include_router(investment_fund_router)
 router.include_router(catalogue_router)
 
 __all__ = ['router']
