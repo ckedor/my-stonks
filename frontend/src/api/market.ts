@@ -1,5 +1,5 @@
 import type { CandleDataPoint } from '@/components/charts/CandleChart'
-import { ASSET_ROUTES, CURRENCY_ROUTES, FII_ROUTES, INVESTMENT_FUND_ROUTES, MARKET_CATALOGUE_ROUTES, MARKET_DATA_SERIES_ROUTES, QUOTE_ROUTES, STOCK_ROUTES, USD_BRL_ROUTES } from '@/constants/routes'
+import { ASSET_ROUTES, CURRENCY_ROUTES, FII_ROUTES, INVESTMENT_FUND_ROUTES, MARKET_CATALOGUE_ROUTES, MARKET_DATA_SERIES_ROUTES, QUOTE_ROUTES, STOCK_ROUTES, USD_BRL_ROUTES, type MarketCatalogueKind } from '@/constants/routes'
 import api from '@/lib/api'
 import type { ReturnsEntry } from '@/types'
 
@@ -865,16 +865,7 @@ export const fetchStockProfile = (assetId: number): Promise<StockProfile> =>
 // Market catalogues
 // ---------------------------------------------------------------------------
 
-/** `-us` são as classes de fora da B3: lá o universo é o cadastro da própria
- *  aplicação, e não o catálogo do provedor, que só cobre o mercado brasileiro. */
-export type MarketCatalogueKind =
-  | 'stock'
-  | 'etf'
-  | 'fii'
-  | 'bdr'
-  | 'crypto'
-  | 'stock-us'
-  | 'etf-us'
+export type { MarketCatalogueKind } from '@/constants/routes'
 
 export interface MarketCatalogueAsset {
   asset_id: number | null

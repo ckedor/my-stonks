@@ -94,9 +94,17 @@ export const STOCK_ROUTES = {
   profile: (assetId: number | string) => `${MARKET_DATA}/stock/${assetId}/profile`,
 } as const
 
+export type MarketCatalogueKind =
+  | 'stock'
+  | 'etf'
+  | 'fii'
+  | 'bdr'
+  | 'crypto'
+  | 'stock-us'
+  | 'etf-us'
+
 export const MARKET_CATALOGUE_ROUTES = {
-  byKind: (kind: 'stock' | 'etf' | 'fii' | 'bdr' | 'crypto') =>
-    `${MARKET_DATA}/market/${kind}`,
+  byKind: (kind: MarketCatalogueKind) => `${MARKET_DATA}/market/${kind}`,
 } as const
 
 export const DATA_INGESTION_ROUTES = {
