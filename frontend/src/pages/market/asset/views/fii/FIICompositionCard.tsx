@@ -188,6 +188,32 @@ export default function FIICompositionCard({ composition, history, report }: Pro
     },
   ].filter((block) => block.rows.length > 0)
 
+  const patrimonyBlock = patrimony && (
+    <AppStack gap="xs">
+      <SectionLabel>Onde está o patrimônio</SectionLabel>
+      <AppPieChart
+        data={patrimony.slices}
+        height={PIE_HEIGHT}
+        isCurrency
+        minOuterLabelPercentage={MIN_LABELLED_SLICE}
+      />
+      {/* Qual informe desenhou a pizza, porque os dois datam diferente e só o
+          mensal põe preço nos imóveis. */}
+      <AppText variant="caption" tone="secondary">
+        {patrimony.source === 'report'
+          ? `Informe mensal${report?.reference_date ? ` de ${formatDate(report.reference_date)}` : ''}, que é o único a precificar os imóveis`
+          : 'Informe trimestral. Os imóveis não entram: ele os conta e descreve, sem declarar valor'}
+      </AppText>
+    </AppStack>
+  )
+
+  const evolutionBlock = (
+    <AppStack gap="xs">
+      <SectionLabel>Evolução por classe</SectionLabel>
+      <FIICompositionHistoryChart history={history} />
+    </AppStack>
+  )
+
   return (
     <AppCard>
       <AppStack gap="md">
@@ -212,29 +238,19 @@ export default function FIICompositionCard({ composition, history, report }: Pro
           <AppMetric label="Terrenos" value={formatCount(summary?.lands_count)} />
         </AppGrid>
 
-        {patrimony && (
-          <AppStack gap="xs">
-            <SectionLabel>Onde está o patrimônio</SectionLabel>
-            <AppPieChart
-              data={patrimony.slices}
-              height={PIE_HEIGHT}
-              isCurrency
-              minOuterLabelPercentage={MIN_LABELLED_SLICE}
-            />
-            {/* Qual informe desenhou a pizza, porque os dois datam diferente e
-                só o mensal põe preço nos imóveis. */}
-            <AppText variant="caption" tone="secondary">
-              {patrimony.source === 'report'
-                ? `Informe mensal${report?.reference_date ? ` de ${formatDate(report.reference_date)}` : ''}, que é o único a precificar os imóveis`
-                : 'Informe trimestral. Os imóveis não entram: ele os conta e descreve, sem declarar valor'}
-            </AppText>
-          </AppStack>
+        {/* Lado a lado: as duas respondem "de que é feita a carteira", uma
+            agora e outra ao longo do tempo, e cada uma ocupando uma faixa
+            inteira do card afastava as duas leituras uma da outra. Sem a
+            pizza, a evolução fica com a largura toda em vez de metade de uma
+            grade pela metade. */}
+        {patrimony ? (
+          <AppGrid cols={{ xs: 1, md: 2 }} gap="md" align="start">
+            {patrimonyBlock}
+            {evolutionBlock}
+          </AppGrid>
+        ) : (
+          evolutionBlock
         )}
-
-        <AppStack gap="xs">
-          <SectionLabel>Evolução por classe</SectionLabel>
-          <FIICompositionHistoryChart history={history} />
-        </AppStack>
 
         {blocks.map(({ label, table }) => (
           <AppStack key={label} gap="xs">

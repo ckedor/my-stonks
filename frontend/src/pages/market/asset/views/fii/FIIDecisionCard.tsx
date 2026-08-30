@@ -97,7 +97,7 @@ export default function FIIDecisionCard({ profile }: { profile: FIIProfile }) {
                       "1,02x" obriga o leitor a lembrar de que lado de 1 está
                       caro, e é isso que a faixa existe para poupar. */}
                   <AppText
-                    variant="pageHeading"
+                    variant="cardValue"
                     tone={nav.direction === 'below' ? 'success' : 'default'}
                   >
                     {nav.direction === 'at'
