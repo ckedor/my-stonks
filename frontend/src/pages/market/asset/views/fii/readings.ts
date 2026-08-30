@@ -1,9 +1,12 @@
 import type {
+  FIIAllocation,
   FIIDividend,
   FIIIndicators,
+  FIIMonthlyReport,
   FIIPropertiesPoint,
   FIIPropertySummary,
 } from '@/api/market'
+import { assetClassLabel, PATRIMONY_LINES } from './labels'
 
 /** As três leituras que a faixa de decisão faz do perfil do fundo.
  *
@@ -143,4 +146,47 @@ export function vacancyReading({ summary, history }: VacancySource): VacancyRead
     change,
     previousDate: change == null ? null : (before?.reference_date ?? null),
   }
+}
+
+export interface PatrimonySlices {
+  slices: { label: string; value: number }[]
+  /** De onde a fatia veio: o informe mensal precifica tudo, inclusive os
+   *  imóveis; o trimestral só precifica o que não é prédio. */
+  source: 'report' | 'quarter'
+}
+
+/** De que é feita a carteira, em reais, para ser desenhada.
+ *
+ *  O informe mensal vem primeiro por dois motivos: ele é mais recente e é o
+ *  único que põe preço nos imóveis. O trimestral conta e descreve os prédios
+ *  sem declarar valor para eles, então uma pizza feita dele mostraria um fundo
+ *  de tijolo como se fosse só o punhado de CRI que ele carrega — o que é
+ *  falso, e pior do que não desenhar nada.
+ *
+ *  Fatia de valor zero fica de fora: ela não desenha setor nenhum e ainda
+ *  empurra um rótulo solto para a borda do gráfico.
+ */
+export function patrimonySlices({
+  report,
+  allocations,
+}: {
+  report: FIIMonthlyReport | null
+  allocations: FIIAllocation[]
+}): PatrimonySlices | null {
+  const filed = report
+    ? PATRIMONY_LINES.map(({ label, read }) => ({ label, value: read(report) ?? 0 })).filter(
+        (slice) => slice.value > 0
+      )
+    : []
+
+  if (filed.length > 0) return { slices: filed, source: 'report' }
+
+  const quarterly = allocations
+    .filter((allocation) => (allocation.value ?? 0) > 0)
+    .map((allocation) => ({
+      label: assetClassLabel(allocation.asset_class),
+      value: allocation.value as number,
+    }))
+
+  return quarterly.length > 0 ? { slices: quarterly, source: 'quarter' } : null
 }

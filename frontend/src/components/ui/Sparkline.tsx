@@ -15,6 +15,11 @@ interface Props {
    *  cada valor é um evento que aconteceu, e não uma amostra de algo
    *  contínuo. Padrão: `line`. */
   variant?: 'line' | 'bars'
+  /** O que cada valor diz ao passar o mouse, um por valor, já formatado por
+   *  quem chama. Sem eles a série mostra a forma e esconde o número, que numa
+   *  faixa de seis pagamentos quase iguais é justamente o que se quer ler.
+   *  Só em `bars`: uma linha não tem alvo por ponto. */
+  titles?: string[]
 }
 
 /** Respiro entre barras, em unidades do viewBox. */
@@ -35,6 +40,7 @@ export default function Sparkline({
   height = 36,
   baseline = 0,
   variant = 'line',
+  titles,
 }: Props) {
   const gradientId = useId()
 
@@ -70,7 +76,9 @@ export default function Sparkline({
               rx={BAR_RADIUS}
               fill={color}
               opacity={last ? 1 : BAR_QUIET_OPACITY}
-            />
+            >
+              {titles?.[index] && <title>{titles[index]}</title>}
+            </rect>
           )
         })}
       </Box>

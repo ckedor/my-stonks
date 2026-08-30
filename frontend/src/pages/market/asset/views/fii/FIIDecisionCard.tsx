@@ -17,6 +17,7 @@ import {
   formatBRLPerShare,
   formatCount,
   formatDate,
+  formatMonth,
   formatPercent,
   formatPercentagePoints,
 } from './format'
@@ -57,11 +58,7 @@ export default function FIIDecisionCard({ profile }: { profile: FIIProfile }) {
   )
 
   const recentIncome = useMemo(
-    () =>
-      profile.dividends
-        .filter(isIncome)
-        .slice(-SPARKLINE_MONTHS)
-        .map((payment) => payment.value_per_share),
+    () => profile.dividends.filter(isIncome).slice(-SPARKLINE_MONTHS),
     [profile.dividends]
   )
 
@@ -100,7 +97,7 @@ export default function FIIDecisionCard({ profile }: { profile: FIIProfile }) {
                       "1,02x" obriga o leitor a lembrar de que lado de 1 está
                       caro, e é isso que a faixa existe para poupar. */}
                   <AppText
-                    variant="cardValue"
+                    variant="pageHeading"
                     tone={nav.direction === 'below' ? 'success' : 'default'}
                   >
                     {nav.direction === 'at'
@@ -130,8 +127,8 @@ export default function FIIDecisionCard({ profile }: { profile: FIIProfile }) {
           <AppStackItem minWidth={120}>
             <AppMetric
               label="Yield 12 meses"
+              size="lg"
               value={formatPercent(profile.indicators?.dividend_yield_12m)}
-              hint="Rendimentos distribuídos nos últimos 12 meses sobre o preço atual da cota"
             />
           </AppStackItem>
 
@@ -144,8 +141,8 @@ export default function FIIDecisionCard({ profile }: { profile: FIIProfile }) {
                   grandeza. */}
               <AppMetric
                 label="Último rendimento"
+                size="lg"
                 value={formatBRLPerShare(trend?.last.value_per_share)}
-                hint="Valor pago por cota no último provento, como o fundo publicou"
               />
               <AppText variant="caption" tone="secondary">
                 {trendLine(trend)}
@@ -162,15 +159,23 @@ export default function FIIDecisionCard({ profile }: { profile: FIIProfile }) {
                   <AppText variant="caption" tone="secondary">
                     Últimos {recentIncome.length} rendimentos
                   </AppText>
+                  {/* Cada barra diz o mês e o quanto pagou ao passar o mouse:
+                      seis pagamentos quase iguais desenham seis barras quase
+                      iguais, e sem o número a série não responde nada. */}
                   <Sparkline
-                    values={recentIncome}
+                    values={recentIncome.map((payment) => payment.value_per_share)}
+                    titles={recentIncome.map(
+                      (payment) =>
+                        `${formatMonth(payment.payment_date)} · ${formatBRLPerShare(payment.value_per_share)}`
+                    )}
                     variant="bars"
                     color={theme.palette.chart.colors[0]}
                     width={SPARKLINE_WIDTH}
                     height={SPARKLINE_HEIGHT}
                   />
-                  <AppText variant="caption" tone="secondary">
-                    por cota, mês a mês
+                  <AppText variant="caption" tone="secondary" noWrap>
+                    {formatMonth(recentIncome[0].payment_date)} a{' '}
+                    {formatMonth(recentIncome[recentIncome.length - 1].payment_date)} · por cota
                   </AppText>
                 </AppStack>
               </AppStackItem>
@@ -184,8 +189,8 @@ export default function FIIDecisionCard({ profile }: { profile: FIIProfile }) {
               <AppStack gap="xs">
                 <AppMetric
                   label="Vacância"
+                  size="lg"
                   value={formatPercent(vacancy.rate)}
-                  hint="Área desocupada sobre a área total do fundo, como o informe consolidou"
                   suffix={
                     vacancy.change != null ? (
                       <AppText

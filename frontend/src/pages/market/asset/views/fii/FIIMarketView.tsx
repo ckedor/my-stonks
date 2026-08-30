@@ -169,7 +169,11 @@ function publishedSections(profile: FIIProfile): Section[] {
       id: 'composition',
       label: 'Carteira',
       content: (
-        <FIICompositionCard composition={composition} history={profile.composition_history} />
+        <FIICompositionCard
+          composition={composition}
+          history={profile.composition_history}
+          report={profile.monthly_report}
+        />
       ),
     })
   }

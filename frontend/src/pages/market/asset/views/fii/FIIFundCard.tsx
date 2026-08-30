@@ -1,5 +1,5 @@
 import type { FIIIndicators, FIIManagement } from '@/api/market'
-import { AppCard, AppLink, AppStack, AppText, SectionTitle } from '@/components/ui'
+import { AppCard, AppGrid, AppLink, AppStack, AppText, SectionTitle } from '@/components/ui'
 import { EMPTY, formatCNPJ, formatDate } from './format'
 
 interface Entry {
@@ -62,20 +62,24 @@ export default function FIIFundCard({
         <SectionTitle>Fundo</SectionTitle>
 
         {published.length > 0 ? (
-          <AppStack gap="sm">
+          /* Grade, e não uma lista de linhas: rótulo à esquerda e valor
+             empurrado para a borda direita do card abria um vão de meia tela
+             entre "CNPJ" e o número. Aqui cada item é um bloco, e o cartão
+             enche a largura com conteúdo em vez de espaço. */
+          <AppGrid cols={{ xs: 1, sm: 2, md: 3 }} gap="md">
             {published.map((entry) => (
-              <AppStack key={entry.label} direction="row" gap="md" justify="between" wrap>
-                <AppText variant="bodySmall" tone="secondary">
+              <AppStack key={entry.label} gap="xs">
+                <AppText variant="caption" tone="secondary">
                   {entry.label}
                 </AppText>
                 {entry.href ? (
                   <AppLink href={entry.href}>{entry.value ?? EMPTY}</AppLink>
                 ) : (
-                  <AppText variant="bodySmall">{entry.value ?? EMPTY}</AppText>
+                  <AppText variant="body">{entry.value ?? EMPTY}</AppText>
                 )}
               </AppStack>
             ))}
-          </AppStack>
+          </AppGrid>
         ) : (
           <AppText variant="bodySmall" tone="secondary">
             O provedor não publicou o cadastro deste fundo.

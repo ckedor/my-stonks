@@ -12,29 +12,12 @@ import {
 } from '@/components/ui'
 import { useMemo } from 'react'
 import { EMPTY, formatBRL, formatCompactBRL, formatDate, formatPercent } from './format'
+import { PATRIMONY_LINES } from './labels'
 
 interface Line {
   label: string
   value: number
 }
-
-/** What the filing calls each part of the fund's equity, in the order a fund
- *  is usually read: what it owns, then what it lent, then what it is owed,
- *  then what is sitting in cash. */
-const HOLDINGS: { label: string; read: (report: FIIMonthlyReport) => number | null }[] = [
-  { label: 'Imóveis', read: (report) => report.real_estate },
-  { label: 'CRI', read: (report) => report.cri },
-  { label: 'LCI', read: (report) => report.lci },
-  { label: 'Cotas de FII', read: (report) => report.fii_holdings },
-  { label: 'Ações de companhias imobiliárias', read: (report) => report.real_estate_company_shares },
-  { label: 'Cotas de companhias imobiliárias', read: (report) => report.real_estate_company_units },
-  { label: 'Recebíveis de aluguel', read: (report) => report.rental_receivables },
-  { label: 'Outros recebíveis', read: (report) => report.other_receivables },
-  { label: 'Fundos de renda fixa', read: (report) => report.fixed_income_funds },
-  { label: 'Títulos públicos', read: (report) => report.government_bonds },
-  { label: 'Títulos privados', read: (report) => report.private_bonds },
-  { label: 'Caixa', read: (report) => report.cash },
-]
 
 const LIABILITIES: { label: string; read: (report: FIIMonthlyReport) => number | null }[] = [
   { label: 'Rendimentos a distribuir', read: (report) => report.distributions_payable },
@@ -62,7 +45,7 @@ const lines = (
  *  the table is where that distinction is legible: the second has a row.
  */
 export default function FIIMonthlyReportCard({ report }: { report: FIIMonthlyReport }) {
-  const holdings = useMemo(() => lines(report, HOLDINGS), [report])
+  const holdings = useMemo(() => lines(report, PATRIMONY_LINES), [report])
   const liabilities = useMemo(() => lines(report, LIABILITIES), [report])
 
   /* The shares are read against what the fund says it has invested, not

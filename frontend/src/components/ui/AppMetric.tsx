@@ -57,7 +57,11 @@ export default function AppMetric({
       variant={size === 'lg' ? 'body2' : 'caption'}
       color="text.secondary"
       sx={{
-        display: 'block',
+        /* Com dica, o rótulo encolhe até o próprio texto: em `block` o
+           sublinhado pontilhado atravessava a coluna inteira e virava uma
+           régua entre o rótulo e o número, em vez de marcar a palavra que
+           tem o que ler. */
+        display: hint ? 'inline-block' : 'block',
         lineHeight: 1.2,
         ...(hint
           ? { borderBottom: '1px dotted', borderColor: 'text.disabled', cursor: 'help' }

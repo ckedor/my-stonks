@@ -1,8 +1,16 @@
-import type { FIIComposition, FIICompositionPoint, FIIHolding, FIILand, FIIRight } from '@/api/market'
+import type {
+  FIIComposition,
+  FIICompositionPoint,
+  FIIHolding,
+  FIILand,
+  FIIMonthlyReport,
+  FIIRight,
+} from '@/api/market'
 import {
   AppCard,
   AppGrid,
   AppMetric,
+  AppPieChart,
   AppSimpleTable,
   AppStack,
   AppText,
@@ -10,6 +18,7 @@ import {
   SectionTitle,
   type AppSimpleTableColumn,
 } from '@/components/ui'
+import { useMemo } from 'react'
 import FIICompositionHistoryChart from './FIICompositionHistoryChart'
 import {
   EMPTY,
@@ -21,6 +30,11 @@ import {
   formatPercent,
 } from './format'
 import { assetClassLabel } from './labels'
+import { patrimonySlices } from './readings'
+
+const PIE_HEIGHT = 260
+/** Abaixo disso o rótulo não cabe fora do setor sem colidir com o vizinho. */
+const MIN_LABELLED_SLICE = 4
 
 /** What an item the fund chose not to describe is called. The filing allows it,
  *  and an empty cell would read as a gap in the data rather than as a decision
@@ -99,6 +113,8 @@ const RIGHT_COLUMNS: AppSimpleTableColumn<FIIRight>[] = [
 interface Props {
   composition: FIIComposition
   history: FIICompositionPoint[]
+  /** O informe mensal, que é quem precifica os imóveis. */
+  report: FIIMonthlyReport | null
 }
 
 /** What the fund holds besides its buildings, one item at a time.
@@ -108,8 +124,13 @@ interface Props {
  *  one. The buildings arrive in the same filing and are read in the section
  *  below, where the vacancy that qualifies them is.
  */
-export default function FIICompositionCard({ composition, history }: Props) {
+export default function FIICompositionCard({ composition, history, report }: Props) {
   const summary = composition.summary
+
+  const patrimony = useMemo(
+    () => patrimonySlices({ report, allocations: composition.allocations }),
+    [report, composition.allocations]
+  )
 
   /* One block per kind of item, and only for the kinds this fund holds: a
      table header over an empty body says the fund reported nothing, which is
@@ -190,6 +211,25 @@ export default function FIICompositionCard({ composition, history }: Props) {
           <AppMetric label="Papéis e cotas" value={formatCount(summary?.financial_assets_count)} />
           <AppMetric label="Terrenos" value={formatCount(summary?.lands_count)} />
         </AppGrid>
+
+        {patrimony && (
+          <AppStack gap="xs">
+            <SectionLabel>Onde está o patrimônio</SectionLabel>
+            <AppPieChart
+              data={patrimony.slices}
+              height={PIE_HEIGHT}
+              isCurrency
+              minOuterLabelPercentage={MIN_LABELLED_SLICE}
+            />
+            {/* Qual informe desenhou a pizza, porque os dois datam diferente e
+                só o mensal põe preço nos imóveis. */}
+            <AppText variant="caption" tone="secondary">
+              {patrimony.source === 'report'
+                ? `Informe mensal${report?.reference_date ? ` de ${formatDate(report.reference_date)}` : ''}, que é o único a precificar os imóveis`
+                : 'Informe trimestral. Os imóveis não entram: ele os conta e descreve, sem declarar valor'}
+            </AppText>
+          </AppStack>
+        )}
 
         <AppStack gap="xs">
           <SectionLabel>Evolução por classe</SectionLabel>

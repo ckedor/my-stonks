@@ -52,7 +52,23 @@ describe('FIIDecisionCard', () => {
     renderWithTheme(<FIIDecisionCard profile={profile()} />)
 
     expect(screen.getByText('12,38%')).toBeInTheDocument()
-    expect(screen.getByText(/R\$\s?0,089/)).toBeInTheDocument()
+    // Ancorado: o mesmo valor também aparece no título da última barra do
+    // sparkline, que é o que o mouse lê.
+    expect(screen.getByText(/^R\$\s?0,089$/)).toBeInTheDocument()
+  })
+
+  it('names the month and the amount of every bar in the sparkline', () => {
+    // Seis pagamentos quase iguais desenham seis barras quase iguais: sem o
+    // número, a série mostra a forma e esconde a resposta.
+    const { container } = renderWithTheme(<FIIDecisionCard profile={profile()} />)
+
+    // O `<title>` mora dentro do `<rect>`, que é o que dá o balão à barra e
+    // não ao desenho inteiro. O espaço da moeda é o não-quebrável do pt-BR.
+    const titles = [...container.querySelectorAll('rect > title')].map((node) =>
+      node.textContent?.replace(/\u00a0/g, ' '),
+    )
+    expect(titles).toEqual(['11/2025 · R$ 0,098', '12/2025 · R$ 0,089'])
+    expect(screen.getByText(/11\/2025 a 12\/2025 · por cota/)).toBeInTheDocument()
   })
 
   it('says which way the last payment moved, and against what', () => {

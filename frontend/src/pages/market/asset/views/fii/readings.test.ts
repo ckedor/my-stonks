@@ -1,8 +1,13 @@
-import type { FIIDividend, FIIIndicators, FIIPropertiesPoint } from '@/api/market'
+import type {
+  FIIDividend,
+  FIIIndicators,
+  FIIMonthlyReport,
+  FIIPropertiesPoint,
+} from '@/api/market'
 import { describe, expect, it } from 'vitest'
 
 import { formatBRLPerShare, formatPercentagePoints } from './format'
-import { incomeTrend, navReading, vacancyReading } from './readings'
+import { incomeTrend, navReading, patrimonySlices, vacancyReading } from './readings'
 
 const indicators = (overrides: Partial<FIIIndicators> = {}): FIIIndicators => ({
   as_of_date: '2025-12-01',
@@ -179,5 +184,80 @@ describe('formatação das duas grandezas', () => {
     expect(formatPercentagePoints(-0.003697)).toBe('−0,37 p.p.')
     expect(formatPercentagePoints(0)).toBe('0,00 p.p.')
     expect(formatPercentagePoints(null)).toBe('—')
+  })
+})
+
+const report = (overrides: Partial<FIIMonthlyReport> = {}): FIIMonthlyReport => ({
+  reference_date: '2025-12-01',
+  admin_fee_rate: 0.000753,
+  monthly_patrimonial_return: -0.001452,
+  amortization_rate: 0,
+  equity: 4331102700,
+  total_assets: 4375755000,
+  total_invested: 4326274600,
+  cash: 0,
+  liquidity_needs: 24506374,
+  government_bonds: 0,
+  private_bonds: 0,
+  fixed_income_funds: 24506374,
+  real_estate: 9147060,
+  real_estate_company_shares: 0,
+  real_estate_company_units: 0,
+  cri: 3354012400,
+  lci: 0,
+  fii_holdings: 538337660,
+  receivables: 24973770,
+  rental_receivables: 0,
+  other_receivables: 24973770,
+  distributions_payable: 41155660,
+  admin_fees_payable: 3260833.2,
+  real_estate_obligations: 0,
+  total_liabilities: 44652356,
+  ...overrides,
+})
+
+describe('patrimonySlices', () => {
+  it('draws the monthly filing, which is the one that prices the buildings', () => {
+    const drawn = patrimonySlices({
+      report: report(),
+      allocations: [{ asset_class: 'cri', count: 3, value: 3349501.49 }],
+    })
+
+    expect(drawn?.source).toBe('report')
+    expect(drawn?.slices.map((slice) => slice.label)).toEqual([
+      'Imóveis',
+      'CRI',
+      'Cotas de FII',
+      'Outros recebíveis',
+      'Fundos de renda fixa',
+    ])
+    // Linha filed como zero não vira fatia: ela não desenha setor e ainda
+    // empurra um rótulo solto para a borda.
+    expect(drawn?.slices.every((slice) => slice.value > 0)).toBe(true)
+  })
+
+  it('falls back to the quarterly filing when there is no monthly one', () => {
+    const drawn = patrimonySlices({
+      report: null,
+      allocations: [
+        { asset_class: 'real_estate', count: 37, value: null },
+        { asset_class: 'cri', count: 3, value: 3349501.49 },
+      ],
+    })
+
+    expect(drawn?.source).toBe('quarter')
+    // O imóvel sem valor declarado fica de fora do desenho — e é por isso que
+    // o card diz de qual informe a pizza veio.
+    expect(drawn?.slices).toEqual([{ label: 'CRI', value: 3349501.49 }])
+  })
+
+  it('draws nothing when neither filing priced anything', () => {
+    expect(
+      patrimonySlices({
+        report: null,
+        allocations: [{ asset_class: 'real_estate', count: 37, value: null }],
+      }),
+    ).toBeNull()
+    expect(patrimonySlices({ report: null, allocations: [] })).toBeNull()
   })
 })
