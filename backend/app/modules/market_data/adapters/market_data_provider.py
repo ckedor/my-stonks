@@ -1,8 +1,10 @@
 # app/modules/market_data/service/market_data_provider.py
 import asyncio
 import math
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
+from dataclasses import astuple
 from datetime import date, datetime
+from typing import Any, TypeVar
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -19,7 +21,23 @@ from app.infra.integrations.tesouro_client import TesouroClient
 from app.lib.utils.df import extend_values_to_today
 from app.modules.market_data.domain.constants import ASSET_TYPE, FII_SEGMENT, SERIES
 from app.modules.market_data.domain.enums import EXCHANGE
-from app.modules.market_data.domain.fii import FIIDividend, FIIIndicators, FIIProfile
+from app.modules.market_data.domain.fii import (
+    FIIAllocation,
+    FIIComposition,
+    FIICompositionPoint,
+    FIICompositionSummary,
+    FIIDividend,
+    FIIHolding,
+    FIIIndicators,
+    FIILand,
+    FIIManagement,
+    FIIMonthlyReport,
+    FIIProfile,
+    FIIPropertiesPoint,
+    FIIProperty,
+    FIIPropertySummary,
+    FIIRight,
+)
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.domain.quote import (
     FetchedQuotes,
@@ -52,6 +70,9 @@ STATUSINVEST_TO_INTERNAL_SEGMENT = {
 
 MARKET_TIMEZONE = ZoneInfo('America/Sao_Paulo')
 
+#: One row of a provider history, whatever shape the route answers with.
+HistoryPoint = TypeVar('HistoryPoint')
+
 #: Served by brapi for assets it has no artwork for; it is the vendor's own
 #: mark, not the asset's.
 PROVIDER_PLACEHOLDER_LOGO = 'icons/BRAPI.svg'
@@ -72,9 +93,104 @@ FII_INDICATOR_KEYS: dict[str, str] = {
 }
 
 
+#: Provider field behind each number of the monthly filing. Same rule as the
+#: indicators above: a line the fund did not file stays None, because a fund
+#: that holds no paper and one that did not say are different statements.
+FII_REPORT_KEYS: dict[str, str] = {
+    'admin_fee_rate': 'adminFeeRate',
+    'monthly_patrimonial_return': 'monthlyPatrimonialReturn',
+    'amortization_rate': 'amortizationRate',
+    'equity': 'equity',
+    'total_assets': 'totalAssets',
+    'total_invested': 'totalInvested',
+    'cash': 'cash',
+    'liquidity_needs': 'liquidityNeeds',
+    'government_bonds': 'governmentBonds',
+    'private_bonds': 'privateBonds',
+    'fixed_income_funds': 'fixedIncomeFunds',
+    'real_estate': 'realEstateAssets',
+    'real_estate_company_shares': 'realEstateCompanyShares',
+    'real_estate_company_units': 'realEstateCompanyUnits',
+    'cri': 'cri',
+    'lci': 'lci',
+    'fii_holdings': 'fiiHoldings',
+    'receivables': 'receivables',
+    'rental_receivables': 'rentalReceivables',
+    'other_receivables': 'otherReceivables',
+    'distributions_payable': 'distributionsPayable',
+    'admin_fees_payable': 'adminFeesPayable',
+    'real_estate_obligations': 'realEstateObligations',
+    'total_liabilities': 'totalLiabilities',
+}
+
+#: The quarterly filing describes buildings, paper, land and rights with four
+#: shapes of its own. Each is declared as which of its fields is a number, a
+#: text, a date or a flag, so that one reader handles all four and a field
+#: added upstream is one line here.
+FII_PROPERTY_FIELDS: dict[str, dict[str, str]] = {
+    'text': {
+        'name': 'name',
+        'identifier': 'identifier',
+        'address': 'address',
+        'property_class': 'propertyClass',
+    },
+    'number': {
+        'area': 'area',
+        'vacancy_rate': 'vacancyRate',
+        'delinquency_rate': 'delinquencyRate',
+        'revenue_share': 'revenueShare',
+        'leased_rate': 'leasedRate',
+        'sold_rate': 'soldRate',
+        'construction_progress_actual': 'constructionProgressActual',
+        'construction_progress_expected': 'constructionProgressExpected',
+        'construction_cost_actual': 'constructionCostActual',
+        'construction_cost_expected': 'constructionCostExpected',
+        'invested_share': 'investedShare',
+    },
+    'integer': {'unit_count': 'unitCount'},
+    'flag': {'confidential': 'confidential'},
+}
+
+FII_HOLDING_FIELDS: dict[str, dict[str, str]] = {
+    'text': {
+        'asset_class': 'assetClass',
+        'name': 'name',
+        'issuer': 'issuer',
+        'issuer_cnpj': 'issuerCnpj',
+        'identifier': 'identifier',
+        'issue': 'issue',
+        'series': 'series',
+        'ticker': 'ticker',
+    },
+    'number': {'quantity': 'quantity', 'value': 'value'},
+    'date': {'maturity_date': 'maturityDate'},
+    'flag': {'confidential': 'confidential'},
+}
+
+FII_LAND_FIELDS: dict[str, dict[str, str]] = {
+    'text': {'name': 'name', 'identifier': 'identifier', 'address': 'address'},
+    'number': {
+        'area': 'area',
+        'invested_share': 'investedShare',
+        'equity_share': 'equityShare',
+    },
+    'flag': {'confidential': 'confidential'},
+}
+
+FII_RIGHT_FIELDS: dict[str, dict[str, str]] = {
+    'text': {'name': 'name', 'identifier': 'identifier', 'description': 'description'},
+    'number': {'value': 'value'},
+    'flag': {'confidential': 'confidential'},
+}
+
 #: Quantos fundos são consultados ao mesmo tempo. O mesmo teto que a
 #: ingestão de cotações usa: a cota do provedor é por minuto, não por rota.
 MAX_CONCURRENT_FII_REQUESTS = 5
+
+#: Quantos informes mensais são pedidos para achar o mais recente. O provedor
+#: aceita ordenação, mas não publica por qual campo, então a página lê uma
+#: janela e escolhe a maior data ela mesma.
+FII_REPORT_WINDOW = 24
 
 
 class MarketDataProvider:
@@ -458,32 +574,109 @@ class MarketDataProvider:
         )
 
     async def fetch_fii_profile(self, *, ticker: str) -> FIIProfile:
-        """A real-estate fund's published indicators and the payments it made.
+        """Everything the provider publishes about one real-estate fund.
 
-        The two come from separate upstream routes and are asked for together,
-        tolerating one of them failing: a fund whose indicators are missing
-        still has a payment history worth charting, and the reverse holds for a
-        fund the provider has never recorded a payment for. Both failing is not
-        a profile at all, so that raises rather than serving an empty one --
-        an expired token or a rate limit must reach the reader as itself.
+        Seven routes answer for one page, and each is read on its own: the
+        indicators and the monthly filing are monthly, the payments follow the
+        fund's own calendar, and the composition of what it holds is filed
+        quarterly and published months later. A fund the provider has never
+        described still has a payment history worth charting, so one route
+        failing costs the page that section and nothing else.
+
+        Every route failing is not a profile at all and raises. An expired
+        token or a spent quota refuses all seven at once, and that has to reach
+        the reader as itself rather than as a page of empty cards.
+
+        The fan-out is bounded by the same limit the dividend ingestion uses,
+        for the same reason: the provider counts its quota per minute, not per
+        route.
         """
         symbol = ticker.upper()
-        indicators_response, dividends_response = await asyncio.gather(
-            self.brapi_client.get_fii_indicators(symbols=symbol),
-            # Ascending, so the series arrives in the order it is charted in.
-            self.brapi_client.get_fii_dividends(symbols=symbol, sortOrder='asc'),
-            return_exceptions=True,
-        )
-        if isinstance(indicators_response, BaseException) and isinstance(
-            dividends_response, BaseException
-        ):
-            raise indicators_response
+        requests = {
+            'indicators': lambda: self.brapi_client.get_fii_indicators(symbols=symbol),
+            # Ascending, so every series arrives in the order it is charted in.
+            'indicators_history': lambda: self.brapi_client.get_fii_indicators_history(
+                symbols=symbol, sortOrder='asc'
+            ),
+            'dividends': lambda: self.brapi_client.get_fii_dividends(
+                symbols=symbol, sortOrder='asc'
+            ),
+            'reports': lambda: self.brapi_client.get_fii_reports(
+                symbols=symbol, sortOrder='desc', limit=FII_REPORT_WINDOW
+            ),
+            # Without a reference date, both quarterly routes answer with the
+            # most recent quarter the fund has filed.
+            'composition': lambda: self.brapi_client.get_fii_portfolio(symbols=symbol),
+            'composition_history': lambda: self.brapi_client.get_fii_portfolio_history(
+                symbols=symbol, sortOrder='asc'
+            ),
+            'properties_history': lambda: self.brapi_client.get_fii_properties_history(
+                symbols=symbol, sortOrder='asc'
+            ),
+        }
+        responses = await self._gather_fii_routes(requests)
 
+        failures = [item for item in responses.values() if isinstance(item, BaseException)]
+        if len(failures) == len(responses):
+            raise failures[0]
+
+        indicators = self._fii_result(responses['indicators'], symbol, subject='indicators')
+        composition = self._fii_result(responses['composition'], symbol, subject='composition')
         return FIIProfile(
             ticker=symbol,
-            indicators=self._fii_indicators(indicators_response, symbol),
-            dividends=self._fii_dividends(dividends_response, symbol),
+            management=self._fii_management(indicators),
+            indicators=self._fii_indicators(indicators),
+            indicators_history=self._fii_history(
+                responses['indicators_history'],
+                symbol,
+                subject='indicators history',
+                build=lambda _, item: self._indicators(item, date_key='referenceDate'),
+            ),
+            dividends=self._fii_dividends(responses['dividends'], symbol),
+            monthly_report=self._fii_monthly_report(responses['reports'], symbol),
+            composition=self._fii_composition(composition),
+            composition_history=self._fii_history(
+                responses['composition_history'],
+                symbol,
+                subject='composition history',
+                build=lambda moment, item: FIICompositionPoint(
+                    reference_date=moment,
+                    summary=self._composition_summary(item.get('summary')),
+                    allocations=self._allocations(item.get('allocations')),
+                ),
+            ),
+            properties_history=self._fii_history(
+                responses['properties_history'],
+                symbol,
+                subject='properties history',
+                build=lambda moment, item: FIIPropertiesPoint(
+                    reference_date=moment,
+                    summary=self._property_summary(item.get('summary')),
+                ),
+            ),
         )
+
+    @staticmethod
+    async def _gather_fii_routes(
+        requests: dict[str, Callable[[], Awaitable[Any]]],
+    ) -> dict[str, Any]:
+        """Every route of one profile, answered or failed, under its own name.
+
+        A failure is returned rather than raised so that the caller decides
+        what a missing section costs, which is what reading the sections
+        independently means.
+        """
+        semaphore = asyncio.Semaphore(MAX_CONCURRENT_FII_REQUESTS)
+
+        async def call(request: Callable[[], Awaitable[Any]]) -> Any:
+            async with semaphore:
+                try:
+                    return await request()
+                except Exception as exc:
+                    return exc
+
+        answers = await asyncio.gather(*(call(request) for request in requests.values()))
+        return dict(zip(requests, answers, strict=True))
 
     async def fetch_fii_market(self) -> list[dict]:
         """The complete summarized FII catalogue exposed by BRAPI.
@@ -550,16 +743,55 @@ class MarketDataProvider:
         # current numbers, not remove supported symbols from the catalogue.
         return [quoted.get(symbol, {'coin': symbol, 'coinName': symbol}) for symbol in symbols]
 
-    def _fii_indicators(self, response: object, symbol: str) -> FIIIndicators | None:
-        """The one fund's entry from `GET /v2/fii/indicators`, under `fiis`."""
-        payload = self._fii_payload(response, symbol, key='fiis', subject='indicators')
-        result = next((item for item in payload if self._is_symbol(item, symbol)), None)
-        if result is None:
-            return None
+    def _fii_result(self, response: object, symbol: str, *, subject: str) -> dict | None:
+        """The one fund's entry in a route that answers under `fiis`."""
+        payload = self._fii_payload(response, symbol, key='fiis', subject=subject)
+        return next((item for item in payload if self._is_symbol(item, symbol)), None)
 
+    def _fii_history(
+        self,
+        response: object,
+        symbol: str,
+        *,
+        subject: str,
+        build: Callable[[date, dict], HistoryPoint],
+    ) -> list[HistoryPoint]:
+        """One row per reference date, oldest first.
+
+        The three history routes answer the same way -- a flat list under
+        `history`, each row naming its fund and dated by `referenceDate` --
+        and only what is read out of a row differs. The order is imposed here
+        rather than trusted: the routes accept a sort direction but do not
+        publish which field they sort by, and a month filed twice after a
+        correction must not be charted twice.
+        """
+        payload = self._fii_payload(response, symbol, key='history', subject=subject)
+
+        points: dict[date, HistoryPoint] = {}
+        for item in payload:
+            if not self._is_symbol(item, symbol):
+                continue
+            moment = self._provider_date(item.get('referenceDate'))
+            if moment is None:
+                continue
+            points[moment] = build(moment, item)
+        return [points[moment] for moment in sorted(points)]
+
+    def _fii_indicators(self, result: dict | None) -> FIIIndicators | None:
+        """The fund's current numbers, from `GET /v2/fii/indicators`."""
+        return self._indicators(result, date_key='asOfDate') if result is not None else None
+
+    def _indicators(self, result: dict, *, date_key: str) -> FIIIndicators:
+        """The indicators of one entry, current or historical.
+
+        The two routes publish the same numbers under the same names and date
+        the entry differently -- `asOfDate` for the current one, `referenceDate`
+        for a month of the history -- so the date is the only thing the caller
+        has to say.
+        """
         shareholders = self._number(result.get('totalInvestors'))
         return FIIIndicators(
-            as_of_date=self._provider_date(result.get('asOfDate')),
+            as_of_date=self._provider_date(result.get(date_key)),
             segment_type=self._text(result.get('segmentType')),
             # Absent from the provider's documented example but present in what
             # it actually answers, under either spelling.
@@ -567,6 +799,157 @@ class MarketDataProvider:
             shareholders=int(shareholders) if shareholders is not None else None,
             **{name: self._number(result.get(key)) for name, key in FII_INDICATOR_KEYS.items()},
         )
+
+    def _fii_management(self, result: dict | None) -> FIIManagement | None:
+        """Who runs the fund, published beside its indicators.
+
+        A fund the provider knows nothing about beyond its ticker has no
+        management to show, and an object of five empty fields would still
+        draw the section. So nothing at all reads as nothing.
+        """
+        if result is None:
+            return None
+
+        management = FIIManagement(
+            cnpj=self._text(result.get('cnpj')),
+            mandate=self._text(result.get('mandate')),
+            management_type=self._text(result.get('tipoGestao')),
+            administrator_name=self._text(result.get('administratorName')),
+            administrator_website=self._text(result.get('administratorWebsite')),
+        )
+        return management if any(astuple(management)) else None
+
+    def _fii_monthly_report(self, response: object, symbol: str) -> FIIMonthlyReport | None:
+        """The most recent monthly filing in the window that was asked for.
+
+        The route sorts, but does not publish which field it sorts by, so the
+        newest filing is the one with the highest reference date and not the
+        one that came first.
+        """
+        payload = self._fii_payload(response, symbol, key='reports', subject='monthly reports')
+
+        reports: dict[date, FIIMonthlyReport] = {}
+        for item in payload:
+            if not self._is_symbol(item, symbol):
+                continue
+            filed_on = self._provider_date(item.get('referenceDate'))
+            if filed_on is None:
+                continue
+            reports[filed_on] = FIIMonthlyReport(
+                reference_date=filed_on,
+                **{name: self._number(item.get(key)) for name, key in FII_REPORT_KEYS.items()},
+            )
+        return reports[max(reports)] if reports else None
+
+    def _fii_composition(self, result: dict | None) -> FIIComposition | None:
+        """One quarter of what the fund holds, item by item.
+
+        The buildings arrive in this same answer, which is why the properties
+        route is not asked for as well: it is this list, sorted upstream.
+        """
+        if result is None:
+            return None
+
+        return FIIComposition(
+            reference_date=self._provider_date(result.get('referenceDate')),
+            summary=self._composition_summary(result.get('summary')),
+            allocations=self._allocations(result.get('allocations')),
+            properties=[
+                FIIProperty(**self._mapped(item, FII_PROPERTY_FIELDS))
+                for item in self._items(result.get('properties'))
+            ],
+            financial_assets=[
+                FIIHolding(**self._mapped(item, FII_HOLDING_FIELDS))
+                for item in self._items(result.get('financialAssets'))
+            ],
+            fund_holdings=[
+                FIIHolding(**self._mapped(item, FII_HOLDING_FIELDS))
+                for item in self._items(result.get('fundHoldings'))
+            ],
+            lands=[
+                FIILand(**self._mapped(item, FII_LAND_FIELDS))
+                for item in self._items(result.get('lands'))
+            ],
+            rights=[
+                FIIRight(**self._mapped(item, FII_RIGHT_FIELDS))
+                for item in self._items(result.get('rights'))
+            ],
+        )
+
+    def _composition_summary(self, value: object) -> FIICompositionSummary | None:
+        if not isinstance(value, dict):
+            return None
+
+        groups = {
+            name: group if isinstance(group := value.get(name), dict) else {}
+            for name in ('financialAssets', 'lands', 'rights')
+        }
+        return FIICompositionSummary(
+            total_items=self._integer(value.get('totalItems')),
+            declared_value=self._number(value.get('declaredValue')),
+            properties=self._property_summary(value.get('properties')),
+            financial_assets_count=self._integer(groups['financialAssets'].get('count')),
+            financial_assets_value=self._number(groups['financialAssets'].get('declaredValue')),
+            lands_count=self._integer(groups['lands'].get('count')),
+            lands_area=self._number(groups['lands'].get('totalArea')),
+            rights_count=self._integer(groups['rights'].get('count')),
+            rights_value=self._number(groups['rights'].get('declaredValue')),
+        )
+
+    def _property_summary(self, value: object) -> FIIPropertySummary | None:
+        """The buildings added up.
+
+        It arrives nested under the composition's summary and on its own in the
+        buildings history, in the same shape both times.
+        """
+        if not isinstance(value, dict):
+            return None
+
+        return FIIPropertySummary(
+            count=self._integer(value.get('count')),
+            total_area=self._number(value.get('totalArea')),
+            vacancy_rate=self._number(value.get('vacancyRate')),
+            average_vacancy_rate=self._number(value.get('averageVacancyRate')),
+            properties_with_vacancy=self._integer(value.get('propertiesWithVacancy')),
+        )
+
+    def _allocations(self, value: object) -> list[FIIAllocation]:
+        """How much of each asset class, in the quarter.
+
+        An entry without a class says nothing that can be charted or labelled,
+        so it is dropped rather than carried as an unnamed slice.
+        """
+        return [
+            FIIAllocation(
+                asset_class=asset_class,
+                count=self._integer(item.get('count')),
+                value=self._number(item.get('value')),
+            )
+            for item in self._items(value)
+            if (asset_class := self._text(item.get('assetClass')))
+        ]
+
+    def _mapped(self, item: dict, spec: dict[str, dict[str, str]]) -> dict[str, Any]:
+        """One item of the quarterly filing, read field by field as declared."""
+        readers: dict[str, Callable[[object], Any]] = {
+            'text': self._text,
+            'number': self._number,
+            'integer': self._integer,
+            'date': self._provider_date,
+            'flag': self._flag,
+        }
+        return {
+            name: readers[kind](item.get(key))
+            for kind, keys in spec.items()
+            for name, key in keys.items()
+        }
+
+    @staticmethod
+    def _items(value: object) -> list[dict]:
+        """The objects of a list the provider may answer with, or none."""
+        if not isinstance(value, list):
+            return []
+        return [item for item in value if isinstance(item, dict)]
 
     def _fii_dividends(self, response: object, symbol: str) -> list[FIIDividend]:
         """Payments from `GET /v2/fii/dividends`, a flat list under `dividends`.
@@ -623,6 +1006,17 @@ class MarketDataProvider:
         except (TypeError, ValueError):
             return None
         return number if math.isfinite(number) else None
+
+    @classmethod
+    def _integer(cls, value: object) -> int | None:
+        """A whole count. Providers write counts as numbers all the same."""
+        number = cls._number(value)
+        return int(number) if number is not None else None
+
+    @staticmethod
+    def _flag(value: object) -> bool | None:
+        """A published yes or no. Anything else is unpublished, not a no."""
+        return value if isinstance(value, bool) else None
 
     @staticmethod
     def _text(value: object) -> str | None:

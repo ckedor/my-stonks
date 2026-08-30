@@ -2148,6 +2148,260 @@
     "title": "ExchangeOut",
     "type": "object"
    },
+   "FIIAllocationResponse": {
+    "description": "How much of one asset class the fund held.\n\n``value`` is absent for the buildings: the quarterly filing counts and\ndescribes them, but declares no price for them.",
+    "properties": {
+     "asset_class": {
+      "title": "Asset Class",
+      "type": "string"
+     },
+     "count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Count"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     }
+    },
+    "required": [
+     "asset_class"
+    ],
+    "title": "FIIAllocationResponse",
+    "type": "object"
+   },
+   "FIICompositionPointResponse": {
+    "description": "One quarter of the composition history: the totals, not the items.",
+    "properties": {
+     "allocations": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/FIIAllocationResponse"
+      },
+      "title": "Allocations",
+      "type": "array"
+     },
+     "reference_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reference Date"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FIICompositionSummaryResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "title": "FIICompositionPointResponse",
+    "type": "object"
+   },
+   "FIICompositionResponse": {
+    "description": "What the fund held at the end of the last quarter it filed for.",
+    "properties": {
+     "allocations": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/FIIAllocationResponse"
+      },
+      "title": "Allocations",
+      "type": "array"
+     },
+     "financial_assets": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/FIIHoldingResponse"
+      },
+      "title": "Financial Assets",
+      "type": "array"
+     },
+     "fund_holdings": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/FIIHoldingResponse"
+      },
+      "title": "Fund Holdings",
+      "type": "array"
+     },
+     "lands": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/FIILandResponse"
+      },
+      "title": "Lands",
+      "type": "array"
+     },
+     "properties": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/FIIPropertyResponse"
+      },
+      "title": "Properties",
+      "type": "array"
+     },
+     "reference_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reference Date"
+     },
+     "rights": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/FIIRightResponse"
+      },
+      "title": "Rights",
+      "type": "array"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FIICompositionSummaryResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "title": "FIICompositionResponse",
+    "type": "object"
+   },
+   "FIICompositionSummaryResponse": {
+    "properties": {
+     "declared_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Declared Value"
+     },
+     "financial_assets_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Financial Assets Count"
+     },
+     "financial_assets_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Financial Assets Value"
+     },
+     "lands_area": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lands Area"
+     },
+     "lands_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lands Count"
+     },
+     "properties": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FIIPropertySummaryResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "rights_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rights Count"
+     },
+     "rights_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rights Value"
+     },
+     "total_items": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Items"
+     }
+    },
+    "title": "FIICompositionSummaryResponse",
+    "type": "object"
+   },
    "FIIDividendResponse": {
     "description": "One payment per share, as published.\n\n``event_type`` is what the fund called it — an ordinary distribution or an\namortization of capital. It is carried so that a reader meaning income can\ntell the two apart instead of adding them up.",
     "properties": {
@@ -2189,6 +2443,146 @@
      "value_per_share"
     ],
     "title": "FIIDividendResponse",
+    "type": "object"
+   },
+   "FIIHoldingResponse": {
+    "description": "One financial asset the fund holds: a CRI, a share in another fund.",
+    "properties": {
+     "asset_class": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Class"
+     },
+     "confidential": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confidential"
+     },
+     "identifier": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Identifier"
+     },
+     "issue": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Issue"
+     },
+     "issuer": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Issuer"
+     },
+     "issuer_cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Issuer Cnpj"
+     },
+     "maturity_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Maturity Date"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "quantity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Quantity"
+     },
+     "series": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Series"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     }
+    },
+    "title": "FIIHoldingResponse",
     "type": "object"
    },
    "FIIIndicatorsResponse": {
@@ -2340,6 +2734,151 @@
      }
     },
     "title": "FIIIndicatorsResponse",
+    "type": "object"
+   },
+   "FIILandResponse": {
+    "properties": {
+     "address": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Address"
+     },
+     "area": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Area"
+     },
+     "confidential": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confidential"
+     },
+     "equity_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Equity Share"
+     },
+     "identifier": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Identifier"
+     },
+     "invested_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Invested Share"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     }
+    },
+    "title": "FIILandResponse",
+    "type": "object"
+   },
+   "FIIManagementResponse": {
+    "description": "Who runs the fund and under which mandate.",
+    "properties": {
+     "administrator_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Administrator Name"
+     },
+     "administrator_website": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Administrator Website"
+     },
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "management_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Management Type"
+     },
+     "mandate": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Mandate"
+     }
+    },
+    "title": "FIIManagementResponse",
     "type": "object"
    },
    "FIIMarketFundResponse": {
@@ -2518,6 +3057,289 @@
     "title": "FIIMarketResponse",
     "type": "object"
    },
+   "FIIMonthlyReportResponse": {
+    "description": "The monthly filing: what the fund's equity is made of, in reais.\n\nThe rates are ratios like everywhere else here, and the monetary fields are\nabsolute amounts, not per share. Indicators the filing repeats are served by\n``FIIIndicatorsResponse`` instead of being restated under a second name.",
+    "properties": {
+     "admin_fee_rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Admin Fee Rate"
+     },
+     "admin_fees_payable": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Admin Fees Payable"
+     },
+     "amortization_rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amortization Rate"
+     },
+     "cash": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cash"
+     },
+     "cri": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cri"
+     },
+     "distributions_payable": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Distributions Payable"
+     },
+     "equity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Equity"
+     },
+     "fii_holdings": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fii Holdings"
+     },
+     "fixed_income_funds": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fixed Income Funds"
+     },
+     "government_bonds": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Government Bonds"
+     },
+     "lci": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lci"
+     },
+     "liquidity_needs": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Liquidity Needs"
+     },
+     "monthly_patrimonial_return": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Monthly Patrimonial Return"
+     },
+     "other_receivables": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Other Receivables"
+     },
+     "private_bonds": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Private Bonds"
+     },
+     "real_estate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Real Estate"
+     },
+     "real_estate_company_shares": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Real Estate Company Shares"
+     },
+     "real_estate_company_units": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Real Estate Company Units"
+     },
+     "real_estate_obligations": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Real Estate Obligations"
+     },
+     "receivables": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Receivables"
+     },
+     "reference_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reference Date"
+     },
+     "rental_receivables": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rental Receivables"
+     },
+     "total_assets": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Assets"
+     },
+     "total_invested": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Invested"
+     },
+     "total_liabilities": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Liabilities"
+     }
+    },
+    "title": "FIIMonthlyReportResponse",
+    "type": "object"
+   },
    "FIIOut": {
     "properties": {
      "asset_id": {
@@ -2541,7 +3363,26 @@
     "type": "object"
    },
    "FIIProfileResponse": {
+    "description": "Everything the fund publishes about itself.\n\nEvery section is optional and independent: the provider answers each from a\nroute of its own, and one of them failing costs the page that section\nrather than the whole profile. The monthly sections and the quarterly ones\nalso carry different dates, which is why each states its own.",
     "properties": {
+     "composition": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FIICompositionResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "composition_history": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/FIICompositionPointResponse"
+      },
+      "title": "Composition History",
+      "type": "array"
+     },
      "dividends": {
       "default": [],
       "items": {
@@ -2560,6 +3401,42 @@
        }
       ]
      },
+     "indicators_history": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/FIIIndicatorsResponse"
+      },
+      "title": "Indicators History",
+      "type": "array"
+     },
+     "management": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FIIManagementResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "monthly_report": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FIIMonthlyReportResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "properties_history": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/FIIPropertiesPointResponse"
+      },
+      "title": "Properties History",
+      "type": "array"
+     },
      "ticker": {
       "title": "Ticker",
       "type": "string"
@@ -2569,6 +3446,351 @@
      "ticker"
     ],
     "title": "FIIProfileResponse",
+    "type": "object"
+   },
+   "FIIPropertiesPointResponse": {
+    "properties": {
+     "reference_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reference Date"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FIIPropertySummaryResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "title": "FIIPropertiesPointResponse",
+    "type": "object"
+   },
+   "FIIPropertyResponse": {
+    "description": "One building, as the fund described it in the quarterly filing.",
+    "properties": {
+     "address": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Address"
+     },
+     "area": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Area"
+     },
+     "confidential": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confidential"
+     },
+     "construction_cost_actual": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Construction Cost Actual"
+     },
+     "construction_cost_expected": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Construction Cost Expected"
+     },
+     "construction_progress_actual": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Construction Progress Actual"
+     },
+     "construction_progress_expected": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Construction Progress Expected"
+     },
+     "delinquency_rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Delinquency Rate"
+     },
+     "identifier": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Identifier"
+     },
+     "invested_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Invested Share"
+     },
+     "leased_rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Leased Rate"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "property_class": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Property Class"
+     },
+     "revenue_share": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Revenue Share"
+     },
+     "sold_rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sold Rate"
+     },
+     "unit_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unit Count"
+     },
+     "vacancy_rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Vacancy Rate"
+     }
+    },
+    "title": "FIIPropertyResponse",
+    "type": "object"
+   },
+   "FIIPropertySummaryResponse": {
+    "description": "The fund's buildings added up, as of one quarter.\n\n``vacancy_rate`` is consolidated and ``average_vacancy_rate`` is the plain\naverage across buildings; areas are in square metres.",
+    "properties": {
+     "average_vacancy_rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Average Vacancy Rate"
+     },
+     "count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Count"
+     },
+     "properties_with_vacancy": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Properties With Vacancy"
+     },
+     "total_area": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Area"
+     },
+     "vacancy_rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Vacancy Rate"
+     }
+    },
+    "title": "FIIPropertySummaryResponse",
+    "type": "object"
+   },
+   "FIIRightResponse": {
+    "properties": {
+     "confidential": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confidential"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "identifier": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Identifier"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     }
+    },
+    "title": "FIIRightResponse",
     "type": "object"
    },
    "FIISegmentOut": {
