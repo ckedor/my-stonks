@@ -8,11 +8,22 @@ interface Props {
   height?: number
   /** Marca o zero, quando ele cai dentro da faixa desenhada. Sem essa linha,
    *  uma curva inteiramente negativa parece igual a uma inteiramente positiva:
-   *  o traço é o mesmo, só a escala muda. */
+   *  o traço é o mesmo, só a escala muda. Ignorado por `bars`, que já mede a
+   *  partir do zero. */
   baseline?: number | null
+  /** `bars` desenha uma barra por valor, a partir do zero — a série em que
+   *  cada valor é um evento que aconteceu, e não uma amostra de algo
+   *  contínuo. Padrão: `line`. */
+  variant?: 'line' | 'bars'
 }
 
-/** Uma curva sem eixos, rótulos ou grade — só a forma.
+/** Respiro entre barras, em unidades do viewBox. */
+const BAR_GAP = 2
+const BAR_RADIUS = 2
+/** Peso das barras que só dão contexto à última. */
+const BAR_QUIET_OPACITY = 0.45
+
+/** Uma série sem eixos, rótulos ou grade — só a forma.
  *
  *  SVG em vez de uma biblioteca de gráficos: em 120×36 pixels não há tooltip,
  *  legenda ou escala para desenhar, e o custo de montar um gráfico de verdade
@@ -23,10 +34,48 @@ export default function Sparkline({
   width = 120,
   height = 36,
   baseline = 0,
+  variant = 'line',
 }: Props) {
   const gradientId = useId()
 
   if (values.length < 2) return <Box sx={{ width, height }} />
+
+  if (variant === 'bars') {
+    /* Escala a partir do zero, sempre. Cortar a base para "mostrar a
+       variação" transformaria seis pagamentos quase iguais numa escada, que
+       é exatamente a leitura errada de uma série que mal se moveu. */
+    const top = Math.max(...values)
+    if (top <= 0) return <Box sx={{ width, height }} />
+
+    const barWidth = (width - BAR_GAP * (values.length - 1)) / values.length
+
+    return (
+      <Box
+        component="svg"
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        sx={{ width, height, display: 'block' }}
+      >
+        {values.map((value, index) => {
+          const barHeight = Math.max((Math.max(value, 0) / top) * height, 1)
+          const last = index === values.length - 1
+
+          return (
+            <rect
+              key={index}
+              x={index * (barWidth + BAR_GAP)}
+              y={height - barHeight}
+              width={barWidth}
+              height={barHeight}
+              rx={BAR_RADIUS}
+              fill={color}
+              opacity={last ? 1 : BAR_QUIET_OPACITY}
+            />
+          )
+        })}
+      </Box>
+    )
+  }
 
   const min = Math.min(...values, ...(baseline != null ? [baseline] : []))
   const max = Math.max(...values, ...(baseline != null ? [baseline] : []))

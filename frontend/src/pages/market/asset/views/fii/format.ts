@@ -13,6 +13,19 @@ const BRL_COMPACT = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 2,
 })
 
+/** O que o fundo pagou por cota, e nunca um valor absoluto.
+ *
+ *  Três casas no máximo porque é onde a informação está: entre R$ 0,089 e
+ *  R$ 0,098 há quase 10% de diferença, e duas casas apagam a distinção
+ *  arredondando as duas para R$ 0,09. Duas no mínimo para que um fundo que
+ *  paga R$ 12,50 não seja escrito "R$ 12,5". */
+const BRL_PER_SHARE = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 3,
+})
+
 const COUNT = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 })
 const COUNT_COMPACT = new Intl.NumberFormat('pt-BR', {
   notation: 'compact',
@@ -33,6 +46,14 @@ export const formatBRL = (value: number | null | undefined) =>
 export const formatCompactBRL = (value: number | null | undefined) =>
   nullish(value) ? EMPTY : BRL_COMPACT.format(value!)
 
+/** Um pagamento por cota.
+ *
+ *  Existe separado de `formatBRL` porque as duas grandezas aparecem lado a
+ *  lado: o rendimento do mês em reais por cota e o yield em percentual. Escritos
+ *  do mesmo jeito, 0,089 e 0,1238 leem como a mesma coisa — e não são. */
+export const formatBRLPerShare = (value: number | null | undefined) =>
+  nullish(value) ? EMPTY : BRL_PER_SHARE.format(value!)
+
 export const formatCount = (value: number | null | undefined) =>
   nullish(value) ? EMPTY : COUNT.format(value!)
 
@@ -46,6 +67,19 @@ export const formatRatio = (value: number | null | undefined) =>
  *  presentation's job precisely so that the number stays comparable upstream. */
 export const formatPercent = (value: number | null | undefined) =>
   nullish(value) ? EMPTY : `${RATIO.format(value! * 100)}%`
+
+/** A diferença entre duas razões, que é uma diferença em pontos percentuais e
+ *  não uma variação percentual: de 2,91% para 3,28% de vacância são 0,37 p.p.,
+ *  e escrever "12,7%" ali — que é a variação relativa — diria outra coisa.
+ *
+ *  O sinal é sempre escrito, inclusive o positivo: um delta sem sinal obriga o
+ *  leitor a lembrar contra o quê está comparando. */
+export const formatPercentagePoints = (value: number | null | undefined) => {
+  if (nullish(value)) return EMPTY
+  const points = value! * 100
+  const sign = points > 0 ? '+' : points < 0 ? '−' : ''
+  return `${sign}${RATIO.format(Math.abs(points))} p.p.`
+}
 
 /** P/VP, which is a multiple and not a percentage: 1.018 reads as 1,02x, or a
  *  share trading slightly above what the fund says it is worth. */
