@@ -4,19 +4,13 @@ import { AppCard, AppChartArea, AppStack, AppText, SectionTitle } from '@/compon
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 import { formatBRL, formatDate, formatMonth } from './format'
+// A mesma regra que a faixa de decisão usa para achar o último rendimento:
+// duas leituras do que é renda e o que é devolução de principal divergiriam
+// no dia em que o provedor mudasse o rótulo.
+import { isIncome } from './readings'
 
 const CHART_HEIGHT = 280
 const MONTHS_IN_A_YEAR = 12
-
-/** What the provider labels an ordinary distribution. Funds also amortize
- *  capital, which arrives through the same route under its own label and is a
- *  return of principal, not income — adding the two would overstate what the
- *  fund pays. Payments the provider leaves unlabelled are read as income,
- *  since that is what these routes overwhelmingly carry. */
-const INCOME_LABEL = 'RENDIMENTO'
-
-const isIncome = (dividend: FIIDividend) =>
-  !dividend.event_type || dividend.event_type.toUpperCase() === INCOME_LABEL
 
 interface Props {
   dividends: FIIDividend[]
