@@ -34,13 +34,13 @@ export default function PortfolioAssetsPage() {
   }
 
   const { data: positions } = useQuery<any[]>({
-    queryKey: [portfolioId ? `assets:positions:${portfolioId}:${groupBy}:${currency}` : null],
+    queryKey: ['portfolio', portfolioId, 'asset-list', groupBy, currency],
     queryFn: useCallback(() => {
       const params: Record<string, string> = { currency }
       if (groupBy === 'broker') params.group_by_broker = 'true'
       return api.get(POSITION_ROUTES.byPortfolio(portfolioId!), { params }).then(r => r.data)
     }, [portfolioId, groupBy, currency]),
-    enabled: (portfolioId ? `assets:positions:${portfolioId}:${groupBy}:${currency}` : null) != null && !!portfolioId,
+    enabled: !!portfolioId,
   })
 
   const loading = !positions && !!portfolioId

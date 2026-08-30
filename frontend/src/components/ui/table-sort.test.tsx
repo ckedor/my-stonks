@@ -1,6 +1,6 @@
 import { ThemeProvider } from '@mui/material/styles'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { buildMuiTheme, defaultLightPalette } from '@/theme/themes'
 import AppSimpleTable, { type AppSimpleTableColumn } from './AppSimpleTable'
@@ -103,5 +103,27 @@ describe('AppSimpleTable — ordenação', () => {
     expect(tickers()).toHaveLength(2)
     expect(screen.getByText('11-12 de 12')).toBeInTheDocument()
     expect(screen.getByRole('table').parentElement).toHaveStyle({ height: '620px' })
+  })
+
+  it('não transforma o clique num controle da célula em clique da linha', () => {
+    const onRowClick = vi.fn()
+    const columns: AppSimpleTableColumn<Row>[] = [
+      {
+        label: 'Ativo',
+        render: (row) => (
+          <div>
+            <span>{row.ticker}</span>
+            <div role="combobox" aria-label="Escolher categoria" tabIndex={0} />
+          </div>
+        ),
+      },
+    ]
+    renderTable({ columns, onRowClick })
+
+    fireEvent.click(screen.getAllByRole('combobox', { name: 'Escolher categoria' })[0])
+    expect(onRowClick).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByText('PETR4'))
+    expect(onRowClick).toHaveBeenCalledWith(ROWS[0])
   })
 })

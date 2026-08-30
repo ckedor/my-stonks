@@ -268,14 +268,16 @@ class PortfolioConsolidatorService:
 
         values = position_df.to_dict(orient='records')
 
-        max_date = position_df['date'].max()
-
+        # Recalculation replaces this asset's whole curve. Upserting the new
+        # dates and deleting only the old tail leaves stale rows when the first
+        # trade is moved forward (and can also preserve holes removed by a new
+        # calculation). Delete and rebuild inside the same transaction, so a
+        # failed insert rolls the deletion back with it.
         await repository.delete(
             Position,
             by={
                 'portfolio_id': portfolio_id,
                 'asset_id': asset.id,
-                'date__gt': max_date,
             },
         )
 

@@ -76,6 +76,7 @@ export default function AppSelect({
       error={error}
       helperText={helperText}
       value={value}
+      onClick={(event) => event.stopPropagation()}
       /* Clicar numa ação também dispara o `onChange` do Select, com o
          `value` vazio do `<MenuItem>` que a desenha — e o campo ficaria em
          branco depois de abrir um formulário. Só valor que existe na lista
@@ -108,7 +109,10 @@ export default function AppSelect({
            escrevem um por cima do outro. */
         inputLabel: options.some((option) => option.value === '') ? { shrink: true } : undefined,
         select: {
-          MenuProps: { disableScrollLock: true },
+          MenuProps: {
+            disableScrollLock: true,
+            onClick: (event) => event.stopPropagation(),
+          },
           /* Uma opção de valor vazio é uma escolha — "sem benchmark" — e não
              a ausência de escolha. Sem `displayEmpty` o `Select` desenha o
              campo em branco justamente no caso em que a pessoa escolheu

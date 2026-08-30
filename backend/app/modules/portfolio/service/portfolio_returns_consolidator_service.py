@@ -42,6 +42,8 @@ class PortfolioReturnsConsolidatorService:
         async with self.uow as uow:
             position_df = await self._position_returns(uow.portfolios, portfolio_id)
             if position_df is None:
+                await uow.portfolios.delete_return_series(portfolio_id)
+                await uow.commit()
                 return
 
             records = (
@@ -50,6 +52,10 @@ class PortfolioReturnsConsolidatorService:
                 + self._asset_type_records(position_df, portfolio_id)
                 + self._segment_records(position_df, portfolio_id)
             )
+            # This is a rebuild, not an incremental merge. Without deleting
+            # first, dates that disappeared from the position history survive
+            # the upsert and keep the old head or tail of every derived curve.
+            await uow.portfolios.delete_return_series(portfolio_id)
             if records:
                 await uow.portfolios.upsert_bulk(
                     ReturnSeries,
@@ -151,9 +157,7 @@ class PortfolioReturnsConsolidatorService:
             group_column='category',
             # A posição carrega o nome da categoria, e o id é o que a série
             # guarda: uma categoria renomeada continua sendo a mesma série.
-            key_of=lambda name: (
-                str(ids_by_name[name]) if name in ids_by_name else None
-            ),
+            key_of=lambda name: (str(ids_by_name[name]) if name in ids_by_name else None),
         )
 
     def _asset_type_records(self, position_df: pd.DataFrame, portfolio_id: int) -> list[dict]:
@@ -213,9 +217,9 @@ class PortfolioReturnsConsolidatorService:
             previous = base.groupby(df['asset_id']).shift(1)
             group_total = previous.groupby([df['date'], df[group_column]]).transform('sum')
             weight = previous / group_total.replace(0, pd.NA)
-            df[f'weighted_return{suffix}'] = pd.to_numeric(weight, errors='coerce').fillna(0) * df[
-                f'asset_return{suffix}'
-            ]
+            df[f'weighted_return{suffix}'] = (
+                pd.to_numeric(weight, errors='coerce').fillna(0) * df[f'asset_return{suffix}']
+            )
 
         daily = (
             df.groupby(['date', group_column])

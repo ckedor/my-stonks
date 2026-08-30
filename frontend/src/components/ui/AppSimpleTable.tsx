@@ -32,6 +32,20 @@ const CLAMPED_WIDTH = 320
 const VIEWPORT_MAX_HEIGHT = '80vh'
 
 const SURFACE = { paper: 'background.paper', sunken: 'background.default' } as const
+const INTERACTIVE_ELEMENT_SELECTOR = [
+  'a',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  '[contenteditable="true"]',
+  '[role="button"]',
+  '[role="checkbox"]',
+  '[role="combobox"]',
+  '[role="link"]',
+  '[role="menuitem"]',
+  '[role="option"]',
+].join(',')
 
 export type AppSimpleTableSort = { column: string; direction: 'asc' | 'desc' }
 
@@ -180,7 +194,20 @@ export default function AppSimpleTable<Row>({
                     key={getRowKey(row)}
                     hover
                     selected={isRowSelected?.(row) ?? false}
-                    onClick={clickable ? () => onRowClick?.(row) : undefined}
+                    onClick={
+                      clickable
+                        ? (event) => {
+                            const target = event.target
+                            if (
+                              target instanceof Element &&
+                              target.closest(INTERACTIVE_ELEMENT_SELECTOR)
+                            ) {
+                              return
+                            }
+                            onRowClick?.(row)
+                          }
+                        : undefined
+                    }
                     sx={{
                       ...(clickable ? { cursor: 'pointer' } : null),
                       ...(getRowSurface ? { backgroundColor: SURFACE[getRowSurface(row)] } : null),

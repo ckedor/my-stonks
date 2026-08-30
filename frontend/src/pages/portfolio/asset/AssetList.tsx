@@ -1,4 +1,4 @@
-import { useSelectedPortfolio } from '@/queries/portfolio'
+import { useRefreshPortfolio, useSelectedPortfolio } from '@/queries/portfolio'
 import AssetCard from '@/components/portfolio-asset/AssetCard'
 import {
   AppConfirmDialog,
@@ -53,6 +53,7 @@ const formatPercent = (value: number) =>
 
 export default function AssetList({ positions, groupBy, search, view }: AssetListProps) {
   const selectedPortfolio = useSelectedPortfolio()
+  const refreshPortfolio = useRefreshPortfolio()
   const navigate = useNavigate()
   const userCategories = selectedPortfolio?.custom_categories ?? []
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -126,6 +127,7 @@ export default function AssetList({ positions, groupBy, search, view }: AssetLis
         portfolio_id: selectedPortfolio?.id,
       })
       setConfirmDialog({ open: false, assetId: null, categoryId: null })
+      void refreshPortfolio()
     } catch (error) {
       console.error('Erro ao atualizar categoria', error)
       setSnackbarOpen(true)
