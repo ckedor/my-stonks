@@ -78,8 +78,7 @@ const renderPage = () =>
   )
 
 describe('MarketLaboratoryComparePage', () => {
-  const pick = async (name: string) =>
-    fireEvent.click(await screen.findByText(name))
+  const pick = async (name: string) => fireEvent.click(await screen.findByText(name))
 
   it('picks carteiras from a list, in the order they were clicked', async () => {
     renderPage()
@@ -88,8 +87,8 @@ describe('MarketLaboratoryComparePage', () => {
     await pick('Conservadora')
     await pick('Agressiva')
 
-    expect(await screen.findByText('1º')).toBeInTheDocument()
-    expect(await screen.findByText('2º')).toBeInTheDocument()
+    expect(await screen.findByText('1\u00ba')).toBeInTheDocument()
+    expect(await screen.findByText('2\u00ba')).toBeInTheDocument()
     expect(await screen.findByText(/2 de 4 escolhidas/)).toBeInTheDocument()
   })
 

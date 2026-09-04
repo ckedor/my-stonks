@@ -5,6 +5,7 @@ from sqlalchemy import inspect
 from app.infra.db.base import Base
 from app.infra.db.bootstrap import start_mappers
 from app.modules.ai.domain.entities import AIArtifact, AIFeature
+from app.modules.lab.domain.entities import TheoreticalPortfolio, TheoreticalPosition
 from app.modules.market_data.domain import assets as asset_entities
 from app.modules.market_data.domain.asset_visit import AssetVisit
 from app.modules.market_data.domain.ingestion import (
@@ -18,6 +19,11 @@ from app.modules.market_data.domain.market_data_series import (
 from app.modules.market_data.domain.quote import Quote
 from app.modules.market_data.domain.usd_brl import UsdBrlHistory
 from app.modules.portfolio.domain import entities as portfolio_entities
+from app.modules.research.domain.entities import (
+    RecommendedPortfolio,
+    RecommendedPosition,
+    ResearchSource,
+)
 from app.modules.users.domain import User
 
 PERSISTED_ENTITIES = [
@@ -60,8 +66,13 @@ PERSISTED_ENTITIES = [
     Quote,
     DataIngestionExecution,
     DataIngestionAttempt,
+    ResearchSource,
+    RecommendedPortfolio,
+    RecommendedPosition,
+    TheoreticalPortfolio,
+    TheoreticalPosition,
 ]
-EXPECTED_PERSISTED_ENTITY_COUNT = 39
+EXPECTED_PERSISTED_ENTITY_COUNT = 44
 
 
 def test_every_persisted_entity_is_one_mapped_domain_dataclass():
