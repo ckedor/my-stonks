@@ -13,13 +13,19 @@
 # ── Onde cada check roda ───────────────────────────────────────────────────
 # COMMIT: só o que olha o arquivo que você acabou de mexer e responde na hora —
 #         ruff, eslint, ds-baseline e a regra de importação (lint-imports).
-# PUSH:   tudo que varre o projeto inteiro ou executa código: knip, vitest,
-#         pytest e tsc + build. É lento demais para pagar a cada commit, mas
-#         nada sai daqui sem passar.
+# PUSH:   knip, pytest e tsc + build. É lento demais para pagar a cada commit,
+#         mas nada sai daqui sem passar.
 #
-# A regressão visual saiu do push e agora é manual: `cd frontend && npm run e2e`.
-# Ela continua sendo a linha de base — os snapshots em `frontend/e2e/` seguem
-# versionados —, mas deixou de bloquear. Rode-a depois de mexer no visual.
+# Dois checks saíram do push por serem lentos demais, e agora são manuais:
+#
+#     cd frontend && npm test    # vitest
+#     cd frontend && npm run e2e # regressão visual
+#
+# Os dois continuam valendo — os snapshots em `frontend/e2e/` seguem sendo a
+# linha de base —, mas deixaram de bloquear. Rode o vitest depois de mexer em
+# componente ou página, e o e2e depois de mexer no visual. O `tsc + build` do
+# push ainda pega erro de tipo e import quebrado, que é a metade barata do que
+# o vitest cobria.
 #
 # ── Bloqueia ou não ────────────────────────────────────────────────────────
 # O critério é: check verde entra bloqueando, check vermelho entra reportando
@@ -84,15 +90,6 @@ repos:
       - id: knip
         name: knip / código morto
         entry: bash -c 'cd frontend && npx knip --no-progress'
-        language: system
-        pass_filenames: false
-        files: ^frontend/
-        verbose: true
-        stages: [pre-push]
-
-      - id: vitest
-        name: vitest (frontend)
-        entry: bash -c 'cd frontend && npm run --silent test'
         language: system
         pass_filenames: false
         files: ^frontend/
