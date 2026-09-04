@@ -37,13 +37,13 @@ function Location() {
 
 describe('MarketCataloguePage', () => {
   it.each([
-    ['stock', 'BR · Mercado de Ações', 'IBOVESPA contra CDI'],
-    ['etf', 'BR · Mercado de ETFs', 'IBOVESPA e S&P 500 contra CDI'],
+    ['br', 'Bolsa BR', 'IBOVESPA contra CDI'],
+    ['us', 'Bolsa EUA', 'S&P 500 contra CDI'],
     ['crypto', 'Mercado de Criptoativos', 'Bitcoin contra CDI'],
-  ] as const)('renders the %s market with the shared structure', async (kind, title, benchmark) => {
+  ] as const)('renders the %s market with the shared structure', async (market, title, benchmark) => {
     render(
       <MemoryRouter>
-        <MarketCataloguePage kind={kind} />
+        <MarketCataloguePage market={market} />
       </MemoryRouter>,
     )
 
@@ -59,9 +59,9 @@ describe('MarketCataloguePage', () => {
 
   it('navigates from the whole table row', async () => {
     render(
-      <MemoryRouter initialEntries={['/market/stock']}>
+      <MemoryRouter initialEntries={['/market/br']}>
         <Routes>
-          <Route path="/market/stock" element={<MarketCataloguePage kind="stock" />} />
+          <Route path="/market/br" element={<MarketCataloguePage market="br" />} />
           <Route path="*" element={<Location />} />
         </Routes>
       </MemoryRouter>,

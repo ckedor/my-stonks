@@ -32,6 +32,7 @@ import {
   type ConcentrationDimension,
 } from './concentration'
 import SliceDividendsTab from './SliceDividendsTab'
+import SegmentDistributionTab from './SegmentDistributionTab'
 import SliceDistributionTab from './SliceDistributionTab'
 import SliceReturnsTab from './SliceReturnsTab'
 import SliceRiskTab from './SliceRiskTab'
@@ -304,9 +305,15 @@ export default function PortfolioSliceScreen(props: PortfolioSliceScreenProps) {
             />
           )}
           {tab === 'trades' && <SliceTradesTab trades={trades} />}
-          {tab === 'distribuicao' && (
-            <SliceDistributionTab portfolioId={portfolioId} categoryNames={categoryNames} />
-          )}
+          {/* O alvo pertence à categoria personalizada. Um segmento atravessa
+              várias delas, então ali a aba mostra a repartição interna em vez
+              do alvo de categorias que o recorte apenas toca. */}
+          {tab === 'distribuicao' &&
+            (props.categoryName === undefined ? (
+              <SegmentDistributionTab positions={positions} />
+            ) : (
+              <SliceDistributionTab portfolioId={portfolioId} categoryNames={categoryNames} />
+            ))}
         </>
       )}
     </AppStack>

@@ -101,13 +101,21 @@ export const navigationSections: NavigationSection[] = [
       {
         title: 'Categorias',
         items: [
-          { label: 'Ações BR', path: '/market/stock' },
-          { label: 'ETFs BR', path: '/market/etf' },
-          { label: 'Ações EUA', path: '/market/stock-us' },
-          { label: 'ETFs EUA', path: '/market/etf-us' },
+          { label: 'Bolsa BR', path: '/market/br' },
+          { label: 'Bolsa EUA', path: '/market/us' },
           { label: 'FIIs', path: '/market/fii' },
           { label: 'Fundos', path: '/market/investment-fund' },
           { label: 'Cripto', path: '/market/crypto' },
+        ],
+      },
+      /* A simulação fica sob `/market` e não sob uma raiz própria porque
+         `getNavigationSection` decide a seção pelo prefixo da rota: um `/lab`
+         abriria com a coluna da Carteira. */
+      {
+        title: 'Simulação',
+        items: [
+          { label: 'Laboratório', path: '/market/laboratory' },
+          { label: 'Comparador', path: '/market/laboratory/compare' },
         ],
       },
     ],
@@ -159,6 +167,26 @@ export function getNavigationSection(pathname: string): SectionId {
   return pathname.startsWith('/market') ? 'mercado' : 'carteira'
 }
 
+/** Todos os destinos declarados, do mais específico para o mais genérico. */
+const DECLARED_PATHS = navigationSections
+  .flatMap((section) => section.groups)
+  .flatMap((group) => group.items)
+  .map((item) => item.path)
+
+/** Se o item da coluna corresponde à rota aberta.
+ *
+ *  O prefixo sozinho não serve: `/market/laboratory/compare` começa com
+ *  `/market/laboratory`, e os dois itens acendiam ao mesmo tempo. Um item só
+ *  ganha por prefixo quando nenhum destino mais específico também casa — o que
+ *  mantém `/portfolio/category/11` acendendo Categorias, já que ali o trecho
+ *  extra é um id e não outra tela. */
 export function isNavigationItemActive(pathname: string, path: string): boolean {
-  return pathname === path || pathname.startsWith(path + '/')
+  if (pathname === path) return true
+  if (!pathname.startsWith(path + '/')) return false
+
+  return !DECLARED_PATHS.some(
+    (other) =>
+      other.length > path.length &&
+      (pathname === other || pathname.startsWith(other + '/')),
+  )
 }

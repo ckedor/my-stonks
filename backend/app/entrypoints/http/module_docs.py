@@ -22,8 +22,10 @@ class ModuleDocs:
 MODULE_DOCS = (
     ModuleDocs('users', 'Usuários e autenticação', ('/auth', '/users')),
     ModuleDocs('ai', 'Inteligência artificial', ('/ai',)),
+    ModuleDocs('lab', 'Laboratório', ('/lab',)),
     ModuleDocs('market-data', 'Dados de mercado', ('/market_data',)),
     ModuleDocs('portfolio', 'Portfólio', ('/portfolio',)),
+    ModuleDocs('research', 'Research', ('/research',)),
     ModuleDocs('system', 'Sistema', ('/hc',)),
 )
 

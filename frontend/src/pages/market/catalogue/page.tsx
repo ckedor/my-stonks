@@ -14,6 +14,7 @@ import {
   AppSkeleton,
   AppStack,
   AppTableSkeleton,
+  AppTabs,
   AppText,
   SectionTitle,
   type AppSimpleTableColumn,
@@ -24,109 +25,112 @@ import MarketBenchmarkCard from '@/pages/market/components/MarketBenchmarkCard'
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-interface MarketPageConfig {
+/* Uma praça, e não uma classe de ativo, é o assunto de uma tela de mercado.
+ *
+ * Ação e ETF da mesma bolsa se leem juntos — o benchmark é o mesmo, a moeda é
+ * a mesma, e quem chega quer ver o que está acontecendo ali. Eram quatro
+ * telas quase idênticas; viraram duas, e a classe passou a ser uma aba dentro
+ * de cada uma. */
+
+/** A aba de uma praça: uma classe de ativo, e o que muda na tabela dela. */
+interface MarketTabConfig {
+  id: MarketCatalogueKind
+  label: string
   assetTypeId: number
-  breadcrumb: string
-  description: string
   itemLabel: string
-  kind: MarketCatalogueKind
-  pageTitle: string
   sectionTitle: string
-  benchmarkTitle: string
-  benchmarks: string[]
   showMarketCap?: boolean
   volumeAsMoney?: boolean
 }
 
-const CONFIG: Record<MarketCatalogueKind, MarketPageConfig> = {
-  stock: {
-    assetTypeId: ASSET_TYPES.STOCK,
-    breadcrumb: 'Ações',
-    description: 'Cotações das ações negociadas na B3 e comparação com os benchmarks da classe.',
-    itemLabel: 'ação',
-    kind: 'stock',
-    pageTitle: 'BR · Mercado de Ações',
-    sectionTitle: 'Todas as ações',
+interface MarketPageConfig {
+  breadcrumb: string
+  description: string
+  pageTitle: string
+  benchmarkTitle: string
+  benchmarks: string[]
+  /** `false` na cripto, que não é de bolsa nenhuma. */
+  brazilian?: boolean
+  tabs: MarketTabConfig[]
+}
+
+export type MarketPageId = 'br' | 'us' | 'crypto'
+
+const CONFIG: Record<MarketPageId, MarketPageConfig> = {
+  br: {
+    breadcrumb: 'Bolsa BR',
+    description: 'Cotações do que é negociado na B3 e comparação com os benchmarks da praça.',
+    pageTitle: 'Bolsa BR',
     benchmarkTitle: 'IBOVESPA contra CDI',
     benchmarks: ['IBOVESPA', 'CDI'],
-    showMarketCap: true,
+    brazilian: true,
+    tabs: [
+      {
+        id: 'stock',
+        label: 'Ações',
+        assetTypeId: ASSET_TYPES.STOCK,
+        itemLabel: 'ação',
+        sectionTitle: 'Todas as ações',
+        showMarketCap: true,
+      },
+      {
+        id: 'etf',
+        label: 'ETFs',
+        assetTypeId: ASSET_TYPES.ETF,
+        itemLabel: 'ETF',
+        sectionTitle: 'Todos os ETFs',
+      },
+    ],
   },
-  etf: {
-    assetTypeId: ASSET_TYPES.ETF,
-    breadcrumb: 'ETFs',
-    description: 'Cotações dos ETFs negociados na B3 e comparação dos principais benchmarks.',
-    itemLabel: 'ETF',
-    kind: 'etf',
-    pageTitle: 'BR · Mercado de ETFs',
-    sectionTitle: 'Todos os ETFs',
-    benchmarkTitle: 'IBOVESPA contra CDI',
-    benchmarks: ['IBOVESPA', 'CDI'],
-  },
-  fii: {
-    assetTypeId: ASSET_TYPES.FII,
-    breadcrumb: 'FIIs',
-    description:
-      'Cotações dos fundos imobiliários negociados na B3 e comparação com os benchmarks da classe.',
-    itemLabel: 'FII',
-    kind: 'fii',
-    pageTitle: 'BR · Mercado de FIIs',
-    sectionTitle: 'Todos os FIIs',
-    benchmarkTitle: 'IFIX contra CDI',
-    benchmarks: ['IFIX', 'CDI'],
-  },
-  bdr: {
-    assetTypeId: ASSET_TYPES.BDR,
-    breadcrumb: 'BDRs',
-    description:
-      'Cotações dos BDRs negociados na B3 — ações estrangeiras em reais — e os benchmarks da classe.',
-    itemLabel: 'BDR',
-    kind: 'bdr',
-    pageTitle: 'BR · Mercado de BDRs',
-    sectionTitle: 'Todos os BDRs',
-    benchmarkTitle: 'S&P 500 contra IBOVESPA',
-    benchmarks: ['S&P500', 'IBOVESPA'],
-    showMarketCap: true,
-  },
-  'stock-us': {
-    assetTypeId: ASSET_TYPES.STOCK,
-    breadcrumb: 'Ações EUA',
-    description:
-      'Cotações das ações negociadas fora da B3 que o cadastro acompanha, em dólar.',
-    itemLabel: 'ação',
-    kind: 'stock-us',
-    pageTitle: 'EUA · Mercado de Ações',
-    sectionTitle: 'Todas as ações',
+  us: {
+    breadcrumb: 'Bolsa EUA',
+    description: 'Cotações do que o cadastro acompanha fora da B3, em dólar.',
+    pageTitle: 'Bolsa EUA',
     benchmarkTitle: 'S&P 500 contra CDI',
     benchmarks: ['S&P500', 'CDI'],
-  },
-  'etf-us': {
-    assetTypeId: ASSET_TYPES.ETF,
-    breadcrumb: 'ETFs EUA',
-    description: 'Cotações dos ETFs negociados fora da B3 que o cadastro acompanha, em dólar.',
-    itemLabel: 'ETF',
-    kind: 'etf-us',
-    pageTitle: 'EUA · Mercado de ETFs',
-    sectionTitle: 'Todos os ETFs',
-    benchmarkTitle: 'S&P 500 contra CDI',
-    benchmarks: ['S&P500', 'CDI'],
+    brazilian: false,
+    tabs: [
+      {
+        id: 'stock-us',
+        label: 'Ações',
+        assetTypeId: ASSET_TYPES.STOCK,
+        itemLabel: 'ação',
+        sectionTitle: 'Todas as ações',
+      },
+      {
+        id: 'etf-us',
+        label: 'ETFs',
+        assetTypeId: ASSET_TYPES.ETF,
+        itemLabel: 'ETF',
+        sectionTitle: 'Todos os ETFs',
+      },
+    ],
   },
   crypto: {
-    assetTypeId: ASSET_TYPES.CRIPTO,
     breadcrumb: 'Cripto',
     description: 'Cotações de criptoativos em reais e desempenho do Bitcoin contra o CDI.',
-    itemLabel: 'criptoativo',
-    kind: 'crypto',
     pageTitle: 'Mercado de Criptoativos',
-    sectionTitle: 'Todos os criptoativos',
     benchmarkTitle: 'Bitcoin contra CDI',
     benchmarks: ['CDI'],
-    volumeAsMoney: true,
+    tabs: [
+      {
+        id: 'crypto',
+        label: 'Criptoativos',
+        assetTypeId: ASSET_TYPES.CRIPTO,
+        itemLabel: 'criptoativo',
+        sectionTitle: 'Todos os criptoativos',
+        volumeAsMoney: true,
+      },
+    ],
   },
 }
 
-export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKind }) {
-  const config = CONFIG[kind]
+export default function MarketCataloguePage({ market }: { market: MarketPageId }) {
+  const config = CONFIG[market]
   const navigate = useNavigate()
+  const [tabId, setTabId] = useState<MarketCatalogueKind>(config.tabs[0].id)
+  const tab = config.tabs.find((item) => item.id === tabId) ?? config.tabs[0]
+  const kind = tab.id
   const fetcher = useCallback(() => fetchMarketCatalogue(kind), [kind])
   const { data, isPending: loading } = useQuery({
     queryKey: [`market:${kind}:catalogue`],
@@ -144,10 +148,7 @@ export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKin
         asset.name.toLocaleLowerCase('pt-BR').includes(query),
     )
   }, [data?.assets, search])
-  const columns = useMemo(
-    () => catalogueColumns(config),
-    [config],
-  )
+  const columns = useMemo(() => catalogueColumns(tab), [tab])
 
   const bitcoinId = kind === 'crypto'
     ? data?.assets.find((asset) => asset.ticker === 'BTC')?.asset_id ?? null
@@ -186,16 +187,12 @@ export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKin
       {/* O recorte é o tipo de ativo, e não a lista de ids da página: mandar
           o catálogo inteiro na query string dava URLs de dezenas de milhares
           de caracteres a cada render. */}
-      <FavoriteAssets
-        limit={8}
-        assetTypeId={config.assetTypeId}
-        brazilian={kind === 'crypto' ? undefined : !kind.endsWith('-us')}
-      />
+      <FavoriteAssets limit={8} assetTypeId={tab.assetTypeId} brazilian={config.brazilian} />
 
       <MarketBenchmarkCard
         title={config.benchmarkTitle}
         benchmarks={config.benchmarks}
-        persistKey={`market-${kind}-benchmarks`}
+        persistKey={`market-${market}-benchmarks`}
         external={kind === 'crypto' ? {
           assetId: bitcoinId,
           key: 'BTC',
@@ -205,12 +202,25 @@ export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKin
       />
 
       <AppStack gap="md">
-        <SectionTitle>{config.sectionTitle} · {visibleAssets.length}</SectionTitle>
+        {/* Ação e ETF são a mesma praça vista por duas lentes: a aba troca a
+            lente, e o benchmark acima dela continua sendo o mesmo. */}
+        {config.tabs.length > 1 && (
+          <AppTabs
+            items={config.tabs.map((item) => ({ id: item.id, label: item.label }))}
+            value={tabId}
+            onChange={(next) => {
+              setTabId(next)
+              setSearch('')
+            }}
+            label="Classe de ativo"
+          />
+        )}
+        <SectionTitle>{tab.sectionTitle} · {visibleAssets.length}</SectionTitle>
         <AppCard padding="none">
           <AppStack gap="md">
             <AppCard>
               <AppSearchField
-                label={`Buscar ${config.itemLabel}`}
+                label={`Buscar ${tab.itemLabel}`}
                 placeholder="Ticker ou nome"
                 value={search}
                 onChange={setSearch}
@@ -226,7 +236,7 @@ export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKin
               isRowClickable={(asset) => asset.asset_id != null}
               pageSize={10}
               fixedHeight={620}
-              emptyMessage={`Nenhum ${config.itemLabel} encontrado.`}
+              emptyMessage={`Nenhum ${tab.itemLabel} encontrado.`}
               defaultSort={{ column: 'Volume', direction: 'desc' }}
             />
           </AppStack>
@@ -236,14 +246,10 @@ export default function MarketCataloguePage({ kind }: { kind: MarketCatalogueKin
   )
 }
 
-function catalogueColumns(config: MarketPageConfig): AppSimpleTableColumn<MarketCatalogueAsset>[] {
+function catalogueColumns(config: MarketTabConfig): AppSimpleTableColumn<MarketCatalogueAsset>[] {
   const columns: AppSimpleTableColumn<MarketCatalogueAsset>[] = [
     {
-      label: config.kind === 'crypto'
-        ? 'Criptoativo'
-        : config.kind.startsWith('etf')
-          ? 'ETF'
-          : 'Ação',
+      label: config.label,
       sortValue: (asset) => asset.ticker,
       render: (asset) => (
         <AppStack gap="none">

@@ -12,10 +12,10 @@ Two things define a segment, and only two:
 
 The second exists because the same type trades in both markets: a stock is a B3
 share or a Nasdaq one, and the two are different screens. The rule for which
-side an asset is on is the exchange, and it is the one the provider adapter
-already applies when it decides a quote's currency: B3 — or no exchange at all,
-which is what a Brazilian instrument registered without one looks like — is the
-Brazilian side, and anything else is abroad.
+side an asset is on is the exchange when the registry records one, and the
+shape of the ticker when it does not. The exchange alone was not enough: most
+of the registry carries none, so "no exchange means Brazilian" put every
+American ETF — IVV, QQQM, SCHD — on the Brazilian equity screen.
 
 Membership is by **id**, never by `asset_type.short_name`. That column holds
 product copy in pt-BR — `Ação`, `Tesouro`, `Cripto`, `Debênture` — while the
@@ -39,6 +39,7 @@ from enum import StrEnum
 
 from app.modules.market_data.domain.constants import ASSET_TYPE
 from app.modules.market_data.domain.enums import EXCHANGE
+from app.modules.market_data.domain.market_scope import is_b3_ticker
 
 
 class PortfolioSegment(StrEnum):
@@ -97,18 +98,34 @@ def get_segment_definition(segment: PortfolioSegment) -> SegmentDefinition:
     return SEGMENT_DEFINITIONS[PortfolioSegment(segment)]
 
 
-def is_brazilian_exchange(exchange_code: str | None) -> bool:
+def is_brazilian_exchange(exchange_code: str | None, ticker: str | None = None) -> bool:
     """Where an asset trades, reduced to the only distinction a segment makes.
 
-    A missing exchange reads as Brazilian: it is how Treasury bonds, bank notes
-    and every instrument that has no ticker on a foreign board are registered,
-    and it is the same fallback the market-data provider applies when it decides
-    such an asset is quoted in BRL.
+    The exchange answers it when the registry has one. When it does not, the
+    ticker answers instead, and that second step is not a refinement — it is
+    what makes the rule correct at all. Most of the registry has no exchange:
+    a missing one was read as Brazilian, which is right for a Treasury bond or
+    a bank note, and wrong for IVV, QQQM and SCHD, which came in without an
+    exchange like everything else and landed on the Brazilian equity screen.
+
+    The ticker format is the B3's own rule and no American ticker matches it —
+    see ``market_data.domain.market_scope``. It is only consulted when there is
+    no exchange, so an asset the registry does place on a board is still
+    decided by the board.
     """
-    return exchange_code is None or exchange_code == EXCHANGE.B3.value
+    if exchange_code is not None:
+        return exchange_code == EXCHANGE.B3.value
+    # Sem ticker não há segundo critério, e o padrão continua sendo brasileiro:
+    # é assim que o Tesouro e o CDB, que não têm código em bolsa nenhuma, são
+    # registrados.
+    return ticker is None or is_b3_ticker(ticker)
 
 
-def resolve_segment(asset_type_id: int | None, exchange_code: str | None) -> str | None:
+def resolve_segment(
+    asset_type_id: int | None,
+    exchange_code: str | None,
+    ticker: str | None = None,
+) -> str | None:
     """The segment a position belongs to, or None when it belongs to none."""
     if asset_type_id is None:
         return None
@@ -120,7 +137,7 @@ def resolve_segment(asset_type_id: int | None, exchange_code: str | None) -> str
             continue
         if definition.brazilian_exchange is None:
             return segment.value
-        if definition.brazilian_exchange is is_brazilian_exchange(exchange_code):
+        if definition.brazilian_exchange is is_brazilian_exchange(exchange_code, ticker):
             return segment.value
 
     return None

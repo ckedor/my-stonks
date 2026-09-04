@@ -57,6 +57,7 @@ export const adminNavigationSections: AdminNavigationSection[] = [
     defaultPath: '/admin/ai-features',
     items: [
       { label: 'Recursos de IA', path: '/admin/ai-features' },
+      { label: 'Carteiras recomendadas', path: '/admin/recommended-portfolios' },
       { label: 'Design System', path: '/admin/design-system' },
       { label: 'Arquitetura', path: '/admin/architecture' },
     ],

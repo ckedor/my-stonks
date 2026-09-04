@@ -25,6 +25,7 @@ from app.modules.market_data.domain.assets import (
 )
 from app.modules.market_data.domain.enums import EXCHANGE
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
+from app.modules.market_data.domain.market_scope import B3_TICKER_PATTERN
 from app.modules.portfolio.domain.dividend import DividendQuery
 from app.modules.portfolio.domain.entities import (
     CustomCategory,
@@ -481,9 +482,21 @@ class PortfolioRepository(SQLAlchemyRepository):
         )
 
         if definition.brazilian_exchange is not None:
-            # Sem bolsa é brasileiro: é como ficam registrados o Tesouro, o CDB
-            # e tudo que não tem código em bolsa nenhuma.
-            in_brazil = or_(Exchange.code == EXCHANGE.B3.value, Asset.exchange_id.is_(None))
+            # A bolsa decide quando o cadastro tem uma; sem ela, decide o
+            # formato do ticker. "Sem bolsa é brasileiro" sozinho é o que
+            # trazia IVV, QQQM e SCHD para a tela de ações BR: eles entraram
+            # sem bolsa, como quase todo o cadastro. Mesma regra de
+            # `portfolio_segment.is_brazilian_exchange`, escrita aqui em SQL.
+            in_brazil = or_(
+                Exchange.code == EXCHANGE.B3.value,
+                and_(
+                    Asset.exchange_id.is_(None),
+                    or_(
+                        Asset.ticker.is_(None),
+                        Asset.ticker.op('~')(B3_TICKER_PATTERN),
+                    ),
+                ),
+            )
             stmt = stmt.where(in_brazil if definition.brazilian_exchange else ~in_brazil)
 
         result = await self.session.execute(stmt)

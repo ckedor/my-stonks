@@ -9,11 +9,11 @@ from app.core.exceptions import NotFoundError
 from app.infra.db.unit_of_work import UnitOfWork
 from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
+from app.lib.finance.analysis import calculate_returns_analysis
 from app.lib.utils.df import df_to_dict_list, rows_to_df
 from app.lib.utils.fastapi import df_response
 from app.modules.market_data.domain.constants import SERIES
 from app.modules.market_data.service.market_data_service import MarketDataReadService
-from app.modules.portfolio.domain.asset_analysis import calculate_returns_analysis
 from app.modules.portfolio.domain.asset_position import AssetPosition
 from app.modules.portfolio.domain.entities import Position
 from app.modules.portfolio.domain.portfolio_segment import (
@@ -328,7 +328,6 @@ class PortfolioPositionService:
         df['date'] = df['date'].dt.strftime('%Y-%m-%d')
         return df_to_dict_list(df)
 
-
     async def get_segment_stats(
         self,
         portfolio_id: int,
@@ -454,9 +453,13 @@ class PortfolioPositionService:
         # A visão por corretora é outra consulta, que não traz a bolsa e
         # também não tem tela especializada.
         if 'exchange' in pos_df.columns:
+            # O ticker vai junto porque a bolsa sozinha não separa os dois
+            # lados: quase todo o cadastro entrou sem ela.
             pos_df['segment'] = [
-                resolve_segment(type_id, exchange)
-                for type_id, exchange in zip(pos_df['type_id'], pos_df['exchange'], strict=True)
+                resolve_segment(type_id, exchange, ticker)
+                for type_id, exchange, ticker in zip(
+                    pos_df['type_id'], pos_df['exchange'], pos_df['ticker'], strict=True
+                )
             ]
 
         return df_response(pos_df)

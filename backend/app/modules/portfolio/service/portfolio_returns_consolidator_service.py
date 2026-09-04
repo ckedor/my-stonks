@@ -178,10 +178,17 @@ class PortfolioReturnsConsolidatorService:
         A position outside every segment resolves to None and is left out.
         """
         df = position_df.copy()
+        # O ticker entra ao lado da bolsa porque ela sozinha não separa os dois
+        # lados: quase todo o cadastro entrou sem bolsa, e sem o ticker os ETFs
+        # americanos caíam no segmento brasileiro.
+        empty = pd.Series([None] * len(df))
         df['segment'] = [
-            resolve_segment(asset_type_id, exchange)
-            for asset_type_id, exchange in zip(
-                df['asset_type_id'], df.get('exchange', pd.Series([None] * len(df))), strict=False
+            resolve_segment(asset_type_id, exchange, ticker)
+            for asset_type_id, exchange, ticker in zip(
+                df['asset_type_id'],
+                df.get('exchange', empty),
+                df.get('ticker', empty),
+                strict=False,
             )
         ]
         return self._records_grouped_by(

@@ -21,8 +21,12 @@ tipo correto, e tipo é uma coluna: ela se move.
 Nada aqui pergunta ao provedor. O par a fundir é o ticker que existe nos dois
 tipos ao mesmo tempo, e isso o banco responde sozinho — uma migração que
 consultasse a brapi daria um resultado diferente a cada execução. Fundo que
-existe só como FI é fundo que a rota nova trouxe e o balaio nunca teve: não
-tem par, não entra na fusão e fica como está.
+existe só como FI é fundo que a rota nova trouxe e o balaio nunca teve: não tem
+par, não entra na fusão e fica como está.
+
+O mesmo balaio também duplicou os ETFs, e aquele par tem direção oposta — quem
+tem história ali é a linha de ETF. Ele é desfeito em ``d8f0b2c4e6a9``, e não
+aqui, porque esta revisão já estava aplicada quando o segundo caso apareceu.
 """
 
 import sqlalchemy as sa

@@ -1,3 +1,4 @@
+import base64
 from functools import lru_cache
 
 from openai import (
@@ -18,6 +19,7 @@ from app.infra.exceptions import (
     IntegrationUnavailable,
 )
 from app.modules.ai.domain.provider import (
+    AIFileInput,
     AIGenerationRequest,
     AIGenerationResult,
     AIProvider,
@@ -36,7 +38,7 @@ class OpenAIProvider:
         model = request.model or self.model
         kwargs = {
             'model': model,
-            'input': request.prompt,
+            'input': self._build_input(request),
             'temperature': request.temperature,
             'store': False,
         }
@@ -45,6 +47,8 @@ class OpenAIProvider:
             kwargs['instructions'] = request.system
         if request.max_output_tokens is not None:
             kwargs['max_output_tokens'] = request.max_output_tokens
+        if request.json_output:
+            kwargs['text'] = {'format': {'type': 'json_object'}}
 
         try:
             response = await self._client.responses.create(**kwargs)
@@ -66,6 +70,29 @@ class OpenAIProvider:
         if not response.output_text:
             raise IntegrationBadResponse(provider=PROVIDER, context={'reason': 'empty response'})
         return AIGenerationResult(text=response.output_text, model=model)
+
+    @classmethod
+    def _build_input(cls, request: AIGenerationRequest) -> str | list[dict]:
+        """The prompt alone, or the prompt and the documents it refers to.
+
+        A request without files keeps the bare string the Responses API takes,
+        so the common call is unchanged. Files force the message form, since
+        that is the only place a document can be attached.
+        """
+        if not request.files:
+            return request.prompt
+        content: list[dict] = [{'type': 'input_text', 'text': request.prompt}]
+        content.extend(cls._file_part(file) for file in request.files)
+        return [{'role': 'user', 'content': content}]
+
+    @staticmethod
+    def _file_part(file: AIFileInput) -> dict:
+        encoded = base64.b64encode(file.content).decode('ascii')
+        return {
+            'type': 'input_file',
+            'filename': file.filename,
+            'file_data': f'data:{file.media_type};base64,{encoded}',
+        }
 
     async def aclose(self) -> None:
         await self._client.close()

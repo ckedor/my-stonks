@@ -22,6 +22,18 @@ const INNER_PADDING = 1
 /** Faixa reservada no topo de cada grupo para o nome dele. */
 const GROUP_LABEL_BAND = 20
 const GROUP_LABEL_FONT_SIZE = 11
+
+/** Altura mínima para um grupo ainda caber nome e bloco.
+ *
+ *  A faixa do nome é subtraída da caixa do grupo, então um grupo mais baixo do
+ *  que ela deixa altura negativa para o que está dentro — e o bloco some. Era
+ *  o que acontecia com uma posição de 0,2% da carteira: o grupo saía com 9px,
+ *  a faixa pedia 20, e o retângulo do ativo ficava com zero. O que se via era
+ *  um grupo vazio, que parece defeito, e não uma fatia pequena.
+ *
+ *  Abaixo desta altura o nome sai e o bloco fica com a caixa inteira: uma
+ *  posição minúscula é uma tira fina de cor, que é o que ela é. */
+const MIN_HEIGHT_FOR_GROUP_LABEL = GROUP_LABEL_BAND + 6
 const LEAF_FONT_SIZE = 10
 /** Claro o bastante para se ler sobre o vermelho e sobre o verde. */
 const LEAF_TEXT_COLOR = '#dedede'
@@ -102,7 +114,9 @@ export default function AppTreemap({
           round
           paddingOuter={OUTER_PADDING}
           paddingInner={INNER_PADDING}
-          paddingTop={GROUP_LABEL_BAND}
+          paddingTop={(node) =>
+            node.y1 - node.y0 < MIN_HEIGHT_FOR_GROUP_LABEL ? INNER_PADDING : GROUP_LABEL_BAND
+          }
         >
           {(treemap) => (
             <>
@@ -120,19 +134,21 @@ export default function AppTreemap({
                     pointerEvents: 'none',
                   }}
                 >
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      left: OUTER_PADDING,
-                      padding: '1px 6px',
-                      fontSize: GROUP_LABEL_FONT_SIZE,
-                      fontWeight: 'bold',
-                      color: labelColor,
-                    }}
-                  >
-                    {group.data.name}
-                  </Box>
+                  {group.y1 - group.y0 >= MIN_HEIGHT_FOR_GROUP_LABEL && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: OUTER_PADDING,
+                        padding: '1px 6px',
+                        fontSize: GROUP_LABEL_FONT_SIZE,
+                        fontWeight: 'bold',
+                        color: labelColor,
+                      }}
+                    >
+                      {group.data.name}
+                    </Box>
+                  )}
                 </Box>
               ))}
 

@@ -244,7 +244,10 @@ export default function RebalancingTable({
         rows={rows}
         columns={columns}
         getRowKey={(row) => row.key}
-        getRowSurface={(row) => (row.kind === 'category' ? 'sunken' : 'paper')}
+        /* A categoria fica no papel do card e o ativo aberto é que afunda.
+           Estava invertido: `sunken` é a cor da página, então a linha de
+           categoria — a que se lê primeiro — sumia contra o fundo. */
+        getRowSurface={(row) => (row.kind === 'category' ? 'paper' : 'sunken')}
       />
     </AppCard>
   )

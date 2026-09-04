@@ -80,7 +80,6 @@ export default function AppNumberField({
   return (
     <TextField
       label={hideLabel ? undefined : label}
-      aria-label={hideLabel ? label : undefined}
       type="number"
       size={density === 'compact' ? 'small' : 'medium'}
       error={error}
@@ -96,7 +95,11 @@ export default function AppNumberField({
         if (Number.isFinite(next)) onChange(next)
       }}
       slotProps={{
-        htmlInput: { min, step },
+        /* O nome acessível vai no `input`, e não na raiz: o `aria-label` do
+           `TextField` pousa na `div` que embrulha o campo, então com
+           `hideLabel` o input ficava sem nome nenhum — invisível para leitor
+           de tela e para teste. */
+        htmlInput: { min, step, 'aria-label': hideLabel ? label : undefined },
         input: {
           startAdornment: prefix ? <span>{prefix}&nbsp;</span> : undefined,
           endAdornment: busy ? (

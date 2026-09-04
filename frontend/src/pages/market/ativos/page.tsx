@@ -14,6 +14,7 @@ import {
 } from '@/components/ui'
 import { ASSET_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
+import { useFavoritesStore } from '@/stores/favorites'
 import { useMarketStore } from '@/stores/market'
 import { useTradeFormStore } from '@/stores/trade-form'
 import ViewListIcon from '@mui/icons-material/ViewList'
@@ -106,6 +107,7 @@ export default function MarketAtivosPage() {
   }, [assetTypes])
 
   const { byTicker: quotes } = useMarketQuotes()
+  const { favorites } = useFavoritesStore()
 
   const quoteOf = useCallback(
     (asset: { ticker: string | null }) =>
@@ -130,23 +132,35 @@ export default function MarketAtivosPage() {
     })
   }, [assets, search, selectedType, selectedClass])
 
-  /* Ordem por liquidez, e não alfabética.
+  /* Quem você mais abre vem primeiro; o resto vem em ordem de nome.
    *
-   * A ordem do dicionário abria a tela em BDRs de três letras e um número, que
-   * é o começo do alfabeto e o fim da relevância. O volume negociado é a única
-   * medida de "o que o mercado está olhando" que o catálogo já traz; o que não
-   * tem cotação — renda fixa, tesouro — vai para o fim, em ordem de nome, onde
-   * continua encontrável pela busca. */
+   * A ordem era a do volume negociado, e não funcionava por dois motivos. O
+   * primeiro é que ela não é sua: o papel mais líquido da B3 não é o que você
+   * veio procurar, e a tela abria numa lista de tickers desconhecidos. O
+   * segundo é que o volume vem de cinco catálogos que respondem em tempos
+   * diferentes, então a lista reordenava a cada resposta — e clicar numa linha
+   * abria a que tinha acabado de tomar o lugar dela.
+   *
+   * O contador de visitas resolve os dois. Ele já existe, é seu, e está pronto
+   * antes da tela: vem persistido do acesso anterior, não de uma requisição
+   * que ainda vai chegar. Depois dos visitados a ordem é a do nome, que é
+   * estável e não promete relevância nenhuma — é onde a busca assume. */
+  const visitRank = useMemo(() => {
+    const rank = new Map<number, number>()
+    favorites.forEach((favorite, index) => rank.set(favorite.id, index))
+    return rank
+  }, [favorites])
+
   const sortedAssets = useMemo(() => {
     return [...filteredAssets].sort((a, b) => {
-      const volumeA = quoteOf(a)?.volume ?? null
-      const volumeB = quoteOf(b)?.volume ?? null
-      if (volumeA == null && volumeB == null) return a.name.localeCompare(b.name)
-      if (volumeA == null) return 1
-      if (volumeB == null) return -1
-      return volumeB - volumeA
+      const rankA = visitRank.get(a.id)
+      const rankB = visitRank.get(b.id)
+      if (rankA != null && rankB != null) return rankA - rankB
+      if (rankA != null) return -1
+      if (rankB != null) return 1
+      return a.name.localeCompare(b.name)
     })
-  }, [filteredAssets, quoteOf])
+  }, [filteredAssets, visitRank])
 
   const totalPages = Math.ceil(sortedAssets.length / ITEMS_PER_PAGE)
   const paginatedAssets = useMemo(() => {

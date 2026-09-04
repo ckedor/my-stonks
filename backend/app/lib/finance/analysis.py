@@ -1,3 +1,13 @@
+"""A leitura completa de uma série de retorno: desempenho e risco.
+
+Mora aqui, e não no domínio de um módulo, porque não conhece entidade nenhuma —
+entra uma ``pd.Series`` de retorno diário e um dicionário de benchmarks em nível
+de preço, e sai um dicionário. A carteira real e a carteira teórica do
+laboratório fazem a mesma pergunta sobre séries de origens diferentes, e a
+resposta é uma só: um segundo cálculo produziria dois Sharpes discordando na
+tela.
+"""
+
 import math
 
 import pandas as pd

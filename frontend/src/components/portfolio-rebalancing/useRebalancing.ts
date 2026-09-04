@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useAppTheme } from '@/components/ui'
 import { REBALANCING_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 import type { RebalancingResponse } from '@/types'
@@ -94,6 +95,19 @@ export function useRebalancing(portfolioId: number | undefined, options: UseReba
     if (fetchedData) setData(fetchedData)
   }, [fetchedData])
 
+  const theme = useAppTheme()
+
+  /* Uma categoria sozinha já vem aberta. Quando o recorte é ela, a linha-pai
+     não é uma escolha de navegação — é o cabeçalho do que a página veio
+     mostrar, e deixar os ativos escondidos atrás de um clique é esconder o
+     conteúdo da tela dentro dela mesma. Com mais de uma, o fechado continua
+     sendo o certo: aí a pergunta é a repartição entre elas. */
+  const onlyCategoryId =
+    fetchedData?.categories.length === 1 ? fetchedData.categories[0].category_id : null
+  useEffect(() => {
+    if (onlyCategoryId != null) setOpenCategories([onlyCategoryId])
+  }, [onlyCategoryId])
+
   const loading = !fetchedData && !!portfolioId
 
   /* O recorte escolhe quais categorias aparecem, e nada mais.
@@ -161,6 +175,35 @@ export function useRebalancing(portfolioId: number | undefined, options: UseReba
   const pies = useMemo(() => {
     if (!view) return { current: [], suggested: [] }
 
+    /* Dentro de uma categoria só, a pizza é dos ativos dela.
+       Fatiada por categoria ali, ela desenha uma rosca de 100% com o nome do
+       recorte no meio — que é onde o leitor já sabe que está. A pergunta de
+       quem abre a página de uma categoria é como *ela* se reparte, e quem
+       responde isso são IVV, QQQM e SCHD. A cor sai da paleta de gráfico
+       porque um ativo não tem cor própria no cadastro; a categoria tem, e é
+       por isso que a fatia por categoria continua usando a dela. */
+    const single = view.categories.length === 1 ? view.categories[0] : null
+
+    if (single) {
+      const palette = theme.palette.chart.colors
+      const color = (index: number) => palette[index % palette.length]
+
+      return {
+        current: single.assets.map((asset, index) => ({
+          label: asset.ticker,
+          value: asset.current_value,
+          color: color(index),
+        })),
+        suggested: single.assets.map((asset, index) => ({
+          label: asset.ticker,
+          color: color(index),
+          value: simulating
+            ? asset.current_value + (buyPlan.byAsset.get(asset.asset_id) ?? 0)
+            : (asset.target_value ?? asset.current_value),
+        })),
+      }
+    }
+
     const current = view.categories.map((cat) => ({
       label: cat.category_name,
       value: cat.current_value,
@@ -178,7 +221,7 @@ export function useRebalancing(portfolioId: number | undefined, options: UseReba
     }))
 
     return { current, suggested }
-  }, [view, simulating, buyPlan])
+  }, [view, simulating, buyPlan, theme])
 
   const setCategoryTarget = useCallback((categoryId: number, value: number | null) => {
     setData((prev) =>

@@ -1234,6 +1234,190 @@
     "title": "AssetUpdate",
     "type": "object"
    },
+   "BacktestLineResponse": {
+    "properties": {
+     "final_value": {
+      "title": "Final Value",
+      "type": "number"
+     },
+     "final_weight": {
+      "title": "Final Weight",
+      "type": "number"
+     },
+     "key": {
+      "title": "Key",
+      "type": "string"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "target_weight": {
+      "title": "Target Weight",
+      "type": "number"
+     }
+    },
+    "required": [
+     "key",
+     "label",
+     "target_weight",
+     "final_weight",
+     "final_value"
+    ],
+    "title": "BacktestLineResponse",
+    "type": "object"
+   },
+   "BacktestPointResponse": {
+    "properties": {
+     "acc_return": {
+      "title": "Acc Return",
+      "type": "number"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "invested": {
+      "title": "Invested",
+      "type": "number"
+     },
+     "value": {
+      "title": "Value",
+      "type": "number"
+     }
+    },
+    "required": [
+     "date",
+     "value",
+     "invested",
+     "acc_return"
+    ],
+    "title": "BacktestPointResponse",
+    "type": "object"
+   },
+   "BacktestResponse": {
+    "properties": {
+     "analysis": {
+      "anyOf": [
+       {
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Analysis"
+     },
+     "contributions": {
+      "title": "Contributions",
+      "type": "integer"
+     },
+     "final_value": {
+      "title": "Final Value",
+      "type": "number"
+     },
+     "invested": {
+      "title": "Invested",
+      "type": "number"
+     },
+     "label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Label"
+     },
+     "lines": {
+      "items": {
+       "$ref": "#/components/schemas/BacktestLineResponse"
+      },
+      "title": "Lines",
+      "type": "array"
+     },
+     "profit": {
+      "title": "Profit",
+      "type": "number"
+     },
+     "rebalances": {
+      "title": "Rebalances",
+      "type": "integer"
+     },
+     "series": {
+      "items": {
+       "$ref": "#/components/schemas/BacktestPointResponse"
+      },
+      "title": "Series",
+      "type": "array"
+     },
+     "window": {
+      "$ref": "#/components/schemas/BacktestWindowResponse"
+     }
+    },
+    "required": [
+     "label",
+     "window",
+     "series",
+     "lines",
+     "final_value",
+     "invested",
+     "profit",
+     "contributions",
+     "rebalances",
+     "analysis"
+    ],
+    "title": "BacktestResponse",
+    "type": "object"
+   },
+   "BacktestWindowResponse": {
+    "properties": {
+     "end_date": {
+      "format": "date",
+      "title": "End Date",
+      "type": "string"
+     },
+     "limited_by": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Limited By"
+     },
+     "requested_start_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Requested Start Date"
+     },
+     "start_date": {
+      "format": "date",
+      "title": "Start Date",
+      "type": "string"
+     }
+    },
+    "required": [
+     "start_date",
+     "end_date",
+     "limited_by",
+     "requested_start_date"
+    ],
+    "title": "BacktestWindowResponse",
+    "type": "object"
+   },
    "BearerResponse": {
     "properties": {
      "access_token": {
@@ -1374,6 +1558,21 @@
      "asset_id"
     ],
     "title": "Body_delete_transaction_portfolio_transaction__transaction_id__delete",
+    "type": "object"
+   },
+   "Body_extract_recommended_portfolio_research_recommended_portfolio_extraction_post": {
+    "properties": {
+     "file": {
+      "description": "Relatório em PDF da carteira recomendada",
+      "format": "binary",
+      "title": "File",
+      "type": "string"
+     }
+    },
+    "required": [
+     "file"
+    ],
+    "title": "Body_extract_recommended_portfolio_research_recommended_portfolio_extraction_post",
     "type": "object"
    },
    "Broker": {
@@ -1614,6 +1813,24 @@
      "assets"
     ],
     "title": "CategoryTargetRequest",
+    "type": "object"
+   },
+   "CompareBacktestsRequest": {
+    "properties": {
+     "runs": {
+      "items": {
+       "$ref": "#/components/schemas/RunBacktestRequest"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Runs",
+      "type": "array"
+     }
+    },
+    "required": [
+     "runs"
+    ],
+    "title": "CompareBacktestsRequest",
     "type": "object"
    },
    "CreatePortfolioRequest": {
@@ -2199,6 +2416,99 @@
      "id"
     ],
     "title": "DividendUpdateRequest",
+    "type": "object"
+   },
+   "DraftPositionResponse": {
+    "properties": {
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "asset_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Name"
+     },
+     "change": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RecommendationChange"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "match": {
+      "$ref": "#/components/schemas/PositionMatch"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "rationale": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rationale"
+     },
+     "target_price": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Target Price"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     },
+     "weight": {
+      "title": "Weight",
+      "type": "number"
+     }
+    },
+    "required": [
+     "ticker",
+     "name",
+     "weight",
+     "rationale",
+     "target_price",
+     "change",
+     "asset_id",
+     "asset_name",
+     "match"
+    ],
+    "title": "DraftPositionResponse",
     "type": "object"
    },
    "ETFOut": {
@@ -4278,6 +4588,18 @@
     "title": "FixedIncomeTypeOut",
     "type": "object"
    },
+   "Frequency": {
+    "description": "Com que passo uma coisa se repete ao longo da simulação.\n\nAporte e rebalanceamento andam no mesmo calendário — de mês em mês, de\ntrimestre em trimestre —, então são a mesma enumeração e não duas iguais.\n`NONE` é a ausência do regime, e significa coisas diferentes em cada um:\nsem aporte, só o valor inicial trabalha; sem rebalanceamento, quem corrige\na carteira são os aportes.",
+    "enum": [
+     "none",
+     "monthly",
+     "quarterly",
+     "semiannual",
+     "annual"
+    ],
+    "title": "Frequency",
+    "type": "string"
+   },
    "HTTPValidationError": {
     "properties": {
      "detail": {
@@ -6231,6 +6553,102 @@
     "title": "PortfolioWealthTier",
     "type": "object"
    },
+   "PositionMatch": {
+    "description": "Whether the ticker a report names is one the catalogue carries.\n\nThree answers and not two: a ticker registered twice — the same code under\ntwo asset types — is not the same problem as one that is missing, and the\nscreen resolves them differently. Guessing between two candidates here\nwould link a recommendation to the wrong asset without saying so.",
+    "enum": [
+     "matched",
+     "unknown",
+     "ambiguous"
+    ],
+    "title": "PositionMatch",
+    "type": "string"
+   },
+   "PresetLineResponse": {
+    "properties": {
+     "fixed_income_type_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fixed Income Type Id"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rate"
+     },
+     "series_id": {
+      "title": "Series Id",
+      "type": "integer"
+     },
+     "weight": {
+      "title": "Weight",
+      "type": "number"
+     }
+    },
+    "required": [
+     "label",
+     "series_id",
+     "weight",
+     "fixed_income_type_id",
+     "rate"
+    ],
+    "title": "PresetLineResponse",
+    "type": "object"
+   },
+   "PresetResponse": {
+    "properties": {
+     "contribution_frequency": {
+      "$ref": "#/components/schemas/Frequency"
+     },
+     "description": {
+      "title": "Description",
+      "type": "string"
+     },
+     "key": {
+      "title": "Key",
+      "type": "string"
+     },
+     "lines": {
+      "items": {
+       "$ref": "#/components/schemas/PresetLineResponse"
+      },
+      "title": "Lines",
+      "type": "array"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "rebalance_frequency": {
+      "$ref": "#/components/schemas/Frequency"
+     }
+    },
+    "required": [
+     "key",
+     "name",
+     "description",
+     "contribution_frequency",
+     "rebalance_frequency",
+     "lines"
+    ],
+    "title": "PresetResponse",
+    "type": "object"
+   },
    "QuoteResponse": {
     "properties": {
      "adjusted_close": {
@@ -6360,6 +6778,401 @@
     "title": "RebalancingResponse",
     "type": "object"
    },
+   "RecommendationChange": {
+    "description": "What an edition did with a line, compared to the previous one.\n\n`UNCHANGED` and an absent change are different statements: the first is the\nreport saying it kept the position, the second is the report not saying\nanything, which is what most of them do for most lines.",
+    "enum": [
+     "entered",
+     "increased",
+     "reduced",
+     "unchanged",
+     "exited"
+    ],
+    "title": "RecommendationChange",
+    "type": "string"
+   },
+   "RecommendedPortfolioDraftResponse": {
+    "description": "The reading of one PDF, for the screen that shows it before it is kept.",
+    "properties": {
+     "model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Model"
+     },
+     "objective": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Objective"
+     },
+     "positions": {
+      "items": {
+       "$ref": "#/components/schemas/DraftPositionResponse"
+      },
+      "title": "Positions",
+      "type": "array"
+     },
+     "reference_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reference Date"
+     },
+     "source_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Name"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
+     },
+     "title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Title"
+     },
+     "total_weight": {
+      "title": "Total Weight",
+      "type": "number"
+     }
+    },
+    "required": [
+     "source_name",
+     "title",
+     "reference_date",
+     "summary",
+     "objective",
+     "positions",
+     "total_weight",
+     "model"
+    ],
+    "title": "RecommendedPortfolioDraftResponse",
+    "type": "object"
+   },
+   "RecommendedPortfolioResponse": {
+    "properties": {
+     "created_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Created At"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "objective": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Objective"
+     },
+     "positions": {
+      "items": {
+       "$ref": "#/components/schemas/RecommendedPositionResponse"
+      },
+      "title": "Positions",
+      "type": "array"
+     },
+     "reference_date": {
+      "format": "date",
+      "title": "Reference Date",
+      "type": "string"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ResearchSourceResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "source_id": {
+      "title": "Source Id",
+      "type": "integer"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
+     },
+     "title": {
+      "title": "Title",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "source_id",
+     "source",
+     "title",
+     "reference_date",
+     "summary",
+     "objective",
+     "created_at",
+     "positions"
+    ],
+    "title": "RecommendedPortfolioResponse",
+    "type": "object"
+   },
+   "RecommendedPositionResponse": {
+    "properties": {
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "change": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RecommendationChange"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "rationale": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rationale"
+     },
+     "target_price": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Target Price"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     },
+     "weight": {
+      "title": "Weight",
+      "type": "number"
+     }
+    },
+    "required": [
+     "id",
+     "asset_id",
+     "ticker",
+     "name",
+     "weight",
+     "rationale",
+     "target_price",
+     "change"
+    ],
+    "title": "RecommendedPositionResponse",
+    "type": "object"
+   },
+   "ResearchSourceResponse": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "slug": {
+      "title": "Slug",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "slug"
+    ],
+    "title": "ResearchSourceResponse",
+    "type": "object"
+   },
+   "RunBacktestRequest": {
+    "description": "Uma simulação pedida.\n\nA alocação vem inteira no corpo, e não como o id de uma carteira salva: é o\nque deixa a tela simular um rascunho que ninguém salvou, e o que faz o\ncomparador e o painel de variações usarem a mesma rota.",
+    "properties": {
+     "benchmark_ids": {
+      "items": {
+       "type": "integer"
+      },
+      "title": "Benchmark Ids",
+      "type": "array"
+     },
+     "contribution_amount": {
+      "default": 0.0,
+      "minimum": 0.0,
+      "title": "Contribution Amount",
+      "type": "number"
+     },
+     "contribution_frequency": {
+      "$ref": "#/components/schemas/Frequency",
+      "default": "none"
+     },
+     "currency": {
+      "default": "BRL",
+      "title": "Currency",
+      "type": "string"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "End Date"
+     },
+     "initial_amount": {
+      "default": 10000.0,
+      "exclusiveMinimum": 0.0,
+      "title": "Initial Amount",
+      "type": "number"
+     },
+     "label": {
+      "anyOf": [
+       {
+        "maxLength": 120,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Label"
+     },
+     "positions": {
+      "items": {
+       "$ref": "#/components/schemas/TheoreticalPositionRequest"
+      },
+      "title": "Positions",
+      "type": "array"
+     },
+     "rebalance_frequency": {
+      "$ref": "#/components/schemas/Frequency",
+      "default": "none"
+     },
+     "start_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Start Date"
+     },
+     "years": {
+      "anyOf": [
+       {
+        "maximum": 50.0,
+        "minimum": 1.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Years"
+     }
+    },
+    "required": [
+     "positions"
+    ],
+    "title": "RunBacktestRequest",
+    "type": "object"
+   },
    "RunDataIngestionRequest": {
     "properties": {
      "force_full_history": {
@@ -6425,6 +7238,138 @@
     "title": "SaveCategoriesRequest",
     "type": "object"
    },
+   "SaveRecommendedPortfolioRequest": {
+    "properties": {
+     "objective": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Objective"
+     },
+     "positions": {
+      "items": {
+       "$ref": "#/components/schemas/SaveRecommendedPositionRequest"
+      },
+      "title": "Positions",
+      "type": "array"
+     },
+     "reference_date": {
+      "format": "date",
+      "title": "Reference Date",
+      "type": "string"
+     },
+     "source_name": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Source Name",
+      "type": "string"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
+     },
+     "title": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+     }
+    },
+    "required": [
+     "source_name",
+     "title",
+     "reference_date",
+     "positions"
+    ],
+    "title": "SaveRecommendedPortfolioRequest",
+    "type": "object"
+   },
+   "SaveRecommendedPositionRequest": {
+    "properties": {
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "change": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RecommendationChange"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "rationale": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rationale"
+     },
+     "target_price": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Target Price"
+     },
+     "ticker": {
+      "maxLength": 30,
+      "minLength": 1,
+      "title": "Ticker",
+      "type": "string"
+     },
+     "weight": {
+      "title": "Weight",
+      "type": "number"
+     }
+    },
+    "required": [
+     "ticker",
+     "weight"
+    ],
+    "title": "SaveRecommendedPositionRequest",
+    "type": "object"
+   },
    "SaveTargetsRequest": {
     "properties": {
      "categories": {
@@ -6444,6 +7389,60 @@
      "categories"
     ],
     "title": "SaveTargetsRequest",
+    "type": "object"
+   },
+   "SaveTheoreticalPortfolioRequest": {
+    "properties": {
+     "benchmark_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Benchmark Id"
+     },
+     "contribution_amount": {
+      "default": 0.0,
+      "minimum": 0.0,
+      "title": "Contribution Amount",
+      "type": "number"
+     },
+     "contribution_frequency": {
+      "$ref": "#/components/schemas/Frequency",
+      "default": "none"
+     },
+     "initial_amount": {
+      "default": 10000.0,
+      "exclusiveMinimum": 0.0,
+      "title": "Initial Amount",
+      "type": "number"
+     },
+     "name": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "positions": {
+      "items": {
+       "$ref": "#/components/schemas/TheoreticalPositionRequest"
+      },
+      "title": "Positions",
+      "type": "array"
+     },
+     "rebalance_frequency": {
+      "$ref": "#/components/schemas/Frequency",
+      "default": "none"
+     }
+    },
+    "required": [
+     "name",
+     "positions"
+    ],
+    "title": "SaveTheoreticalPortfolioRequest",
     "type": "object"
    },
    "StatementScope": {
@@ -7650,6 +8649,217 @@
     "title": "StockSubscriptionResponse",
     "type": "object"
    },
+   "TheoreticalPortfolioResponse": {
+    "properties": {
+     "benchmark_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Benchmark Id"
+     },
+     "contribution_amount": {
+      "title": "Contribution Amount",
+      "type": "number"
+     },
+     "contribution_frequency": {
+      "$ref": "#/components/schemas/Frequency"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "initial_amount": {
+      "title": "Initial Amount",
+      "type": "number"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "positions": {
+      "items": {
+       "$ref": "#/components/schemas/TheoreticalPositionResponse"
+      },
+      "title": "Positions",
+      "type": "array"
+     },
+     "rebalance_frequency": {
+      "$ref": "#/components/schemas/Frequency"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "initial_amount",
+     "contribution_amount",
+     "contribution_frequency",
+     "rebalance_frequency",
+     "benchmark_id",
+     "positions"
+    ],
+    "title": "TheoreticalPortfolioResponse",
+    "type": "object"
+   },
+   "TheoreticalPositionRequest": {
+    "properties": {
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "fixed_income_type_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fixed Income Type Id"
+     },
+     "label": {
+      "anyOf": [
+       {
+        "maxLength": 80,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Label"
+     },
+     "rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rate"
+     },
+     "series_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Series Id"
+     },
+     "weight": {
+      "minimum": 0.0,
+      "title": "Weight",
+      "type": "number"
+     }
+    },
+    "required": [
+     "weight"
+    ],
+    "title": "TheoreticalPositionRequest",
+    "type": "object"
+   },
+   "TheoreticalPositionResponse": {
+    "properties": {
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "fixed_income_type_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fixed Income Type Id"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Label"
+     },
+     "rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rate"
+     },
+     "series_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Series Id"
+     },
+     "weight": {
+      "title": "Weight",
+      "type": "number"
+     }
+    },
+    "required": [
+     "id",
+     "weight",
+     "asset_id",
+     "series_id",
+     "fixed_income_type_id",
+     "rate",
+     "label"
+    ],
+    "title": "TheoreticalPositionResponse",
+    "type": "object"
+   },
    "Transaction": {
     "properties": {
      "asset_id": {
@@ -8681,6 +9891,354 @@
     ]
    }
   },
+  "/lab/backtest": {
+   "post": {
+    "description": "Simula a alocação do corpo. Nada é persistido.",
+    "operationId": "run_backtest_lab_backtest_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RunBacktestRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/BacktestResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Run Backtest",
+    "tags": [
+     "Laboratório"
+    ]
+   }
+  },
+  "/lab/backtest/comparison": {
+   "post": {
+    "description": "Várias simulações lidas lado a lado.\n\nAtende os dois casos, porque são a mesma leitura: variar um parâmetro da\nmesma carteira, e comparar carteiras diferentes.",
+    "operationId": "compare_backtests_lab_backtest_comparison_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CompareBacktestsRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/BacktestResponse"
+         },
+         "title": "Response Compare Backtests Lab Backtest Comparison Post",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Compare Backtests",
+    "tags": [
+     "Laboratório"
+    ]
+   }
+  },
+  "/lab/portfolio": {
+   "get": {
+    "operationId": "list_theoretical_portfolios_lab_portfolio_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/TheoreticalPortfolioResponse"
+         },
+         "title": "Response List Theoretical Portfolios Lab Portfolio Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Theoretical Portfolios",
+    "tags": [
+     "Laboratório"
+    ]
+   },
+   "post": {
+    "operationId": "create_theoretical_portfolio_lab_portfolio_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SaveTheoreticalPortfolioRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TheoreticalPortfolioResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Create Theoretical Portfolio",
+    "tags": [
+     "Laboratório"
+    ]
+   }
+  },
+  "/lab/portfolio/{theoretical_portfolio_id}": {
+   "delete": {
+    "operationId": "delete_theoretical_portfolio_lab_portfolio__theoretical_portfolio_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "theoretical_portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Theoretical Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Delete Theoretical Portfolio",
+    "tags": [
+     "Laboratório"
+    ]
+   },
+   "get": {
+    "operationId": "get_theoretical_portfolio_lab_portfolio__theoretical_portfolio_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "theoretical_portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Theoretical Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TheoreticalPortfolioResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Theoretical Portfolio",
+    "tags": [
+     "Laboratório"
+    ]
+   },
+   "put": {
+    "operationId": "update_theoretical_portfolio_lab_portfolio__theoretical_portfolio_id__put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "theoretical_portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Theoretical Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SaveTheoreticalPortfolioRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TheoreticalPortfolioResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Update Theoretical Portfolio",
+    "tags": [
+     "Laboratório"
+    ]
+   }
+  },
+  "/lab/preset": {
+   "get": {
+    "description": "Os modelos que já vêm prontos. São código, não linhas de tabela.",
+    "operationId": "list_presets_lab_preset_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/PresetResponse"
+         },
+         "title": "Response List Presets Lab Preset Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Presets",
+    "tags": [
+     "Laboratório"
+    ]
+   }
+  },
   "/market_data/asset": {
    "get": {
     "description": "List all assets (cached for 24h).",
@@ -9031,6 +10589,22 @@
         }
        ],
        "title": "Asset Ids"
+      }
+     },
+     {
+      "in": "query",
+      "name": "brazilian",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Brazilian"
       }
      }
     ],
@@ -10467,7 +12041,7 @@
   },
   "/market_data/market/{kind}": {
    "get": {
-    "description": "Complete BRAPI catalogue for one market class.",
+    "description": "O universo de uma classe: catálogo da BRAPI na B3, cadastro fora dela.",
     "operationId": "get_market_catalogue_market_data_market__kind__get",
     "parameters": [
      {
@@ -10480,7 +12054,9 @@
         "etf",
         "fii",
         "bdr",
-        "crypto"
+        "crypto",
+        "stock-us",
+        "etf-us"
        ],
        "title": "Kind",
        "type": "string"
@@ -13789,6 +15365,247 @@
      }
     ],
     "summary": "Update Portfolio"
+   }
+  },
+  "/research/recommended_portfolio": {
+   "get": {
+    "operationId": "list_recommended_portfolios_research_recommended_portfolio_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/RecommendedPortfolioResponse"
+         },
+         "title": "Response List Recommended Portfolios Research Recommended Portfolio Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Recommended Portfolios",
+    "tags": [
+     "Research"
+    ]
+   },
+   "post": {
+    "operationId": "create_recommended_portfolio_research_recommended_portfolio_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SaveRecommendedPortfolioRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RecommendedPortfolioResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Create Recommended Portfolio",
+    "tags": [
+     "Research"
+    ]
+   }
+  },
+  "/research/recommended_portfolio/extraction": {
+   "post": {
+    "description": "Read a research PDF and line its tickers up against the catalogue.\n\nNothing is persisted here. The answer is a draft for a person to look at,\ncorrect, and post back through `POST /research/recommended_portfolio`.",
+    "operationId": "extract_recommended_portfolio_research_recommended_portfolio_extraction_post",
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_extract_recommended_portfolio_research_recommended_portfolio_extraction_post"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RecommendedPortfolioDraftResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Extract Recommended Portfolio",
+    "tags": [
+     "Research"
+    ]
+   }
+  },
+  "/research/recommended_portfolio/{recommended_portfolio_id}": {
+   "delete": {
+    "operationId": "delete_recommended_portfolio_research_recommended_portfolio__recommended_portfolio_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "recommended_portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Recommended Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Delete Recommended Portfolio",
+    "tags": [
+     "Research"
+    ]
+   },
+   "get": {
+    "operationId": "get_recommended_portfolio_research_recommended_portfolio__recommended_portfolio_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "recommended_portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Recommended Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RecommendedPortfolioResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Recommended Portfolio",
+    "tags": [
+     "Research"
+    ]
+   }
+  },
+  "/research/source": {
+   "get": {
+    "operationId": "list_sources_research_source_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ResearchSourceResponse"
+         },
+         "title": "Response List Sources Research Source Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Sources",
+    "tags": [
+     "Research"
+    ]
    }
   },
   "/users": {

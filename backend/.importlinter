@@ -117,3 +117,34 @@ forbidden_modules =
     app.modules.users.repositories
     app.modules.*.infra
 allow_indirect_imports = True
+
+[importlinter:contract:research-module-boundary]
+name = Research does not import repositories from other modules
+type = forbidden
+source_modules =
+    app.modules.research.api
+    app.modules.research.domain
+    app.modules.research.service
+forbidden_modules =
+    app.modules.ai.repositories
+    app.modules.market_data.repositories
+    app.modules.portfolio.repositories
+    app.modules.users.repositories
+    app.modules.*.infra
+allow_indirect_imports = True
+
+[importlinter:contract:lab-module-boundary]
+name = Lab does not import repositories from other modules
+type = forbidden
+source_modules =
+    app.modules.lab.api
+    app.modules.lab.domain
+    app.modules.lab.service
+forbidden_modules =
+    app.modules.ai.repositories
+    app.modules.market_data.repositories
+    app.modules.portfolio.repositories
+    app.modules.research.repositories
+    app.modules.users.repositories
+    app.modules.*.infra
+allow_indirect_imports = True

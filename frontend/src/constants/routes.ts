@@ -232,3 +232,31 @@ export const AI_ROUTES = {
   featureById: (featureId: number | string) => `${AI}/feature/${featureId}`,
   assetOverviewAndNews: `${AI}/asset_overview_and_news`,
 } as const
+
+// ---------------------------------------------------------------------------
+// Laboratório
+// ---------------------------------------------------------------------------
+const LAB = '/lab'
+
+// O backtest recebe a alocação inteira no corpo e não o id de uma carteira
+// salva: é o que deixa simular um rascunho que ninguém salvou, e o que faz o
+// comparador e o painel de variações usarem a mesma rota.
+export const LAB_ROUTES = {
+  portfolio: `${LAB}/portfolio`,
+  portfolioById: (id: number | string) => `${LAB}/portfolio/${id}`,
+  preset: `${LAB}/preset`,
+  backtest: `${LAB}/backtest`,
+  backtestComparison: `${LAB}/backtest/comparison`,
+} as const
+
+// ---------------------------------------------------------------------------
+// Research
+// ---------------------------------------------------------------------------
+const RESEARCH = '/research'
+
+export const RESEARCH_ROUTES = {
+  source: `${RESEARCH}/source`,
+  recommendedPortfolio: `${RESEARCH}/recommended_portfolio`,
+  recommendedPortfolioExtraction: `${RESEARCH}/recommended_portfolio/extraction`,
+  recommendedPortfolioById: (id: number | string) => `${RESEARCH}/recommended_portfolio/${id}`,
+} as const

@@ -2,6 +2,7 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance'
 import ApartmentIcon from '@mui/icons-material/Apartment'
 import BalanceIcon from '@mui/icons-material/Balance'
 import CategoryIcon from '@mui/icons-material/Category'
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows'
 import CurrencyBitcoinIcon from '@mui/icons-material/CurrencyBitcoin'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import DonutSmallIcon from '@mui/icons-material/DonutSmall'
@@ -12,6 +13,7 @@ import PaidIcon from '@mui/icons-material/Paid'
 import PublicIcon from '@mui/icons-material/Public'
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
 import SavingsIcon from '@mui/icons-material/Savings'
+import ScienceIcon from '@mui/icons-material/Science'
 import ShowChartIcon from '@mui/icons-material/ShowChart'
 import SpeedIcon from '@mui/icons-material/Speed'
 import StarBorderIcon from '@mui/icons-material/StarBorder'
@@ -49,13 +51,13 @@ const NAVIGATION_ICONS: Record<string, ReactNode> = {
   '/portfolio/tiers': <MilitaryTechIcon />,
   '/market/overview': <PublicIcon />,
   '/market/assets': <ManageSearchIcon />,
-  '/market/stock': <ShowChartIcon />,
-  '/market/etf': <LayersIcon />,
-  '/market/stock-us': <ShowChartIcon />,
-  '/market/etf-us': <LayersIcon />,
+  '/market/br': <ShowChartIcon />,
+  '/market/us': <LayersIcon />,
   '/market/fii': <ApartmentIcon />,
   '/market/investment-fund': <SavingsIcon />,
   '/market/crypto': <CurrencyBitcoinIcon />,
+  '/market/laboratory': <ScienceIcon />,
+  '/market/laboratory/compare': <CompareArrowsIcon />,
 }
 
 /** Os ativos mais visitados e as categorias da carteira são as entradas

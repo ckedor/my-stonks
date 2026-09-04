@@ -30,6 +30,22 @@ export const fetchUsdBrlHistory = (startDate?: string): Promise<UsdBrlHistoryPoi
     })
     .then((r) => r.data)
 
+/** Um ativo do cadastro, como o seletor de ativos precisa dele.
+ *
+ *  Não existe rota de busca no servidor: a lista inteira é servida de cache e
+ *  quem filtra é a tela. Um seletor que busca por texto e por tipo trabalha em
+ *  cima disto. */
+export interface CatalogueAsset {
+  id: number
+  ticker: string
+  name: string
+  asset_type_id: number
+  asset_type: { id: number; short_name: string; name: string }
+}
+
+export const fetchAssetCatalogue = (): Promise<CatalogueAsset[]> =>
+  api.get<CatalogueAsset[]>(ASSET_ROUTES.list).then((r) => r.data)
+
 export interface MarketDataSeriesOption {
   id: number
   short_name: string

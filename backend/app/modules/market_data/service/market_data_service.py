@@ -3,7 +3,7 @@
 Market data service - handles market indexes, USD/BRL history, and asset quotes.
 """
 
-from datetime import date, datetime
+from datetime import date
 from typing import ClassVar
 
 import pandas as pd
@@ -19,7 +19,13 @@ from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.domain.usd_brl import usd_brl_payload_to_df
 from app.modules.market_data.service.usd_brl_service import UsdBrlReadService
 
-SERIES_HISTORY_CACHE_PREFIX = 'series_history_v2'
+SERIES_HISTORY_CACHE_PREFIX = 'series_history_v3'
+
+#: O começo do mundo, para esta aplicação. Não é um recorte: é o piso de uma
+#: cláusula que o SQL precisa ter, escolhido antes de qualquer série existir --
+#: a mais antiga do banco é o câmbio, de 1984. Cada série continua começando
+#: no dia em que começa.
+_EARLIEST_SERIES_DATE = '1900-01-01'
 
 
 class MarketDataReadService:
@@ -105,7 +111,13 @@ class MarketDataReadService:
         currency: str = 'BRL',
     ):
         target_currency_id = self._currency_id(currency)
-        start_date = start_date or pd.Timestamp(datetime.today()) - pd.DateOffset(years=5)
+        # Sem recorte, a série inteira. O corte de cinco anos que morava aqui
+        # não era uma decisão sobre o dado -- o banco tem S&P 500 e IBOVESPA
+        # desde 1995 e câmbio desde 1984 --, era um limite silencioso: o botão
+        # "Max" do gráfico mostrava o máximo do que a rota tinha mandado, e não
+        # o máximo do que existe. Quem escolhe a janela é quem desenha, e cada
+        # série ainda começa quando começa.
+        start_date = start_date or pd.Timestamp(_EARLIEST_SERIES_DATE)
         async with self.uow as uow:
             index_history_rows = await uow.market_data.get_series_history_values(start_date)
         index_history_df = rows_to_df(index_history_rows, datetime_cols=['date'])

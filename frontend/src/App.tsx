@@ -10,6 +10,7 @@ import ArchitecturePage from "./pages/admin/architecture/ArchitecturePage";
 import DesignSystemPage from "./pages/admin/design-system/page";
 import AdminEventsPage from "./pages/admin/events/page";
 import AdminQuoteIngestionPage from "./pages/admin/quote-ingestion/page";
+import AdminRecommendedPortfoliosPage from "./pages/admin/recommended-portfolios/page";
 import AdminMarketDataQuotesPage from "./pages/admin/market-data/quotes/page";
 import AdminMarketDataSeriesPage from "./pages/admin/market-data/series/page";
 import AdminMarketDataUsdBrlPage from "./pages/admin/market-data/usd-brl/page";
@@ -24,6 +25,8 @@ import PortfolioTiersPage from "./pages/portfolio/tiers/page";
 import MarketCataloguePage from "./pages/market/catalogue/page";
 import MarketFIIPage from "./pages/market/fii/page";
 import MarketInvestmentFundPage from "./pages/market/investment-fund/page";
+import MarketLaboratoryPage from "./pages/market/laboratory/page";
+import MarketLaboratoryComparePage from "./pages/market/laboratory/compare/page";
 import MarketOverviewPage from "./pages/market/overview/page";
 import PortfolioAssetsPage from "./pages/portfolio/asset";
 import PortfolioAssetPage from "./pages/portfolio/asset/[id]/page";
@@ -75,11 +78,12 @@ const router = createBrowserRouter([
       { path: "market/overview", element: <MarketOverviewPage /> },
       { path: "market/fii", element: <MarketFIIPage /> },
       { path: "market/investment-fund", element: <MarketInvestmentFundPage /> },
-      { path: "market/stock", element: <MarketCataloguePage kind="stock" /> },
-      { path: "market/etf", element: <MarketCataloguePage kind="etf" /> },
-      { path: "market/stock-us", element: <MarketCataloguePage kind="stock-us" /> },
-      { path: "market/etf-us", element: <MarketCataloguePage kind="etf-us" /> },
-      { path: "market/crypto", element: <MarketCataloguePage kind="crypto" /> },
+      { path: "market/br", element: <MarketCataloguePage market="br" /> },
+      { path: "market/us", element: <MarketCataloguePage market="us" /> },
+      { path: "market/crypto", element: <MarketCataloguePage market="crypto" /> },
+      { path: "market/laboratory", element: <MarketLaboratoryPage /> },
+      { path: "market/laboratory/compare", element: <MarketLaboratoryComparePage /> },
+      { path: "market/laboratory/:id", element: <MarketLaboratoryPage /> },
       { path: "market/asset/:id", element: <MarketAssetPage /> },
     ],
   },
@@ -100,6 +104,10 @@ const router = createBrowserRouter([
       { path: "market-data-series-ingestion", element: <AdminMarketDataSeriesIngestionPage /> },
       { path: "usd-brl-ingestion", element: <AdminUsdBrlIngestionPage /> },
       { path: "consolidation", element: <AdminConsolidationPage /> },
+      {
+        path: "recommended-portfolios",
+        element: <AdminRecommendedPortfoliosPage />,
+      },
       { path: "architecture", element: <ArchitecturePage /> },
       { index: true, element: <Navigate to="/admin/assets" replace /> },
     ],

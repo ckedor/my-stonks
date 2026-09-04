@@ -33,6 +33,10 @@ export interface AppTextFieldProps {
   placeholder?: string
   /** Disparado no Enter, para o formulário que se envia pelo teclado. */
   onSubmit?: () => void
+  /** Altura em linhas, para o campo que recebe um parágrafo — o resumo de um
+   *  relatório. Com ele o Enter quebra a linha em vez de enviar, que é o que
+   *  se espera de um texto de várias linhas. */
+  rows?: number
 }
 
 export default function AppTextField({
@@ -47,6 +51,7 @@ export default function AppTextField({
   endAdornment,
   placeholder,
   onSubmit,
+  rows,
 }: AppTextFieldProps) {
   return (
     <TextField
@@ -57,8 +62,10 @@ export default function AppTextField({
       value={value}
       placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
+      multiline={rows !== undefined}
+      minRows={rows}
       onKeyDown={(event) => {
-        if (event.key === 'Enter') onSubmit?.()
+        if (event.key === 'Enter' && rows === undefined) onSubmit?.()
       }}
       error={error}
       helperText={helperText}

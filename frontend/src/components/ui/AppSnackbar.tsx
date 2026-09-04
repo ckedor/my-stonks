@@ -10,7 +10,11 @@ import { Alert, Snackbar } from '@mui/material'
 export interface AppSnackbarProps {
   open: boolean
   message: string
-  severity: 'success' | 'error'
+  /** `info` é o aviso que não é nem sucesso nem falha: a ação deu certo, mas
+   *  o resultado tem uma ressalva que a pessoa precisa saber — linhas
+   *  descartadas por não terem preço, por exemplo. Sem ele, essa ressalva
+   *  saía pintada de verde, dizendo que estava tudo certo. */
+  severity: 'success' | 'error' | 'info'
   onClose: () => void
 }
 

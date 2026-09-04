@@ -208,6 +208,31 @@ Do not use:
 | AI artifact | Artefato de IA | Persisted result generated for an AI feature and input, including summary, structured payload, model, generation time, and expiration time. |
 | Asset overview and news | Visão geral e notícias do ativo | AI feature that generates a current overview and news payload for an asset ticker. |
 
+## Research recommendations
+
+| Canonical term | pt-BR | Definition |
+| --- | --- | --- |
+| Research source | Fonte de research | The house that publishes a recommendation — BTG Pactual, XP Research. Identified by a slug derived from its name, so the same house typed two different ways stays one house. |
+| Recommended portfolio | Carteira recomendada | One published edition of a house's recommended portfolio: its title, the month it refers to, the summary and the objective the report declares, and the assets it recommends with their weights. It belongs to the house and not to a user or a portfolio: the same edition is the same for everyone. |
+| Reference date | Competência | The month a recommended portfolio speaks for, not the day the report was read. It is what tells two editions of the same carteira apart, and the date any later measurement of the recommendation has to start from. |
+| Recommended position | Posição recomendada | One line of a recommended portfolio: a ticker, the weight it is given, and optionally the registered asset it points at, the target price, the rationale, and what the edition did with it. A line whose ticker is not in the catalogue keeps its ticker and no asset — dropping it would change the weight of the ones that stayed. |
+| Recommendation change | Mudança da recomendação | What an edition did with a line compared to the previous one: entered, increased, reduced, unchanged, or exited. An absent change is the report saying nothing, which is different from it saying the position was kept. |
+| Recommended portfolio draft | Leitura da carteira recomendada | The reading of a research PDF before anyone agreed with it: what the model extracted, plus, for each line, whether the catalogue carries that ticker, does not carry it, or carries it more than once. It is never persisted — it becomes a recommended portfolio only once a person confirms it. |
+
+## Portfolio laboratory
+
+| Canonical term | pt-BR | Definition |
+| --- | --- | --- |
+| Theoretical portfolio | Carteira teórica | A named allocation a user builds in the laboratory: lines with weights, plus the contribution and rebalancing regime a simulation runs under. It belongs to a user and never to a portfolio — it has no transactions, no positions, and nothing about it is consolidated. What persists is the parameter; the return curve, the simulated patrimony and the analysis are never stored, since they are derived from quotes already held and cheap to recompute. |
+| Theoretical position | Posição teórica | One line of a theoretical portfolio, and the three ways a line becomes a price: a registered **asset**, whose quotes price it; a **market-data series** alone, which is exposure to the index itself; or a series with a fixed-income type and a rate, which is synthetic fixed income. Exactly one of those holds for any line, and the database refuses the middle ground. |
+| Synthetic fixed income | Renda fixa sintética | A line with no asset behind it, priced from a market-data series and a **fixed-income type** — 110% of CDI, IPCA + 6%, or a plain fixed rate. It is how the laboratory represents a CDB or a Treasury bond, instruments that carry no quote at all. The arithmetic is the one the registered fixed income already uses, so a synthetic CDB earns what the real one earned. |
+| Backtest | Backtest | The simulation of a theoretical portfolio over past prices: an initial amount, periodic contributions and a rebalancing calendar, producing a daily return series, the accumulated patrimony, and the same performance and risk analysis a real portfolio gets. Computed on demand and never persisted. |
+| Backtest window | Janela do backtest | The period a backtest could actually run. It starts on the first day **every** line has a price — before that the portfolio would not be the one that was asked for — and ends on the day the first line stops having one, since a delisted line carried forward would read as a stable holding. It reports which line set the start. |
+| Contribution schedule | Regime de aportes | How much money enters the simulation and how often. Between two rebalancing dates a contribution **buys only**, filling the lines furthest below their target first — the same reading the glossary calls **contribution simulation**. |
+| Rebalancing schedule | Regime de rebalanceamento | How often the simulation returns every line to its target weight. On a rebalancing date selling is allowed and tax is not modelled. `none` means contributions alone do the correcting. |
+| Backtest variation | Variação do backtest | The same theoretical portfolio simulated again with one parameter changed — the contribution or the rebalancing frequency — so the results can be read side by side. It is the same reading as comparing two different theoretical portfolios, and it goes through the same route. |
+| Preset allocation | Modelo de carteira | A ready-made allocation the laboratory offers as a starting point. Fixed in code like the wealth-tier ladder, so a model is added by a commit and not by an admin screen, and defined over market-data series only: a model made of tickers breaks the day an asset leaves the catalogue. |
+
 ## Processing terms
 
 | Canonical term | pt-BR | Definition |

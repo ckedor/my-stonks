@@ -206,6 +206,114 @@ the consolidator's commit is the only thing that changes what a reader sees.
 Patrimony evolution is the exception and the only portfolio read still computed
 per request, which is why it is also the only one with a cache in front of it.
 
+## Recommendation ingestion
+
+A recommended portfolio published by a research house enters through a PDF, and
+the flow that reads it is deliberately in two halves:
+
+```text
+upload (PDF)
+  -> extraction service
+  -> AI provider, with the document attached
+  -> parse the model's JSON into a reading
+  -> resolve each ticker against the asset catalogue
+  -> draft returned to the screen         (nothing persisted)
+
+reviewed draft
+  -> recommended-portfolio service
+  -> resolve or create the research source
+  -> persist the edition and its positions
+```
+
+The first half writes nothing. What comes back from `POST
+/research/recommended_portfolio/extraction` is a reading, not a record: a model
+extracted it from a document, and a weight nobody confirmed has no business in
+the database. The screen shows what was read, the person corrects it, and
+`POST /research/recommended_portfolio` is what creates rows.
+
+The PDF goes to the provider as a document rather than as text pulled out of it
+first. The tables in these reports *are* the recommendation, and a text
+extraction of a two-column layout arrives with the tickers in one order and the
+weights in another.
+
+Tickers are resolved against the catalogue in one query, and the answer has
+three outcomes, not two: found, not registered, or registered more than once.
+The service links only the first. A line whose ticker is unknown keeps its
+ticker and no asset — dropping it would silently change the weight of every
+line that stayed — and an ambiguous one is left for the reader, because
+guessing between two assets links a recommendation to the wrong one without
+saying so.
+
+`research` is its own module and its own schema. A recommended portfolio
+belongs to the house that published it, not to a user or to a portfolio: the
+same edition is the same fact for everyone, which is why it does not live under
+`portfolio`. It reads assets through the unit of work, like every other module,
+and imports no other module's repositories.
+
+What is persisted is what a later measurement of the recommendation needs: the
+source, the reference month, the weights, and the rationale the report gave.
+Nothing computes performance today — the data it would need is in place.
+
+## Laboratory backtests
+
+A theoretical portfolio is an allocation nobody bought, and the flow around it
+is deliberately in two halves:
+
+```text
+carteira teórica (nome, pesos, regime)
+  -> theoretical-portfolio service
+  -> lab.theoretical_portfolio + lab.theoretical_position   (persisted)
+
+alocação + janela + regime
+  -> backtest service
+  -> preços: cotações persistidas, provedor quando não houver, série de mercado
+  -> motor de simulação (aportes, rebalanceamento)
+  -> calculate_returns_analysis
+  -> resultado devolvido à tela                             (nada persistido)
+```
+
+Only the parameter is stored. The return curve, the simulated patrimony and the
+analysis are derived from quotes and series already in the database and are
+cheap to recompute, so persisting them would create a second truth to invalidate
+every time a new quote arrived — the same reason a fund profile is never
+persisted.
+
+`POST /lab/backtest` takes the whole allocation in the request body rather than
+the id of a saved portfolio. That is what lets the screen simulate a draft
+nobody saved — editing a weight and running again should not require writing a
+row — and it is what makes `POST /lab/backtest/comparison` serve both the
+variations panel and the portfolio comparator: varying one parameter of one
+portfolio and comparing two different portfolios are the same reading. The price
+series are fetched once for the union of every run's lines, so the second run
+costs almost nothing.
+
+Prices come from three places, and which one a line uses is what the line *is*.
+A registered asset is read from `market_data.quote` through the persisted quote
+reader, and an asset with no ingested history falls back to the provider, so a
+ticker chosen from the catalogue can be simulated before it has ever been
+ingested. The price measured is the **adjusted close**, which already carries
+splits and distributions — there is no per-share dividend history to reconstruct
+from. A line with no asset is either a market-data series read as a level, or a
+series read as a daily rate through `calculate_fixed_income_price`, which is the
+same arithmetic the registered fixed income uses.
+
+The window is not the window that was asked for. It starts on the first day every
+line has a price and ends on the day the first line stops having one; both bounds
+are reported, along with the line that set the start. Weights are normalized at
+run time rather than trusted to sum to 100, so a portfolio that lost a line to a
+de-registered asset keeps the proportion between the lines that remain.
+
+`lab` is its own module and its own schema. A theoretical portfolio belongs to a
+user and has no transactions, no positions and no consolidation, which is why it
+does not live under `portfolio`. It reads quotes and series through injected
+market-data read services rather than another module's repositories.
+
+`calculate_returns_analysis` moved from `portfolio/domain/asset_analysis.py` to
+`app/lib/finance/analysis.py` for this: it is a pure function over a return
+series that knows no entity, and the real portfolio and the theoretical one ask
+it the same question. A second copy would put two disagreeing Sharpe ratios on
+two screens.
+
 ## Layer boundaries
 
 - **HTTP routers:** transport concerns only; call services.

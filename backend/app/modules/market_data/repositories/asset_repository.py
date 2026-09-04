@@ -83,9 +83,17 @@ class AssetRepository(SQLAlchemyRepository):
         O cadastro tem `exchange_id` nulo em quase todo ETF americano e em
         alguns da B3, então a bolsa sozinha não separa os dois lados. O formato
         do ticker separa: ver `domain.market_scope`.
+
+        A guarda de nulo no primeiro termo não é redundante, e foi ela que
+        faltou: `exchange_id = <b3>` com `exchange_id` nulo não dá falso, dá
+        NULL. `NULL OR FALSE` continua NULL, e `NOT NULL` também — então a
+        negação desta condição, que é como o lado de fora da B3 é pedido,
+        descartava silenciosamente todo papel sem bolsa cadastrada. Ou seja,
+        justamente os ETFs americanos, que são o caso que ela existe para
+        achar. O lado brasileiro nunca sofreu porque `TRUE OR NULL` é `TRUE`.
         """
         b3 = select(Exchange.id).where(Exchange.code == EXCHANGE.B3.value).scalar_subquery()
-        return (Asset.exchange_id == b3) | (
+        return (Asset.exchange_id.is_not(None) & (Asset.exchange_id == b3)) | (
             Asset.exchange_id.is_(None) & Asset.ticker.op('~')(B3_TICKER_PATTERN)
         )
 
@@ -126,14 +134,21 @@ class AssetRepository(SQLAlchemyRepository):
     async def get_by_tickers(
         self,
         tickers: list[str],
-        asset_type_id: int,
+        asset_type_id: int | None = None,
     ) -> list[Asset]:
+        """The registered assets carrying these tickers.
+
+        Without `asset_type_id` the whole catalogue answers, and the same
+        ticker may come back more than once: a code says nothing about which
+        kind of asset it names. A caller that knows the kind should say so; one
+        that does not — a recommendation report naming tickers and nothing
+        else — has to decide what an ambiguous ticker means, and cannot decide
+        it here.
+        """
         if not tickers:
             return []
-        result = await self.session.execute(
-            select(Asset).where(
-                Asset.ticker.in_(tickers),
-                Asset.asset_type_id == asset_type_id,
-            )
-        )
+        statement = select(Asset).where(Asset.ticker.in_(tickers))
+        if asset_type_id is not None:
+            statement = statement.where(Asset.asset_type_id == asset_type_id)
+        result = await self.session.execute(statement)
         return list(result.scalars().all())

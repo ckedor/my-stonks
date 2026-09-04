@@ -63,6 +63,14 @@ export const architectureNodes: ArchitectureNode[] = [
     'Operações · posições · retornos',
   ]),
   node('ai-module', 'module', 'IA e Usuários', 'MÓDULO', ['Artefatos', 'Autenticação']),
+  node('research-module', 'module', 'Research', 'MÓDULO', [
+    'Carteiras recomendadas de casas de análise',
+    'Não é de usuário nem de carteira',
+  ]),
+  node('lab-module', 'module', 'Laboratório', 'MÓDULO', [
+    'Carteiras teóricas e backtests',
+    'Guarda o parâmetro, nunca a curva',
+  ]),
 
   node('quote-service', 'service', 'QuoteIngestionService', 'SERVIÇO', [
     'Ingere os ativos que recebe',
@@ -98,6 +106,24 @@ export const architectureNodes: ArchitectureNode[] = [
     'Recalcula posições e retornos',
   ]),
   node('ai-service', 'service', 'Serviços de IA', 'SERVIÇO'),
+  node('extraction-service', 'service', 'RecommendedPortfolioExtractionService', 'SERVIÇO', [
+    'PDF inteiro para o modelo',
+    'Casa o ticker com o catálogo',
+    'Não grava nada',
+  ]),
+  node('theoretical-portfolio-service', 'service', 'TheoreticalPortfolioService', 'SERVIÇO', [
+    'Nome, pesos e regime',
+    'Escopado por usuário',
+  ]),
+  node('backtest-service', 'service', 'BacktestService', 'SERVIÇO', [
+    'Simula sob demanda',
+    'Cotação persistida, provider no vazio',
+    'Não grava nada',
+  ]),
+  node('recommended-service', 'service', 'RecommendedPortfolioService', 'SERVIÇO', [
+    'Grava a leitura já conferida',
+    'Uma edição por fonte, carteira e mês',
+  ]),
 
   node('uow', 'service', 'UnitOfWork', 'PERSISTÊNCIA', [
     'Única porta para o banco',
@@ -146,6 +172,10 @@ export const architectureEdges: ArchitectureEdge[] = [
   edge('history-on-demand', 'history-service', 'on-demand-read-service', 'calls'),
   edge('portfolio-module-service', 'portfolio-module', 'portfolio-service', 'calls'),
   edge('ai-module-service', 'ai-module', 'ai-service', 'calls'),
+  edge('research-module-extraction', 'research-module', 'extraction-service', 'calls'),
+  edge('research-module-recommended', 'research-module', 'recommended-service', 'calls'),
+  edge('lab-module-portfolio', 'lab-module', 'theoretical-portfolio-service', 'calls'),
+  edge('lab-module-backtest', 'lab-module', 'backtest-service', 'calls'),
 
   edge('quote-service-brapi', 'quote-service', 'brapi', 'reads'),
   edge('quote-service-crypto', 'quote-service', 'cryptocompare', 'reads'),
@@ -174,9 +204,19 @@ export const architectureEdges: ArchitectureEdge[] = [
   edge('on-demand-cache', 'on-demand-read-service', 'queue', 'caches'),
   edge('portfolio-service-cache', 'portfolio-service', 'queue', 'caches'),
   edge('ai-service-openai', 'ai-service', 'openai', 'calls'),
+  edge('extraction-openai', 'extraction-service', 'openai', 'calls'),
+  edge('extraction-uow', 'extraction-service', 'uow', 'reads'),
+  edge('recommended-uow', 'recommended-service', 'uow', 'reads/writes'),
+  edge('theoretical-portfolio-uow', 'theoretical-portfolio-service', 'uow', 'reads/writes'),
+  edge('backtest-persisted', 'backtest-service', 'persisted-read-service', 'calls'),
+  edge('backtest-on-demand', 'backtest-service', 'on-demand-read-service', 'calls'),
+  edge('backtest-usd-brl', 'backtest-service', 'usd-brl-read-service', 'calls'),
+  edge('backtest-uow', 'backtest-service', 'uow', 'reads'),
   edge('http-market', 'http-api', 'market-module', 'calls'),
   edge('http-portfolio', 'http-api', 'portfolio-module', 'calls'),
   edge('http-ai', 'http-api', 'ai-module', 'calls'),
+  edge('http-research', 'http-api', 'research-module', 'calls'),
+  edge('http-lab', 'http-api', 'lab-module', 'calls'),
 ]
 
 export function validateArchitectureMap(

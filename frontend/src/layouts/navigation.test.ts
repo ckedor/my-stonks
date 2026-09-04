@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { SLICE_TABS } from '@/components/portfolio-slice/tabs'
 import { PORTFOLIO_SEGMENT_LIST } from '@/constants/portfolioSegments'
 import {
+  getNavigationSection,
   getSectionDefaultPath,
   navigationSections,
   resolveGroups,
@@ -51,16 +52,33 @@ describe('navigationSections', () => {
       {
         title: 'Categorias',
         items: [
-          { label: 'Ações BR', path: '/market/stock' },
-          { label: 'ETFs BR', path: '/market/etf' },
-          { label: 'Ações EUA', path: '/market/stock-us' },
-          { label: 'ETFs EUA', path: '/market/etf-us' },
+          { label: 'Bolsa BR', path: '/market/br' },
+          { label: 'Bolsa EUA', path: '/market/us' },
           { label: 'FIIs', path: '/market/fii' },
           { label: 'Fundos', path: '/market/investment-fund' },
           { label: 'Cripto', path: '/market/crypto' },
         ],
       },
+      {
+        title: 'Simulação',
+        items: [
+          { label: 'Laboratório', path: '/market/laboratory' },
+          { label: 'Comparador', path: '/market/laboratory/compare' },
+        ],
+      },
     ])
+  })
+
+  it('keeps the laboratory under /market, where the market rail is', () => {
+    // `getNavigationSection` decide a seção pelo prefixo da rota. Uma rota do
+    // laboratório fora de `/market` abriria com a coluna da Carteira, e o
+    // usuário perderia o resto do Mercado ao entrar nele.
+    const paths = mercado().groups.flatMap((group) =>
+      group.items.map((item) => item.path),
+    )
+    for (const path of paths) {
+      expect(getNavigationSection(path)).toBe('mercado')
+    }
   })
 })
 
