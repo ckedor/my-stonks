@@ -14,8 +14,12 @@
 # COMMIT: só o que olha o arquivo que você acabou de mexer e responde na hora —
 #         ruff, eslint, ds-baseline e a regra de importação (lint-imports).
 # PUSH:   tudo que varre o projeto inteiro ou executa código: knip, vitest,
-#         pytest, tsc + build e a regressão visual. É lento demais para pagar
-#         a cada commit, mas nada sai daqui sem passar.
+#         pytest e tsc + build. É lento demais para pagar a cada commit, mas
+#         nada sai daqui sem passar.
+#
+# A regressão visual saiu do push e agora é manual: `cd frontend && npm run e2e`.
+# Ela continua sendo a linha de base — os snapshots em `frontend/e2e/` seguem
+# versionados —, mas deixou de bloquear. Rode-a depois de mexer no visual.
 #
 # ── Bloqueia ou não ────────────────────────────────────────────────────────
 # O critério é: check verde entra bloqueando, check vermelho entra reportando
@@ -107,18 +111,6 @@ repos:
       - id: frontend-build
         name: tsc + vite build
         entry: bash -c 'cd frontend && npm run --silent build'
-        language: system
-        pass_filenames: false
-        files: ^frontend/
-        stages: [pre-push]
-        verbose: true
-
-      - id: visual-regression
-        name: playwright / regressão visual
-        # Sobe o dev server sozinho e mocka a API inteira: não depende do
-        # backend estar de pé. Precisa do browser uma vez:
-        #     cd frontend && npx playwright install chromium
-        entry: bash -c 'cd frontend && npm run --silent e2e'
         language: system
         pass_filenames: false
         files: ^frontend/

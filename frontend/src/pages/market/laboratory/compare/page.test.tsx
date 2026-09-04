@@ -45,7 +45,7 @@ const result = (label: string, finalValue: number) => ({
   analysis: null,
 })
 
-let saved = [portfolio(1, 'Conservadora'), portfolio(2, 'Agressiva')]
+const saved = [portfolio(1, 'Conservadora'), portfolio(2, 'Agressiva')]
 
 vi.mock('@/api/lab', async () => {
   const actual = await vi.importActual<typeof import('@/api/lab')>('@/api/lab')
@@ -78,62 +78,60 @@ const renderPage = () =>
   )
 
 describe('MarketLaboratoryComparePage', () => {
-  it('asks for two saved portfolios before it can compare anything', async () => {
-    saved = []
-    renderPage()
+  const pick = async (name: string) =>
+    fireEvent.click(await screen.findByText(name))
 
-    expect(await screen.findByText('Faltam carteiras para comparar')).toBeInTheDocument()
-    saved = [portfolio(1, 'Conservadora'), portfolio(2, 'Agressiva')]
-  })
-
-  /* O regime é compartilhado de propósito: duas carteiras com aportes
-     diferentes comparariam duas coisas ao mesmo tempo. */
-  it('runs both carteiras under the same window and contribution regime', async () => {
+  it('picks carteiras from a list, in the order they were clicked', async () => {
     renderPage()
     await screen.findByRole('heading', { name: 'Comparador' })
 
-    fireEvent.mouseDown(screen.getByLabelText('Primeira'))
-    fireEvent.click(await screen.findByRole('option', { name: 'Conservadora' }))
-    fireEvent.mouseDown(screen.getByLabelText('Segunda'))
-    fireEvent.click(await screen.findByRole('option', { name: 'Agressiva' }))
+    await pick('Conservadora')
+    await pick('Agressiva')
 
+    expect(await screen.findByText('1º')).toBeInTheDocument()
+    expect(await screen.findByText('2º')).toBeInTheDocument()
+    expect(await screen.findByText(/2 de 4 escolhidas/)).toBeInTheDocument()
+  })
+
+  /* O regime é compartilhado de propósito: carteiras com aportes diferentes
+     comparariam duas coisas ao mesmo tempo. */
+  it('runs every carteira under the same window and contribution regime', async () => {
+    renderPage()
+    await screen.findByRole('heading', { name: 'Comparador' })
+
+    await pick('Conservadora')
+    await pick('Agressiva')
     fireEvent.click(screen.getByRole('button', { name: 'Comparar' }))
 
     await waitFor(() => expect(compareBacktests).toHaveBeenCalled())
     const runs = compareBacktests.mock.calls[0][0]
-    expect(runs).toHaveLength(2)
-    expect(runs[0].label).toBe('Conservadora')
-    expect(runs[1].label).toBe('Agressiva')
+    expect(runs.map((run: { label: string }) => run.label)).toEqual([
+      'Conservadora',
+      'Agressiva',
+    ])
     expect(runs[0].years).toBe(runs[1].years)
     expect(runs[0].contribution_frequency).toBe(runs[1].contribution_frequency)
     expect(runs[0].rebalance_frequency).toBe(runs[1].rebalance_frequency)
   })
 
-  it('shows one column per carteira in the metric table', async () => {
+  it('opens the result in tabs instead of stacking it below', async () => {
     renderPage()
     await screen.findByRole('heading', { name: 'Comparador' })
 
-    fireEvent.mouseDown(screen.getByLabelText('Primeira'))
-    fireEvent.click(await screen.findByRole('option', { name: 'Conservadora' }))
-    fireEvent.mouseDown(screen.getByLabelText('Segunda'))
-    fireEvent.click(await screen.findByRole('option', { name: 'Agressiva' }))
+    await pick('Conservadora')
+    await pick('Agressiva')
     fireEvent.click(screen.getByRole('button', { name: 'Comparar' }))
 
-    expect(await screen.findByText('Lado a lado')).toBeInTheDocument()
+    expect(await screen.findByRole('tab', { name: 'Rentabilidade' })).toBeInTheDocument()
+    fireEvent.click(await screen.findByRole('tab', { name: 'Lado a lado' }))
     expect(await screen.findByText('Patrimônio final')).toBeInTheDocument()
   })
 
-  it('says so when both selections are the same carteira', async () => {
+  it('needs two competitors before it can compare', async () => {
     renderPage()
     await screen.findByRole('heading', { name: 'Comparador' })
 
-    fireEvent.mouseDown(screen.getByLabelText('Primeira'))
-    fireEvent.click(await screen.findByRole('option', { name: 'Conservadora' }))
-    fireEvent.mouseDown(screen.getByLabelText('Segunda'))
-    fireEvent.click(await screen.findByRole('option', { name: 'Conservadora' }))
-
-    expect(
-      await screen.findByText('As duas seleções são a mesma carteira.'),
-    ).toBeInTheDocument()
+    await pick('Conservadora')
+    expect(screen.getByRole('button', { name: 'Comparar' })).toBeDisabled()
   })
 })

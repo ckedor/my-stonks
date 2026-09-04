@@ -101,26 +101,30 @@ describe('MarketLaboratoryPage', () => {
   it('opens on the workbench with nothing allocated yet', async () => {
     renderPage()
 
-    expect(await screen.findByText('Laboratório')).toBeInTheDocument()
-    expect(await screen.findByText('0.0%')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Laboratório' })).toBeInTheDocument()
+    expect(
+      await screen.findByText(/Nenhuma linha ainda/),
+    ).toBeInTheDocument()
   })
 
   it('seeds the draft from a preset and shows the weights adding to 100', async () => {
     renderPage()
-    await screen.findByText('Laboratório')
+    await screen.findByRole('heading', { name: 'Laboratório' })
 
     fireEvent.mouseDown(screen.getByLabelText('Modelo'))
     fireEvent.click(await screen.findByRole('option', { name: '60/40 Brasil' }))
 
     expect(await screen.findByText('Ibovespa')).toBeInTheDocument()
+    // A soma mora ao pé da lista, e não numa métrica do cabeçalho.
     expect(await screen.findByText('100.0%')).toBeInTheDocument()
+    expect(await screen.findByText('Os pesos fecham em 100%.')).toBeInTheDocument()
   })
 
   /* A soma dos pesos é o sinal que evita simular uma carteira que não é a que
      se desenhou. O motor normaliza, mas 90% somados quase sempre é engano. */
   it('warns when the weights do not add to one hundred', async () => {
     renderPage()
-    await screen.findByText('Laboratório')
+    await screen.findByRole('heading', { name: 'Laboratório' })
 
     fireEvent.mouseDown(screen.getByLabelText('Modelo'))
     fireEvent.click(await screen.findByRole('option', { name: '60/40 Brasil' }))
@@ -136,7 +140,7 @@ describe('MarketLaboratoryPage', () => {
 
   it('sends the whole allocation to the backtest, not a saved id', async () => {
     renderPage()
-    await screen.findByText('Laboratório')
+    await screen.findByRole('heading', { name: 'Laboratório' })
 
     fireEvent.mouseDown(screen.getByLabelText('Modelo'))
     fireEvent.click(await screen.findByRole('option', { name: '60/40 Brasil' }))
@@ -153,7 +157,7 @@ describe('MarketLaboratoryPage', () => {
 
   it('shows the result once the simulation answers', async () => {
     renderPage()
-    await screen.findByText('Laboratório')
+    await screen.findByRole('heading', { name: 'Laboratório' })
 
     fireEvent.mouseDown(screen.getByLabelText('Modelo'))
     fireEvent.click(await screen.findByRole('option', { name: '60/40 Brasil' }))
@@ -161,7 +165,8 @@ describe('MarketLaboratoryPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Rodar simulação' }))
 
-    expect(await screen.findByText('Resultado')).toBeInTheDocument()
+    // O resultado abre numa aba, e não empilhado no fim da página.
+    expect(await screen.findByRole('tab', { name: 'Rentabilidade' })).toBeInTheDocument()
     expect(await screen.findByText('Patrimônio final')).toBeInTheDocument()
   })
 })
