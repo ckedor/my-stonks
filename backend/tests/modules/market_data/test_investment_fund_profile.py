@@ -805,9 +805,7 @@ async def test_the_catalogue_carries_the_id_of_a_fund_registered_in_the_app():
     service = InvestmentFundMarketReadService(
         uow=FakeUnitOfWork(
             assets=SimpleNamespace(
-                get_by_tickers=AsyncMock(
-                    return_value=[SimpleNamespace(id=ASSET_ID, ticker=TICKER)]
-                )
+                get_by_tickers=AsyncMock(return_value=[SimpleNamespace(id=ASSET_ID, ticker=TICKER)])
             )
         ),
         provider=provider,

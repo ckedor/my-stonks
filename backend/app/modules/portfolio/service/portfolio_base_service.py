@@ -87,9 +87,7 @@ class PortfolioBaseService:
             # Séries e carimbo apontam para a carteira mas nada cascateia a
             # partir de `scope_key`, que é texto. Saem aqui, explicitamente.
             await uow.portfolios.delete_return_series(portfolio_id)
-            await uow.portfolios.delete(
-                PortfolioConsolidation, by={'portfolio_id': portfolio_id}
-            )
+            await uow.portfolios.delete(PortfolioConsolidation, by={'portfolio_id': portfolio_id})
             await uow.portfolios.delete(Position, by={'portfolio_id': portfolio_id})
             await uow.portfolios.delete(Transaction, by={'portfolio_id': portfolio_id})
             await uow.portfolios.delete(Dividend, by={'portfolio_id': portfolio_id})

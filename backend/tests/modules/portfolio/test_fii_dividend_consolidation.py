@@ -73,9 +73,7 @@ def _service(
     )
     service = PortfolioConsolidatorService(
         uow=FakeUnitOfWork(portfolios=repository),
-        provider=SimpleNamespace(
-            fetch_fii_dividends=AsyncMock(return_value={'FIIX11': payments})
-        ),
+        provider=SimpleNamespace(fetch_fii_dividends=AsyncMock(return_value={'FIIX11': payments})),
         usd_brl_service=SimpleNamespace(),
     )
     return service, repository

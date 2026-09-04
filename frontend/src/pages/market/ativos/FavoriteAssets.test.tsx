@@ -37,7 +37,9 @@ describe('FavoriteAssets', () => {
     )
 
     await waitFor(() => {
-      expect(fetchFavoriteAssets).toHaveBeenCalledWith(8, 1, [42, 47])
+      // O quarto argumento é o recorte de mercado; sem ele pedido, é
+      // `undefined` e a leitura não filtra por bolsa.
+      expect(fetchFavoriteAssets).toHaveBeenCalledWith(8, 1, [42, 47], undefined)
     })
     expect(screen.getByText('BOVA11')).toBeVisible()
   })
