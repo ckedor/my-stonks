@@ -56,10 +56,15 @@ class PortfolioWealthTierService:
         tiers = await self.list_tiers()
         peak, current_value = await self._patrimony_peak_and_current(portfolio_id)
 
+        # A patente sai do **pico**, e não do valor de hoje: um degrau é
+        # alcançado uma vez e nunca se perde, então quem caiu mantém o título.
+        # O degrau seguinte é o próximo da escala depois do conquistado, e é
+        # só o *quanto falta* que se mede contra o patrimônio de hoje — essa
+        # sim é pergunta sobre agora.
         current = None
         following = None
         for tier in tiers:
-            if tier.threshold <= current_value:
+            if tier.threshold <= peak:
                 current = tier
             elif following is None:
                 following = tier

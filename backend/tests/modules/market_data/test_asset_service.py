@@ -93,4 +93,6 @@ async def test_favorite_assets_filters_the_universe_before_applying_the_limit():
         8,
         asset_type_id=1,
         asset_ids=[45, 46, 47],
+        # Sem recorte de mercado pedido: a leitura não filtra por bolsa.
+        brazilian=None,
     )

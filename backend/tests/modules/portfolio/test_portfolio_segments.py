@@ -190,12 +190,21 @@ async def test_only_the_market_scoped_segments_filter_by_exchange(segment, scope
     assert ('NOT (' in sql) is (segment is PortfolioSegment.EQUITY_WORLD)
 
 
-def _current_position_row(asset_id: int, type_id: int, exchange: str | None) -> dict:
-    """Uma linha como `get_position_on_date` devolve."""
+def _current_position_row(
+    asset_id: int,
+    type_id: int,
+    exchange: str | None,
+    ticker: str | None = None,
+) -> dict:
+    """Uma linha como `get_position_on_date` devolve.
+
+    O ticker importa: sem bolsa registrada, é o formato dele que decide de que
+    lado o ativo cai. `A1` não é formato de B3.
+    """
     return {
         'date': '2026-03-17',
         'asset_id': asset_id,
-        'ticker': f'A{asset_id}',
+        'ticker': ticker or f'A{asset_id}',
         'name': f'Ativo {asset_id}',
         'quantity': 10,
         'price': 100.0,
@@ -225,7 +234,8 @@ async def test_the_current_position_payload_carries_the_segment():
     não sobre o método, justamente por isso.
     """
     rows = [
-        _current_position_row(1, ASSET_TYPE.STOCK, None),
+        # Sem bolsa, mas com ticker de B3: cai no Brasil pelo formato.
+        _current_position_row(1, ASSET_TYPE.STOCK, None, ticker='PETR4'),
         _current_position_row(2, ASSET_TYPE.STOCK, 'NASDAQ'),
         _current_position_row(3, ASSET_TYPE.FII, 'B3'),
         _current_position_row(4, ASSET_TYPE.CRIPTO, None),

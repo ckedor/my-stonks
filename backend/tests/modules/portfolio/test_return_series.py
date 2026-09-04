@@ -70,6 +70,9 @@ def _consolidator(categories: list | None = None):
         get_portfolio_position=AsyncMock(return_value=_position_history()),
         get=AsyncMock(return_value=categories if categories is not None else []),
         upsert_bulk=AsyncMock(),
+        # A consolidação apaga as séries do portfolio antes de reescrevê-las:
+        # sem isto o duplo do repositório não tem o método que ela chama.
+        delete_return_series=AsyncMock(),
     )
     uow = FakeUnitOfWork(portfolios=repository)
     return PortfolioReturnsConsolidatorService(uow), repository
