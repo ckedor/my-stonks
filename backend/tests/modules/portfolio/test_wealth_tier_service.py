@@ -63,46 +63,57 @@ async def test_a_portfolio_at_its_peak_reads_the_same_either_way():
 
 
 @pytest.mark.asyncio
-async def test_a_tier_survives_the_patrimony_falling_back_below_its_threshold():
-    """The guard on the whole promise: a rung is reached once and never lost.
+async def test_the_tier_follows_the_patrimony_down():
+    """A guarda da promessa: a patente é onde a carteira está, não onde esteve.
 
-    The series peaks inside Camponês and then falls back under Andarilho. If the
-    tier were ever read from the latest value instead of the peak, this is where
-    it would regress, so the assertion is on the fallen series, not the peak.
-    """
-    service, *_ = _build(_series(10_000.0, 120_000.0, 30_000.0))
-
-    standing = await service.get_portfolio_tier(portfolio_id=1)
-
-    assert standing['peak_patrimony'] == 120_000.0
-    assert standing['current_tier'].name == 'Camponês'
-
-
-@pytest.mark.asyncio
-async def test_what_is_left_to_climb_is_measured_from_today_not_from_the_peak():
-    """The other half of the split, and the reason the two numbers both exist.
-
-    The peak of 120k earns Camponês, but the carteira is worth 30k today. The
-    distance to Mercador is the one the portfolio actually has to cover from
-    where it stands — 170k, not the 80k it would owe from its high.
+    A série sobe até Camponês e cai de volta abaixo de Andarilho. Ler o degrau
+    do pico deixava o título falando de um mês e a barra de outro — "Camponês"
+    com uma barra medindo a distância a partir de um patrimônio que a carteira
+    já não tinha. É aqui que essa regressão apareceria, por isso a asserção é
+    sobre a série caída.
     """
     service, *_ = _build(_series(10_000.0, 120_000.0, 30_000.0))
 
     standing = await service.get_portfolio_tier(portfolio_id=1)
 
     assert standing['current_patrimony'] == 30_000.0
-    assert standing['remaining'] == 170_000.0
+    assert standing['current_tier'].name == 'Pedinte'
+    assert standing['next_tier'].name == 'Andarilho'
 
 
 @pytest.mark.asyncio
-async def test_a_portfolio_below_its_own_rung_shows_an_empty_bar():
-    """Falling under the floor of a rung already won is not negative progress."""
-    service, *_ = _build(_series(120_000.0, 30_000.0))
+async def test_the_peak_is_still_reported_but_does_not_decide_the_title():
+    """O pico continua publicado — ele conta a história do álbum.
+
+    O que ele não faz mais é escolher a patente: os 120k do topo ficam em
+    `peak_patrimony`, e o título e o quanto falta saem os dois dos 30k de hoje,
+    do mesmo número. Duas perguntas sobre a mesma carteira não podem ser
+    respondidas a partir de dois patrimônios diferentes.
+    """
+    service, *_ = _build(_series(10_000.0, 120_000.0, 30_000.0))
+
+    standing = await service.get_portfolio_tier(portfolio_id=1)
+
+    assert standing['peak_patrimony'] == 120_000.0
+    assert standing['current_patrimony'] == 30_000.0
+    assert standing['remaining'] == 20_000.0
+
+
+@pytest.mark.asyncio
+async def test_progress_measures_the_crossing_from_the_current_rung():
+    """A barra mede o trecho que o "Faltam" ao lado dela promete.
+
+    Com 120k a carteira é Camponês (100k) a caminho de Mercador (200k): 20% da
+    travessia, e não 60% do alvo cheio. Sobre o valor cheio, quem acabou de
+    subir de degrau já apareceria quase no fim da barra.
+    """
+    service, *_ = _build(_series(30_000.0, 120_000.0))
 
     standing = await service.get_portfolio_tier(portfolio_id=1)
 
     assert standing['current_tier'].name == 'Camponês'
-    assert standing['progress'] == 0.0
+    assert standing['next_tier'].name == 'Mercador'
+    assert standing['progress'] == pytest.approx(0.2)
 
 
 @pytest.mark.asyncio
