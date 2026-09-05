@@ -21,6 +21,7 @@ from app.modules.market_data.domain.usd_brl import UsdBrlHistory
 from app.modules.portfolio.domain import entities as portfolio_entities
 from app.modules.research.domain.entities import (
     RecommendedPortfolio,
+    RecommendedPortfolioType,
     RecommendedPosition,
     ResearchSource,
 )
@@ -68,11 +69,12 @@ PERSISTED_ENTITIES = [
     DataIngestionAttempt,
     ResearchSource,
     RecommendedPortfolio,
+    RecommendedPortfolioType,
     RecommendedPosition,
     TheoreticalPortfolio,
     TheoreticalPosition,
 ]
-EXPECTED_PERSISTED_ENTITY_COUNT = 44
+EXPECTED_PERSISTED_ENTITY_COUNT = 45
 
 
 def test_every_persisted_entity_is_one_mapped_domain_dataclass():

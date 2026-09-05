@@ -6790,6 +6790,147 @@
     "title": "RecommendationChange",
     "type": "string"
    },
+   "RecommendationConsensusEntryResponse": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "average_weight": {
+      "title": "Average Weight",
+      "type": "number"
+     },
+     "conviction": {
+      "title": "Conviction",
+      "type": "number"
+     },
+     "entered": {
+      "title": "Entered",
+      "type": "integer"
+     },
+     "houses": {
+      "title": "Houses",
+      "type": "integer"
+     },
+     "increased": {
+      "title": "Increased",
+      "type": "integer"
+     },
+     "logo_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Logo Url"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "portfolios": {
+      "title": "Portfolios",
+      "type": "integer"
+     },
+     "reduced": {
+      "title": "Reduced",
+      "type": "integer"
+     },
+     "source_names": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Source Names",
+      "type": "array"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "asset_id",
+     "ticker",
+     "name",
+     "logo_url",
+     "houses",
+     "portfolios",
+     "average_weight",
+     "conviction",
+     "entered",
+     "increased",
+     "reduced",
+     "source_names"
+    ],
+    "title": "RecommendationConsensusEntryResponse",
+    "type": "object"
+   },
+   "RecommendationConsensusResponse": {
+    "description": "O ranking mais o que ficou de fora dele.",
+    "properties": {
+     "considered_portfolios": {
+      "title": "Considered Portfolios",
+      "type": "integer"
+     },
+     "considered_sources": {
+      "title": "Considered Sources",
+      "type": "integer"
+     },
+     "entries": {
+      "items": {
+       "$ref": "#/components/schemas/RecommendationConsensusEntryResponse"
+      },
+      "title": "Entries",
+      "type": "array"
+     },
+     "newest_reference_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Newest Reference Date"
+     },
+     "oldest_reference_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Oldest Reference Date"
+     },
+     "unlinked_positions": {
+      "title": "Unlinked Positions",
+      "type": "integer"
+     },
+     "window_months": {
+      "title": "Window Months",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "entries",
+     "considered_portfolios",
+     "considered_sources",
+     "unlinked_positions",
+     "window_months",
+     "oldest_reference_date",
+     "newest_reference_date"
+    ],
+    "title": "RecommendationConsensusResponse",
+    "type": "object"
+   },
    "RecommendedPortfolioDraftResponse": {
     "description": "The reading of one PDF, for the screen that shows it before it is kept.",
     "properties": {
@@ -6954,12 +7095,35 @@
      "title": {
       "title": "Title",
       "type": "string"
+     },
+     "type": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RecommendedPortfolioTypeResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "type_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Type Id"
      }
     },
     "required": [
      "id",
      "source_id",
      "source",
+     "type_id",
+     "type",
      "title",
      "reference_date",
      "summary",
@@ -6968,6 +7132,29 @@
      "positions"
     ],
     "title": "RecommendedPortfolioResponse",
+    "type": "object"
+   },
+   "RecommendedPortfolioTypeResponse": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "slug": {
+      "title": "Slug",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "slug"
+    ],
+    "title": "RecommendedPortfolioTypeResponse",
     "type": "object"
    },
    "RecommendedPositionResponse": {
@@ -7285,6 +7472,17 @@
       "minLength": 1,
       "title": "Title",
       "type": "string"
+     },
+     "type_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Type Id"
      }
     },
     "required": [
@@ -7294,6 +7492,21 @@
      "positions"
     ],
     "title": "SaveRecommendedPortfolioRequest",
+    "type": "object"
+   },
+   "SaveRecommendedPortfolioTypeRequest": {
+    "properties": {
+     "name": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "SaveRecommendedPortfolioTypeRequest",
     "type": "object"
    },
    "SaveRecommendedPositionRequest": {
@@ -9024,6 +9237,24 @@
      "name"
     ],
     "title": "UpdatePortfolioRequest",
+    "type": "object"
+   },
+   "UpdateRecommendedPortfolioRequest": {
+    "description": "O que uma carteira já salva aceita mudar depois da importação.",
+    "properties": {
+     "type_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Type Id"
+     }
+    },
+    "title": "UpdateRecommendedPortfolioRequest",
     "type": "object"
    },
    "UsdBrlConversionRequest": {
@@ -15367,6 +15598,77 @@
     "summary": "Update Portfolio"
    }
   },
+  "/research/recommendation_consensus": {
+   "get": {
+    "description": "Quantas casas recomendam cada ativo, entre as carteiras vigentes.\n\nO recorte por tipo é feito pelo lado da posição: uma carteira de vários\nmercados contribui com as linhas que são do tipo pedido.",
+    "operationId": "get_recommendation_consensus_research_recommendation_consensus_get",
+    "parameters": [
+     {
+      "description": "Recorte pelo tipo do ativo recomendado, pelo nome curto: FII, ETF, Ação.",
+      "in": "query",
+      "name": "asset_type",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Recorte pelo tipo do ativo recomendado, pelo nome curto: FII, ETF, Ação.",
+       "title": "Asset Type"
+      }
+     },
+     {
+      "description": "Quantos meses para trás uma edição ainda conta. 0 desliga a janela.",
+      "in": "query",
+      "name": "window_months",
+      "required": false,
+      "schema": {
+       "default": 3,
+       "description": "Quantos meses para trás uma edição ainda conta. 0 desliga a janela.",
+       "maximum": 60,
+       "minimum": 0,
+       "title": "Window Months",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RecommendationConsensusResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Recommendation Consensus",
+    "tags": [
+     "Research"
+    ]
+   }
+  },
   "/research/recommended_portfolio": {
    "get": {
     "operationId": "list_recommended_portfolios_research_recommended_portfolio_get",
@@ -15573,6 +15875,181 @@
      }
     ],
     "summary": "Get Recommended Portfolio",
+    "tags": [
+     "Research"
+    ]
+   },
+   "patch": {
+    "description": "Reclassificar uma edição salva. O tipo é o que a tela deixa mudar.",
+    "operationId": "update_recommended_portfolio_research_recommended_portfolio__recommended_portfolio_id__patch",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "recommended_portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Recommended Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/UpdateRecommendedPortfolioRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RecommendedPortfolioResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Update Recommended Portfolio",
+    "tags": [
+     "Research"
+    ]
+   }
+  },
+  "/research/recommended_portfolio_type": {
+   "get": {
+    "operationId": "list_recommended_portfolio_types_research_recommended_portfolio_type_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/RecommendedPortfolioTypeResponse"
+         },
+         "title": "Response List Recommended Portfolio Types Research Recommended Portfolio Type Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Recommended Portfolio Types",
+    "tags": [
+     "Research"
+    ]
+   },
+   "post": {
+    "operationId": "create_recommended_portfolio_type_research_recommended_portfolio_type_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SaveRecommendedPortfolioTypeRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RecommendedPortfolioTypeResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Create Recommended Portfolio Type",
+    "tags": [
+     "Research"
+    ]
+   }
+  },
+  "/research/recommended_portfolio_type/{type_id}": {
+   "delete": {
+    "operationId": "delete_recommended_portfolio_type_research_recommended_portfolio_type__type_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "type_id",
+      "required": true,
+      "schema": {
+       "title": "Type Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Delete Recommended Portfolio Type",
     "tags": [
      "Research"
     ]
