@@ -102,9 +102,6 @@ read as current and copied. Treat these as part of the change, not follow-up.
   or dropped. A term that lives only in code is not canonical yet.
 - **`backend/CLAUDE.md` and `frontend/CLAUDE.md`** — update when a rule they
   state stops holding, or when a new rule starts being enforced.
-- **`frontend/src/pages/admin/architecture/graph/architecture-map.ts`** — the
-  visual map is documentation too. Same trigger as the overview.
-
 Two things make staleness cheap to catch, and both already exist:
 
 - `task architecture` fails when the layering the overview describes is broken;

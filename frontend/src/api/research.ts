@@ -51,8 +51,19 @@ export interface SaveRecommendedPosition {
   change: RecommendationChange | null
 }
 
+/** Que espécie de carteira é a edição: FII, ETF Global, Ações Brasil.
+ *
+ *  Cadastro e não união de literais: a lista é do mantenedor, e um tipo novo
+ *  se cria na tela do admin, sem passar por deploy. */
+export interface RecommendedPortfolioType {
+  id: number
+  name: string
+  slug: string
+}
+
 export interface SaveRecommendedPortfolio {
   source_name: string
+  type_id: number | null
   title: string
   reference_date: string
   summary: string | null
@@ -74,6 +85,8 @@ export interface RecommendedPortfolio {
   id: number
   source_id: number
   source: ResearchSource | null
+  type_id: number | null
+  type: RecommendedPortfolioType | null
   title: string
   reference_date: string
   summary: string | null
@@ -98,5 +111,71 @@ export const saveRecommendedPortfolio = (
 ): Promise<RecommendedPortfolio> =>
   api.post<RecommendedPortfolio>(RESEARCH_ROUTES.recommendedPortfolio, data).then((r) => r.data)
 
+export const fetchRecommendedPortfolioTypes = (): Promise<RecommendedPortfolioType[]> =>
+  api
+    .get<RecommendedPortfolioType[]>(RESEARCH_ROUTES.recommendedPortfolioType)
+    .then((r) => r.data)
+
+export const createRecommendedPortfolioType = (
+  name: string,
+): Promise<RecommendedPortfolioType> =>
+  api
+    .post<RecommendedPortfolioType>(RESEARCH_ROUTES.recommendedPortfolioType, { name })
+    .then((r) => r.data)
+
+export const deleteRecommendedPortfolioType = (id: number): Promise<void> =>
+  api.delete(RESEARCH_ROUTES.recommendedPortfolioTypeById(id)).then(() => undefined)
+
+/** Reclassificar uma carteira já salva. O tipo é o que a tela deixa mudar. */
+export const setRecommendedPortfolioType = (
+  id: number,
+  typeId: number | null,
+): Promise<RecommendedPortfolio> =>
+  api
+    .patch<RecommendedPortfolio>(RESEARCH_ROUTES.recommendedPortfolioById(id), {
+      type_id: typeId,
+    })
+    .then((r) => r.data)
+
 export const deleteRecommendedPortfolio = (id: number): Promise<void> =>
   api.delete(RESEARCH_ROUTES.recommendedPortfolioById(id)).then(() => undefined)
+
+/** Um ativo no consenso: quanta gente recomenda, e com que tamanho.
+ *
+ *  `conviction` é o peso da linha sobre o peso médio da carteira em que ela
+ *  está — `1` é posição média, `2` é o dobro. Sem isso uma carteira de dez
+ *  ativos pareceria sempre mais convicta que uma de trinta. */
+export interface RecommendationConsensusEntry {
+  asset_id: number
+  ticker: string
+  name: string
+  logo_url: string | null
+  houses: number
+  portfolios: number
+  average_weight: number
+  conviction: number
+  entered: number
+  increased: number
+  reduced: number
+  source_names: string[]
+}
+
+export interface RecommendationConsensus {
+  entries: RecommendationConsensusEntry[]
+  considered_portfolios: number
+  considered_sources: number
+  unlinked_positions: number
+  window_months: number
+  oldest_reference_date: string | null
+  newest_reference_date: string | null
+}
+
+export const fetchRecommendationConsensus = (
+  assetType: string,
+  windowMonths: number,
+): Promise<RecommendationConsensus> =>
+  api
+    .get<RecommendationConsensus>(RESEARCH_ROUTES.recommendationConsensus, {
+      params: { asset_type: assetType, window_months: windowMonths },
+    })
+    .then((r) => r.data)

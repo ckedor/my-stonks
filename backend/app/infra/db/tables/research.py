@@ -25,6 +25,16 @@ research_source_table = Table(
     schema='research',
 )
 
+recommended_portfolio_type_table = Table(
+    'recommended_portfolio_type',
+    Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('name', String(120), nullable=False),
+    Column('slug', String(120), nullable=False, unique=True),
+    Column('created_at', DateTime(timezone=True), nullable=False, server_default=func.now()),
+    schema='research',
+)
+
 recommended_portfolio_table = Table(
     'recommended_portfolio',
     Base.metadata,
@@ -34,6 +44,14 @@ recommended_portfolio_table = Table(
         Integer,
         ForeignKey('research.research_source.id', ondelete='RESTRICT'),
         nullable=False,
+    ),
+    # Nullable: the editions imported before the list of types existed have
+    # none, and a type erased from the cadastro must not take the edition with
+    # it.
+    Column(
+        'type_id',
+        Integer,
+        ForeignKey('research.recommended_portfolio_type.id', ondelete='SET NULL'),
     ),
     Column('title', String(200), nullable=False),
     Column('reference_date', Date, nullable=False),

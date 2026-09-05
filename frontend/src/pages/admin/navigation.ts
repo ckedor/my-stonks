@@ -34,8 +34,9 @@ export const adminNavigationSections: AdminNavigationSection[] = [
   {
     id: 'integrations',
     label: 'Integrações',
-    defaultPath: '/admin/quote-ingestion',
+    defaultPath: '/admin/asset-sync',
     items: [
+      { label: 'Sincronização de ativos', path: '/admin/asset-sync' },
       { label: 'Importação de cotações', path: '/admin/quote-ingestion' },
       {
         label: 'Séries de mercado',
@@ -46,21 +47,28 @@ export const adminNavigationSections: AdminNavigationSection[] = [
     ],
   },
   {
+    id: 'research',
+    label: 'Pesquisa',
+    defaultPath: '/admin/recommended-portfolios',
+    items: [{ label: 'Carteiras recomendadas', path: '/admin/recommended-portfolios' }],
+  },
+  {
+    id: 'ai',
+    label: 'IA',
+    defaultPath: '/admin/ai-features',
+    items: [{ label: 'Recursos de IA', path: '/admin/ai-features' }],
+  },
+  {
     id: 'users',
     label: 'Usuários',
     defaultPath: '/admin/users',
     items: [{ label: 'Usuários', path: '/admin/users' }],
   },
   {
-    id: 'system',
-    label: 'Sistema',
-    defaultPath: '/admin/ai-features',
-    items: [
-      { label: 'Recursos de IA', path: '/admin/ai-features' },
-      { label: 'Carteiras recomendadas', path: '/admin/recommended-portfolios' },
-      { label: 'Design System', path: '/admin/design-system' },
-      { label: 'Arquitetura', path: '/admin/architecture' },
-    ],
+    id: 'design-system',
+    label: 'Design System',
+    defaultPath: '/admin/design-system',
+    items: [{ label: 'Design System', path: '/admin/design-system' }],
   },
 ]
 

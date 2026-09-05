@@ -7,6 +7,7 @@ import {
   AppIconButton,
   AppListRow,
   AppPageHeader,
+  AppPagination,
   AppPieChart,
   AppSelect,
   AppSideDrawer,
@@ -57,6 +58,8 @@ import {
  * sai de um botão, e não é dado de servidor que envelhece. O que é query é a
  * lista de carteiras salvas — e o que se salva é só parâmetro, nunca a curva. */
 
+const PORTFOLIOS_PER_PAGE = 4
+
 export default function MarketLaboratoryPage() {
   const {
     draft,
@@ -71,6 +74,24 @@ export default function MarketLaboratoryPage() {
   } = useLaboratory()
 
   const { portfolios, loading: portfoliosLoading } = useTheoreticalPortfolios()
+
+  /* Quatro por página: a lista divide a coluna com o formulário de simulação,
+     e crescer sem limite empurrava o formulário para fora da tela. */
+  const [portfolioPage, setPortfolioPage] = useState(1)
+  const portfolioPages = Math.ceil(portfolios.length / PORTFOLIOS_PER_PAGE)
+  const pagedPortfolios = useMemo(
+    () =>
+      portfolios.slice(
+        (portfolioPage - 1) * PORTFOLIOS_PER_PAGE,
+        portfolioPage * PORTFOLIOS_PER_PAGE,
+      ),
+    [portfolios, portfolioPage],
+  )
+  // Apagar a última carteira de uma página deixaria a lista vazia com a
+  // paginação ainda apontando para ela.
+  useEffect(() => {
+    if (portfolioPage > 1 && portfolioPage > portfolioPages) setPortfolioPage(portfolioPages || 1)
+  }, [portfolioPage, portfolioPages])
   const presets = usePresets()
   const assetList = useLabAssets()
   const seriesList = useLabSeries()
@@ -411,7 +432,7 @@ export default function MarketLaboratoryPage() {
                   <SectionTitle>Minhas carteiras</SectionTitle>
                   <AppCard>
                     <AppStack gap="none">
-                      {portfolios.map((item: TheoreticalPortfolio) => (
+                      {pagedPortfolios.map((item: TheoreticalPortfolio) => (
                         <AppListRow
                           key={item.id}
                           onClick={() => handleLoad(item)}
@@ -437,6 +458,13 @@ export default function MarketLaboratoryPage() {
                       ))}
                     </AppStack>
                   </AppCard>
+                  <AppStack direction="row" justify="center">
+                    <AppPagination
+                      count={portfolioPages}
+                      page={portfolioPage}
+                      onChange={setPortfolioPage}
+                    />
+                  </AppStack>
                 </>
               )}
 

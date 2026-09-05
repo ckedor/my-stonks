@@ -4,9 +4,9 @@ import { initAuth } from "./actions/auth";
 import MainLayout from "./layouts/MainLayout";
 import AdminAIFeaturesPage from "./pages/admin/ai-features/page";
 import AdminAssetsPage from "./pages/admin/assets/page";
+import AdminAssetSyncPage from "./pages/admin/asset-sync/page";
 import AdminBrokersPage from "./pages/admin/brokers/page";
 import AdminConsolidationPage from "./pages/admin/consolidation/page";
-import ArchitecturePage from "./pages/admin/architecture/ArchitecturePage";
 import DesignSystemPage from "./pages/admin/design-system/page";
 import AdminEventsPage from "./pages/admin/events/page";
 import AdminQuoteIngestionPage from "./pages/admin/quote-ingestion/page";
@@ -97,6 +97,7 @@ const router = createBrowserRouter([
       { path: "users", element: <AdminUsersPage /> },
       { path: "design-system", element: <DesignSystemPage /> },
       { path: "ai-features", element: <AdminAIFeaturesPage /> },
+      { path: "asset-sync", element: <AdminAssetSyncPage /> },
       { path: "quote-ingestion", element: <AdminQuoteIngestionPage /> },
       { path: "market-data/usd-brl", element: <AdminMarketDataUsdBrlPage /> },
       { path: "market-data/series", element: <AdminMarketDataSeriesPage /> },
@@ -108,7 +109,6 @@ const router = createBrowserRouter([
         path: "recommended-portfolios",
         element: <AdminRecommendedPortfoliosPage />,
       },
-      { path: "architecture", element: <ArchitecturePage /> },
       { index: true, element: <Navigate to="/admin/assets" replace /> },
     ],
   },

@@ -8,6 +8,7 @@ from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.research.domain.commands import SaveRecommendedPortfolioCommand
 from app.modules.research.domain.entities import (
     RecommendedPortfolio,
+    RecommendedPortfolioType,
     RecommendedPosition,
     ResearchSource,
 )
@@ -48,6 +49,69 @@ class RecommendedPortfolioService:
         async with self.uow as uow:
             return await uow.repository.get(ResearchSource, order_by='name')
 
+    async def list_types(self) -> list[RecommendedPortfolioType]:
+        async with self.uow as uow:
+            return await uow.repository.get(RecommendedPortfolioType, order_by='name')
+
+    async def create_type(self, name: str) -> RecommendedPortfolioType:
+        """Um tipo novo, cadastrado da própria tela que classifica a carteira.
+
+        O slug é o que impede "ETF Global" e "etf global" de virarem dois tipos
+        com metade das carteiras cada.
+        """
+        async with self.uow as uow:
+            slug = slugify(name)
+            existing = await uow.repository.get(
+                RecommendedPortfolioType, by={'slug': slug}, first=True
+            )
+            if existing is not None:
+                raise AlreadyExistsError(f'O tipo "{existing.name}" já está cadastrado.')
+            portfolio_type = RecommendedPortfolioType(name=name.strip(), slug=slug)
+            await uow.repository.create(RecommendedPortfolioType, [portfolio_type])
+            await uow.commit()
+            return portfolio_type
+
+    async def delete_type(self, type_id: int) -> None:
+        """Apagar o tipo não apaga as carteiras: elas voltam a ficar sem tipo."""
+        async with self.uow as uow:
+            portfolio_type = await uow.repository.get(RecommendedPortfolioType, id=type_id)
+            if portfolio_type is None:
+                raise NotFoundError('Tipo de carteira não encontrado.')
+            await uow.repository.delete(RecommendedPortfolioType, id=type_id)
+            await uow.commit()
+
+    async def set_type(
+        self, recommended_portfolio_id: int, type_id: int | None
+    ) -> RecommendedPortfolio:
+        """Reclassificar uma edição já salva.
+
+        O tipo é a única coisa que a tela edita depois da importação: o resto
+        veio do relatório e mudar seria discordar dele, não corrigi-lo.
+
+        Um escopo só, do começo ao fim: `self.get` abriria a mesma UnitOfWork
+        por dentro desta, e ela não se entra duas vezes. O tipo carregado é
+        atribuído junto com o `type_id` porque é ele que a resposta serializa —
+        deixar a relação para o ORM resolver depois do commit seria IO fora do
+        escopo.
+        """
+        async with self.uow as uow:
+            portfolio = await uow.repository.get(
+                RecommendedPortfolio, id=recommended_portfolio_id, relations=['positions']
+            )
+            if portfolio is None:
+                raise NotFoundError('Carteira recomendada não encontrada.')
+
+            portfolio_type = None
+            if type_id is not None:
+                portfolio_type = await uow.repository.get(RecommendedPortfolioType, id=type_id)
+                if portfolio_type is None:
+                    raise NotFoundError('Tipo de carteira não encontrado.')
+
+            portfolio.type_id = type_id
+            portfolio.type = portfolio_type
+            await uow.commit()
+            return portfolio
+
     async def create(self, command: SaveRecommendedPortfolioCommand) -> RecommendedPortfolio:
         async with self.uow as uow:
             source = await self._resolve_source(uow, command.source_name)
@@ -56,6 +120,7 @@ class RecommendedPortfolioService:
             portfolio = RecommendedPortfolio(
                 source_id=source.id,
                 source=source,
+                type_id=command.type_id,
                 title=command.title,
                 reference_date=command.reference_date,
                 summary=command.summary,

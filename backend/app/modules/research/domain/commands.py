@@ -25,6 +25,7 @@ class SaveRecommendedPortfolioCommand:
     """
 
     source_name: str
+    type_id: int | None = None
     title: str
     reference_date: date
     summary: str | None = None

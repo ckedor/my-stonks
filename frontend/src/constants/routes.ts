@@ -259,4 +259,8 @@ export const RESEARCH_ROUTES = {
   recommendedPortfolio: `${RESEARCH}/recommended_portfolio`,
   recommendedPortfolioExtraction: `${RESEARCH}/recommended_portfolio/extraction`,
   recommendedPortfolioById: (id: number | string) => `${RESEARCH}/recommended_portfolio/${id}`,
+  recommendationConsensus: `${RESEARCH}/recommendation_consensus`,
+  recommendedPortfolioType: `${RESEARCH}/recommended_portfolio_type`,
+  recommendedPortfolioTypeById: (id: number | string) =>
+    `${RESEARCH}/recommended_portfolio_type/${id}`,
 } as const

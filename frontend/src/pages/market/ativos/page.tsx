@@ -55,7 +55,7 @@ export default function MarketAtivosPage() {
   const { assets, assetTypes, loading: marketLoading } = useMarketStore()
   const [error, setError] = useState<string | null>(null)
 
-  const loading = marketLoading && assets.length === 0
+  const assetsLoading = marketLoading && assets.length === 0
 
   // Filters
   const [search, setSearch] = useState('')
@@ -106,7 +106,13 @@ export default function MarketAtivosPage() {
     return Array.from(classMap.values())
   }, [assetTypes])
 
-  const { byTicker: quotes } = useMarketQuotes()
+  /* A espera é uma só, e vai até a última peça chegar. O cadastro responde
+     rápido e o catálogo do provedor não; mostrar a lista assim que o cadastro
+     chega fazia a tela nascer sem logo, sem preço e sem variação, e depois se
+     repintar linha a linha. Uma tela que se completa sozinha na frente de quem
+     olha lê pior do que uma reserva que espera. */
+  const { byTicker: quotes, loading: quotesLoading } = useMarketQuotes()
+  const loading = assetsLoading || quotesLoading
   const { favorites } = useFavoritesStore()
 
   const quoteOf = useCallback(

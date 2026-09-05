@@ -1,6 +1,5 @@
 import { AppSidebar } from '@/components/ui'
 
-import AccountTreeIcon from '@mui/icons-material/AccountTree'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import BusinessIcon from '@mui/icons-material/Business'
 import CalculateIcon from '@mui/icons-material/Calculate'
@@ -24,14 +23,15 @@ const menuIcons: Record<string, React.ReactNode> = {
   '/admin/market-data/usd-brl': <AttachMoneyIcon fontSize="small" />,
   '/admin/market-data/series': <ShowChartIcon fontSize="small" />,
   '/admin/market-data/quotes': <TableChartIcon fontSize="small" />,
+  '/admin/asset-sync': <SyncAltIcon fontSize="small" />,
   '/admin/quote-ingestion': <SyncAltIcon fontSize="small" />,
+  '/admin/recommended-portfolios': <TokenIcon fontSize="small" />,
   '/admin/market-data-series-ingestion': <SyncAltIcon fontSize="small" />,
   '/admin/usd-brl-ingestion': <SyncAltIcon fontSize="small" />,
   '/admin/consolidation': <CalculateIcon fontSize="small" />,
   '/admin/users': <PeopleIcon fontSize="small" />,
   '/admin/ai-features': <PsychologyIcon fontSize="small" />,
   '/admin/design-system': <PaletteIcon fontSize="small" />,
-  '/admin/architecture': <AccountTreeIcon fontSize="small" />,
 }
 
 export default function AdminSidebar({

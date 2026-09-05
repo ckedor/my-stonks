@@ -11,6 +11,7 @@ import {
   AppSkeleton,
   AppStack,
   AppTableSkeleton,
+  AppTabs,
   AppText,
   SectionTitle,
   type AppSimpleTableColumn,
@@ -18,6 +19,7 @@ import {
 import { ASSET_TYPES } from '@/constants/assetTypes'
 import FavoriteAssets from '@/pages/market/ativos/FavoriteAssets'
 import MarketBenchmarkCard from '@/pages/market/components/MarketBenchmarkCard'
+import RecommendedFIIs from './RecommendedFIIs'
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -47,6 +49,7 @@ export default function MarketFIIPage() {
     queryFn: fetcher,
     enabled: true,
   })
+  const [tab, setTab] = useState<'funds' | 'recommended'>('funds')
   const [search, setSearch] = useState('')
   const [type, setType] = useState('all')
   const [segment, setSegment] = useState('all')
@@ -136,6 +139,20 @@ export default function MarketFIIPage() {
       />
 
       <AppStack gap="md">
+        <AppTabs
+          items={[
+            { id: 'funds', label: 'Todos os FIIs' },
+            { id: 'recommended', label: 'Mais recomendados' },
+          ]}
+          value={tab}
+          onChange={setTab}
+          label="Visão dos FIIs"
+        />
+
+        {tab === 'recommended' && <RecommendedFIIs />}
+
+        {tab === 'funds' && (
+        <AppStack gap="md">
         <SectionTitle>Todos os FIIs · {visibleFunds.length}</SectionTitle>
         <AppCard padding="none">
           <AppStack gap="md">
@@ -184,6 +201,8 @@ export default function MarketFIIPage() {
             />
           </AppStack>
         </AppCard>
+        </AppStack>
+        )}
       </AppStack>
     </AppStack>
   )

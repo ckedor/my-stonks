@@ -14,6 +14,7 @@ from app.infra.db.tables.market_data_series import (
 from app.infra.db.tables.quote import quote_table
 from app.infra.db.tables.research import (
     recommended_portfolio_table,
+    recommended_portfolio_type_table,
     recommended_position_table,
     research_source_table,
 )
@@ -27,6 +28,7 @@ __all__ = [
     'market_data_series_table',
     'quote_table',
     'recommended_portfolio_table',
+    'recommended_portfolio_type_table',
     'recommended_position_table',
     'research_source_table',
     'theoretical_portfolio_table',

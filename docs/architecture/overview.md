@@ -432,14 +432,6 @@ holds the two sides together.
 A cache is optional infrastructure. A read whose cache is unreachable is slow,
 never failed, and a `None` answer is not stored, since it reads back as a miss.
 
-## Visual architecture map
-
-The frontend route `/admin/architecture` renders a conceptual, read-only map.
-Its versioned graph data lives in
-`frontend/src/pages/admin/architecture/graph/architecture-map.ts`; update that
-file when a main module boundary, scheduler, integration or operational flow
-changes.
-
 ## Domain language
 
 The canonical glossary shared by backend, frontend, and documentation is

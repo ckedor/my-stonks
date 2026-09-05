@@ -1,13 +1,18 @@
 import {
+  createRecommendedPortfolioType,
   deleteRecommendedPortfolio,
+  deleteRecommendedPortfolioType,
   extractRecommendedPortfolio,
   fetchRecommendedPortfolios,
+  fetchRecommendedPortfolioTypes,
   saveRecommendedPortfolio,
+  setRecommendedPortfolioType,
   type DraftPosition,
   type PositionMatch,
   type RecommendationChange,
   type RecommendedPortfolio,
   type RecommendedPortfolioDraft,
+  type RecommendedPortfolioType,
 } from '@/api/research'
 import {
   AppAutocomplete,
@@ -21,6 +26,7 @@ import {
   AppIconButton,
   AppMetric,
   AppNumberField,
+  AppSelect,
   AppSideDrawer,
   AppSimpleTable,
   AppSnackbar,
@@ -33,6 +39,7 @@ import {
 } from '@/components/ui'
 import { ASSET_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
+import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import dayjs, { type Dayjs } from 'dayjs'
@@ -88,8 +95,10 @@ const monthOf = (isoDate: string) => dayjs(isoDate).format('MM/YYYY')
 
 export default function AdminRecommendedPortfoliosPage() {
   const [saved, setSaved] = useState<RecommendedPortfolio[]>([])
+  const [types, setTypes] = useState<RecommendedPortfolioType[]>([])
   const [assets, setAssets] = useState<CatalogueAsset[]>([])
   const [loading, setLoading] = useState(true)
+  const [newTypeName, setNewTypeName] = useState('')
 
   const [file, setFile] = useState<File | null>(null)
   const [extracting, setExtracting] = useState(false)
@@ -101,6 +110,7 @@ export default function AdminRecommendedPortfoliosPage() {
   const [referenceDate, setReferenceDate] = useState<Dayjs | null>(null)
   const [summary, setSummary] = useState('')
   const [objective, setObjective] = useState('')
+  const [typeId, setTypeId] = useState('')
   const [positions, setPositions] = useState<ReviewPosition[]>([])
 
   const [opened, setOpened] = useState<RecommendedPortfolio | null>(null)
@@ -118,12 +128,28 @@ export default function AdminRecommendedPortfoliosPage() {
     setSaved(await fetchRecommendedPortfolios())
   }, [])
 
+  const loadTypes = useCallback(async () => {
+    setTypes(await fetchRecommendedPortfolioTypes())
+  }, [])
+
+  /* O tipo é escolhido, e criado, no mesmo lugar: quem está classificando uma
+   * carteira que não se encaixa em nenhum tipo não deveria ter de sair da tela
+   * para cadastrar o que falta. */
+  const typeOptions = useMemo(
+    () => [
+      { value: '', label: 'Sem tipo' },
+      ...types.map((type) => ({ value: String(type.id), label: type.name })),
+    ],
+    [types],
+  )
+
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       try {
-        const [, catalogue] = await Promise.all([
+        const [, , catalogue] = await Promise.all([
           loadSaved(),
+          loadTypes(),
           api.get<CatalogueAsset[]>(ASSET_ROUTES.list).then((r) => r.data),
         ])
         setAssets(catalogue)
@@ -134,7 +160,7 @@ export default function AdminRecommendedPortfoliosPage() {
       }
     }
     load()
-  }, [loadSaved, notify])
+  }, [loadSaved, loadTypes, notify])
 
   const assetById = useMemo(() => {
     const index = new Map<number, CatalogueAsset>()
@@ -153,6 +179,7 @@ export default function AdminRecommendedPortfoliosPage() {
       setReferenceDate(extracted.reference_date ? dayjs(extracted.reference_date) : null)
       setSummary(extracted.summary ?? '')
       setObjective(extracted.objective ?? '')
+      setTypeId('')
       setPositions(extracted.positions.map((position, index) => ({ ...position, key: index })))
     } catch {
       notify('Não foi possível ler o relatório', 'error')
@@ -179,6 +206,7 @@ export default function AdminRecommendedPortfoliosPage() {
     try {
       await saveRecommendedPortfolio({
         source_name: sourceName.trim(),
+        type_id: typeId ? Number(typeId) : null,
         title: title.trim(),
         reference_date: referenceDate.format('YYYY-MM-DD'),
         summary: summary.trim() || null,
@@ -205,6 +233,43 @@ export default function AdminRecommendedPortfoliosPage() {
       notify(detail ?? 'Não foi possível salvar a carteira', 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleCreateType = async () => {
+    const name = newTypeName.trim()
+    if (!name) return
+    try {
+      await createRecommendedPortfolioType(name)
+      setNewTypeName('')
+      await loadTypes()
+      notify('Tipo cadastrado', 'success')
+    } catch (error) {
+      const detail =
+        typeof error === 'object' && error !== null && 'response' in error
+          ? ((error as { response?: { data?: { message?: string } } }).response?.data?.message ??
+            null)
+          : null
+      notify(detail ?? 'Não foi possível cadastrar o tipo', 'error')
+    }
+  }
+
+  const handleDeleteType = async (type: RecommendedPortfolioType) => {
+    try {
+      await deleteRecommendedPortfolioType(type.id)
+      await Promise.all([loadTypes(), loadSaved()])
+      notify('Tipo removido', 'success')
+    } catch {
+      notify('Não foi possível remover o tipo', 'error')
+    }
+  }
+
+  const handleSetType = async (portfolio: RecommendedPortfolio, value: string) => {
+    try {
+      await setRecommendedPortfolioType(portfolio.id, value ? Number(value) : null)
+      await loadSaved()
+    } catch {
+      notify('Não foi possível mudar o tipo da carteira', 'error')
     }
   }
 
@@ -318,6 +383,35 @@ export default function AdminRecommendedPortfoliosPage() {
     },
   ]
 
+  const typeColumns: AppSimpleTableColumn<RecommendedPortfolioType>[] = [
+    {
+      label: 'Tipo',
+      render: (type) => <AppText weight="strong">{type.name}</AppText>,
+    },
+    {
+      label: 'Carteiras',
+      align: 'right',
+      render: (type) => (
+        <AppText>{saved.filter((portfolio) => portfolio.type_id === type.id).length}</AppText>
+      ),
+    },
+    {
+      label: '',
+      align: 'right',
+      render: (type) => (
+        <AppIconButton
+          label="Remover tipo"
+          tone="error"
+          size="sm"
+          tooltip
+          onClick={() => handleDeleteType(type)}
+        >
+          <DeleteOutlineIcon fontSize="small" />
+        </AppIconButton>
+      ),
+    },
+  ]
+
   const savedColumns: AppSimpleTableColumn<RecommendedPortfolio>[] = [
     {
       label: 'Fonte',
@@ -328,6 +422,19 @@ export default function AdminRecommendedPortfoliosPage() {
       label: 'Carteira',
       sortValue: (portfolio) => portfolio.title,
       render: (portfolio) => <AppText weight="strong">{portfolio.title}</AppText>,
+    },
+    {
+      label: 'Tipo',
+      hint: 'A espécie de carteira. Editável aqui: a classificação é do mantenedor, não do relatório.',
+      sortValue: (portfolio) => portfolio.type?.name ?? '',
+      render: (portfolio) => (
+        <AppSelect
+          options={typeOptions}
+          value={portfolio.type_id === null ? '' : String(portfolio.type_id)}
+          onChange={(value) => void handleSetType(portfolio, value)}
+          size="sm"
+        />
+      ),
     },
     {
       label: 'Competência',
@@ -432,6 +539,16 @@ export default function AdminRecommendedPortfoliosPage() {
                       onChange={setReferenceDate}
                     />
                   </AppGridItem>
+                  <AppGridItem>
+                    <AppSelect
+                      label="Tipo"
+                      options={typeOptions}
+                      value={typeId}
+                      onChange={setTypeId}
+                      size="full"
+                      density="comfortable"
+                    />
+                  </AppGridItem>
                 </AppGrid>
 
                 <AppGrid cols={{ xs: 1, md: 2 }} gap="md">
@@ -470,6 +587,36 @@ export default function AdminRecommendedPortfoliosPage() {
         )}
 
         <AppStack gap="md">
+          <SectionTitle>Tipos de carteira</SectionTitle>
+          <AppCard>
+            <AppStack gap="md">
+              <AppText variant="bodySmall" tone="secondary">
+                A lista que classifica as carteiras. Apagar um tipo não apaga as carteiras dele —
+                elas voltam a ficar sem tipo.
+              </AppText>
+              <AppStack direction="row" gap="sm" align="center" wrap>
+                <AppTextField
+                  label="Novo tipo"
+                  value={newTypeName}
+                  onChange={setNewTypeName}
+                  placeholder="ETF Global"
+                />
+                <AppButton icon={<AddIcon />} onClick={handleCreateType} disabled={!newTypeName.trim()}>
+                  Cadastrar tipo
+                </AppButton>
+              </AppStack>
+              <AppSimpleTable
+                rows={types}
+                columns={typeColumns}
+                getRowKey={(type) => type.id}
+                surface="outlined"
+                emptyMessage="Nenhum tipo cadastrado."
+              />
+            </AppStack>
+          </AppCard>
+        </AppStack>
+
+        <AppStack gap="md">
           <SectionTitle>Carteiras salvas</SectionTitle>
           <AppSimpleTable
             rows={saved}
@@ -486,7 +633,11 @@ export default function AdminRecommendedPortfoliosPage() {
       <AppSideDrawer
         open={opened !== null}
         onClose={() => setOpened(null)}
-        title={opened ? `${opened.title} · ${monthOf(opened.reference_date)}` : ''}
+        title={
+          opened
+            ? `${opened.title} · ${opened.type?.name ?? 'sem tipo'} · ${monthOf(opened.reference_date)}`
+            : ''
+        }
         width="md"
       >
         {opened && (

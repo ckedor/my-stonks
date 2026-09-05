@@ -21,6 +21,22 @@ class ResearchSource:
 
 
 @dataclass(eq=False, kw_only=True)
+class RecommendedPortfolioType:
+    """What kind of carteira an edition is: FII, ETF global, ações Brasil.
+
+    A row and not an enum in code because the list is the maintainer's to
+    extend: a house publishing a new kind of carteira is a cadastro on the
+    admin screen, not a migration. The slug is what keeps "ETF Global" and
+    "etf global" the same type.
+    """
+
+    id: int | None = None
+    name: str
+    slug: str
+    created_at: datetime | None = None
+
+
+@dataclass(eq=False, kw_only=True)
 class RecommendedPortfolio:
     """One published edition of a recommended portfolio.
 
@@ -33,12 +49,14 @@ class RecommendedPortfolio:
 
     id: int | None = None
     source_id: int
+    type_id: int | None = None
     title: str
     reference_date: date
     summary: str | None = None
     objective: str | None = None
     created_at: datetime | None = None
     source: ResearchSource | None = None
+    type: RecommendedPortfolioType | None = None
     positions: list['RecommendedPosition'] = field(default_factory=list)
 
 
