@@ -42,7 +42,12 @@ async def test_list_assets_returns_only_the_registered_catalogue(client):
     response = await client.get('/market_data/asset')
 
     assert response.status_code == HTTPStatus.OK
-    assert sorted(asset['ticker'] for asset in response.json()) == ['CSPX.L', 'VWRA.L']
+    assert sorted(asset['ticker'] for asset in response.json()) == [
+        'CSPX.L',
+        'EIMI.L',
+        'EXUS.L',
+        'VWRA.L',
+    ]
 
 
 async def test_list_assets_returns_seeded(client, db, factory):
