@@ -1,24 +1,21 @@
-import { useRefreshPortfolio, useSelectedPortfolio } from '@/queries/portfolio'
+import { useSelectedPortfolio } from '@/queries/portfolio'
 import AssetCard from '@/components/portfolio-asset/AssetCard'
 import {
-  AppConfirmDialog,
   AppGrid,
   AppGroupHeader,
-  AppSelect,
   AppSimpleTable,
-  AppSnackbar,
   AppStack,
   AppText,
   MiniDonut,
   useAppTheme,
   type AppSimpleTableColumn,
 } from '@/components/ui'
-import { CATEGORY_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
-import api from '@/lib/api'
 import type { AssetGroupBy, AssetListView } from './view-state'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { CategoryAssignmentPrompt, CategoryCell } from './CategoryAssignment'
+import { useCategoryAssignment } from './category-assignment'
 
 interface Position {
   ticker: string | null
@@ -53,15 +50,9 @@ const formatPercent = (value: number) =>
 
 export default function AssetList({ positions, groupBy, search, view }: AssetListProps) {
   const selectedPortfolio = useSelectedPortfolio()
-  const refreshPortfolio = useRefreshPortfolio()
   const navigate = useNavigate()
-  const userCategories = selectedPortfolio?.custom_categories ?? []
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean
-    categoryId: number | null
-    assetId: number | null
-  }>({ open: false, categoryId: null, assetId: null })
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const assignment = useCategoryAssignment()
+  const userCategories = assignment.categories
 
   const theme = useAppTheme()
 
@@ -116,26 +107,6 @@ export default function AssetList({ positions, groupBy, search, view }: AssetLis
     const totalB = b.reduce((acc, item) => acc + item.value, 0)
     return totalB - totalA
   })
-
-  const handleCategoryChange = (assetId: number, categoryId: number) => {
-    setConfirmDialog({ open: true, assetId, categoryId })
-  }
-
-  const confirmCategoryChange = async () => {
-    if (!confirmDialog.assetId || !confirmDialog.categoryId) return
-    try {
-      await api.post(CATEGORY_ROUTES.assignment, {
-        asset_id: confirmDialog.assetId,
-        category_id: confirmDialog.categoryId,
-        portfolio_id: selectedPortfolio?.id,
-      })
-      setConfirmDialog({ open: false, assetId: null, categoryId: null })
-      void refreshPortfolio()
-    } catch (error) {
-      console.error('Erro ao atualizar categoria', error)
-      setSnackbarOpen(true)
-    }
-  }
 
   const { format: formatCurrency } = useCurrency()
 
@@ -234,12 +205,7 @@ export default function AssetList({ positions, groupBy, search, view }: AssetLis
     {
       label: 'Categoria',
       render: (pos) => (
-        <AppSelect
-          size="full"
-          options={userCategories.map((cat) => ({ value: String(cat.id), label: cat.name }))}
-          value={String(userCategories.find((c) => c.name === pos.category)?.id ?? '')}
-          onChange={(value) => handleCategoryChange(pos.asset_id, Number(value))}
-        />
+        <CategoryCell assignment={assignment} assetId={pos.asset_id} categoryName={pos.category} />
       ),
     },
   ]
@@ -290,22 +256,7 @@ export default function AssetList({ positions, groupBy, search, view }: AssetLis
         )
       })}
 
-      <AppConfirmDialog
-        open={confirmDialog.open}
-        title="Confirmar Alteração"
-        tone="primary"
-        onConfirm={confirmCategoryChange}
-        onCancel={() => setConfirmDialog({ open: false, assetId: null, categoryId: null })}
-      >
-        Deseja realmente alterar a categoria deste ativo?
-      </AppConfirmDialog>
-
-      <AppSnackbar
-        open={snackbarOpen}
-        message="Erro ao atualizar categoria."
-        severity="error"
-        onClose={() => setSnackbarOpen(false)}
-      />
+      <CategoryAssignmentPrompt assignment={assignment} />
     </AppStack>
   )
 }

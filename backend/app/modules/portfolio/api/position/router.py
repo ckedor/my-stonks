@@ -9,6 +9,7 @@ from app.modules.market_data.api.asset.schemas import (
     AssetDetailsWithPosition,
 )
 from app.modules.portfolio.api.position.schemas import (
+    ClosedPositionEntry,
     ContributionAverage,
     PortfolioConsolidation,
 )
@@ -34,6 +35,22 @@ async def get_portfolio_position(  # noqa: PLR0913
             portfolio_id, group_by_broker=group_by_broker, currency=currency
         )
     return await service.get_portfolio_position_history(portfolio_id, asset_id, currency=currency)
+
+
+@router.get('/{portfolio_id}/closed', response_model=list[ClosedPositionEntry])
+async def get_closed_positions(
+    portfolio_id: int,
+    currency: str = Query('BRL'),
+    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+):
+    """Os ativos que a carteira teve e não tem mais.
+
+    Uma leitura própria, e não um filtro da posição atual: uma posição
+    encerrada não tem valor de mercado nem peso na carteira, e o que se
+    pergunta dela — quanto rendeu, quanto de lucro sobrou, por quanto tempo
+    ficou — só existe depois que ela acabou.
+    """
+    return await service.get_closed_positions(portfolio_id, currency=currency)
 
 
 @router.get('/{portfolio_id}/consolidation', response_model=PortfolioConsolidation | None)

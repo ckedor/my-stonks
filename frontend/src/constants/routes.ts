@@ -177,6 +177,10 @@ export const POSITION_ROUTES = {
   returns: (portfolioId: number | string) => `${PORTFOLIO}/position/${portfolioId}/returns`,
   consolidation: (portfolioId: number | string) =>
     `${PORTFOLIO}/position/${portfolioId}/consolidation`,
+  // Os ativos que a carteira teve e não tem mais. Leitura própria: uma posição
+  // encerrada não tem valor de mercado nem peso, e o que se pergunta dela só
+  // existe depois que ela acabou.
+  closed: (portfolioId: number | string) => `${PORTFOLIO}/position/${portfolioId}/closed`,
   assetTypeReturns: (portfolioId: number | string, assetTypeId: number | string) =>
     `${PORTFOLIO}/position/${portfolioId}/asset-type/${assetTypeId}/returns`,
   assetTypeAnalysis: (portfolioId: number | string, assetTypeId: number | string) =>

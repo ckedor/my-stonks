@@ -73,3 +73,36 @@ test('portfolio/ativos — cards', async ({ page, mockApi }) => {
 
   await expect(page).toHaveScreenshot('page-assets-cards.png')
 })
+
+/* A aba dos encerrados: o que a carteira teve e não tem mais. Colunas
+   próprias — período, lucro realizado, rentabilidade na saída —, porque são
+   as perguntas que só existem depois que a posição acabou. */
+const ENCERRADOS = [
+  {
+    asset_id: 4, ticker: 'MGLU3', name: 'Magazine Luiza', type: 'Ação',
+    category: 'Ações', entry_date: '2021-02-10', exit_date: '2023-11-30',
+    days_held: 1023, quantity_sold: 500, average_price: 18.4,
+    average_sale_price: 11.2, total_invested: 9200, gross_sales: 5600,
+    realized_profit: -3600, realized_profit_pct: -39.13, dividends: 120,
+    acc_return: -0.3785, cagr: -0.1652,
+  },
+  {
+    asset_id: 5, ticker: 'XPLG11', name: 'XP Log', type: 'FII',
+    category: 'FIIs', entry_date: '2022-06-01', exit_date: '2024-08-15',
+    days_held: 806, quantity_sold: 120, average_price: 96.3,
+    average_sale_price: 108.9, total_invested: 11556, gross_sales: 13068,
+    realized_profit: 1512, realized_profit_pct: 13.08, dividends: 1840,
+    acc_return: 0.2916, cagr: 0.1241,
+  },
+]
+
+test('portfolio/ativos — encerrados', async ({ page, mockApi }) => {
+  await mockApi('/portfolio/position/1/closed', ENCERRADOS)
+  await abrirListagem(page, mockApi)
+
+  await page.getByRole('tab', { name: 'Encerrados' }).click()
+  await expect(page.getByText('Magazine Luiza')).toBeVisible()
+
+  await expectNothingClipped(page)
+  await expect(page).toHaveScreenshot('page-assets-closed.png')
+})

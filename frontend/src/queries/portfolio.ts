@@ -3,6 +3,7 @@ import {
   consolidatePortfolio,
   fetchAnalysis,
   fetchCategoryReturns,
+  fetchClosedPositions,
   fetchContributionAverage,
   fetchDividends,
   fetchPatrimony,
@@ -32,6 +33,8 @@ const portfolioKeys = {
   list: () => [...portfolioKeys.all, 'list'] as const,
   positions: (id: number, currency: Currency) =>
     [...portfolioKeys.all, id, 'positions', currency] as const,
+  closedPositions: (id: number, currency: Currency) =>
+    [...portfolioKeys.all, id, 'closed-positions', currency] as const,
   returns: (id: number, currency: Currency) =>
     [...portfolioKeys.all, id, 'returns', currency] as const,
   categoryReturns: (id: number, currency: Currency) =>
@@ -110,6 +113,20 @@ export function usePositions(explicitPortfolioId?: number) {
     queryKey: portfolioKeys.positions(portfolioId!, currency),
     queryFn: () => fetchPositions(portfolioId!, currency),
     enabled: portfolioId != null,
+  })
+}
+
+/** Os ativos que a carteira teve e não tem mais.
+ *
+ *  Só busca quando a aba que os mostra está aberta: é uma leitura que nenhuma
+ *  outra tela usa, e quem abre Ativos quase sempre quer ver o que tem. */
+export function useClosedPositions(enabled: boolean) {
+  const portfolioId = useSelectedPortfolioId()
+  const currency = useCurrency()
+  return useQuery({
+    queryKey: portfolioKeys.closedPositions(portfolioId!, currency),
+    queryFn: () => fetchClosedPositions(portfolioId!, currency),
+    enabled: enabled && portfolioId != null,
   })
 }
 

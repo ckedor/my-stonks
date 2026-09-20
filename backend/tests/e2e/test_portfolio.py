@@ -8,7 +8,7 @@ user configuration, and rebalancing.
 from datetime import date, datetime
 from http import HTTPStatus
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.modules.portfolio.domain.entities import (
     CustomCategory,
@@ -52,6 +52,26 @@ async def _create_portfolio(client, name='Carteira Principal', benchmark_id=6):
 
 async def _seed_portfolio(factory, name='Carteira Test'):
     return _Row(await factory.portfolio(name=name))
+
+
+async def _seed_position(db, portfolio_id, asset_id, on, *, acc_return=0.0):
+    """Uma linha de posição consolidada, que é o que as leituras de carteira leem."""
+    await db.execute(
+        text(
+            'INSERT INTO portfolio.position '
+            '(portfolio_id, asset_id, date, quantity, price, average_price, '
+            'daily_return, acc_return, price_usd, average_price_usd, '
+            'daily_return_usd, acc_return_usd) '
+            'VALUES (:portfolio_id, :asset_id, :on, 100, 15, 10, '
+            '0, :acc_return, 3, 2, 0, :acc_return)'
+        ),
+        {
+            'portfolio_id': portfolio_id,
+            'asset_id': asset_id,
+            'on': on,
+            'acc_return': acc_return,
+        },
+    )
 
 
 # ============================================================================
@@ -407,6 +427,42 @@ class TestRebalancing:
 
         assert response.status_code == HTTPStatus.OK
 
+    async def test_rebalancing_lists_a_category_without_assets(self, client, db, factory):
+        """Planejar uma categoria vazia é o caso, não a exceção.
+
+        Sem ativo nenhum ela não aparecia na tela, e era justamente nela que o
+        aporte precisava entrar: uma classe que a carteira ainda não tem só
+        pode ser alvo antes de existir.
+        """
+        portfolio = await _seed_portfolio(factory)
+        await factory.category(
+            name='Cripto', portfolio_id=portfolio.id, benchmark_id=6, target_percentage=10.0
+        )
+
+        response = await client.get(f'/portfolio/rebalancing/{portfolio.id}')
+
+        assert response.status_code == HTTPStatus.OK
+        categories = response.json()['categories']
+        assert [c['category_name'] for c in categories] == ['Cripto']
+        assert categories[0]['current_value'] == 0
+        assert categories[0]['target_pct'] == 10.0
+        assert categories[0]['assets'] == []
+
+    async def test_save_targets_for_a_category_without_assets(self, client, db, factory):
+        """Sem ativo não há 100% a repartir dentro da categoria."""
+        portfolio = await _seed_portfolio(factory)
+        cat = _Row(await factory.category(name='Cripto', portfolio_id=portfolio.id, benchmark_id=6))
+
+        payload = {
+            'portfolio_id': portfolio.id,
+            'categories': [
+                {'category_id': cat.id, 'target_percentage': 100.0, 'assets': []},
+            ],
+        }
+        response = await client.put(f'/portfolio/rebalancing/{portfolio.id}', json=payload)
+
+        assert response.status_code == HTTPStatus.OK
+
 
 # ============================================================================
 # POSITION (read-only endpoints, need seeded positions)
@@ -433,6 +489,88 @@ class TestPosition:
         response = await client.get(
             f'/portfolio/position/{portfolio.id}/asset-type/{fii_type}/returns'
         )
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.json() == []
+
+    async def test_get_closed_positions(self, client, db, factory):
+        """Um ativo vendido sai da posição atual e reaparece aqui, com a conta.
+
+        Duas datas de posição, e é isso que separa os dois lados: a data mais
+        recente da carteira é a do ativo ainda em carteira, então a última
+        linha do vendido ficou para trás — é assim que a rota sabe que ele
+        acabou, sem precisar de uma coluna dizendo isso.
+        """
+        portfolio = await _seed_portfolio(factory)
+        broker = await _seed_broker(factory)
+        sold = await _seed_asset(factory, ticker='PETR4', name='Petrobras')
+        held = await _seed_asset(factory, ticker='VALE3', name='Vale')
+
+        await factory.transaction(
+            portfolio_id=portfolio.id,
+            asset_id=sold.id,
+            broker_id=broker.id,
+            quantity=100,
+            price=10,
+            on=date(2024, 1, 2),
+        )
+        await factory.transaction(
+            portfolio_id=portfolio.id,
+            asset_id=sold.id,
+            broker_id=broker.id,
+            quantity=-100,
+            price=15,
+            on=date(2024, 3, 1),
+        )
+        await factory.dividend(
+            portfolio_id=portfolio.id, asset_id=sold.id, amount=40.0, on=date(2024, 2, 1)
+        )
+        await _seed_position(db, portfolio.id, sold.id, date(2024, 2, 29), acc_return=0.5)
+        await _seed_position(db, portfolio.id, held.id, date(2024, 3, 31), acc_return=0.1)
+
+        response = await client.get(f'/portfolio/position/{portfolio.id}/closed')
+
+        assert response.status_code == HTTPStatus.OK
+        closed = response.json()
+        assert [entry['ticker'] for entry in closed] == ['PETR4']
+        entry = closed[0]
+        assert entry['entry_date'] == '2024-01-02'
+        assert entry['exit_date'] == '2024-03-01'
+        assert entry['quantity_sold'] == 100
+        assert entry['average_price'] == 10
+        assert entry['average_sale_price'] == 15
+        assert entry['total_invested'] == 1000
+        assert entry['gross_sales'] == 1500
+        assert entry['realized_profit'] == 500
+        assert entry['realized_profit_pct'] == 50
+        assert entry['dividends'] == 40
+        assert entry['acc_return'] == 0.5
+
+    async def test_closed_positions_exclude_a_repurchased_asset(self, client, db, factory):
+        """Vendido e recomprado é posição aberta, não encerrada."""
+        portfolio = await _seed_portfolio(factory)
+        broker = await _seed_broker(factory)
+        asset = await _seed_asset(factory)
+
+        await factory.transaction(
+            portfolio_id=portfolio.id,
+            asset_id=asset.id,
+            broker_id=broker.id,
+            quantity=100,
+            price=10,
+            on=date(2024, 1, 2),
+        )
+        await factory.transaction(
+            portfolio_id=portfolio.id,
+            asset_id=asset.id,
+            broker_id=broker.id,
+            quantity=-100,
+            price=15,
+            on=date(2024, 3, 1),
+        )
+        await _seed_position(db, portfolio.id, asset.id, date(2024, 3, 31))
+
+        response = await client.get(f'/portfolio/position/{portfolio.id}/closed')
 
         assert response.status_code == HTTPStatus.OK
         assert response.json() == []

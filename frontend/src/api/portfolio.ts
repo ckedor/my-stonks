@@ -7,7 +7,7 @@ import {
 } from '@/constants/routes'
 import api from '@/lib/api'
 import { toISODate } from '@/lib/utils/date'
-import type { AssetAnalysis, CategoryReturnEntry, ContributionAverage, Dividend, PatrimonyEntry, Portfolio, PortfolioPositionEntry, PortfolioReturnEntry, ReturnsEntry, Trade } from '@/types'
+import type { AssetAnalysis, CategoryReturnEntry, ClosedPositionEntry, ContributionAverage, Dividend, PatrimonyEntry, Portfolio, PortfolioPositionEntry, PortfolioReturnEntry, ReturnsEntry, Trade } from '@/types'
 
 // ---------------------------------------------------------------------------
 // Pure API functions – no state management, no side-effects beyond the fetch.
@@ -18,6 +18,9 @@ export const fetchPortfolios = (): Promise<Portfolio[]> =>
 
 export const fetchPositions = (portfolioId: number, currency: string = 'BRL'): Promise<PortfolioPositionEntry[]> =>
   api.get<PortfolioPositionEntry[]>(POSITION_ROUTES.byPortfolio(portfolioId), { params: { currency } }).then((r) => r.data)
+
+export const fetchClosedPositions = (portfolioId: number, currency: string = 'BRL'): Promise<ClosedPositionEntry[]> =>
+  api.get<ClosedPositionEntry[]>(POSITION_ROUTES.closed(portfolioId), { params: { currency } }).then((r) => r.data)
 
 export const fetchDividends = (portfolioId: number, currency: string = 'BRL'): Promise<Dividend[]> =>
   api.get<Dividend[]>(DIVIDEND_ROUTES.list, { params: { portfolio_id: portfolioId, currency } }).then((r) => r.data)

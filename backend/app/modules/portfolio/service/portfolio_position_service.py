@@ -10,12 +10,15 @@ from app.infra.db.unit_of_work import UnitOfWork
 from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
 from app.lib.finance.analysis import calculate_returns_analysis
+from app.lib.finance.trade import profit_by_trade_df
 from app.lib.utils.df import df_to_dict_list, rows_to_df
 from app.lib.utils.fastapi import df_response
 from app.modules.market_data.domain.constants import SERIES
 from app.modules.market_data.service.market_data_service import MarketDataReadService
 from app.modules.portfolio.domain.asset_position import AssetPosition
+from app.modules.portfolio.domain.closed_position import ClosedPosition
 from app.modules.portfolio.domain.contribution_average import contribution_average
+from app.modules.portfolio.domain.dividend import DividendQuery
 from app.modules.portfolio.domain.entities import Position
 from app.modules.portfolio.domain.portfolio_segment import (
     PortfolioSegment,
@@ -480,6 +483,74 @@ class PortfolioPositionService:
 
         return df_response(pos_df)
 
+    async def get_closed_positions(
+        self, portfolio_id: int, currency: str = 'BRL'
+    ) -> list[ClosedPosition]:
+        """What the portfolio held and no longer holds, with how it went.
+
+        Two sources, because they answer different halves of the question. The
+        last position row carries the time-weighted return of the round trip;
+        the trades carry the money — what was paid, what was received and the
+        profit that was realized on the way out. Dividends come from the
+        portfolio's own records, so income already counted in the return is
+        still visible as cash.
+        """
+        async with self.uow as uow:
+            rows = await uow.portfolios.get_closed_positions(portfolio_id, currency=currency)
+            if not rows:
+                return []
+            transaction_rows = await uow.portfolios.get_transactions(portfolio_id)
+            dividend_rows = await uow.portfolios.get_portfolio_dividends(
+                portfolio_id, DividendQuery(), currency=currency
+            )
+
+        closed_ids = {int(row['asset_id']) for row in rows}
+        round_trips = _round_trips_by_asset(transaction_rows, closed_ids, currency)
+        dividends_by_asset: dict[int, float] = {}
+        for dividend in dividend_rows:
+            asset_id = int(dividend['asset_id'])
+            if asset_id in closed_ids:
+                dividends_by_asset[asset_id] = dividends_by_asset.get(asset_id, 0.0) + float(
+                    dividend['amount'] or 0
+                )
+
+        closed: list[ClosedPosition] = []
+        for row in rows:
+            asset_id = int(row['asset_id'])
+            trip = round_trips.get(asset_id)
+            if trip is None:
+                # Position without a trade behind it: nothing to report about a
+                # round trip that has no purchase and no sale.
+                continue
+
+            cost_of_sold = trip['average_price'] * trip['quantity_sold']
+            closed.append(
+                ClosedPosition(
+                    asset_id=asset_id,
+                    ticker=row['ticker'],
+                    name=row['name'] or row['ticker'],
+                    type=row['type'],
+                    category=row['category'],
+                    entry_date=trip['entry_date'],
+                    exit_date=trip['exit_date'],
+                    days_held=(trip['exit_date'] - trip['entry_date']).days,
+                    quantity_sold=round(trip['quantity_sold'], 8),
+                    average_price=round(trip['average_price'], 6),
+                    average_sale_price=round(trip['average_sale_price'], 6),
+                    total_invested=round(trip['total_invested'], 2),
+                    gross_sales=round(trip['gross_sales'], 2),
+                    realized_profit=round(trip['realized_profit'], 2),
+                    realized_profit_pct=round(trip['realized_profit'] / cost_of_sold * 100, 2)
+                    if cost_of_sold > 0
+                    else None,
+                    dividends=round(dividends_by_asset.get(asset_id, 0.0), 2),
+                    acc_return=float(row['acc_return']) if row['acc_return'] is not None else None,
+                    cagr=float(row['cagr']) if row['cagr'] is not None else None,
+                )
+            )
+
+        return closed
+
     async def get_portfolio_position_history(
         self, portfolio_id: int, asset_id: int | None = None, currency: str = 'BRL'
     ) -> pd.DataFrame:
@@ -560,3 +631,52 @@ class PortfolioPositionService:
             )
 
         return calculate_returns_analysis(returns_series, benchmarks)
+
+
+def _round_trips_by_asset(
+    transaction_rows: list[dict],
+    asset_ids: set[int],
+    currency: str,
+) -> dict[int, dict]:
+    """Summarize the trades of each given asset into one round trip.
+
+    The average cost comes from `profit_by_trade_df`, which walks the trades in
+    order and keeps the cost basis a sale consumes — the same arithmetic the
+    income-tax report uses, so a realized profit means the same number on both
+    screens. The value read is the one on the last sale: that is the cost the
+    position carried out the door.
+    """
+    rows = [row for row in transaction_rows if int(row['asset_id']) in asset_ids]
+    if not rows:
+        return {}
+
+    trades = pd.DataFrame(rows)
+    trades['date'] = pd.to_datetime(trades['date'])
+    if currency == 'USD':
+        trades['price'] = trades['price_usd']
+    trades['price'] = pd.to_numeric(trades['price'], errors='coerce').fillna(0.0)
+    trades['quantity'] = pd.to_numeric(trades['quantity'], errors='coerce').fillna(0.0)
+
+    summaries: dict[int, dict] = {}
+    for asset_id, group in trades.groupby('asset_id'):
+        priced = profit_by_trade_df(group)
+        sales = priced[priced['quantity'] < 0]
+        purchases = priced[priced['quantity'] > 0]
+        if sales.empty:
+            continue
+
+        quantity_sold = float(-sales['quantity'].sum())
+        gross_sales = float((-sales['quantity'] * sales['price']).sum())
+
+        summaries[int(asset_id)] = {
+            'entry_date': priced['date'].min().date(),
+            'exit_date': sales['date'].max().date(),
+            'quantity_sold': quantity_sold,
+            'average_price': float(sales['average_price'].iloc[-1]),
+            'average_sale_price': gross_sales / quantity_sold if quantity_sold else 0.0,
+            'total_invested': float((purchases['quantity'] * purchases['price']).sum()),
+            'gross_sales': gross_sales,
+            'realized_profit': float(priced['realized_profit'].sum()),
+        }
+
+    return summaries

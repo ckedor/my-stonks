@@ -2403,6 +2403,142 @@
     "title": "CategoryTargetRequest",
     "type": "object"
    },
+   "ClosedPositionEntry": {
+    "description": "Um ativo que a carteira teve e não tem mais.\n\nTraz as duas leituras do domínio juntas: o dinheiro realizado na ida e\nvolta e o retorno ponderado no tempo no último dia de exposição.",
+    "properties": {
+     "acc_return": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Acc Return"
+     },
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "average_price": {
+      "title": "Average Price",
+      "type": "number"
+     },
+     "average_sale_price": {
+      "title": "Average Sale Price",
+      "type": "number"
+     },
+     "cagr": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cagr"
+     },
+     "category": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Category"
+     },
+     "days_held": {
+      "title": "Days Held",
+      "type": "integer"
+     },
+     "dividends": {
+      "title": "Dividends",
+      "type": "number"
+     },
+     "entry_date": {
+      "format": "date",
+      "title": "Entry Date",
+      "type": "string"
+     },
+     "exit_date": {
+      "format": "date",
+      "title": "Exit Date",
+      "type": "string"
+     },
+     "gross_sales": {
+      "title": "Gross Sales",
+      "type": "number"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "quantity_sold": {
+      "title": "Quantity Sold",
+      "type": "number"
+     },
+     "realized_profit": {
+      "title": "Realized Profit",
+      "type": "number"
+     },
+     "realized_profit_pct": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Realized Profit Pct"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     },
+     "total_invested": {
+      "title": "Total Invested",
+      "type": "number"
+     },
+     "type": {
+      "title": "Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "asset_id",
+     "ticker",
+     "name",
+     "type",
+     "category",
+     "entry_date",
+     "exit_date",
+     "days_held",
+     "quantity_sold",
+     "average_price",
+     "average_sale_price",
+     "total_invested",
+     "gross_sales",
+     "realized_profit",
+     "realized_profit_pct",
+     "dividends",
+     "acc_return",
+     "cagr"
+    ],
+    "title": "ClosedPositionEntry",
+    "type": "object"
+   },
    "CompareBacktestsRequest": {
     "properties": {
      "runs": {
@@ -17691,6 +17827,68 @@
      }
     ],
     "summary": "Get Category Analysis",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/closed": {
+   "get": {
+    "description": "Os ativos que a carteira teve e não tem mais.\n\nUma leitura própria, e não um filtro da posição atual: uma posição\nencerrada não tem valor de mercado nem peso na carteira, e o que se\npergunta dela — quanto rendeu, quanto de lucro sobrou, por quanto tempo\nficou — só existe depois que ela acabou.",
+    "operationId": "get_closed_positions_portfolio_position__portfolio_id__closed_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ClosedPositionEntry"
+         },
+         "title": "Response Get Closed Positions Portfolio Position  Portfolio Id  Closed Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Closed Positions",
     "tags": [
      "Portfolio Position"
     ]

@@ -1,21 +1,34 @@
 import { useQuery } from '@tanstack/react-query'
-import { useSelectedPortfolio } from '@/queries/portfolio'
+import { EMPTY_LIST } from '@/queries/empty'
+import { useClosedPositions, useSelectedPortfolio } from '@/queries/portfolio'
 import { POSITION_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
-import { AppPageHeader, AppStack } from '@/components/ui'
+import { AppPageHeader, AppSearchField, AppStack, AppTabs, AppTableSkeleton } from '@/components/ui'
 import type { Dayjs } from 'dayjs'
 import type { PortfolioPositionEntry } from '@/types'
 import { useCallback, useState } from 'react'
 import AssetListTable from './AssetList'
 import AssetListSkeleton from './AssetListSkeleton'
 import AssetListToolbar from './AssetListToolbar'
+import ClosedPositionList from './ClosedPositionList'
 import {
   readAssetListView,
   storeAssetListView,
   type AssetGroupBy,
   type AssetListView,
 } from './view-state'
+
+/* Duas listas, e não uma com filtro: o que está na carteira tem valor, peso e
+   preço de hoje, e o que saiu tem lucro realizado e data de saída. São
+   colunas diferentes porque são perguntas diferentes, e misturá-las obrigaria
+   metade das linhas a mostrar traço. */
+const TABS = [
+  { id: 'held' as const, label: 'Em carteira' },
+  { id: 'closed' as const, label: 'Encerrados' },
+]
+
+type AssetTab = (typeof TABS)[number]['id']
 
 export default function PortfolioAssetsPage() {
   const selectedPortfolio = useSelectedPortfolio()
@@ -28,6 +41,7 @@ export default function PortfolioAssetsPage() {
   const [search, setSearch] = useState('')
   const [date, setDate] = useState<Dayjs | null>(null)
   const [view, setViewState] = useState<AssetListView>(readAssetListView)
+  const [tab, setTab] = useState<AssetTab>('held')
 
   const setView = (next: AssetListView) => {
     setViewState(next)
@@ -44,7 +58,10 @@ export default function PortfolioAssetsPage() {
     enabled: !!portfolioId,
   })
 
+  const { data: closedPositions } = useClosedPositions(tab === 'closed')
+
   const loading = !positions && !!portfolioId
+  const closedLoading = tab === 'closed' && !closedPositions && !!portfolioId
 
   return (
     <AppStack gap="lg">
@@ -55,29 +72,54 @@ export default function PortfolioAssetsPage() {
           { label: 'Ativos' },
         ]}
         actions={
-          <AssetListToolbar
-            search={search}
-            onSearchChange={setSearch}
-            groupBy={groupBy}
-            onGroupByChange={setGroupBy}
-            date={date}
-            onDateChange={setDate}
-            view={view}
-            onViewChange={setView}
-          />
+          /* Agrupamento, data e modo de exibição são da listagem em carteira.
+             Na lista de encerrados não há grupo que some nem cards — sobra a
+             busca, que é a mesma pergunta nas duas. */
+          tab === 'held' ? (
+            <AssetListToolbar
+              search={search}
+              onSearchChange={setSearch}
+              groupBy={groupBy}
+              onGroupByChange={setGroupBy}
+              date={date}
+              onDateChange={setDate}
+              view={view}
+              onViewChange={setView}
+            />
+          ) : (
+            <AppSearchField
+              label="Buscar ativo"
+              placeholder="Buscar ativo…"
+              hideLabel
+              icon
+              size="bar"
+              value={search}
+              onChange={setSearch}
+            />
+          )
         }
       />
 
-      {loading ? (
-        <AssetListSkeleton />
-      ) : (
-        <AssetListTable
-          positions={positions ?? []}
-          groupBy={groupBy}
-          search={search}
-          view={view}
-        />
-      )}
+      <AppTabs items={TABS} value={tab} onChange={setTab} label="Ativos da carteira" />
+
+      {tab === 'held' &&
+        (loading ? (
+          <AssetListSkeleton />
+        ) : (
+          <AssetListTable
+            positions={positions ?? []}
+            groupBy={groupBy}
+            search={search}
+            view={view}
+          />
+        ))}
+
+      {tab === 'closed' &&
+        (closedLoading ? (
+          <AppTableSkeleton columns={9} rows={8} />
+        ) : (
+          <ClosedPositionList positions={closedPositions ?? EMPTY_LIST} search={search} />
+        ))}
     </AppStack>
   )
 }

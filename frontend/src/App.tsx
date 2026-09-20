@@ -25,6 +25,7 @@ import AdminUsersPage from './pages/admin/users/page'
 import LoginPage from './pages/login'
 import MarketAssetPage from './pages/market/asset/page'
 import MarketAtivosPage from './pages/market/ativos/page'
+import PensionPage from './pages/portfolio/pension/page'
 import PortfolioTiersPage from './pages/portfolio/tiers/page'
 import MarketCataloguePage from './pages/market/catalogue/page'
 import MarketFIIPage from './pages/market/fii/page'
@@ -68,6 +69,7 @@ const router = createBrowserRouter([
       { path: 'portfolio/crypto', element: <PortfolioSegmentPage segment="crypto" /> },
       { path: 'portfolio/returns', element: <PortfolioReturnsPage /> },
       { path: 'portfolio/analysis', element: <PortfolioRiskPage /> },
+      { path: 'portfolio/pension', element: <PensionPage /> },
       { path: 'portfolio/tax-income', element: <TaxIncomePage /> },
       { path: 'portfolio/tiers', element: <PortfolioTiersPage /> },
       { path: 'portfolio/trades', element: <PortfolioTransactionsPage /> },

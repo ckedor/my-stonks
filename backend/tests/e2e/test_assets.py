@@ -27,11 +27,22 @@ async def _seed_asset(factory, ticker='PETR4', name='Petrobras'):
 # ---------------------------------------------------------------------------
 # LIST ASSETS
 # ---------------------------------------------------------------------------
-async def test_list_assets_empty(client):
+async def test_list_assets_returns_only_the_registered_catalogue(client):
+    """Um banco recém-migrado lista o que as migrations cadastram, e nada mais.
+
+    Era `== []`, e deixou de ser verdade quando os ETFs UCITS passaram a ser
+    cadastrados por migration: eles não vêm do catálogo da B3, então alguém
+    tem de digitá-los, e a migration é o lugar onde isso é digitado uma vez
+    para todos os ambientes.
+
+    A igualdade exata é de propósito: cadastrar um ativo numa migration é
+    decisão do mantenedor, e este teste é o que obriga a próxima a passar por
+    aqui em vez de entrar sem ninguém notar.
+    """
     response = await client.get('/market_data/asset')
 
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == []
+    assert sorted(asset['ticker'] for asset in response.json()) == ['CSPX.L', 'VWRA.L']
 
 
 async def test_list_assets_returns_seeded(client, db, factory):

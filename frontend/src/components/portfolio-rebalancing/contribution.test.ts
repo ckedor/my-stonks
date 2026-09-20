@@ -168,6 +168,22 @@ describe('planContribution', () => {
     expect(plan[1]).toBeCloseTo(300, 6)
   })
 
+  it('manda o aporte para a categoria que ainda não tem ativo nenhum', () => {
+    /* É o caso de quem planeja entrar numa classe que a carteira não tem: a
+       categoria vale zero, e o nível d'água a deixa atrasada em relação a
+       todas as outras — então o dinheiro novo vai primeiro para ela. */
+    const plan = planContribution(
+      [
+        { value: 9_000, targetPct: 90 },
+        { value: 0, targetPct: 10 },
+      ],
+      1_000,
+    )
+
+    expect(plan[1]).toBeCloseTo(1_000, 6)
+    expect(plan[0]).toBeCloseTo(0, 6)
+  })
+
   it('serve também aos ativos dentro de uma categoria', () => {
     /* A mesma função vale um nível abaixo: o valor comprado da categoria é o
        aporte, e os pesos são os alvos dentro dela. */

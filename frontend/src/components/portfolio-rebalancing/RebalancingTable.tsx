@@ -97,10 +97,15 @@ export default function RebalancingTable({
         if (row.kind === 'total') return <AppText weight="strong">Total</AppText>
         if (row.kind === 'category') {
           const open = openCategories.includes(row.category.category_id)
+          /* Categoria ainda sem ativo não abre — não há o que revelar —, mas
+             a seta continua na linha, desabilitada: tirá-la puxaria o nome
+             para a esquerda e a coluna deixaria de alinhar. */
+          const expandable = row.category.assets.length > 0
           return (
             <AppStack direction="row" gap="xs" align="center">
               <AppIconButton
                 size="sm"
+                disabled={!expandable}
                 label={open ? 'Recolher categoria' : 'Expandir categoria'}
                 onClick={() => onToggleCategory(row.category.category_id)}
               >

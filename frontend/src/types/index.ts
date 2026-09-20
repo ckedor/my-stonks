@@ -118,6 +118,33 @@ export interface PortfolioPositionEntry {
   fixed_income_type_id?: number | null
 }
 
+/** Um ativo que a carteira teve e não tem mais.
+ *
+ *  Duas leituras, porque respondem coisas diferentes: os números realizados
+ *  dizem quanto dinheiro a ida e volta fez, e o retorno acumulado — o mesmo
+ *  ponderado no tempo que as outras telas leem, congelado no último dia de
+ *  exposição — diz como o ativo se comportou enquanto esteve na carteira. */
+export interface ClosedPositionEntry {
+  asset_id: number
+  ticker: string | null
+  name: string
+  type: string
+  category: string | null
+  entry_date: string
+  exit_date: string
+  days_held: number
+  quantity_sold: number
+  average_price: number
+  average_sale_price: number
+  total_invested: number
+  gross_sales: number
+  realized_profit: number
+  realized_profit_pct: number | null
+  dividends: number
+  acc_return: number | null
+  cagr: number | null
+}
+
 export interface Dividend {
   id: number
   asset_id: number

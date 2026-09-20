@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class PortfolioConsolidation(BaseModel):
@@ -26,3 +26,32 @@ class ContributionAverage(BaseModel):
     """
 
     monthly_average: float
+
+
+class ClosedPositionEntry(BaseModel):
+    """Um ativo que a carteira teve e não tem mais.
+
+    Traz as duas leituras do domínio juntas: o dinheiro realizado na ida e
+    volta e o retorno ponderado no tempo no último dia de exposição.
+    """
+
+    asset_id: int
+    ticker: str | None
+    name: str
+    type: str
+    category: str | None
+    entry_date: date
+    exit_date: date
+    days_held: int
+    quantity_sold: float
+    average_price: float
+    average_sale_price: float
+    total_invested: float
+    gross_sales: float
+    realized_profit: float
+    realized_profit_pct: float | None
+    dividends: float
+    acc_return: float | None
+    cagr: float | None
+
+    model_config = ConfigDict(from_attributes=True)

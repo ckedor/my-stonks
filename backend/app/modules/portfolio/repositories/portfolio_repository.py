@@ -772,6 +772,82 @@ class PortfolioRepository(SQLAlchemyRepository):
         result = await self.session.execute(stmt)
         return result.mappings().all()
 
+    async def get_closed_positions(self, portfolio_id: int, currency: str = 'BRL') -> list[dict]:
+        """The last position row of every asset this portfolio no longer holds.
+
+        An asset is gone when it has no row on the portfolio's most recent
+        position date: the consolidation trims the zero tail after a full exit,
+        so the last row it left behind is the last day with exposure. That row
+        is the one that carries the accumulated return and the CAGR of the
+        round trip, which is why the read ends on it instead of on a sum.
+
+        An asset sold and bought back is held again, so it does not appear
+        here — its zero stretch is in the middle of the series, not at the end.
+        """
+        latest_date = (
+            select(func.max(Position.date))
+            .where(Position.portfolio_id == portfolio_id)
+            .scalar_subquery()
+        )
+        held_asset_ids = (
+            select(Position.asset_id)
+            .where(Position.portfolio_id == portfolio_id)
+            .where(Position.date == latest_date)
+        )
+        bounds = (
+            select(
+                Position.asset_id.label('asset_id'),
+                func.max(Position.date).label('last_date'),
+            )
+            .where(Position.portfolio_id == portfolio_id)
+            .where(Position.asset_id.not_in(held_asset_ids))
+            .group_by(Position.asset_id)
+            .subquery()
+        )
+
+        usd = currency == 'USD'
+        price_col = (Position.price_usd if usd else Position.price).label('price')
+        average_price_col = (Position.average_price_usd if usd else Position.average_price).label(
+            'average_price'
+        )
+        acc_return_col = (Position.acc_return_usd if usd else Position.acc_return).label(
+            'acc_return'
+        )
+        cagr_col = (Position.cagr_usd if usd else Position.cagr).label('cagr')
+
+        cat_assignment_subq = get_custom_category_subquery(portfolio_id)
+
+        stmt = (
+            select(
+                Position.asset_id,
+                Asset.ticker,
+                Asset.name,
+                AssetType.short_name.label('type'),
+                cat_assignment_subq.c.category,
+                bounds.c.last_date,
+                Position.quantity,
+                price_col,
+                average_price_col,
+                acc_return_col,
+                cagr_col,
+            )
+            .join(
+                bounds,
+                and_(
+                    bounds.c.asset_id == Position.asset_id,
+                    bounds.c.last_date == Position.date,
+                ),
+            )
+            .join(Asset, Asset.id == Position.asset_id)
+            .join(AssetType, Asset.asset_type_id == AssetType.id)
+            .outerjoin(cat_assignment_subq, cat_assignment_subq.c.asset_id == Position.asset_id)
+            .where(Position.portfolio_id == portfolio_id)
+            .order_by(desc(bounds.c.last_date))
+        )
+
+        result = await self.session.execute(stmt)
+        return result.mappings().all()
+
     async def get_position_on_date(
         self, portfolio_id, date=None, asset_type_id=None, currency='BRL'
     ) -> list[dict]:

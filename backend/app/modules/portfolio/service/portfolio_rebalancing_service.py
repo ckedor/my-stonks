@@ -15,7 +15,7 @@ selling.
 
 Contribution-only distribution — where to direct new money without selling
 anything — is a separate reading of the same targets, and it lives in the
-frontend (`pages/portfolio/rebalancing/contribution.ts`). It stays there
+frontend (`components/portfolio-rebalancing/contribution.ts`). It stays there
 because it is interactive: the amount is typed and the answer is redrawn on
 every keystroke, and nothing about it is persisted.
 """
@@ -40,12 +40,6 @@ class PortfolioRebalancingService:
         """Return current positions enriched with target allocations and differences."""
         async with self.uow as uow:
             rows = await uow.portfolios.get_position_on_date(portfolio_id)
-            if not rows:
-                return PortfolioRebalancing(
-                    portfolio_id=portfolio_id,
-                    total_value=0,
-                    categories=[],
-                )
 
             # Load categories with their assignments (which hold asset-level targets)
             categories = await uow.portfolios.get(
@@ -75,6 +69,14 @@ class PortfolioRebalancingService:
 
         # Find category model by name
         cat_by_name = {cat.name: cat for cat in categories}
+
+        # Uma categoria sem ativo nenhum continua sendo um alvo: é assim que se
+        # planeja entrar numa classe que a carteira ainda não tem. Ela entra
+        # com valor zero e sem ativos — o alvo dela é o que a torna visível no
+        # rateio do aporte, que é justamente onde o dinheiro novo precisa ir.
+        for cat in categories:
+            if cat.name not in category_groups:
+                category_groups[cat.name] = []
 
         result_categories: list[CategoryRebalancing] = []
 
@@ -195,8 +197,13 @@ class PortfolioRebalancingService:
                 f'A soma dos percentuais das categorias deve ser 100%. Atual: {cat_sum:.2f}%',
             )
 
-        # Validate asset sum per category
+        # Validate asset sum per category. Uma categoria sem ativo nenhum é um
+        # alvo planejado: não há o que repartir dentro dela, e exigir 100%
+        # de uma lista vazia impediria justamente o caso de planejar uma
+        # categoria antes de comprar o primeiro ativo.
         for cat in categories:
+            if not cat.assets:
+                continue
             asset_sum = sum(a.target_percentage for a in cat.assets)
             if abs(asset_sum - 100) > 0.01:
                 category_obj = await repository.get(CustomCategory, id=cat.category_id)
