@@ -21,10 +21,14 @@ export interface Portfolio {
 }
 
 export interface Trade {
+  /** Older persisted query results may not include the asset name yet. */
+  name?: string
   id: number
   asset_id: number
   date: Date
-  ticker: string
+  /** Ativo sem ticker existe: um fundo cadastrado pelo registro do regulador
+   *  não é negociado em bolsa e não tem código. O nome é o que o identifica. */
+  ticker: string | null
   type: string
   quantity: number
   price: number
@@ -81,7 +85,7 @@ export interface CategoryReturnEntry {
 export interface PortfolioPositionEntry {
   asset_id: number
   date: string
-  ticker: string
+  ticker: string | null
   name: string
   quantity: number
   average_price: number
@@ -203,11 +207,13 @@ export interface RebalancingResponse {
 }
 
 // Asset Analysis types
+/** Nulo quando a posição é curta demais para a métrica existir: `corr` de uma
+ *  série com um único retorno é NaN, e NaN chega aqui como `null`. */
 export interface BenchmarkMetrics {
-  cagr: number
-  alpha: number
-  beta: number
-  correlation: number
+  cagr: number | null
+  alpha: number | null
+  beta: number | null
+  correlation: number | null
 }
 
 export interface DrawdownEntry {
@@ -274,8 +280,19 @@ export interface WealthTier {
 /* Quando o degrau seguinte chega, no ritmo atual: o aporte médio recente
    somado ao que o patrimônio de hoje rende na taxa anual da carteira. As duas
    entradas vêm junto com a data porque é delas que a data tira o crédito. */
+/** Quanto entrou por mês, em média, na história inteira da carteira.
+ *
+ *  Vem pronto do backend, e não somado aqui: a tela de patrimônio e a jornada
+ *  do herói mostram este mesmo número, e enquanto cada uma fazia a sua conta
+ *  elas discordavam sob o mesmo rótulo. */
+export interface ContributionAverage {
+  /** Na moeda pedida na rota. Zero quando não há história para medir. */
+  monthly_average: number
+}
+
 export interface WealthTierProjection {
-  /** Média mensal de aporte na janela recente. */
+  /** Aporte médio mensal da história inteira da carteira, sempre em BRL: a
+   *  escala de patentes é fixa em reais, e o seletor de moeda não a move. */
   monthly_contribution: number
   /** Taxa anual como fração: 0.12 é 12% ao ano. */
   annual_rate: number

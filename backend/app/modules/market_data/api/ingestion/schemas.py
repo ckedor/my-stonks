@@ -21,6 +21,13 @@ class RunUsdBrlIngestionRequest(BaseModel):
     force_full_history: bool = False
 
 
+class RunFundRegistryIngestionRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    #: Read both files even when the stored validators say they did not change.
+    force_full_history: bool = False
+
+
 class DataIngestionAttemptResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -27,7 +27,7 @@ function isActionRow(option: unknown): option is ActionRow {
 export interface AppAutocompleteAction {
   label: string
   icon?: ReactNode
-  onSelect: () => void
+  onSelect: (search: string) => void
 }
 
 export interface AppAutocompleteProps<T> {
@@ -73,6 +73,7 @@ export default function AppAutocomplete<T>({
   /* Controlado só por causa da linha de ação: clicar nela precisa fechar o
      dropdown sem escolher nada, e o MUI não tem como saber disso. */
   const [open, setOpen] = useState(false)
+  const [inputValue, setInputValue] = useState('')
 
   const items: (T | ActionRow)[] = action ? [...options, ACTION_ROW] : options
 
@@ -83,8 +84,13 @@ export default function AppAutocomplete<T>({
       onClose={() => setOpen(false)}
       options={items}
       value={value}
+      onInputChange={(_, next) => setInputValue(next)}
       onChange={(_, next) => {
-        if (isActionRow(next)) return
+        if (isActionRow(next)) {
+          setOpen(false)
+          action?.onSelect(inputValue)
+          return
+        }
         onChange((next as T) ?? null)
       }}
       getOptionLabel={(option) => (isActionRow(option) ? '' : getOptionLabel(option as T))}
@@ -116,7 +122,7 @@ export default function AppAutocomplete<T>({
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => {
                     setOpen(false)
-                    action.onSelect()
+                    action.onSelect(inputValue)
                   }}
                   style={{ cursor: 'pointer' }}
                 >

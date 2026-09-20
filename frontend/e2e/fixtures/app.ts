@@ -29,10 +29,15 @@ async function json(page: Page, path: string, body: unknown) {
 export const test = base.extend<AppFixtures>({
   page: async ({ page, baseURL }, use) => {
     /* Sem tema fixo o snapshot depende da preferência de cor do sistema
-       operacional de quem roda o teste. */
+       operacional de quem roda o teste.
+
+       O id tem de existir no catálogo: `readSavedTheme` troca em silêncio um
+       id desconhecido pelo padrão, então um nome velho aqui não falha — só
+       fotografa outro tema. `src/theme/e2e-theme.test.ts` é o que prova que
+       este ainda é um dos temas claros. */
     await page.addInitScript(() => {
       localStorage.setItem('theme-mode', 'light')
-      localStorage.setItem('theme-light-id', 'principal-light')
+      localStorage.setItem('theme-light-id', 'earth-tinta-light')
     })
 
     /* `initAuth()` só chama `/users/me` se o cookie existir. */

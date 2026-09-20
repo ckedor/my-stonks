@@ -71,7 +71,16 @@ class IntegrationRateLimited(IntegrationError):
 
 
 class IntegrationBadResponse(IntegrationError):
+    """O provedor respondeu, e a resposta não serve.
+
+    Diferente das irmãs, esta aceita mensagem: as outras dizem tudo o que há
+    para dizer no nome — deu timeout, não respondeu, estourou a cota —, e aqui
+    o que importa é *o que* veio de errado. O `context` não substitui a
+    mensagem: o formato do log imprime só `%(message)s`, então o que for para
+    o `extra` não aparece em lugar nenhum.
+    """
+
     default_message = 'Integration bad response'
 
-    def __init__(self, *, provider: str, context: dict | None = None):
-        super().__init__(provider=provider, retryable=False, context=context)
+    def __init__(self, message: str | None = None, *, provider: str, context: dict | None = None):
+        super().__init__(message, provider=provider, retryable=False, context=context)

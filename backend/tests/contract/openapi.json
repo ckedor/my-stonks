@@ -1,6 +1,116 @@
 {
  "components": {
   "schemas": {
+   "AIArtifactResponse": {
+    "description": "One answer, plus what it cost to have it.\n\nThe generation date is part of the contract and not decoration: on a\nmanually-refreshed feature it is the only thing telling a reader whether to\nask for a new one.",
+    "properties": {
+     "cost_usd": {
+      "title": "Cost Usd",
+      "type": "number"
+     },
+     "expires_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Expires At"
+     },
+     "feature_key": {
+      "title": "Feature Key",
+      "type": "string"
+     },
+     "from_cache": {
+      "title": "From Cache",
+      "type": "boolean"
+     },
+     "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+     },
+     "input_tokens": {
+      "title": "Input Tokens",
+      "type": "integer"
+     },
+     "latency_ms": {
+      "title": "Latency Ms",
+      "type": "integer"
+     },
+     "model": {
+      "title": "Model",
+      "type": "string"
+     },
+     "output_tokens": {
+      "title": "Output Tokens",
+      "type": "integer"
+     },
+     "payload": {
+      "title": "Payload",
+      "type": "object"
+     },
+     "prompt_version": {
+      "title": "Prompt Version",
+      "type": "integer"
+     },
+     "provider": {
+      "title": "Provider",
+      "type": "string"
+     },
+     "schema_version": {
+      "title": "Schema Version",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "feature_key",
+     "payload",
+     "schema_version",
+     "model",
+     "generated_at",
+     "expires_at",
+     "prompt_version",
+     "from_cache",
+     "provider",
+     "input_tokens",
+     "output_tokens",
+     "cost_usd",
+     "latency_ms"
+    ],
+    "title": "AIArtifactResponse",
+    "type": "object"
+   },
+   "AIFeatureFormResponse": {
+    "description": "What the admin needs to run a feature it was never told about.\n\nThe input schema builds the form and the context keys document what the\nprompt may refer to. Both are declared on the handler, so a feature added\nlater gets its screen without a line of frontend.",
+    "properties": {
+     "context_keys": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Context Keys",
+      "type": "array"
+     },
+     "feature_key": {
+      "title": "Feature Key",
+      "type": "string"
+     },
+     "input_schema": {
+      "title": "Input Schema",
+      "type": "object"
+     }
+    },
+    "required": [
+     "feature_key",
+     "input_schema",
+     "context_keys"
+    ],
+    "title": "AIFeatureFormResponse",
+    "type": "object"
+   },
    "AIFeatureResponse": {
     "properties": {
      "created_at": {
@@ -8,9 +118,17 @@
       "title": "Created At",
       "type": "string"
      },
-     "default_ttl_hours": {
-      "title": "Default Ttl Hours",
-      "type": "integer"
+     "description": {
+      "title": "Description",
+      "type": "string"
+     },
+     "enabled": {
+      "title": "Enabled",
+      "type": "boolean"
+     },
+     "freshness": {
+      "title": "Freshness",
+      "type": "string"
      },
      "id": {
       "title": "Id",
@@ -19,6 +137,25 @@
      "key": {
       "title": "Key",
       "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "output_schema_version": {
+      "title": "Output Schema Version",
+      "type": "integer"
+     },
+     "ttl_hours": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ttl Hours"
      },
      "updated_at": {
       "format": "date-time",
@@ -29,16 +166,39 @@
     "required": [
      "id",
      "key",
-     "default_ttl_hours",
+     "name",
+     "description",
+     "output_schema_version",
+     "enabled",
+     "freshness",
+     "ttl_hours",
      "created_at",
      "updated_at"
     ],
     "title": "AIFeatureResponse",
     "type": "object"
    },
-   "AIFeatureUpdate": {
+   "AIFeatureUpdateRequest": {
     "properties": {
-     "default_ttl_hours": {
+     "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+     },
+     "enabled": {
+      "default": true,
+      "title": "Enabled",
+      "type": "boolean"
+     },
+     "freshness": {
+      "title": "Freshness",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "ttl_hours": {
       "anyOf": [
        {
         "minimum": 1.0,
@@ -48,10 +208,309 @@
         "type": "null"
        }
       ],
-      "title": "Default Ttl Hours"
+      "title": "Ttl Hours"
      }
     },
-    "title": "AIFeatureUpdate",
+    "required": [
+     "name",
+     "freshness"
+    ],
+    "title": "AIFeatureUpdateRequest",
+    "type": "object"
+   },
+   "AIPromptVersionCreateRequest": {
+    "properties": {
+     "activate": {
+      "default": true,
+      "title": "Activate",
+      "type": "boolean"
+     },
+     "max_output_tokens": {
+      "anyOf": [
+       {
+        "minimum": 1.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Max Output Tokens"
+     },
+     "model": {
+      "title": "Model",
+      "type": "string"
+     },
+     "notes": {
+      "default": "",
+      "title": "Notes",
+      "type": "string"
+     },
+     "system": {
+      "default": "",
+      "title": "System",
+      "type": "string"
+     },
+     "temperature": {
+      "default": 0.2,
+      "title": "Temperature",
+      "type": "number"
+     },
+     "template": {
+      "title": "Template",
+      "type": "string"
+     },
+     "web_search": {
+      "default": false,
+      "title": "Web Search",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "template",
+     "model"
+    ],
+    "title": "AIPromptVersionCreateRequest",
+    "type": "object"
+   },
+   "AIPromptVersionResponse": {
+    "properties": {
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "feature_id": {
+      "title": "Feature Id",
+      "type": "integer"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "is_active": {
+      "title": "Is Active",
+      "type": "boolean"
+     },
+     "max_output_tokens": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Max Output Tokens"
+     },
+     "model": {
+      "title": "Model",
+      "type": "string"
+     },
+     "notes": {
+      "title": "Notes",
+      "type": "string"
+     },
+     "system": {
+      "title": "System",
+      "type": "string"
+     },
+     "temperature": {
+      "title": "Temperature",
+      "type": "number"
+     },
+     "template": {
+      "title": "Template",
+      "type": "string"
+     },
+     "version": {
+      "title": "Version",
+      "type": "integer"
+     },
+     "web_search": {
+      "title": "Web Search",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "id",
+     "feature_id",
+     "version",
+     "system",
+     "template",
+     "model",
+     "temperature",
+     "max_output_tokens",
+     "web_search",
+     "is_active",
+     "notes",
+     "created_at"
+    ],
+    "title": "AIPromptVersionResponse",
+    "type": "object"
+   },
+   "AIRunResponse": {
+    "properties": {
+     "cost_usd": {
+      "title": "Cost Usd",
+      "type": "number"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "feature_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Feature Id"
+     },
+     "input_tokens": {
+      "title": "Input Tokens",
+      "type": "integer"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "latency_ms": {
+      "title": "Latency Ms",
+      "type": "integer"
+     },
+     "model": {
+      "title": "Model",
+      "type": "string"
+     },
+     "output_tokens": {
+      "title": "Output Tokens",
+      "type": "integer"
+     },
+     "prompt_version_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Prompt Version Id"
+     },
+     "provider": {
+      "title": "Provider",
+      "type": "string"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     },
+     "trace_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Trace Id"
+     }
+    },
+    "required": [
+     "feature_id",
+     "prompt_version_id",
+     "label",
+     "provider",
+     "model",
+     "input_tokens",
+     "output_tokens",
+     "cost_usd",
+     "latency_ms",
+     "status",
+     "error",
+     "trace_id",
+     "created_at"
+    ],
+    "title": "AIRunResponse",
+    "type": "object"
+   },
+   "AITaskDispatchResponse": {
+    "properties": {
+     "task_id": {
+      "title": "Task Id",
+      "type": "string"
+     },
+     "task_name": {
+      "title": "Task Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "task_id",
+     "task_name"
+    ],
+    "title": "AITaskDispatchResponse",
+    "type": "object"
+   },
+   "AIUsageRowResponse": {
+    "properties": {
+     "cost_usd": {
+      "title": "Cost Usd",
+      "type": "number"
+     },
+     "day": {
+      "format": "date-time",
+      "title": "Day",
+      "type": "string"
+     },
+     "input_tokens": {
+      "title": "Input Tokens",
+      "type": "integer"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "model": {
+      "title": "Model",
+      "type": "string"
+     },
+     "output_tokens": {
+      "title": "Output Tokens",
+      "type": "integer"
+     },
+     "runs": {
+      "title": "Runs",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "day",
+     "label",
+     "model",
+     "runs",
+     "input_tokens",
+     "output_tokens",
+     "cost_usd"
+    ],
+    "title": "AIUsageRowResponse",
     "type": "object"
    },
    "AssetClass": {
@@ -103,28 +562,6 @@
       ],
       "title": "Anbima Category"
      },
-     "anbima_code": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Anbima Code"
-     },
-     "anbima_code_class": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Anbima Code Class"
-     },
      "asset_type_id": {
       "title": "Asset Type Id",
       "type": "integer"
@@ -139,6 +576,17 @@
        }
       ],
       "title": "Country"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
      },
      "etf_segment_id": {
       "anyOf": [
@@ -217,6 +665,17 @@
       ],
       "title": "Industry"
      },
+     "institution_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Institution Id"
+     },
      "legal_id": {
       "anyOf": [
        {
@@ -254,6 +713,28 @@
        }
       ],
       "title": "Sector"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
      },
      "ticker": {
       "anyOf": [
@@ -293,6 +774,17 @@
      "asset_type_id": {
       "title": "Asset Type Id",
       "type": "integer"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
      },
      "etf": {
       "anyOf": [
@@ -349,6 +841,27 @@
       "title": "Id",
       "type": "integer"
      },
+     "institution": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InstitutionOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "institution_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Institution Id"
+     },
      "logo_url": {
       "anyOf": [
        {
@@ -364,6 +877,11 @@
       "title": "Name",
       "type": "string"
      },
+     "status": {
+      "default": "active",
+      "title": "Status",
+      "type": "string"
+     },
      "stock": {
       "anyOf": [
        {
@@ -373,6 +891,17 @@
         "type": "null"
        }
       ]
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
      },
      "ticker": {
       "anyOf": [
@@ -436,6 +965,17 @@
       ],
       "title": "Cagr"
      },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
      "etf": {
       "anyOf": [
        {
@@ -491,6 +1031,27 @@
       "title": "Id",
       "type": "integer"
      },
+     "institution": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InstitutionOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "institution_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Institution Id"
+     },
      "logo_url": {
       "anyOf": [
        {
@@ -516,6 +1077,11 @@
       "title": "Quantity",
       "type": "number"
      },
+     "status": {
+      "default": "active",
+      "title": "Status",
+      "type": "string"
+     },
      "stock": {
       "anyOf": [
        {
@@ -525,6 +1091,17 @@
         "type": "null"
        }
       ]
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
      },
      "ticker": {
       "anyOf": [
@@ -615,58 +1192,6 @@
     "title": "AssetEvent",
     "type": "object"
    },
-   "AssetOverviewAndNewsResponse": {
-    "properties": {
-     "expires_at": {
-      "format": "date-time",
-      "title": "Expires At",
-      "type": "string"
-     },
-     "feature_key": {
-      "title": "Feature Key",
-      "type": "string"
-     },
-     "generated_at": {
-      "format": "date-time",
-      "title": "Generated At",
-      "type": "string"
-     },
-     "model": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Model"
-     },
-     "payload": {
-      "title": "Payload",
-      "type": "object"
-     },
-     "summary": {
-      "title": "Summary",
-      "type": "string"
-     },
-     "ticker": {
-      "title": "Ticker",
-      "type": "string"
-     }
-    },
-    "required": [
-     "feature_key",
-     "ticker",
-     "summary",
-     "payload",
-     "model",
-     "generated_at",
-     "expires_at"
-    ],
-    "title": "AssetOverviewAndNewsResponse",
-    "type": "object"
-   },
    "AssetQuoteHistoryResponse": {
     "properties": {
      "asset_type_id": {
@@ -717,8 +1242,15 @@
       "type": "string"
      },
      "ticker": {
-      "title": "Ticker",
-      "type": "string"
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
      }
     },
     "required": [
@@ -819,6 +1351,40 @@
      "diff_value"
     ],
     "title": "AssetRebalancingEntry",
+    "type": "object"
+   },
+   "AssetRegistrySyncSection": {
+    "properties": {
+     "skipped_foreign": {
+      "title": "Skipped Foreign",
+      "type": "integer"
+     },
+     "unchanged": {
+      "title": "Unchanged",
+      "type": "integer"
+     },
+     "unmatched": {
+      "items": {
+       "$ref": "#/components/schemas/RegistrySyncEntry"
+      },
+      "title": "Unmatched",
+      "type": "array"
+     },
+     "updated": {
+      "items": {
+       "$ref": "#/components/schemas/RegistrySyncFieldChange"
+      },
+      "title": "Updated",
+      "type": "array"
+     }
+    },
+    "required": [
+     "updated",
+     "unchanged",
+     "unmatched",
+     "skipped_foreign"
+    ],
+    "title": "AssetRegistrySyncSection",
     "type": "object"
    },
    "AssetSyncChange": {
@@ -1047,28 +1613,6 @@
       ],
       "title": "Anbima Category"
      },
-     "anbima_code": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Anbima Code"
-     },
-     "anbima_code_class": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Anbima Code Class"
-     },
      "asset_type_id": {
       "title": "Asset Type Id",
       "type": "integer"
@@ -1083,6 +1627,17 @@
        }
       ],
       "title": "Country"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
      },
      "etf_segment_id": {
       "anyOf": [
@@ -1165,6 +1720,17 @@
       ],
       "title": "Industry"
      },
+     "institution_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Institution Id"
+     },
      "legal_id": {
       "anyOf": [
        {
@@ -1202,6 +1768,28 @@
        }
       ],
       "title": "Sector"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
      },
      "ticker": {
       "anyOf": [
@@ -1833,6 +2421,38 @@
     "title": "CompareBacktestsRequest",
     "type": "object"
    },
+   "ConfirmSeriesAliasesRequest": {
+    "additionalProperties": false,
+    "properties": {
+     "aliases": {
+      "items": {
+       "$ref": "#/components/schemas/SeriesAliasIn"
+      },
+      "minItems": 1,
+      "title": "Aliases",
+      "type": "array"
+     }
+    },
+    "required": [
+     "aliases"
+    ],
+    "title": "ConfirmSeriesAliasesRequest",
+    "type": "object"
+   },
+   "ContributionAverage": {
+    "description": "Quanto entrou por mês, em média, na história inteira da carteira.\n\nUm objeto e não um número solto: a rota responde uma leitura da carteira,\ne uma leitura ganha campo com o tempo — um corpo `3909.02` não ganha.\n\nNa moeda pedida na rota, convertido pelo preço do dia da transação, que é\no mesmo critério da série de patrimônio.",
+    "properties": {
+     "monthly_average": {
+      "title": "Monthly Average",
+      "type": "number"
+     }
+    },
+    "required": [
+     "monthly_average"
+    ],
+    "title": "ContributionAverage",
+    "type": "object"
+   },
    "CreatePortfolioRequest": {
     "properties": {
      "name": {
@@ -1930,6 +2550,28 @@
      "benchmark_id"
     ],
     "title": "CustomCategory",
+    "type": "object"
+   },
+   "CvmRegistrySyncReport": {
+    "description": "O que o sync do cadastro da CVM fez — ou faria, quando `dry_run`.",
+    "properties": {
+     "assets": {
+      "$ref": "#/components/schemas/AssetRegistrySyncSection"
+     },
+     "dry_run": {
+      "title": "Dry Run",
+      "type": "boolean"
+     },
+     "institutions": {
+      "$ref": "#/components/schemas/InstitutionSyncSection"
+     }
+    },
+    "required": [
+     "dry_run",
+     "institutions",
+     "assets"
+    ],
+    "title": "CvmRegistrySyncReport",
     "type": "object"
    },
    "DataIngestionAttemptResponse": {
@@ -2516,6 +3158,17 @@
      "asset_id": {
       "title": "Asset Id",
       "type": "integer"
+     },
+     "fund_registry_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fund Registry Id"
      },
      "segment": {
       "anyOf": [
@@ -3809,6 +4462,17 @@
       "title": "Asset Id",
       "type": "integer"
      },
+     "fund_registry_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fund Registry Id"
+     },
      "segment": {
       "$ref": "#/components/schemas/FIISegmentOut"
      },
@@ -4600,6 +5264,891 @@
     "title": "Frequency",
     "type": "string"
    },
+   "FundLinkCandidate": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     }
+    },
+    "required": [
+     "id",
+     "name"
+    ],
+    "title": "FundLinkCandidate",
+    "type": "object"
+   },
+   "FundLinkRequest": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "fund_registry_id": {
+      "title": "Fund Registry Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "asset_id",
+     "fund_registry_id"
+    ],
+    "title": "FundLinkRequest",
+    "type": "object"
+   },
+   "FundLinkResult": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "cnpj": {
+      "title": "Cnpj",
+      "type": "string"
+     },
+     "fund_registry_id": {
+      "title": "Fund Registry Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "asset_id",
+     "fund_registry_id",
+     "cnpj",
+     "name"
+    ],
+    "title": "FundLinkResult",
+    "type": "object"
+   },
+   "FundLinkSuggestion": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "candidates": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/FundLinkCandidate"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Candidates"
+     },
+     "cnpj": {
+      "title": "Cnpj",
+      "type": "string"
+     },
+     "fund_registry_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fund Registry Id"
+     },
+     "fund_registry_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fund Registry Name"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "asset_id",
+     "ticker",
+     "cnpj"
+    ],
+    "title": "FundLinkSuggestion",
+    "type": "object"
+   },
+   "FundLinkSuggestionReport": {
+    "description": "As propostas de vínculo entre um FII e o fundo que o regulador registrou.\n\n`ambiguous` é um CNPJ que aponta para mais de um registro e `unknown` é um\nque o registro não conhece. Nenhum dos dois vira palpite.",
+    "properties": {
+     "already_linked": {
+      "title": "Already Linked",
+      "type": "integer"
+     },
+     "ambiguous": {
+      "items": {
+       "$ref": "#/components/schemas/FundLinkSuggestion"
+      },
+      "title": "Ambiguous",
+      "type": "array"
+     },
+     "suggestions": {
+      "items": {
+       "$ref": "#/components/schemas/FundLinkSuggestion"
+      },
+      "title": "Suggestions",
+      "type": "array"
+     },
+     "unknown": {
+      "items": {
+       "$ref": "#/components/schemas/FundLinkSuggestion"
+      },
+      "title": "Unknown",
+      "type": "array"
+     }
+    },
+    "required": [
+     "suggestions",
+     "ambiguous",
+     "unknown",
+     "already_linked"
+    ],
+    "title": "FundLinkSuggestionReport",
+    "type": "object"
+   },
+   "FundRegistryClassDetailOut": {
+    "properties": {
+     "registered_units": {
+      "items": {
+       "$ref": "#/components/schemas/RegisteredFundUnitOut"
+      },
+      "title": "Registered Units",
+      "type": "array"
+     },
+     "registry_class": {
+      "$ref": "#/components/schemas/FundRegistryClassOut"
+     },
+     "series": {
+      "items": {
+       "$ref": "#/components/schemas/FundShareSeriesOut"
+      },
+      "title": "Series",
+      "type": "array"
+     },
+     "subclasses": {
+      "items": {
+       "$ref": "#/components/schemas/FundRegistrySubclassOut"
+      },
+      "title": "Subclasses",
+      "type": "array"
+     }
+    },
+    "required": [
+     "registry_class",
+     "subclasses",
+     "series",
+     "registered_units"
+    ],
+    "title": "FundRegistryClassDetailOut",
+    "type": "object"
+   },
+   "FundRegistryClassOut": {
+    "properties": {
+     "admin_fee": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Admin Fee"
+     },
+     "anbima_classification": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Anbima Classification"
+     },
+     "auditor_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Auditor Name"
+     },
+     "class_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Class Type"
+     },
+     "classification": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Classification"
+     },
+     "cnpj": {
+      "title": "Cnpj",
+      "type": "string"
+     },
+     "conversion_days": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Conversion Days"
+     },
+     "custodian_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Custodian Name"
+     },
+     "equity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Equity"
+     },
+     "equity_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Equity Date"
+     },
+     "exclusive": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Exclusive"
+     },
+     "fund": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/FundRegistryOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "fund_registry_id": {
+      "title": "Fund Registry Id",
+      "type": "integer"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "long_term_taxation": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Long Term Taxation"
+     },
+     "minimum_investment": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Minimum Investment"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "open_ended": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Open Ended"
+     },
+     "performance_benchmark": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Performance Benchmark"
+     },
+     "performance_fee": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Performance Fee"
+     },
+     "redemption_payment_days": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Redemption Payment Days"
+     },
+     "refreshed_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Refreshed At"
+     },
+     "registry_id": {
+      "title": "Registry Id",
+      "type": "integer"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     },
+     "target_investors": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Target Investors"
+     },
+     "terms_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Terms Date"
+     }
+    },
+    "required": [
+     "id",
+     "registry_id",
+     "fund_registry_id",
+     "cnpj",
+     "name",
+     "class_type",
+     "status",
+     "classification",
+     "anbima_classification",
+     "open_ended",
+     "exclusive",
+     "target_investors",
+     "long_term_taxation",
+     "custodian_name",
+     "auditor_name",
+     "equity",
+     "equity_date",
+     "admin_fee",
+     "performance_fee",
+     "performance_benchmark",
+     "minimum_investment",
+     "conversion_days",
+     "redemption_payment_days",
+     "terms_date",
+     "refreshed_at",
+     "fund"
+    ],
+    "title": "FundRegistryClassOut",
+    "type": "object"
+   },
+   "FundRegistryOut": {
+    "properties": {
+     "administrator_cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Administrator Cnpj"
+     },
+     "administrator_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Administrator Name"
+     },
+     "cancelled_at": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cancelled At"
+     },
+     "cnpj": {
+      "title": "Cnpj",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "kind": {
+      "title": "Kind",
+      "type": "string"
+     },
+     "manager_document": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Manager Document"
+     },
+     "manager_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Manager Name"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "refreshed_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Refreshed At"
+     },
+     "registry_id": {
+      "title": "Registry Id",
+      "type": "integer"
+     },
+     "started_at": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Started At"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "registry_id",
+     "cnpj",
+     "name",
+     "kind",
+     "status",
+     "started_at",
+     "cancelled_at",
+     "administrator_name",
+     "administrator_cnpj",
+     "manager_name",
+     "manager_document",
+     "refreshed_at"
+    ],
+    "title": "FundRegistryOut",
+    "type": "object"
+   },
+   "FundRegistrySubclassOut": {
+    "properties": {
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "fund_registry_class_id": {
+      "title": "Fund Registry Class Id",
+      "type": "integer"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "pension": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Pension"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     },
+     "target_investors": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Target Investors"
+     }
+    },
+    "required": [
+     "id",
+     "fund_registry_class_id",
+     "code",
+     "name",
+     "status",
+     "target_investors",
+     "pension"
+    ],
+    "title": "FundRegistrySubclassOut",
+    "type": "object"
+   },
+   "FundSeriesCandidateOut": {
+    "properties": {
+     "has_shares": {
+      "title": "Has Shares",
+      "type": "boolean"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "share_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Share Value"
+     },
+     "shares": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Shares"
+     }
+    },
+    "required": [
+     "label",
+     "shares",
+     "share_value",
+     "has_shares"
+    ],
+    "title": "FundSeriesCandidateOut",
+    "type": "object"
+   },
+   "FundSeriesFilingOut": {
+    "description": "The latest FIDC filing of a class. ``applicable`` is false for classes\nthat do not file by series; ``filing_date`` is null when no file listed by\nthe source has a filing for the class.",
+    "properties": {
+     "applicable": {
+      "title": "Applicable",
+      "type": "boolean"
+     },
+     "candidates": {
+      "items": {
+       "$ref": "#/components/schemas/FundSeriesCandidateOut"
+      },
+      "title": "Candidates",
+      "type": "array"
+     },
+     "files_read": {
+      "title": "Files Read",
+      "type": "integer"
+     },
+     "filing_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Filing Date"
+     },
+     "fund_registry_class_id": {
+      "title": "Fund Registry Class Id",
+      "type": "integer"
+     },
+     "searched_from": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Searched From"
+     },
+     "searched_to": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Searched To"
+     }
+    },
+    "required": [
+     "fund_registry_class_id",
+     "applicable",
+     "filing_date",
+     "candidates",
+     "searched_from",
+     "searched_to",
+     "files_read"
+    ],
+    "title": "FundSeriesFilingOut",
+    "type": "object"
+   },
+   "FundShareSeriesAliasOut": {
+    "properties": {
+     "confirmed_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confirmed At"
+     },
+     "fund_share_series_id": {
+      "title": "Fund Share Series Id",
+      "type": "integer"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "valid_from": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Valid From"
+     },
+     "valid_to": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Valid To"
+     }
+    },
+    "required": [
+     "id",
+     "fund_share_series_id",
+     "label",
+     "valid_from",
+     "valid_to",
+     "confirmed_at"
+    ],
+    "title": "FundShareSeriesAliasOut",
+    "type": "object"
+   },
+   "FundShareSeriesOut": {
+    "properties": {
+     "aliases": {
+      "items": {
+       "$ref": "#/components/schemas/FundShareSeriesAliasOut"
+      },
+      "title": "Aliases",
+      "type": "array"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "aliases"
+    ],
+    "title": "FundShareSeriesOut",
+    "type": "object"
+   },
    "HTTPValidationError": {
     "properties": {
      "detail": {
@@ -4711,6 +6260,91 @@
      "currency"
     ],
     "title": "IndexOut",
+    "type": "object"
+   },
+   "InstitutionOut": {
+    "description": "Uma pessoa jurídica: companhia emissora, administradora, gestora.",
+    "properties": {
+     "cnpj": {
+      "title": "Cnpj",
+      "type": "string"
+     },
+     "country": {
+      "title": "Country",
+      "type": "string"
+     },
+     "cvm_code": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cvm Code"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "legal_name": {
+      "title": "Legal Name",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     }
+    },
+    "required": [
+     "id",
+     "cnpj",
+     "name",
+     "legal_name",
+     "country"
+    ],
+    "title": "InstitutionOut",
+    "type": "object"
+   },
+   "InstitutionSyncSection": {
+    "properties": {
+     "created": {
+      "items": {
+       "$ref": "#/components/schemas/RegistrySyncEntry"
+      },
+      "title": "Created",
+      "type": "array"
+     },
+     "unchanged": {
+      "title": "Unchanged",
+      "type": "integer"
+     },
+     "updated": {
+      "items": {
+       "$ref": "#/components/schemas/RegistrySyncFieldChange"
+      },
+      "title": "Updated",
+      "type": "array"
+     }
+    },
+    "required": [
+     "created",
+     "updated",
+     "unchanged"
+    ],
+    "title": "InstitutionSyncSection",
     "type": "object"
    },
    "InvestmentFundDividendResponse": {
@@ -5631,31 +7265,42 @@
       ],
       "title": "Anbima Category"
      },
-     "anbima_code": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Anbima Code"
-     },
-     "anbima_code_class": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Anbima Code Class"
-     },
      "asset_id": {
       "title": "Asset Id",
       "type": "integer"
+     },
+     "fund_registry_class_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fund Registry Class Id"
+     },
+     "fund_registry_subclass_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fund Registry Subclass Id"
+     },
+     "fund_share_series_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fund Share Series Id"
      },
      "legal_id": {
       "anyOf": [
@@ -5672,8 +7317,6 @@
     "required": [
      "asset_id",
      "legal_id",
-     "anbima_code",
-     "anbima_code_class",
      "anbima_category"
     ],
     "title": "InvestmentFundOut",
@@ -6378,8 +8021,15 @@
       "type": "array"
      },
      "ticker": {
-      "title": "Ticker",
-      "type": "string"
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
      }
     },
     "required": [
@@ -7239,6 +8889,288 @@
     "title": "RecommendedPositionResponse",
     "type": "object"
    },
+   "RegisterFundRequest": {
+    "additionalProperties": false,
+    "properties": {
+     "asset_type_id": {
+      "title": "Asset Type Id",
+      "type": "integer"
+     },
+     "fund_registry_class_id": {
+      "title": "Fund Registry Class Id",
+      "type": "integer"
+     },
+     "fund_registry_subclass_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fund Registry Subclass Id"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "series_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Series Id"
+     },
+     "series_label": {
+      "anyOf": [
+       {
+        "maxLength": 100,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Series Label"
+     }
+    },
+    "required": [
+     "fund_registry_class_id",
+     "asset_type_id"
+    ],
+    "title": "RegisterFundRequest",
+    "type": "object"
+   },
+   "RegisteredFundOut": {
+    "description": "Um fundo do cadastro do regulador, como a busca manual o devolve.",
+    "properties": {
+     "administrator_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Administrator Name"
+     },
+     "cnpj": {
+      "title": "Cnpj",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "kind": {
+      "title": "Kind",
+      "type": "string"
+     },
+     "manager_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Manager Name"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "cnpj",
+     "name",
+     "kind",
+     "status"
+    ],
+    "title": "RegisteredFundOut",
+    "type": "object"
+   },
+   "RegisteredFundUnitOut": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "fund_registry_subclass_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fund Registry Subclass Id"
+     },
+     "fund_share_series_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fund Share Series Id"
+     }
+    },
+    "required": [
+     "asset_id",
+     "fund_registry_subclass_id",
+     "fund_share_series_id"
+    ],
+    "title": "RegisteredFundUnitOut",
+    "type": "object"
+   },
+   "RegistrySyncEntry": {
+    "properties": {
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "role": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Role"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     }
+    },
+    "title": "RegistrySyncEntry",
+    "type": "object"
+   },
+   "RegistrySyncFieldChange": {
+    "description": "O antes e o depois de um campo que o regulador corrige.",
+    "properties": {
+     "changes": {
+      "additionalProperties": {
+       "maxItems": 2,
+       "minItems": 2,
+       "prefixItems": [
+        {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        }
+       ],
+       "type": "array"
+      },
+      "title": "Changes",
+      "type": "object"
+     },
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     }
+    },
+    "required": [
+     "changes"
+    ],
+    "title": "RegistrySyncFieldChange",
+    "type": "object"
+   },
    "ResearchSourceResponse": {
     "properties": {
      "id": {
@@ -7383,6 +9315,18 @@
      }
     },
     "title": "RunDataIngestionRequest",
+    "type": "object"
+   },
+   "RunFundRegistryIngestionRequest": {
+    "additionalProperties": false,
+    "properties": {
+     "force_full_history": {
+      "default": false,
+      "title": "Force Full History",
+      "type": "boolean"
+     }
+    },
+    "title": "RunFundRegistryIngestionRequest",
     "type": "object"
    },
    "RunMarketDataSeriesIngestionRequest": {
@@ -7656,6 +9600,76 @@
      "positions"
     ],
     "title": "SaveTheoreticalPortfolioRequest",
+    "type": "object"
+   },
+   "SelectFundSeriesRequest": {
+    "additionalProperties": false,
+    "properties": {
+     "series_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Series Id"
+     },
+     "series_label": {
+      "anyOf": [
+       {
+        "maxLength": 100,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Series Label"
+     }
+    },
+    "title": "SelectFundSeriesRequest",
+    "type": "object"
+   },
+   "SeriesAliasIn": {
+    "additionalProperties": false,
+    "properties": {
+     "label": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Label",
+      "type": "string"
+     },
+     "valid_from": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Valid From"
+     },
+     "valid_to": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Valid To"
+     }
+    },
+    "required": [
+     "label"
+    ],
+    "title": "SeriesAliasIn",
     "type": "object"
    },
    "StatementScope": {
@@ -8169,6 +10183,17 @@
       ],
       "title": "Industry"
      },
+     "listing_segment": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Listing Segment"
+     },
      "sector": {
       "anyOf": [
        {
@@ -8179,6 +10204,17 @@
        }
       ],
       "title": "Sector"
+     },
+     "share_class": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Share Class"
      }
     },
     "required": [
@@ -9741,31 +11777,20 @@
  },
  "openapi": "3.1.0",
  "paths": {
-  "/ai/asset_overview_and_news": {
+  "/ai/asset_description_draft": {
    "get": {
-    "operationId": "get_asset_overview_and_news_ai_asset_overview_and_news_get",
+    "description": "O rascunho do texto de cadastro, para o botão de preencher.\n\nLê o que já existe e só gera quando não há nada — clicar duas vezes não\npaga duas vezes. Querer um rascunho diferente é uma decisão, e ela entra\npela rota de execução.\n\nNada daqui chega ao cadastro: o texto vai para o formulário, e o que fica\ngravado em `asset.summary` e `asset.description` é o que o mantenedor\nsalvar.",
+    "operationId": "get_asset_description_draft_ai_asset_description_draft_get",
     "parameters": [
      {
-      "description": "Asset ticker",
+      "description": "Id do ativo registrado",
       "in": "query",
-      "name": "ticker",
+      "name": "asset_id",
       "required": true,
       "schema": {
-       "description": "Asset ticker",
-       "title": "Ticker",
-       "type": "string"
-      }
-     },
-     {
-      "description": "If true, forces a fresh generation even when existing artifact is still valid",
-      "in": "query",
-      "name": "force_generate",
-      "required": false,
-      "schema": {
-       "default": false,
-       "description": "If true, forces a fresh generation even when existing artifact is still valid",
-       "title": "Force Generate",
-       "type": "boolean"
+       "description": "Id do ativo registrado",
+       "title": "Asset Id",
+       "type": "integer"
       }
      }
     ],
@@ -9774,7 +11799,7 @@
       "content": {
        "application/json": {
         "schema": {
-         "$ref": "#/components/schemas/AssetOverviewAndNewsResponse"
+         "$ref": "#/components/schemas/AIArtifactResponse"
         }
        }
       },
@@ -9796,7 +11821,7 @@
       "OAuth2PasswordBearer": []
      }
     ],
-    "summary": "Get Asset Overview And News",
+    "summary": "Get Asset Description Draft",
     "tags": [
      "AI"
     ]
@@ -9832,17 +11857,17 @@
     ]
    }
   },
-  "/ai/feature/{feature_id}": {
+  "/ai/feature/{feature_key}": {
    "get": {
-    "operationId": "get_feature_ai_feature__feature_id__get",
+    "operationId": "get_feature_ai_feature__feature_key__get",
     "parameters": [
      {
       "in": "path",
-      "name": "feature_id",
+      "name": "feature_key",
       "required": true,
       "schema": {
-       "title": "Feature Id",
-       "type": "integer"
+       "title": "Feature Key",
+       "type": "string"
       }
      }
     ],
@@ -9879,15 +11904,15 @@
     ]
    },
    "patch": {
-    "operationId": "update_feature_ai_feature__feature_id__patch",
+    "operationId": "update_feature_ai_feature__feature_key__patch",
     "parameters": [
      {
       "in": "path",
-      "name": "feature_id",
+      "name": "feature_key",
       "required": true,
       "schema": {
-       "title": "Feature Id",
-       "type": "integer"
+       "title": "Feature Key",
+       "type": "string"
       }
      }
     ],
@@ -9895,7 +11920,7 @@
      "content": {
       "application/json": {
        "schema": {
-        "$ref": "#/components/schemas/AIFeatureUpdate"
+        "$ref": "#/components/schemas/AIFeatureUpdateRequest"
        }
       }
      },
@@ -9929,6 +11954,421 @@
      }
     ],
     "summary": "Update Feature",
+    "tags": [
+     "AI"
+    ]
+   }
+  },
+  "/ai/feature/{feature_key}/form": {
+   "get": {
+    "description": "Everything the admin needs to run and to write a prompt for a feature.\n\nBoth halves are declared on the handler, so a feature added later gets its\nrun form and its list of available data without a line of frontend.",
+    "operationId": "get_feature_form_ai_feature__feature_key__form_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "feature_key",
+      "required": true,
+      "schema": {
+       "title": "Feature Key",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AIFeatureFormResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Feature Form",
+    "tags": [
+     "AI"
+    ]
+   }
+  },
+  "/ai/feature/{feature_key}/prompt_version": {
+   "get": {
+    "operationId": "list_prompt_versions_ai_feature__feature_key__prompt_version_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "feature_key",
+      "required": true,
+      "schema": {
+       "title": "Feature Key",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AIPromptVersionResponse"
+         },
+         "title": "Response List Prompt Versions Ai Feature  Feature Key  Prompt Version Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Prompt Versions",
+    "tags": [
+     "AI"
+    ]
+   },
+   "post": {
+    "operationId": "create_prompt_version_ai_feature__feature_key__prompt_version_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "feature_key",
+      "required": true,
+      "schema": {
+       "title": "Feature Key",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AIPromptVersionCreateRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AIPromptVersionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Create Prompt Version",
+    "tags": [
+     "AI"
+    ]
+   }
+  },
+  "/ai/feature/{feature_key}/run": {
+   "post": {
+    "description": "Generate now and replace what was stored — the refresh, in other words.\n\nIt answers with the payload and with what the call cost, so the admin can\nread the result and its price on the same screen.",
+    "operationId": "run_feature_ai_feature__feature_key__run_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "feature_key",
+      "required": true,
+      "schema": {
+       "title": "Feature Key",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Payload",
+        "type": "object"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AIArtifactResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Run Feature",
+    "tags": [
+     "AI"
+    ]
+   }
+  },
+  "/ai/feature/{feature_key}/schedule": {
+   "post": {
+    "description": "Run the scheduled refresh of a feature now, in the worker.\n\nThe same task the beat calls, with the same arguments. Manual and scheduled\ntriggers enter one operation because they do the same thing.",
+    "operationId": "run_feature_schedule_ai_feature__feature_key__schedule_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "feature_key",
+      "required": true,
+      "schema": {
+       "title": "Feature Key",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AITaskDispatchResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Run Feature Schedule",
+    "tags": [
+     "AI"
+    ]
+   }
+  },
+  "/ai/prompt_version/{version_id}/activate": {
+   "post": {
+    "operationId": "activate_prompt_version_ai_prompt_version__version_id__activate_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "version_id",
+      "required": true,
+      "schema": {
+       "title": "Version Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AIPromptVersionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Activate Prompt Version",
+    "tags": [
+     "AI"
+    ]
+   }
+  },
+  "/ai/run": {
+   "get": {
+    "operationId": "list_runs_ai_run_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 100,
+       "maximum": 500,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AIRunResponse"
+         },
+         "title": "Response List Runs Ai Run Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Runs",
+    "tags": [
+     "AI"
+    ]
+   }
+  },
+  "/ai/usage": {
+   "get": {
+    "operationId": "get_usage_ai_usage_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "days",
+      "required": false,
+      "schema": {
+       "default": 30,
+       "maximum": 365,
+       "minimum": 1,
+       "title": "Days",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AIUsageRowResponse"
+         },
+         "title": "Response Get Usage Ai Usage Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Usage",
     "tags": [
      "AI"
     ]
@@ -10977,6 +13417,292 @@
     ]
    }
   },
+  "/market_data/asset/fund": {
+   "post": {
+    "description": "Make one priced unit of a registered fund class an FI or PREV asset.",
+    "operationId": "register_fund_market_data_asset_fund_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RegisterFundRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Register Fund",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/fund/{asset_id}/series": {
+   "put": {
+    "description": "Confirm the series of a legacy FIDC asset without replacing its transactions.",
+    "operationId": "select_fund_series_market_data_asset_fund__asset_id__series_put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SelectFundSeriesRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Select Fund Series",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/fund/{asset_id}/series-aliases": {
+   "put": {
+    "description": "Confirm filing labels that meant the asset's series, keeping earlier ones.\n\nShare values applied under the previous aliases stop counting as covered,\nso the next share-value ingestion re-reads the asset's history.",
+    "operationId": "confirm_fund_series_aliases_market_data_asset_fund__asset_id__series_aliases_put",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ConfirmSeriesAliasesRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/FundShareSeriesAliasOut"
+         },
+         "title": "Response Confirm Fund Series Aliases Market Data Asset Fund  Asset Id  Series Aliases Put",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Confirm Fund Series Aliases",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/fund_link": {
+   "post": {
+    "description": "Confirma o vínculo de um FII ou ETF com um fundo do registro.\n\nÉ por aqui que o ETF entra: o catálogo do provedor não traz o CNPJ dele,\nentão o fundo é achado pela busca do registro e confirmado à mão.",
+    "operationId": "link_asset_to_fund_registry_market_data_asset_fund_link_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/FundLinkRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FundLinkResult"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Link Asset To Fund Registry",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/fund_link/suggestions": {
+   "get": {
+    "description": "As propostas de vínculo entre um FII e o fundo registrado na CVM.\n\nSó propõe: um CNPJ que aponta para mais de um registro sai como ambíguo, e\num que o registro não conhece sai como desconhecido. Nenhum dos dois vira\npalpite, e nada é gravado aqui.",
+    "operationId": "suggest_fund_links_market_data_asset_fund_link_suggestions_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FundLinkSuggestionReport"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Suggest Fund Links",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
+  "/market_data/asset/registry_sync": {
+   "post": {
+    "description": "Casar o cadastro local com o que a CVM publica sobre companhias.\n\nPreenche as pessoas jurídicas e liga cada ação à companhia que a emitiu,\ncom a espécie do papel e o segmento de listagem que vêm junto. `dry_run` é\no padrão porque a rota reescreve dado que a tela mostra: primeiro se lê o\nrelatório, depois se repete com `dry_run=false`.",
+    "operationId": "sync_assets_with_regulator_market_data_asset_registry_sync_post",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "dry_run",
+      "required": false,
+      "schema": {
+       "default": true,
+       "title": "Dry Run",
+       "type": "boolean"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CvmRegistrySyncReport"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Sync Assets With Regulator",
+    "tags": [
+     "Asset"
+    ]
+   }
+  },
   "/market_data/asset/sync": {
    "post": {
     "description": "Casar o cadastro local com o catálogo do provedor.\n\nNomes e logos vêm do provedor, tickers que faltam viram ativos novos, e o\nque só existe aqui continua existindo. `dry_run` é o padrão porque a rota\nreescreve dado que a tela mostra: primeiro se olha o relatório, depois se\nrepete com `dry_run=false`.",
@@ -11616,6 +14342,684 @@
     "summary": "Get Fii Profile",
     "tags": [
      "FII"
+    ]
+   }
+  },
+  "/market_data/fund_registry": {
+   "get": {
+    "description": "Registered classes by name, CNPJ, administrator or manager.",
+    "operationId": "search_fund_registry_market_data_fund_registry_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "search",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 120,
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      }
+     },
+     {
+      "in": "query",
+      "name": "kind",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 20,
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Kind"
+      }
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 60,
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 30,
+       "maximum": 100,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/FundRegistryClassOut"
+         },
+         "title": "Response Search Fund Registry Market Data Fund Registry Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Search Fund Registry",
+    "tags": [
+     "Fund registry"
+    ]
+   }
+  },
+  "/market_data/fund_registry/class/{class_id}": {
+   "get": {
+    "description": "A class with its fund, subclasses, known series and the units already assets.",
+    "operationId": "get_fund_registry_class_market_data_fund_registry_class__class_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "class_id",
+      "required": true,
+      "schema": {
+       "title": "Class Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FundRegistryClassDetailOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Fund Registry Class",
+    "tags": [
+     "Fund registry"
+    ]
+   }
+  },
+  "/market_data/fund_registry/class/{class_id}/series": {
+   "get": {
+    "description": "The series a FIDC class filed most recently, read from the source now.\n\nWorks before the class is an asset, and writes nothing.",
+    "operationId": "get_fund_registry_class_series_market_data_fund_registry_class__class_id__series_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "class_id",
+      "required": true,
+      "schema": {
+       "title": "Class Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FundSeriesFilingOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Fund Registry Class Series",
+    "tags": [
+     "Fund registry"
+    ]
+   }
+  },
+  "/market_data/fund_registry/fund": {
+   "get": {
+    "description": "Busca no cadastro de fundos, no nível do fundo.\n\nÉ a contraparte de `/class` um nível acima, e é como um ETF é achado: o\ncatálogo do provedor não devolve o CNPJ dele, então o fundo é procurado\npelo nome e o vínculo é confirmado à mão.",
+    "operationId": "search_registered_funds_market_data_fund_registry_fund_get",
+    "parameters": [
+     {
+      "description": "Nome, CNPJ, administrador ou gestor",
+      "in": "query",
+      "name": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Nome, CNPJ, administrador ou gestor",
+       "title": "Query"
+      }
+     },
+     {
+      "description": "Tipo do fundo no registro: FII, FIIM, FIF",
+      "in": "query",
+      "name": "kind",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Tipo do fundo no registro: FII, FIIM, FIF",
+       "title": "Kind"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 20,
+       "maximum": 100,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/RegisteredFundOut"
+         },
+         "title": "Response Search Registered Funds Market Data Fund Registry Fund Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Search Registered Funds",
+    "tags": [
+     "Fund registry"
+    ]
+   }
+  },
+  "/market_data/ingestions/fund_registry": {
+   "get": {
+    "operationId": "list_fund_registry_ingestions_market_data_ingestions_fund_registry_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+         },
+         "title": "Response List Fund Registry Ingestions Market Data Ingestions Fund Registry Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Fund Registry Ingestions",
+    "tags": [
+     "Data Ingestion"
+    ]
+   },
+   "post": {
+    "operationId": "run_fund_registry_ingestion_market_data_ingestions_fund_registry_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RunFundRegistryIngestionRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Run Fund Registry Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/fund_registry/{execution_id}": {
+   "get": {
+    "operationId": "get_fund_registry_ingestion_market_data_ingestions_fund_registry__execution_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionDetailResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Fund Registry Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/fund_registry/{execution_id}/abort": {
+   "post": {
+    "operationId": "abort_fund_registry_ingestion_market_data_ingestions_fund_registry__execution_id__abort_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Abort Fund Registry Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/fund_share_value": {
+   "get": {
+    "operationId": "list_fund_share_value_ingestions_market_data_ingestions_fund_share_value_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+         },
+         "title": "Response List Fund Share Value Ingestions Market Data Ingestions Fund Share Value Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Fund Share Value Ingestions",
+    "tags": [
+     "Data Ingestion"
+    ]
+   },
+   "post": {
+    "description": "Ingest share values now. ``item_ids`` narrows the run to chosen funds;\n``force_full_history`` re-reads from each first purchase, ignoring validators.",
+    "operationId": "run_fund_share_value_ingestion_market_data_ingestions_fund_share_value_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RunDataIngestionRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Run Fund Share Value Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/fund_share_value/{execution_id}": {
+   "get": {
+    "operationId": "get_fund_share_value_ingestion_market_data_ingestions_fund_share_value__execution_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionDetailResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Fund Share Value Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/fund_share_value/{execution_id}/abort": {
+   "post": {
+    "operationId": "abort_fund_share_value_ingestion_market_data_ingestions_fund_share_value__execution_id__abort_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Abort Fund Share Value Ingestion",
+    "tags": [
+     "Data Ingestion"
     ]
    }
   },
@@ -14343,6 +17747,64 @@
      }
     ],
     "summary": "Get Consolidation",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/contribution-average": {
+   "get": {
+    "description": "O aporte médio mensal da carteira.\n\nExiste como rota porque o número aparece em mais de uma tela, e cada tela\nque o recalculava a partir da série chegava a um valor diferente sob o\nmesmo nome.",
+    "operationId": "get_contribution_average_portfolio_position__portfolio_id__contribution_average_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ContributionAverage"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Contribution Average",
     "tags": [
      "Portfolio Position"
     ]

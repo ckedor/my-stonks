@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.composition.portfolio import get_portfolio_dividend_service
+from app.entrypoints.worker.task_runner import run_task_by_name
 from app.modules.portfolio.api.dividend.schema import (
     Dividend,
     DividendCreateRequest,
@@ -31,7 +32,9 @@ async def create_dividend(
     dividend: DividendCreateRequest,
     service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
 ):
-    return await service.create_dividend(dividend)
+    created = await service.create_dividend(dividend)
+    run_task_by_name('recalculate_asset_position', dividend.portfolio_id, dividend.asset_id)
+    return created
 
 
 @router.put('/{dividend_id}')
@@ -44,6 +47,7 @@ async def update_dividend(
     updated = await service.update_dividend(payload)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Dividend not found')
+    run_task_by_name('recalculate_asset_position', updated['portfolio_id'], updated['asset_id'])
     return updated
 
 
@@ -55,4 +59,5 @@ async def delete_dividend(
     deleted = await service.delete_dividend(dividend_id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Dividend not found')
+    run_task_by_name('recalculate_asset_position', deleted['portfolio_id'], deleted['asset_id'])
     return {'detail': 'Dividend deleted successfully'}

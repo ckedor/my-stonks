@@ -4,12 +4,17 @@ from types import TracebackType
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.infra.db import bootstrap as _db_bootstrap  # noqa: F401
+from app.infra.db.repositories.ai_repository import AIRepository
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.infra.db.session import AsyncSessionLocal
 from app.modules.market_data.repositories.asset_repository import AssetRepository
+from app.modules.market_data.repositories.fund_registry_repository import (
+    FundRegistryRepository,
+)
 from app.modules.market_data.repositories.ingestion_repository import DataIngestionRepository
 from app.modules.market_data.repositories.market_data_repository import MarketDataRepository
 from app.modules.market_data.repositories.quote_repository import QuoteRepository
+from app.modules.market_data.repositories.source_file_repository import SourceFileRepository
 from app.modules.portfolio.repositories.portfolio_repository import PortfolioRepository
 
 
@@ -37,8 +42,11 @@ class UnitOfWork:
         self.assets = AssetRepository(self._session)
         self.market_data = MarketDataRepository(self._session)
         self.quotes = QuoteRepository(self._session)
+        self.fund_registry = FundRegistryRepository(self._session)
+        self.source_files = SourceFileRepository(self._session)
         self.ingestions = DataIngestionRepository(self._session)
         self.portfolios = PortfolioRepository(self._session)
+        self.ai = AIRepository(self._session)
         return self
 
     async def commit(self) -> None:

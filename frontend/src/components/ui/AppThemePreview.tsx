@@ -1,4 +1,5 @@
-import { Box } from '@mui/material'
+import { Box, Typography } from '@mui/material'
+import type { Theme } from '@mui/material/styles'
 import type { ThemePreview } from '@/theme/themes'
 import { useAppTheme } from './useAppTheme'
 
@@ -16,10 +17,130 @@ const NAV_LINES = [0, 1, 2]
 
 export interface AppThemePreviewProps {
   colors: ThemePreview
+  sampleTheme?: Theme
 }
 
-export default function AppThemePreview({ colors }: AppThemePreviewProps) {
+export default function AppThemePreview({ colors, sampleTheme }: AppThemePreviewProps) {
   const theme = useAppTheme()
+
+  if (sampleTheme) {
+    const palette = sampleTheme.palette
+    const font = sampleTheme.typography.fontFamily
+    return (
+      <Box
+        aria-hidden="true"
+        sx={{
+          width: '100%',
+          aspectRatio: '16 / 10',
+          bgcolor: palette.background.default,
+          border: `1px solid ${palette.divider}`,
+          borderRadius: `${sampleTheme.radius.sm}px`,
+          overflow: 'hidden',
+          fontFamily: font,
+        }}
+      >
+        <Box
+          sx={{
+            height: '14%',
+            px: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            bgcolor: palette.topbar.background,
+            color: palette.topbar.text,
+            borderBottom: `1px solid ${palette.divider}`,
+          }}
+        >
+          <Typography sx={{ fontFamily: font, fontSize: 8, fontWeight: 700 }}>MY STONKS</Typography>
+          <Box sx={{ width: 16, height: 2, bgcolor: palette.primary.main, ml: 'auto' }} />
+        </Box>
+        <Box sx={{ display: 'flex', height: '86%' }}>
+          <Box sx={{ width: '16%', bgcolor: palette.sidebar, px: 0.75, py: 1.5 }}>
+            {NAV_LINES.map((i) => (
+              <Box
+                key={i}
+                sx={{
+                  height: 3,
+                  mb: 1,
+                  width: i === 1 ? '65%' : '90%',
+                  bgcolor: palette.topbar.text,
+                  opacity: i === 0 ? 0.7 : 0.2,
+                  borderRadius: `${sampleTheme.radius.sm}px`,
+                }}
+              />
+            ))}
+          </Box>
+          <Box sx={{ flex: 1, minWidth: 0, p: 1 }}>
+            <Typography
+              sx={{
+                fontFamily: sampleTheme.typography.h5.fontFamily,
+                color: palette.text.primary,
+                fontSize: 17,
+                lineHeight: 1.3,
+                fontWeight: 600,
+                mb: 0.5,
+              }}
+            >
+              Visão geral
+            </Typography>
+            <Box
+              sx={{
+                bgcolor: palette.background.paper,
+                border: `1px solid ${palette.divider}`,
+                borderRadius: `${sampleTheme.radius.sm}px`,
+                p: 0.75,
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  gap: 0.5,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: font,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: palette.text.primary,
+                    fontVariantNumeric: 'tabular-nums',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  124.380,00
+                </Typography>
+                <Typography sx={{ fontFamily: font, fontSize: 9, color: palette.success.main }}>
+                  +4,2%
+                </Typography>
+              </Box>
+              <Box
+                component="svg"
+                viewBox="0 0 200 40"
+                preserveAspectRatio="none"
+                sx={{ display: 'block', width: '100%', height: 35 }}
+              >
+                <path
+                  d="M0 34 L18 31 L35 32 L54 23 L73 27 L91 17 L111 20 L133 10 L153 13 L175 7 L200 4"
+                  fill="none"
+                  stroke={palette.primary.main}
+                  strokeWidth="2"
+                />
+                <path
+                  d="M0 36 L25 34 L50 33 L75 31 L100 29 L125 28 L150 26 L175 24 L200 22"
+                  fill="none"
+                  stroke={palette.secondary.main}
+                  strokeWidth="1.5"
+                  strokeDasharray="3 3"
+                />
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+    )
+  }
 
   return (
     <Box

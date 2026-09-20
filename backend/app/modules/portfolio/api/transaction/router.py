@@ -50,12 +50,12 @@ async def update_transaction(
     service: PortfolioTransactionService = Depends(get_portfolio_transaction_service),
 ):
     transaction = {**transaction, 'id': transaction_id}
-    old_portfolio_id = await service.update_transaction(transaction)
+    old_portfolio_id, old_asset_id = await service.update_transaction(transaction)
     run_task_by_name(
         RECALCULATE_ASSET_POSITION_TASK, transaction['portfolio_id'], transaction['asset_id']
     )
-    if transaction['portfolio_id'] != old_portfolio_id:
-        run_task_by_name(RECALCULATE_ASSET_POSITION_TASK, old_portfolio_id, transaction['asset_id'])
+    if (transaction['portfolio_id'], transaction['asset_id']) != (old_portfolio_id, old_asset_id):
+        run_task_by_name(RECALCULATE_ASSET_POSITION_TASK, old_portfolio_id, old_asset_id)
     return {'message': 'Transaction updated'}
 
 

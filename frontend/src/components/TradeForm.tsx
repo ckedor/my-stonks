@@ -120,7 +120,7 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
   }, [open])
 
   const fetchAndSetPrice = useCallback(async () => {
-    if (!selectedAsset || !date || isEdit) return
+    if (!selectedAsset?.ticker || !date || isEdit) return
     setPriceLoading(true)
     try {
       const d = dayjs(date).format('YYYY-MM-DD')
@@ -158,7 +158,9 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
       quantity: type === 'Compra' ? quantity : -quantity,
       price: price,
       currency: currency,
-      date: date?.toISOString(),
+      // Data civil, não instante: `toISOString()` converte para UTC e, depois
+      // das 21h no Brasil, grava a operação no dia seguinte.
+      date: date?.format('YYYY-MM-DD'),
       broker_id: brokerId,
       portfolio_id: portfolioId,
     }

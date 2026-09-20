@@ -88,7 +88,9 @@ export default function AppSidebar({
                   onNavigate(item.path)
                   onClose()
                 }}
-                selected={selectedPath === item.path}
+                selected={
+                  selectedPath === item.path || selectedPath.startsWith(`${item.path}/`)
+                }
                 sx={{
                   color: sidebarText,
                   '&:hover': {

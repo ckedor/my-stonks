@@ -13,6 +13,7 @@ from app.lib.utils.df import rows_to_df
 from app.lib.utils.fastapi import df_response
 from app.modules.market_data.domain.assets import Event
 from app.modules.market_data.domain.constants import ASSET_TYPE, CURRENCY
+from app.modules.market_data.domain.market_scope import is_brazilian_market
 
 _ASSET_TYPE_TO_TAXABLE: dict[ASSET_TYPE, TaxableAssetType] = {
     ASSET_TYPE.STOCK: TaxableAssetType.STOCK,
@@ -37,6 +38,19 @@ _ASSETS_AND_RIGHTS_COLUMNS: list[str] = [
     'cnpj',
     'broker_name',
 ]
+
+#: Os tipos cuja praça de negociação decide Brasil ou exterior. Para todo o
+#: resto a pergunta não se aplica: renda fixa e Tesouro não têm bolsa.
+#: Um CNPJ completo, para decidir se o valor pode ser pontuado.
+_CNPJ_DIGITS = 14
+
+_EXCHANGE_TRADED_TYPES: frozenset[ASSET_TYPE] = frozenset({
+    ASSET_TYPE.STOCK,
+    ASSET_TYPE.ETF,
+    ASSET_TYPE.BDR,
+    ASSET_TYPE.REIT,
+    ASSET_TYPE.FII,
+})
 
 _EXEMPT_DIVIDEND_ASSET_TYPES: list[ASSET_TYPE] = [
     ASSET_TYPE.FII,
@@ -92,6 +106,8 @@ class PortfolioIncomeTaxService:
             df['currency_id_previous_year']
         )
         df['name'] = df['name_fiscal_year'].combine_first(df['name_previous_year'])
+        for column in ('issuer_cnpj', 'fund_cnpj', 'exchange_code'):
+            df[column] = df[f'{column}_fiscal_year'].combine_first(df[f'{column}_previous_year'])
         df['broker_name'] = df['broker_name_fiscal_year'].combine_first(
             df['broker_name_previous_year']
         )
@@ -132,7 +148,7 @@ class PortfolioIncomeTaxService:
         df['codigo_negociacao'] = df['ticker']
         df['negociado_em_bolsa'] = df['type_id'].apply(self._is_traded_on_exchange)
         df['locale'] = df.apply(self._map_locale, axis=1)
-        df['cnpj'] = df['broker_cnpj']
+        df['cnpj'] = df.apply(self._map_cnpj, axis=1)
 
         final_df = df[_ASSETS_AND_RIGHTS_COLUMNS]
 
@@ -149,20 +165,80 @@ class PortfolioIncomeTaxService:
         }
 
     @staticmethod
-    def _map_locale(row):
-        if row['type_id'] == ASSET_TYPE.CRIPTO:
-            return '105'  # Cripto no Brasil
-        return '249' if row['currency_id'] == CURRENCY.USD else '105'
+    def _is_brazilian(row) -> bool:
+        """Onde o ativo é negociado, pela regra que o domínio já tem.
+
+        Antes isto saía da moeda da **corretora**, o que classificava uma ação
+        brasileira comprada por corretora de base dólar como ação no exterior.
+        A praça é do ativo, não de quem custodia, e `is_brazilian_market` é a
+        mesma função que decide o segmento de uma posição — uma pergunta, um
+        dono.
+
+        Só vale para o que é negociado em bolsa. Um CDB, um CRA ou um título
+        público não têm praça, e o "ticker" deles é descritivo — `CDB C6
+        12/02/2027` não tem forma de código da B3 e cairia como estrangeiro se
+        passasse pela regra. Eles são brasileiros por construção, que é como o
+        cadastro os registra.
+        """
+        if row['type_id'] not in _EXCHANGE_TRADED_TYPES:
+            return True
+        # O merge dos dois anos deixa NaN onde a posição só existe num deles, e
+        # NaN não é None: sem isto a comparação com o código da bolsa dá falso
+        # e o papel vira estrangeiro.
+        exchange_code = row.get('exchange_code')
+        if exchange_code is None or pd.isna(exchange_code):
+            exchange_code = None
+        return is_brazilian_market(exchange_code, row.get('ticker'))
 
     @staticmethod
-    def _map_group(row):
+    def _format_cnpj(value) -> str | None:
+        """O CNPJ pontuado, venha ele de onde vier.
+
+        A corretora guarda o documento já pontuado e o cadastro do regulador
+        guarda só os dígitos. Sem normalizar, o mesmo informe sai com os dois
+        formatos misturados.
+        """
+        if value is None or pd.isna(value):
+            return None
+        digits = ''.join(character for character in str(value) if character.isdigit())
+        if len(digits) != _CNPJ_DIGITS:
+            return str(value) or None
+        return f'{digits[:2]}.{digits[2:5]}.{digits[5:8]}/{digits[8:12]}-{digits[12:]}'
+
+    @classmethod
+    def _map_cnpj(cls, row):
+        """O CNPJ que a ficha pede, que é o do emissor e não o da corretora.
+
+        Um fundo é pessoa jurídica e responde por si: o CNPJ vem do cadastro
+        do regulador ao qual o FII ou o ETF está ligado. Uma ação responde pela
+        companhia que a emitiu. Todo o resto continua declarando a corretora,
+        que é onde o papel está custodiado — para renda fixa e Tesouro é ela
+        mesma que a ficha pede.
+        """
+        if row['type_id'] in (ASSET_TYPE.FII, ASSET_TYPE.ETF, ASSET_TYPE.FI, ASSET_TYPE.PREV):
+            issuer = row.get('fund_cnpj')
+        elif row['type_id'] in (ASSET_TYPE.STOCK, ASSET_TYPE.BDR):
+            issuer = row.get('issuer_cnpj')
+        else:
+            issuer = None
+        return cls._format_cnpj(issuer) or cls._format_cnpj(row['broker_cnpj'])
+
+    @classmethod
+    def _map_locale(cls, row):
+        if row['type_id'] == ASSET_TYPE.CRIPTO:
+            return '105'  # Cripto no Brasil
+        return '105' if cls._is_brazilian(row) else '249'
+
+    @classmethod
+    def _map_group(cls, row):
+        brazilian = cls._is_brazilian(row)
         if row['type_id'] == ASSET_TYPE.CRIPTO:
             return '08'
-        elif row['type_id'] == ASSET_TYPE.STOCK and row['currency_id'] == CURRENCY.BRL:
+        elif row['type_id'] == ASSET_TYPE.STOCK and brazilian:
             return '03'  # Ações brasileiras
-        elif row['type_id'] == ASSET_TYPE.STOCK and row['currency_id'] == CURRENCY.USD:
+        elif row['type_id'] == ASSET_TYPE.STOCK and not brazilian:
             return '04'  # Ações no exterior
-        elif row['type_id'] == ASSET_TYPE.ETF and row['currency_id'] == CURRENCY.USD:
+        elif row['type_id'] == ASSET_TYPE.ETF and not brazilian:
             return '04'  # ETF exterior
         elif row['type_id'] in [ASSET_TYPE.ETF, ASSET_TYPE.FII, ASSET_TYPE.FI]:
             return '07'
@@ -178,8 +254,9 @@ class PortfolioIncomeTaxService:
         else:
             return '99'
 
-    @staticmethod
-    def _map_code(row):  # noqa: PLR0912
+    @classmethod
+    def _map_code(cls, row):  # noqa: PLR0912
+        brazilian = cls._is_brazilian(row)
         if row['type_id'] == ASSET_TYPE.CRIPTO:
             if row['ticker'] == 'BTC':
                 return '01'
@@ -190,11 +267,11 @@ class PortfolioIncomeTaxService:
             else:
                 return '99'
 
-        if row['type_id'] == ASSET_TYPE.STOCK and row['currency_id'] == CURRENCY.BRL:
+        if row['type_id'] == ASSET_TYPE.STOCK and brazilian:
             return '01'
-        if row['type_id'] == ASSET_TYPE.STOCK and row['currency_id'] == CURRENCY.USD:
+        if row['type_id'] == ASSET_TYPE.STOCK and not brazilian:
             return '99'
-        if row['type_id'] == ASSET_TYPE.ETF and row['currency_id'] == CURRENCY.USD:
+        if row['type_id'] == ASSET_TYPE.ETF and not brazilian:
             return '99'
 
         elif row['type_id'] in [ASSET_TYPE.CDB, ASSET_TYPE.DEB, ASSET_TYPE.TREASURY]:

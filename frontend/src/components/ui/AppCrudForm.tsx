@@ -15,7 +15,7 @@ import {
     TextField,
     Typography,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import AppButton from './AppButton'
 import AppStack from './AppStack'
 
@@ -29,6 +29,15 @@ export interface FieldConfig {
   required?: boolean
   options?: Array<{ value: any; label: string }>
   disabled?: boolean
+  /** Texto de mais de uma linha. Só para `text`; o número de linhas é o
+   *  mínimo, e o campo cresce com o conteúdo. */
+  rows?: number
+  /** Ação acima do campo — o botão que o preenche por outro meio, como
+   *  pedir um rascunho à IA. Recebe o setter do formulário porque uma ação
+   *  que não escreve nos campos não teria por que existir aqui, e porque
+   *  uma delas costuma preencher mais de um campo de uma vez. */
+  action?: (setFieldValue: (name: string, value: unknown) => void) => ReactNode
+  helperText?: string
 }
 
 export interface AppCrudFormProps {
@@ -40,6 +49,9 @@ export interface AppCrudFormProps {
   initialData?: any
   isEdit?: boolean
   onFieldChange?: (name: string, value: any) => void
+  /** Conteúdo sob os campos gerados — o que não é um campo da lista, como o
+   *  cadastro de um fundo mostrado só para leitura. */
+  children?: ReactNode
 }
 
 export default function AppCrudForm({
@@ -51,6 +63,7 @@ export default function AppCrudForm({
   initialData,
   isEdit = false,
   onFieldChange,
+  children,
 }: AppCrudFormProps) {
   const [formData, setFormData] = useState<any>({})
   const [loading, setLoading] = useState(false)
@@ -143,7 +156,7 @@ export default function AppCrudForm({
               )
             }
 
-            return (
+            const input = (
               <TextField
                 key={field.name}
                 label={field.label}
@@ -159,9 +172,24 @@ export default function AppCrudForm({
                 margin="normal"
                 required={field.required}
                 disabled={field.disabled}
+                multiline={Boolean(field.rows)}
+                minRows={field.rows}
+                helperText={field.helperText}
               />
             )
+
+            if (!field.action) return input
+
+            return (
+              <Box key={field.name}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                  {field.action(handleChange)}
+                </Box>
+                {input}
+              </Box>
+            )
           })}
+          {children}
         </Box>
 
         {/* Footer Actions */}

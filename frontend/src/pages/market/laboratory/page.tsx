@@ -258,7 +258,7 @@ export default function MarketLaboratoryPage() {
         seriesId: null,
         fixedIncomeTypeId: null,
         rate: null,
-        label: position.ticker,
+        label: position.ticker ?? position.name,
       })),
     })
     setResult(null)
@@ -289,7 +289,7 @@ export default function MarketLaboratoryPage() {
         seriesId: null,
         fixedIncomeTypeId: null,
         rate: null,
-        label: position.ticker,
+        label: position.ticker ?? position.name,
       })),
     })
     setResult(null)

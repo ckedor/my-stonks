@@ -1,16 +1,12 @@
-import { ASSET_ROUTES } from '@/constants/routes'
-import api from '@/lib/api'
+import { assetKeys, assetQueryOptions, useAssets, useAssetTypes } from '@/queries/assets'
+import { ASSET_TYPES } from '@/constants/assetTypes'
 import { Asset } from '@/types'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import { AppAutocomplete, AppGrid, AppGridItem, AppSelect } from '@/components/ui'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useEffect, useMemo, useState } from 'react'
 import FixedIncomeForm from './FixedIncomeForm'
-
-interface AssetType {
-  id: number
-  short_name: string
-  asset_class_id?: number
-}
+import { FundRegistrationDrawer } from './fund-registry/FundRegistrationDrawer'
 
 interface AssetSelectorProps {
   value: number | null
@@ -19,11 +15,14 @@ interface AssetSelectorProps {
 }
 
 export default function AssetSelector({ value, onChange, initialAsset }: AssetSelectorProps) {
-  const [assetTypes, setAssetTypes] = useState<AssetType[]>([])
-  const [assets, setAssets] = useState<Asset[]>([])
+  const queryClient = useQueryClient()
+  const { assetTypes, loading: typesLoading } = useAssetTypes()
+  const { assets, loading: assetsLoading } = useAssets()
   const [selectedType, setSelectedType] = useState<number | ''>(initialAsset?.asset_type_id ?? '')
-  const [loading, setLoading] = useState(true)
+  const loading = typesLoading || assetsLoading
   const [createOpen, setCreateOpen] = useState(false)
+  const [fundSearch, setFundSearch] = useState<string | null>(null)
+  const isFund = selectedType === ASSET_TYPES.FI || selectedType === ASSET_TYPES.PREV
 
   // Quando initialAsset muda, define o tipo
   useEffect(() => {
@@ -33,30 +32,6 @@ export default function AssetSelector({ value, onChange, initialAsset }: AssetSe
       setSelectedType('')
     }
   }, [initialAsset])
-
-  const fetchTypes = useCallback(async () => {
-    const res = await api.get(ASSET_ROUTES.type)
-    setAssetTypes(res.data)
-  }, [])
-
-  const fetchAssets = useCallback(async () => {
-    const res = await api.get(ASSET_ROUTES.list)
-    setAssets(res.data)
-  }, [])
-
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true)
-      try {
-        await Promise.all([fetchTypes(), fetchAssets()])
-      } catch {
-        console.log('Failed to load asset types or assets')
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [fetchTypes, fetchAssets])
 
   const isFixedIncomeType = useMemo(() => {
     if (!selectedType) return false
@@ -82,7 +57,7 @@ export default function AssetSelector({ value, onChange, initialAsset }: AssetSe
   const refetchAssets = async (created?: Asset) => {
     setCreateOpen(false)
     if (created) {
-      await fetchAssets()
+      await queryClient.invalidateQueries({ queryKey: assetKeys.all })
       onChange(created)
     }
   }
@@ -97,26 +72,39 @@ export default function AssetSelector({ value, onChange, initialAsset }: AssetSe
             density="comfortable"
             options={assetTypes.map((type) => ({ value: String(type.id), label: type.short_name }))}
             value={selectedType === '' ? '' : String(selectedType)}
-            onChange={(next) => setSelectedType(Number(next))}
+            onChange={(next) => {
+              setSelectedType(Number(next))
+              onChange(null)
+            }}
           />
         </AppGridItem>
 
         <AppGridItem span={8}>
           <AppAutocomplete
             label="Ativo"
-            placeholder="Selecione o ativo"
+            placeholder={isFund ? 'Nome do fundo ou CNPJ' : 'Selecione o ativo'}
             size="full"
             options={filteredAssets}
             value={selectedAsset}
             onChange={(asset) => onChange(asset)}
-            getOptionLabel={(option) => option.ticker}
+            getOptionLabel={(option) => option.ticker || option.name}
+            filterOptions={(options, { inputValue }) => {
+              const search = inputValue.toLocaleLowerCase()
+              return options.filter((option) =>
+                `${option.ticker ?? ''} ${option.name}`.toLocaleLowerCase().includes(search),
+              )
+            }}
             isOptionEqualToValue={(option, current) => option.id === current.id}
             disabled={!selectedType || loading}
             busy={loading}
-            /* O atalho de criar só existe em renda fixa: é a única classe em
-               que o ativo pode não estar no cadastro ainda. */
             action={
-              isFixedIncomeType
+              isFund
+                ? {
+                    label: 'Buscar fundo por CNPJ…',
+                    icon: <AddCircleOutlineIcon fontSize="small" />,
+                    onSelect: setFundSearch,
+                  }
+                : isFixedIncomeType
                 ? {
                     label: 'Novo ativo de renda fixa…',
                     icon: <AddCircleOutlineIcon fontSize="small" />,
@@ -133,6 +121,19 @@ export default function AssetSelector({ value, onChange, initialAsset }: AssetSe
         assetTypeId={Number(selectedType)}
         onClose={refetchAssets}
       />
+      {fundSearch !== null && (
+        <FundRegistrationDrawer
+          open
+          initialQuery={fundSearch}
+          initialAssetType={String(selectedType)}
+          onClose={() => setFundSearch(null)}
+          onRegistered={async (assetId) => {
+            const asset = await queryClient.fetchQuery(assetQueryOptions(assetId))
+            setSelectedType(asset.asset_type_id)
+            onChange(asset)
+          }}
+        />
+      )}
     </>
   )
 }

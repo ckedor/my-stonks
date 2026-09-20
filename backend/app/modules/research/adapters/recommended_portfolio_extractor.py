@@ -2,12 +2,12 @@ import json
 
 from pydantic import ValidationError
 
-from app.infra.exceptions import IntegrationBadResponse
-from app.modules.ai.domain.provider import (
+from app.infra.ai.provider import (
     AIFileInput,
     AIGenerationRequest,
     AIProvider,
 )
+from app.infra.exceptions import IntegrationBadResponse
 from app.modules.research.domain.extraction import ExtractedRecommendedPortfolio
 from app.modules.research.domain.prompts import build_recommended_portfolio_extraction_prompt
 

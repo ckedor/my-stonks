@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Sequence
-from datetime import date, datetime
+from datetime import date
 
 from app.modules.portfolio.domain.wealth_tier_ladder import LADDER, WealthTier
 from app.modules.portfolio.service.portfolio_position_service import (
@@ -90,7 +90,7 @@ class PortfolioWealthTierService:
         """Quando o degrau seguinte chega, se nada mudar de ritmo.
 
         Duas coisas movem o patrimônio, e a projeção usa exatamente essas duas:
-        o dinheiro que entra — a média de aporte dos últimos meses — e o que o
+        o dinheiro que entra — o aporte médio mensal da história inteira — e o
         que já está dentro rende, na taxa anual que a carteira vem entregando.
         Nenhuma das duas é uma promessa; juntas são a única resposta honesta
         para "quanto tempo falta", que é a pergunta que a barra provoca.
@@ -126,38 +126,18 @@ class PortfolioWealthTierService:
         }
 
     async def _monthly_contribution(self, portfolio_id: int) -> float:
-        """Quanto entrou por mês, em média, na história inteira da carteira.
+        """O aporte médio mensal, exatamente como a tela de patrimônio o mostra.
 
-        O aporte acumulado é o que a série guarda, então a média sai da
-        diferença entre as duas pontas dividida pelos meses entre elas — e não
-        da média das linhas, que contaria os dias sem aporte como zero.
+        A conta não está aqui de propósito: ela é uma só, no domínio, e este
+        serviço apenas a pede — ver `domain.contribution_average`. Enquanto
+        havia duas, as duas telas mostravam valores diferentes sob o mesmo
+        nome, e a desta aqui perdia o aporte que abriu a carteira.
 
-        A janela é toda a história, e não os últimos meses, pela mesma razão
-        que a taxa é o CAGR da série inteira: a projeção fala de anos, e um
-        ritmo medido em doze meses faz a data pular a cada semestre bom ou
-        ruim. O par que a tela mostra é o ritmo de sempre, não o de agora.
+        Em BRL, e não na moeda de quem olha, pela mesma razão que o patrimônio
+        da patente é: a escala é fixa em reais, e um ritmo em dólar projetaria
+        a chegada a um degrau que não é medido em dólar.
         """
-        evolution = await self.position_service.get_patrimony_evolution(
-            portfolio_id, currency='BRL'
-        )
-        if not evolution:
-            return 0.0
-
-        points = [
-            (self._as_date(entry.get('date')), self._as_number(entry.get('acc_aported')))
-            for entry in evolution
-        ]
-        points = [(day, value) for day, value in points if day is not None and value is not None]
-        if len(points) < 2:
-            return 0.0
-
-        points.sort(key=lambda point: point[0])
-        last_day, last_value = points[-1]
-        first_day, first_value = points[0]
-        months = (last_day.year - first_day.year) * 12 + last_day.month - first_day.month
-        if months <= 0:
-            return 0.0
-        return max((last_value - first_value) / months, 0.0)
+        return await self.position_service.get_contribution_average(portfolio_id, currency='BRL')
 
     async def _annual_rate(self, portfolio_id: int) -> float:
         """A taxa anual que a carteira vem entregando, como fração.
@@ -184,19 +164,6 @@ class PortfolioWealthTierService:
         if not isinstance(value, int | float) or isinstance(value, bool):
             return None
         return float(value) if math.isfinite(float(value)) else None
-
-    @staticmethod
-    def _as_date(value) -> date | None:
-        if isinstance(value, datetime):
-            return value.date()
-        if isinstance(value, date):
-            return value
-        if isinstance(value, str):
-            try:
-                return datetime.fromisoformat(value[:10]).date()
-            except ValueError:
-                return None
-        return None
 
     async def _patrimony_peak_and_current(self, portfolio_id: int) -> tuple[float, float]:
         """The portfolio's highest and latest daily totals, both in BRL.

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AppImmersiveScene, AppStack, AppText } from '@/components/ui'
 import { fetchWealthTiers } from '@/api/wealth-tier'
 import { tierScene } from '@/constants/tierScenes'
-import { useCurrency } from '@/hooks/useCurrency'
 import { useWealthTier } from '@/queries/portfolio'
 import type { WealthTier } from '@/types'
 import TierStanding, { type TierState } from './TierStanding'
@@ -30,7 +29,6 @@ import TierStanding, { type TierState } from './TierStanding'
 
 export default function PortfolioTiersPage() {
   const { data: standing = null, isLoading } = useWealthTier()
-  const { format: formatCurrency } = useCurrency()
   const [tiers, setTiers] = useState<WealthTier[]>([])
   /* O foco começa na patente atual e passa a ser de quem olha assim que ele
      escolhe outra: `null` quer dizer "ainda a atual". */
@@ -97,7 +95,6 @@ export default function PortfolioTiersPage() {
           state={state}
           standing={standing}
           loading={isLoading}
-          formatCurrency={formatCurrency}
           onPrevious={() => move(-1)}
           onNext={() => move(1)}
           hasPrevious={index > 0}

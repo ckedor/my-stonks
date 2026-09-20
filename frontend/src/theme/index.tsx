@@ -15,6 +15,16 @@ import {
     lightThemes,
 } from "./themes";
 
+function readSavedTheme(mode: ThemeMode): string {
+  const key = `theme-${mode}-id`;
+  const saved = localStorage.getItem(key);
+  const definition = saved ? getThemeById(saved) ?? getCustomThemeById(saved) : undefined;
+  if (definition?.mode === mode) return definition.id;
+  const fallback = mode === "light" ? DEFAULT_LIGHT_THEME_ID : DEFAULT_DARK_THEME_ID;
+  if (saved) localStorage.setItem(key, fallback);
+  return fallback;
+}
+
 export function ThemeRegistry({ children }: { children: React.ReactNode }) {
   const getInitialMode = (): ThemeMode => {
     const saved = localStorage.getItem("theme-mode") as ThemeMode | null;
@@ -33,11 +43,11 @@ export function ThemeRegistry({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<ThemeMode>(() => getInitialMode());
 
   const [lightThemeId, setLightThemeIdState] = useState<string>(
-    () => localStorage.getItem("theme-light-id") || DEFAULT_LIGHT_THEME_ID,
+    () => readSavedTheme("light"),
   );
 
   const [darkThemeId, setDarkThemeIdState] = useState<string>(
-    () => localStorage.getItem("theme-dark-id") || DEFAULT_DARK_THEME_ID,
+    () => readSavedTheme("dark"),
   );
 
   const toggleTheme = () => {

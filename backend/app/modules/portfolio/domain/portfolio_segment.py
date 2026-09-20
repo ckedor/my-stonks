@@ -38,8 +38,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from app.modules.market_data.domain.constants import ASSET_TYPE
-from app.modules.market_data.domain.enums import EXCHANGE
-from app.modules.market_data.domain.market_scope import is_b3_ticker
+from app.modules.market_data.domain.market_scope import is_brazilian_market
 
 
 class PortfolioSegment(StrEnum):
@@ -101,24 +100,12 @@ def get_segment_definition(segment: PortfolioSegment) -> SegmentDefinition:
 def is_brazilian_exchange(exchange_code: str | None, ticker: str | None = None) -> bool:
     """Where an asset trades, reduced to the only distinction a segment makes.
 
-    The exchange answers it when the registry has one. When it does not, the
-    ticker answers instead, and that second step is not a refinement — it is
-    what makes the rule correct at all. Most of the registry has no exchange:
-    a missing one was read as Brazilian, which is right for a Treasury bond or
-    a bank note, and wrong for IVV, QQQM and SCHD, which came in without an
-    exchange like everything else and landed on the Brazilian equity screen.
-
-    The ticker format is the B3's own rule and no American ticker matches it —
-    see ``market_data.domain.market_scope``. It is only consulted when there is
-    no exchange, so an asset the registry does place on a board is still
-    decided by the board.
+    Delegates to ``market_data.domain.market_scope``, which owns the rule. The
+    name is kept because the segment is what most callers mean by it, and
+    because a second copy of the rule is exactly what would let the segment and
+    the tax report disagree about the same asset.
     """
-    if exchange_code is not None:
-        return exchange_code == EXCHANGE.B3.value
-    # Sem ticker não há segundo critério, e o padrão continua sendo brasileiro:
-    # é assim que o Tesouro e o CDB, que não têm código em bolsa nenhuma, são
-    # registrados.
-    return ticker is None or is_b3_ticker(ticker)
+    return is_brazilian_market(exchange_code, ticker)
 
 
 def resolve_segment(

@@ -10,9 +10,11 @@ from app.modules.market_data.api.ingestion.schemas import (
     DataIngestionExecutionDetailResponse,
     DataIngestionExecutionResponse,
     RunDataIngestionRequest,
+    RunFundRegistryIngestionRequest,
     RunMarketDataSeriesIngestionRequest,
     RunUsdBrlIngestionRequest,
 )
+from app.modules.market_data.domain.ingestion import DataIngestionType
 from app.modules.market_data.service.data_ingestion_service import (
     DataIngestionReadService,
     DataIngestionService,
@@ -33,6 +35,10 @@ INGEST_QUOTES_FOR_HELD_ASSETS_TASK = 'ingest_quotes_for_held_assets'
 INGEST_QUOTES_TASK = 'ingest_quotes'
 INGEST_MARKET_DATA_SERIES_TASK = 'ingest_market_data_series'
 INGEST_USD_BRL_TASK = 'ingest_usd_brl'
+INGEST_FUND_REGISTRY_TASK = 'ingest_fund_registry'
+#: Owned by the portfolio module: it resolves each fund's first purchase, also
+#: for funds chosen by id, before chaining into the market-data task.
+INGEST_FUND_SHARE_VALUES_FOR_HELD_FUNDS_TASK = 'ingest_fund_share_values_for_held_funds'
 
 router = APIRouter(
     prefix='/ingestions',
@@ -216,5 +222,126 @@ async def abort_usd_brl_ingestion(
     service: DataIngestionService = Depends(get_data_ingestion_service),
 ):
     execution = await service.abort_usd_brl_execution(execution_id)
+    _revoke_pending_task(execution)
+    return execution
+
+
+@router.get('/fund_registry', response_model=list[DataIngestionExecutionResponse])
+async def list_fund_registry_ingestions(
+    limit: int = Query(default=50, ge=1, le=200),
+    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+):
+    return await service.list_fund_registry_executions(limit=limit)
+
+
+@router.get(
+    '/fund_registry/{execution_id}',
+    response_model=DataIngestionExecutionDetailResponse,
+)
+async def get_fund_registry_ingestion(
+    execution_id: int,
+    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+):
+    return await service.get_fund_registry_execution(execution_id)
+
+
+@router.post('/fund_registry', response_model=DataIngestionExecutionResponse)
+async def run_fund_registry_ingestion(
+    payload: RunFundRegistryIngestionRequest,
+    user: User = Depends(current_superuser),
+    service: DataIngestionService = Depends(get_data_ingestion_service),
+):
+    execution = await service.request_manual_execution(
+        ingestion_type=DataIngestionType.FUND_REGISTRY,
+        requested_by_user_id=user.id,
+        item_ids=None,
+        force_full_history=payload.force_full_history,
+    )
+    try:
+        task = run_task_by_name(
+            INGEST_FUND_REGISTRY_TASK,
+            execution.id,
+            payload.force_full_history,
+        )
+        return await service.set_task_id(execution.id, task.id)
+    except Exception as exc:
+        await service.fail(execution.id, exc)
+        raise TaskDispatchError from exc
+
+
+@router.post(
+    '/fund_registry/{execution_id}/abort',
+    response_model=DataIngestionExecutionResponse,
+)
+async def abort_fund_registry_ingestion(
+    execution_id: int,
+    service: DataIngestionService = Depends(get_data_ingestion_service),
+):
+    execution = await service.abort_execution(
+        ingestion_type=DataIngestionType.FUND_REGISTRY,
+        execution_id=execution_id,
+    )
+    _revoke_pending_task(execution)
+    return execution
+
+
+@router.get('/fund_share_value', response_model=list[DataIngestionExecutionResponse])
+async def list_fund_share_value_ingestions(
+    limit: int = Query(default=50, ge=1, le=200),
+    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+):
+    return await service.list_fund_share_value_executions(limit=limit)
+
+
+@router.get(
+    '/fund_share_value/{execution_id}',
+    response_model=DataIngestionExecutionDetailResponse,
+)
+async def get_fund_share_value_ingestion(
+    execution_id: int,
+    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+):
+    return await service.get_fund_share_value_execution(execution_id)
+
+
+@router.post('/fund_share_value', response_model=DataIngestionExecutionResponse)
+async def run_fund_share_value_ingestion(
+    payload: RunDataIngestionRequest,
+    user: User = Depends(current_superuser),
+    service: DataIngestionService = Depends(get_data_ingestion_service),
+):
+    """Ingest share values now. ``item_ids`` narrows the run to chosen funds;
+    ``force_full_history`` re-reads from each first purchase, ignoring validators."""
+    execution = await service.request_manual_execution(
+        ingestion_type=DataIngestionType.FUND_SHARE_VALUE,
+        requested_by_user_id=user.id,
+        item_ids=payload.item_ids,
+        force_full_history=payload.force_full_history,
+    )
+    try:
+        task = run_task_by_name(
+            INGEST_FUND_SHARE_VALUES_FOR_HELD_FUNDS_TASK,
+            execution.id,
+            payload.force_full_history,
+            payload.item_ids,
+        )
+        return await service.set_task_id(execution.id, task.id)
+    except Exception as exc:
+        await service.fail(execution.id, exc)
+        raise TaskDispatchError from exc
+
+
+@router.post(
+    '/fund_share_value/{execution_id}/abort',
+    response_model=DataIngestionExecutionResponse,
+)
+async def abort_fund_share_value_ingestion(
+    execution_id: int,
+    service: DataIngestionService = Depends(get_data_ingestion_service),
+):
+    execution = await service.abort_execution(
+        ingestion_type=DataIngestionType.FUND_SHARE_VALUE,
+        execution_id=execution_id,
+    )
     _revoke_pending_task(execution)
     return execution

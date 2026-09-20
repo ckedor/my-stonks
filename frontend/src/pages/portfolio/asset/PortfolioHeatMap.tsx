@@ -104,7 +104,7 @@ export default function PortfolioHeatMap({
           const metricValue = getMetricValue(pos, metric)
           return {
             key: pos.asset_id,
-            label: pos.ticker,
+            label: pos.ticker ?? pos.name,
             caption: formatMetricDisplay(metricValue, metric, formatCurrency),
             value: pos.value,
             tint: colorScale(metricValue),
@@ -123,7 +123,7 @@ export default function PortfolioHeatMap({
     return (
       <AppStack gap="xs">
         <AppText variant="caption" weight="strong">
-          {pos.ticker}
+          {pos.ticker ?? pos.name}
         </AppText>
         <AppText variant="caption">Valor: {formatCurrency(pos.value)}</AppText>
         <AppText variant="caption">Participação: {pct.toFixed(2)}%</AppText>

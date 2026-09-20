@@ -49,6 +49,18 @@ export default function OverviewAportsChart({ patrimonyEvolution, size = 340 }: 
     return groupTimeSeries(filterByRange(series, '1y'), groupBy)
   }, [patrimonyEvolution, groupBy])
 
+  // Keep zero as the baseline, but let each side use the space its values
+  // need. Automatic rounded bounds can leave half the chart almost empty.
+  const yDomain = useMemo<[number, number]>(() => {
+    const [min, max] = chartData.reduce(
+      ([low, high], point) => [Math.min(low, point.value), Math.max(high, point.value)],
+      [0, 0],
+    )
+    const padding = (max - min) * 0.05
+    if (padding === 0) return [0, 1]
+    return [min < 0 ? min - padding : 0, max > 0 ? max + padding : 0]
+  }, [chartData])
+
   const labelColor = theme.palette.chart.label
   const hasData = chartData.some((point) => point.value !== 0)
 
@@ -79,6 +91,7 @@ export default function OverviewAportsChart({ patrimonyEvolution, size = 340 }: 
             tickLine={false}
           />
           <YAxis
+            domain={yDomain}
             orientation="right"
             stroke={labelColor}
             tick={{ fill: labelColor, fontSize: 12 }}

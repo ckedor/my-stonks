@@ -10,6 +10,9 @@ import type { CandleDataPoint } from '@/components/charts/CandleChart'
 export interface AssetMarketViewProps {
   assetId: number
   ticker: string
+  /** Texto de cadastro do ativo. Vazio é o estado normal. */
+  summary?: string | null
+  description?: string | null
   candleData: CandleDataPoint[]
   /** Formats prices in the currency the reader chose. */
   priceFormatter: (value: number) => string

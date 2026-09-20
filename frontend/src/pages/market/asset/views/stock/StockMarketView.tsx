@@ -1,6 +1,7 @@
 import { fetchStockProfile, type StockProfile } from '@/api/market'
 import { AppCard, AppDivider, AppSkeleton, AppStack, AppTabs, AppText } from '@/components/ui'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import AssetDescriptionCard from '../../AssetDescriptionCard'
 import AssetQuoteCard from '../../AssetQuoteCard'
 import type { AssetMarketViewProps } from '../types'
 import StockCompanyCard from './StockCompanyCard'
@@ -93,6 +94,8 @@ const VALUE_ADDED_METRICS = [
 export default function StockMarketView({
   assetId,
   ticker,
+  summary,
+  description,
   candleData,
   priceFormatter,
 }: AssetMarketViewProps) {
@@ -143,6 +146,8 @@ export default function StockMarketView({
         persistKey={`market-asset:${ticker}`}
         priceFormatter={priceFormatter}
       />
+
+      <AssetDescriptionCard summary={summary} description={description} />
 
       {loading && <StockSectionsSkeleton />}
 

@@ -286,7 +286,9 @@ export default function PortfolioReturnsChart({
     const tickers = new Set(
       positions.filter((position) => position.category === subject.key).map((p) => p.ticker),
     )
-    return trades.filter((trade) => tickers.has(trade.ticker))
+    /* Ativo sem ticker não casa por ticker: quem não tem código fica de fora
+       do recorte por categoria, como já acontece com o ativo sem categoria. */
+    return trades.filter((trade) => trade.ticker !== null && tickers.has(trade.ticker))
   }, [subject, trades, positions])
 
   const chartLoading = externalSeries.length > 0 ? externalLoading : loading

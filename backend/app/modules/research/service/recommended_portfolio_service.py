@@ -117,10 +117,12 @@ class RecommendedPortfolioService:
             source = await self._resolve_source(uow, command.source_name)
             await self._reject_duplicate(uow, source_id=source.id, command=command)
 
+            portfolio_type = await self._resolve_type(uow, command.type_id)
             portfolio = RecommendedPortfolio(
                 source_id=source.id,
                 source=source,
                 type_id=command.type_id,
+                type=portfolio_type,
                 title=command.title,
                 reference_date=command.reference_date,
                 summary=command.summary,
@@ -139,6 +141,12 @@ class RecommendedPortfolioService:
                 ],
             )
             await uow.repository.create(RecommendedPortfolio, [portfolio])
+            # Pelo mesmo motivo que `set_type` atribui a relação junto do id: é
+            # `type` que a resposta serializa. O repositório solta as relações
+            # que chegaram vazias numa entidade nova, então uma edição sem tipo
+            # sai daqui com o atributo ausente e a serialização, já fora do
+            # escopo, tentaria carregá-lo de uma sessão fechada.
+            portfolio.type = portfolio_type
             await uow.commit()
             return portfolio
 
@@ -149,6 +157,18 @@ class RecommendedPortfolioService:
                 raise NotFoundError('Carteira recomendada não encontrada.')
             await uow.repository.delete(RecommendedPortfolio, id=recommended_portfolio_id)
             await uow.commit()
+
+    @staticmethod
+    async def _resolve_type(
+        uow: UnitOfWork, type_id: int | None
+    ) -> RecommendedPortfolioType | None:
+        """O tipo que a edição declara, ou nada quando ela não declara nenhum."""
+        if type_id is None:
+            return None
+        portfolio_type = await uow.repository.get(RecommendedPortfolioType, id=type_id)
+        if portfolio_type is None:
+            raise NotFoundError('Tipo de carteira não encontrado.')
+        return portfolio_type
 
     @staticmethod
     async def _resolve_source(uow: UnitOfWork, name: str) -> ResearchSource:

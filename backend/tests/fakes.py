@@ -12,7 +12,17 @@ class FakeUnitOfWork:
     """
 
     def __init__(self, **repositories):
-        for name in ('repository', 'assets', 'market_data', 'quotes', 'ingestions', 'portfolios'):
+        for name in (
+            'repository',
+            'assets',
+            'market_data',
+            'quotes',
+            'fund_registry',
+            'source_files',
+            'ingestions',
+            'portfolios',
+            'ai',
+        ):
             setattr(self, name, SimpleNamespace())
         for name, repository in repositories.items():
             setattr(self, name, repository)

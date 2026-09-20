@@ -13,7 +13,19 @@ class Settings(BaseSettings):
     ALPHAVANTAGE_KEY: str
     CRYPTO_COMPARE_API_KEY: str
     OPENAI_API_KEY: str = ''
+    ANTHROPIC_API_KEY: str = ''
     JWT_SECRET: str
+
+    # Tracing de IA. Sem as duas chaves o app roda sem trace, de propósito:
+    # é infraestrutura opcional, como o cache.
+    LANGFUSE_PUBLIC_KEY: str = ''
+    LANGFUSE_SECRET_KEY: str = ''
+    LANGFUSE_HOST: str = 'https://cloud.langfuse.com'
+
+    # Teto de gasto diário com IA, em dólares. Acima dele a geração é recusada.
+    # Existe porque uma chave de API é um cartão de crédito sem limite, e um
+    # laço que regenera o mesmo artefato gastaria até alguém perceber.
+    AI_DAILY_COST_LIMIT_USD: float = 5.0
 
     CORS_ORIGINS: list[str] = [
         'https://my-stonks-front.onrender.com',

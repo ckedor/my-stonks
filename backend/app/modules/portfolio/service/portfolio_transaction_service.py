@@ -26,8 +26,8 @@ class PortfolioTransactionService:
             await uow.portfolios.create(Transaction, transaction)
             await uow.commit()
 
-    async def update_transaction(self, transaction: dict) -> int:
-        """Update the transaction and return the portfolio it belonged to before."""
+    async def update_transaction(self, transaction: dict) -> tuple[int, int]:
+        """Return the old portfolio and asset so both curves can be rebuilt."""
         transaction['date'] = pd.to_datetime(transaction['date']).date()
         async with self.uow as uow:
             old_transaction = await uow.portfolios.get(
@@ -35,11 +35,11 @@ class PortfolioTransactionService:
                 transaction.get('id'),
                 first=True,
             )
-            old_portfolio_id = old_transaction.portfolio_id
+            old_position = (old_transaction.portfolio_id, old_transaction.asset_id)
             await self._with_dual_currency_prices(transaction)
             await uow.portfolios.update(Transaction, transaction)
             await uow.commit()
-        return old_portfolio_id
+        return old_position
 
     async def delete_transaction(self, transaction_id) -> None:
         async with self.uow as uow:

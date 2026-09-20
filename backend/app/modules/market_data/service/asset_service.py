@@ -6,7 +6,12 @@ Asset service - handles asset management operations.
 import contextlib
 
 from app.config.logger import logger
-from app.core.exceptions import BusinessRuleError, NotFoundError
+from app.core.exceptions import (
+    AlreadyExistsError,
+    BusinessRuleError,
+    NotFoundError,
+    ValidationError,
+)
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.infra.db.unit_of_work import UnitOfWork
 from app.infra.redis.decorators import cached
@@ -28,6 +33,16 @@ from app.modules.market_data.domain.assets import (
     TreasuryBondType,
 )
 from app.modules.market_data.domain.constants import ASSET_TYPE
+from app.modules.market_data.domain.fund_registry import (
+    FundShareSeries,
+    FundShareSeriesAlias,
+    normalize_series_label,
+)
+from app.modules.market_data.domain.fund_share_value import (
+    ShareValueDataset,
+    UnsupportedFundKind,
+    share_value_dataset,
+)
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.domain.quote import Quote
 
@@ -45,6 +60,15 @@ FUND_TYPES = {ASSET_TYPE.FI, ASSET_TYPE.PREV}
 
 ASSETS_LIST_CACHE_PREFIX = 'assets_list'
 TREASURY_TYPES = {ASSET_TYPE.TREASURY}
+
+#: The columns of ``asset.fund`` that say which priced unit the asset is. The
+#: generic asset form knows nothing about them, so an edit keeps them as they are.
+FUND_REGISTRY_LINK = (
+    'fund_registry_class_id',
+    'fund_registry_subclass_id',
+    'fund_share_series_id',
+    'selection_version',
+)
 
 
 class AssetService:
@@ -174,6 +198,10 @@ class AssetService:
             )
             if not asset:
                 raise NotFoundError('Asset not found')
+            if asset.fund is not None:
+                # Loads the registry class onto the same fund instance, so its
+                # classification is readable after the session closes.
+                await uow.fund_registry.get_funds([asset.id])
             return asset
 
     async def create_asset(self, data: dict):
@@ -207,6 +235,9 @@ class AssetService:
 
             old_ticker = asset.ticker
             old_asset_type_id = asset.asset_type_id
+            if asset_type_id in FUND_TYPES:
+                link = await uow.fund_registry.get_fund_link(asset_id, FUND_REGISTRY_LINK)
+                data = {**data, **(link or {})}
             asset.ticker = data.get('ticker')
             asset.name = data['name']
             asset.asset_type_id = asset_type_id
@@ -230,6 +261,245 @@ class AssetService:
             asset_type_id=asset.asset_type_id,
         )
         return {'message': 'OK'}
+
+    async def register_fund(  # noqa: PLR0913 - one choice per level of the priced unit
+        self,
+        *,
+        fund_registry_class_id: int,
+        asset_type_id: int,
+        fund_registry_subclass_id: int | None = None,
+        series_id: int | None = None,
+        series_label: str | None = None,
+        name: str | None = None,
+    ) -> dict:
+        """Make one priced unit of a registered class an asset.
+
+        The unit is the class, narrowed to a subclass, or — for a FIDC — to a
+        series. A series is chosen either by its id or by the label it was
+        filed under; a label resolves to the series already confirmed for it,
+        or becomes a new series whose first alias is that label.
+        """
+        if asset_type_id not in FUND_TYPES:
+            raise ValidationError('A registered fund is an FI or PREV asset')
+        if series_id is not None and series_label is not None:
+            raise ValidationError('Choose the series by id or by label, not both')
+        async with self.uow as uow:
+            registry = uow.fund_registry
+            # Serialize registrations of the same class: two users confirming
+            # it concurrently must receive the same priced unit.
+            registry_class = await registry.get_class(fund_registry_class_id, for_update=True)
+            if registry_class is None:
+                raise NotFoundError(
+                    'Fund registry class not found', context={'id': fund_registry_class_id}
+                )
+            subclass = None
+            if fund_registry_subclass_id is not None:
+                subclass = await registry.get_subclass(fund_registry_subclass_id)
+                if subclass is None or subclass.fund_registry_class_id != registry_class.id:
+                    raise ValidationError('The subclass does not belong to the chosen class')
+            wants_series = series_id is not None or series_label is not None
+            if (
+                self._dataset_of(registry_class) == ShareValueDataset.FIDC_MONTHLY
+                and not wants_series
+            ):
+                raise ValidationError('Choose and confirm the series of this FIDC')
+            if wants_series and self._dataset_of(registry_class) != ShareValueDataset.FIDC_MONTHLY:
+                raise ValidationError('Only a FIDC class files share values by series')
+
+            series = None
+            if series_id is not None:
+                series = await registry.get_series(series_id)
+                if series is None or series.fund_registry_class_id != registry_class.id:
+                    raise ValidationError('The series does not belong to the chosen class')
+            elif series_label is not None:
+                series = await self._series_for_label(registry, registry_class.id, series_label)
+
+            resolved_series_id = series.id if series is not None else None
+            existing = await registry.find_priced_unit(
+                class_id=registry_class.id,
+                subclass_id=fund_registry_subclass_id,
+                series_id=resolved_series_id,
+            )
+            if existing is not None:
+                return {'message': 'OK', 'id': existing.asset_id}
+            asset_name = name or (subclass.name if subclass else registry_class.name)
+            if series is not None and not name:
+                asset_name = f'{asset_name} - {series.name}'
+            asset_ids = await uow.assets.create(
+                Asset,
+                {'ticker': None, 'name': asset_name[:200], 'asset_type_id': asset_type_id},
+            )
+            await uow.assets.create(
+                InvestmentFund,
+                {
+                    'asset_id': asset_ids[0],
+                    'legal_id': registry_class.cnpj,
+                    'fund_registry_class_id': registry_class.id,
+                    'fund_registry_subclass_id': fund_registry_subclass_id,
+                    'fund_share_series_id': resolved_series_id,
+                },
+            )
+            await uow.commit()
+        await self._invalidate_asset_cache(
+            asset_id=asset_ids[0], ticker=None, asset_type_id=asset_type_id
+        )
+        return {'message': 'OK', 'id': asset_ids[0]}
+
+    async def select_fund_series(
+        self, asset_id: int, *, series_id: int | None = None, series_label: str | None = None
+    ) -> dict:
+        """Confirm a stable series for a legacy linked FIDC that has none.
+
+        Existing transactions keep their asset. Old automatic selections are
+        no longer covered and will be reconciled on the next ingestion.
+        """
+        if (series_id is None) == (series_label is None):
+            raise ValidationError('Choose the series by id or by label')
+        async with self.uow as uow:
+            registry = uow.fund_registry
+            funds = await registry.get_funds([asset_id])
+            if not funds or funds[0].fund_registry_class_id is None:
+                raise ValidationError('Link this fund to a registry class before choosing a series')
+            fund = funds[0]
+            registry_class = await registry.get_class(fund.fund_registry_class_id, for_update=True)
+            if self._dataset_of(registry_class) != ShareValueDataset.FIDC_MONTHLY:
+                raise ValidationError('Only a FIDC class files share values by series')
+            if fund.fund_share_series_id is not None:
+                raise ValidationError('This asset already has a confirmed series')
+            series = (
+                await registry.get_series(series_id)
+                if series_id is not None
+                else await self._series_for_label(registry, registry_class.id, series_label)
+            )
+            if series is None or series.fund_registry_class_id != registry_class.id:
+                raise ValidationError('The series does not belong to the chosen class')
+            if await registry.find_priced_unit(
+                class_id=registry_class.id,
+                subclass_id=fund.fund_registry_subclass_id,
+                series_id=series.id,
+            ):
+                raise AlreadyExistsError('This series is already registered as another asset')
+            fund.fund_share_series_id = series.id
+            fund.selection_version += 1
+            await uow.commit()
+        await self._invalidate_asset_cache(
+            asset_id=asset_id, ticker=fund.asset.ticker, asset_type_id=fund.asset.asset_type_id
+        )
+        return {'message': 'OK', 'id': asset_id}
+
+    @staticmethod
+    def _dataset_of(registry_class) -> ShareValueDataset | None:
+        try:
+            return share_value_dataset(registry_class.fund.kind if registry_class.fund else None)
+        except UnsupportedFundKind:
+            return None
+
+    @staticmethod
+    async def _series_for_label(registry, class_id: int, label: str) -> FundShareSeries:
+        normalized = normalize_series_label(label)
+        if not normalized:
+            raise ValidationError('A series label cannot be empty')
+        for alias in await registry.list_aliases([class_id]):
+            if alias.label == normalized:
+                if alias.valid_from is None and alias.valid_to is None:
+                    return await registry.get_series(alias.fund_share_series_id)
+                raise ValidationError(
+                    'This label already means a series for part of its history; '
+                    'choose that series by id',
+                    context={'series_id': alias.fund_share_series_id},
+                )
+        created = await registry.create(
+            FundShareSeries, {'fund_registry_class_id': class_id, 'name': label.strip()[:100]}
+        )
+        await registry.create(
+            FundShareSeriesAlias,
+            {
+                'fund_share_series_id': created[0],
+                'fund_registry_class_id': class_id,
+                'label': normalized,
+            },
+        )
+        return await registry.get_series(created[0])
+
+    async def confirm_series_aliases(self, asset_id: int, aliases: list[dict]):
+        """Confirm which filing labels meant the asset's series, and when.
+
+        Earlier aliases are kept, so a replay of old files still resolves. An
+        alias identical to one already confirmed is a no-op. A label that would
+        mean two things on the same date is refused. Every asset priced by the
+        series gets a new selection version: what was applied under the old
+        aliases is no longer covered, and the next share-value run re-reads it.
+        """
+        async with self.uow as uow:
+            registry = uow.fund_registry
+            funds = await registry.get_funds([asset_id])
+            if not funds:
+                raise NotFoundError('Investment fund not found', context={'asset_id': asset_id})
+            fund = funds[0]
+            if fund.fund_share_series_id is None:
+                raise ValidationError('This asset is not priced by a series of shares')
+            class_id = fund.fund_registry_class_id
+            existing = await registry.list_aliases([class_id])
+            added = []
+            for item in aliases:
+                candidate = FundShareSeriesAlias(
+                    fund_share_series_id=fund.fund_share_series_id,
+                    fund_registry_class_id=class_id,
+                    label=normalize_series_label(item['label']),
+                    valid_from=item.get('valid_from'),
+                    valid_to=item.get('valid_to'),
+                )
+                if not candidate.label:
+                    raise ValidationError('A series label cannot be empty')
+                if (
+                    candidate.valid_from
+                    and candidate.valid_to
+                    and candidate.valid_from > candidate.valid_to
+                ):
+                    raise ValidationError('An alias cannot end before it starts')
+                same_label = [
+                    alias for alias in [*existing, *added] if alias.label == candidate.label
+                ]
+                if any(
+                    alias.fund_share_series_id == candidate.fund_share_series_id
+                    and (alias.valid_from, alias.valid_to)
+                    == (candidate.valid_from, candidate.valid_to)
+                    for alias in same_label
+                ):
+                    continue
+                clash = next((alias for alias in same_label if alias.overlaps(candidate)), None)
+                if clash is not None:
+                    raise ValidationError(
+                        f'"{item["label"]}" is already confirmed for dates that overlap',
+                        context={
+                            'series_id': clash.fund_share_series_id,
+                            'valid_from': str(clash.valid_from),
+                            'valid_to': str(clash.valid_to),
+                        },
+                    )
+                added.append(candidate)
+            if added:
+                await registry.create(
+                    FundShareSeriesAlias,
+                    [
+                        {
+                            'fund_share_series_id': alias.fund_share_series_id,
+                            'fund_registry_class_id': alias.fund_registry_class_id,
+                            'label': alias.label,
+                            'valid_from': alias.valid_from,
+                            'valid_to': alias.valid_to,
+                        }
+                        for alias in added
+                    ],
+                )
+                affected = await registry.get_series_asset_ids(fund.fund_share_series_id)
+                await registry.bump_selection_version(affected)
+                await uow.commit()
+            return [
+                alias
+                for alias in await registry.list_aliases([class_id])
+                if alias.fund_share_series_id == fund.fund_share_series_id
+            ]
 
     async def _invalidate_asset_cache(
         self,
@@ -306,9 +576,12 @@ class AssetService:
                 {
                     'asset_id': asset_id,
                     'legal_id': data.get('legal_id'),
-                    'anbima_code': data.get('anbima_code'),
-                    'anbima_code_class': data.get('anbima_code_class'),
                     'anbima_category': data.get('anbima_category'),
+                    **{
+                        column: data[column]
+                        for column in FUND_REGISTRY_LINK
+                        if data.get(column) is not None
+                    },
                 },
             )
         elif asset_type_id in TREASURY_TYPES and data.get('treasury_bond_type_id'):

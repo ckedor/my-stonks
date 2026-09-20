@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends
 
 from app.infra.db.unit_of_work import UnitOfWork, get_uow
+from app.infra.integrations.cvm_client import CvmClient
 from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.service.asset_catalogue_sync_service import (
@@ -11,11 +12,27 @@ from app.modules.market_data.service.asset_catalogue_sync_service import (
 )
 from app.modules.market_data.service.asset_service import AssetService
 from app.modules.market_data.service.brokers_service import BrokersService
+from app.modules.market_data.service.cvm_registry_sync_service import (
+    CvmRegistrySyncService,
+)
 from app.modules.market_data.service.data_ingestion_service import (
     DataIngestionReadService,
     DataIngestionService,
 )
 from app.modules.market_data.service.fii_service import FIIMarketReadService, FIIProfileReadService
+from app.modules.market_data.service.fund_registry_ingestion_service import (
+    FundRegistryIngestionService,
+)
+from app.modules.market_data.service.fund_registry_link_service import (
+    FundRegistryLinkService,
+)
+from app.modules.market_data.service.fund_registry_service import (
+    FundRegistryReadService,
+    FundSeriesReadService,
+)
+from app.modules.market_data.service.fund_share_value_ingestion_service import (
+    FundShareValueIngestionService,
+)
 from app.modules.market_data.service.investment_fund_service import (
     InvestmentFundMarketReadService,
     InvestmentFundProfileReadService,
@@ -69,6 +86,23 @@ def get_usd_brl_read_service(uow: UnitOfWork = Depends(get_uow)) -> UsdBrlReadSe
 
 def get_asset_service(uow: UnitOfWork = Depends(get_uow)) -> AssetService:
     return AssetService(uow=uow, cache=RedisService())
+
+
+def get_fund_registry_read_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> FundRegistryReadService:
+    return FundRegistryReadService(uow)
+
+
+async def get_fund_series_read_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> AsyncIterator[FundSeriesReadService]:
+    """Reads source files on demand, so it owns a client that must be closed."""
+    service = FundSeriesReadService(uow=uow, client=CvmClient())
+    try:
+        yield service
+    finally:
+        await service.aclose()
 
 
 def get_broker_service(uow: UnitOfWork = Depends(get_uow)) -> BrokersService:
@@ -235,6 +269,38 @@ async def get_asset_catalogue_sync_service(
         await investment_fund.aclose()
 
 
+async def get_cvm_registry_sync_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> AsyncIterator[CvmRegistrySyncService]:
+    """O sync do cadastro da CVM e o cliente que baixa os arquivos dele."""
+    client = CvmClient()
+    service = CvmRegistrySyncService(uow=uow, client=client)
+    try:
+        yield service
+    finally:
+        await client.close()
+
+
+async def get_fund_registry_link_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> AsyncIterator[FundRegistryLinkService]:
+    """O vínculo com o registro, e o catálogo de onde vem a sugestão de CNPJ.
+
+    Duas UoW pela mesma razão de sempre: uma instância não é aberta duas vezes,
+    e o catálogo resolve ids na sua enquanto o vínculo escreve na outra.
+    """
+    fii_market = FIIMarketReadService(
+        uow=UnitOfWork(),
+        provider=MarketDataProvider(),
+        cache=RedisService(),
+    )
+    service = FundRegistryLinkService(uow=uow, fii_market=fii_market)
+    try:
+        yield service
+    finally:
+        await fii_market.aclose()
+
+
 def build_data_ingestion_service() -> DataIngestionService:
     """Ingestion tracking needs one transaction per step, so it takes the factory."""
     return DataIngestionService(uow_factory=UnitOfWork)
@@ -281,6 +347,34 @@ async def usd_brl_ingestion_runner_context() -> AsyncIterator[UsdBrlIngestionSer
         ingestion_service=build_data_ingestion_service(),
         provider=MarketDataProvider(),
         cache=RedisService(),
+    )
+    try:
+        yield service
+    finally:
+        await service.aclose()
+
+
+@asynccontextmanager
+async def fund_registry_ingestion_runner_context() -> AsyncIterator[FundRegistryIngestionService]:
+    service = FundRegistryIngestionService(
+        uow_factory=UnitOfWork,
+        ingestion_service=build_data_ingestion_service(),
+        client=CvmClient(),
+    )
+    try:
+        yield service
+    finally:
+        await service.aclose()
+
+
+@asynccontextmanager
+async def fund_share_value_ingestion_runner_context() -> AsyncIterator[
+    FundShareValueIngestionService
+]:
+    service = FundShareValueIngestionService(
+        uow_factory=UnitOfWork,
+        ingestion_service=build_data_ingestion_service(),
+        client=CvmClient(),
     )
     try:
         yield service

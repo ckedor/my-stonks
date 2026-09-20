@@ -15,6 +15,7 @@ from app.lib.utils.fastapi import df_response
 from app.modules.market_data.domain.constants import SERIES
 from app.modules.market_data.service.market_data_service import MarketDataReadService
 from app.modules.portfolio.domain.asset_position import AssetPosition
+from app.modules.portfolio.domain.contribution_average import contribution_average
 from app.modules.portfolio.domain.entities import Position
 from app.modules.portfolio.domain.portfolio_segment import (
     PortfolioSegment,
@@ -280,6 +281,21 @@ class PortfolioPositionService:
         result['acc_aported'] = result['aported'].fillna(0).cumsum()
 
         return df_to_dict_list(result)
+
+    async def get_contribution_average(self, portfolio_id: int, currency: str = 'BRL') -> float:
+        """Quanto entrou por mês, em média, na história inteira da carteira.
+
+        A conta mora no domínio: a tela de patrimônio e a jornada do herói
+        mostram o mesmo número com o mesmo nome, e por um tempo cada uma fazia
+        a sua conta — ver `domain.contribution_average`.
+
+        A moeda é a de quem pergunta, porque o aporte é convertido pelo preço
+        do dia da transação, como o resto da série: a tela de patrimônio pede
+        na moeda que está exibindo, e a jornada pede sempre em BRL, porque a
+        escala de patentes é fixa em reais.
+        """
+        evolution = await self.get_patrimony_evolution(portfolio_id, currency=currency)
+        return contribution_average(evolution or [])
 
     async def get_portfolio_returns(self, portfolio_id: int, currency: str = 'BRL'):
         async with self.uow as uow:

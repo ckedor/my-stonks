@@ -1,6 +1,7 @@
 import { fetchFIIProfile, type FIIProfile } from '@/api/market'
 import { AppCard, AppDivider, AppSkeleton, AppStack, AppTabs, AppText } from '@/components/ui'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import AssetDescriptionCard from '../../AssetDescriptionCard'
 import AssetQuoteCard from '../../AssetQuoteCard'
 import type { AssetMarketViewProps } from '../types'
 import FIICompositionCard from './FIICompositionCard'
@@ -41,6 +42,8 @@ interface Section {
 export default function FIIMarketView({
   assetId,
   ticker,
+  summary,
+  description,
   candleData,
   priceFormatter,
 }: AssetMarketViewProps) {
@@ -85,6 +88,8 @@ export default function FIIMarketView({
         persistKey={`market-asset:${ticker}`}
         priceFormatter={priceFormatter}
       />
+
+      <AssetDescriptionCard summary={summary} description={description} />
 
       {loading && <FIISectionsSkeleton />}
 

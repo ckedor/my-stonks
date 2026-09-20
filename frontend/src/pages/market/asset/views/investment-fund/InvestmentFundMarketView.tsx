@@ -1,6 +1,7 @@
 import { fetchInvestmentFundProfile, type InvestmentFundProfile } from '@/api/market'
 import { AppCard, AppDivider, AppSkeleton, AppStack, AppTabs, AppText } from '@/components/ui'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import AssetDescriptionCard from '../../AssetDescriptionCard'
 import AssetQuoteCard from '../../AssetQuoteCard'
 import type { AssetMarketViewProps } from '../types'
 import FundDecisionCard from './FundDecisionCard'
@@ -42,6 +43,8 @@ interface Section {
 export default function InvestmentFundMarketView({
   assetId,
   ticker,
+  summary,
+  description,
   candleData,
   priceFormatter,
 }: AssetMarketViewProps) {
@@ -82,6 +85,8 @@ export default function InvestmentFundMarketView({
         persistKey={`market-asset:${ticker}`}
         priceFormatter={priceFormatter}
       />
+
+      <AssetDescriptionCard summary={summary} description={description} />
 
       {loading && <FundSectionsSkeleton />}
 

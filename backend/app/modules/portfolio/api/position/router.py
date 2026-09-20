@@ -8,7 +8,10 @@ from app.modules.market_data.api.asset.schemas import (
     AssetDetailsOut,
     AssetDetailsWithPosition,
 )
-from app.modules.portfolio.api.position.schemas import PortfolioConsolidation
+from app.modules.portfolio.api.position.schemas import (
+    ContributionAverage,
+    PortfolioConsolidation,
+)
 from app.modules.portfolio.domain.portfolio_segment import PortfolioSegment
 from app.modules.portfolio.service.portfolio_position_service import (
     PortfolioPositionService,
@@ -108,6 +111,22 @@ async def get_patrimony_evolution(  # noqa: PLR0913
     return await service.get_patrimony_evolution(
         portfolio_id, asset_id, asset_type_id, asset_type_ids, currency=currency, segment=segment
     )
+
+
+@router.get('/{portfolio_id}/contribution-average', response_model=ContributionAverage)
+async def get_contribution_average(
+    portfolio_id: int,
+    currency: str = Query('BRL'),
+    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+):
+    """O aporte médio mensal da carteira.
+
+    Existe como rota porque o número aparece em mais de uma tela, e cada tela
+    que o recalculava a partir da série chegava a um valor diferente sob o
+    mesmo nome.
+    """
+    average = await service.get_contribution_average(portfolio_id, currency=currency)
+    return ContributionAverage(monthly_average=average)
 
 
 @router.get('/{portfolio_id}/analysis')

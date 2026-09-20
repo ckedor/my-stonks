@@ -1,6 +1,7 @@
 import { ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import AppTooltip from './AppTooltip'
+import { space } from '@/theme/tokens'
 
 /* Escolha exclusiva entre poucos modos, em botões colados.
  *
@@ -27,6 +28,7 @@ export interface AppToggleGroupOption<T extends string> {
 }
 
 export interface AppToggleGroupProps<T extends string> {
+  presentation?: 'compact' | 'view'
   options: AppToggleGroupOption<T>[]
   value: T
   onChange: (value: T) => void
@@ -39,9 +41,21 @@ export default function AppToggleGroup<T extends string>({
   value,
   onChange,
   label,
+  presentation = 'compact',
 }: AppToggleGroupProps<T>) {
   return (
     <ToggleButtonGroup
+      sx={presentation === 'view' ? (theme) => ({
+        p: space.xs,
+        gap: space.xs,
+        bgcolor: 'action.hover',
+        borderRadius: `${theme.radius.md}px`,
+        '& .MuiToggleButtonGroup-grouped': {
+          border: 0,
+          margin: 0,
+          borderRadius: `${theme.radius.sm}px !important`,
+        },
+      }) : undefined}
       size="small"
       exclusive
       aria-label={label}
@@ -61,9 +75,25 @@ export default function AppToggleGroup<T extends string>({
             value={option.value}
             aria-label={option.label}
             disabled={option.disabled}
-            sx={{ px: 1, py: 0.25 }}
+            sx={presentation === 'view' ? {
+              height: 32,
+              flex: 1,
+              px: space.sm,
+              gap: space.xs,
+              textTransform: 'none',
+              color: 'text.secondary',
+              '&.Mui-selected': {
+                bgcolor: 'background.paper',
+                color: 'text.primary',
+                boxShadow: 1,
+                '&:hover': { bgcolor: 'background.paper' },
+              },
+            } : { px: 1, py: 0.25 }}
           >
             {option.hint ? <AppTooltip title={option.hint}>{content}</AppTooltip> : content}
+            {presentation === 'view' && option.icon && (
+              <Typography variant="body2" component="span">{option.label}</Typography>
+            )}
           </ToggleButton>
         )
       })}

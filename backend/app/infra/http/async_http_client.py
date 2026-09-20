@@ -7,7 +7,10 @@ Async HTTP client with retry, exponential backoff, and error translation.
 # ruff: noqa: PLR0913
 
 import asyncio
+import hashlib
+from dataclasses import dataclass
 from http import HTTPStatus
+from pathlib import Path
 from typing import Any, Literal
 
 import httpx
@@ -33,10 +36,14 @@ def translate_httpx_error(exc: Exception, *, provider: str) -> IntegrationError:
         if status == HTTPStatus.TOO_MANY_REQUESTS:
             return IntegrationRateLimited(provider=provider, status_code=status)
         if status >= HTTPStatus.INTERNAL_SERVER_ERROR:
-            return IntegrationUnavailable(message=detail, provider=provider, status_code=status)
+            return IntegrationUnavailable(
+                provider=provider, status_code=status, context={'detail': detail}
+            )
         return IntegrationError(message=detail, provider=provider, status_code=status)
     if isinstance(exc, httpx.ConnectError | httpx.RemoteProtocolError):
-        return IntegrationUnavailable(message=f'{provider} connection failed', provider=provider)
+        return IntegrationUnavailable(
+            provider=provider, context={'detail': f'{provider} connection failed'}
+        )
     return IntegrationError(message=f'{provider} request failed: {exc}', provider=provider)
 
 
@@ -53,6 +60,20 @@ def raise_bad_response(exc: Exception, *, provider: str, sample: str = '') -> No
         provider=provider,
         context={'sample': sample[:200]} if sample else {},
     ) from exc
+
+
+@dataclass(frozen=True)
+class StreamedResponse:
+    """What a streamed download left behind.
+
+    The body is on disk at the destination only when ``status_code`` is 200;
+    ``sha256`` and ``size_bytes`` describe that body.
+    """
+
+    status_code: int
+    headers: httpx.Headers
+    size_bytes: int = 0
+    sha256: str | None = None
 
 
 class AsyncHttpClient:
@@ -220,6 +241,64 @@ class AsyncHttpClient:
 
         if last_exception:
             raise_for_provider(last_exception, provider=self.provider)
+
+    async def download(
+        self,
+        path: str,
+        destination: Path,
+        *,
+        headers: dict | None = None,
+        passthrough_statuses: tuple[int, ...] = (),
+        chunk_size: int = 1 << 20,
+    ) -> StreamedResponse:
+        """Stream a GET body into ``destination`` without holding it in memory.
+
+        A status in ``passthrough_statuses`` (a ``304`` answering a conditional
+        request, a ``404`` for a file not published yet) is returned rather than
+        raised, and writes nothing. Retries restart the body from scratch, so a
+        cut connection never leaves half a file behind as if it were whole.
+        """
+        client = await self._get_client()
+        request_headers = {**self.default_headers, **(headers or {})}
+        last_exception: Exception | None = None
+
+        for attempt in range(self.max_retries + 1):
+            try:
+                async with client.stream('GET', path, headers=request_headers) as response:
+                    if response.status_code in passthrough_statuses:
+                        return StreamedResponse(response.status_code, response.headers)
+                    if response.status_code in self.retry_statuses and attempt < self.max_retries:
+                        await asyncio.sleep(self.backoff_factor * (2**attempt))
+                        continue
+                    response.raise_for_status()
+                    digest = hashlib.sha256()
+                    size = 0
+                    with destination.open('wb') as target:
+                        async for chunk in response.aiter_bytes(chunk_size):
+                            target.write(chunk)
+                            digest.update(chunk)
+                            size += len(chunk)
+                    return StreamedResponse(
+                        response.status_code,
+                        response.headers,
+                        size_bytes=size,
+                        sha256=digest.hexdigest(),
+                    )
+            except (httpx.TimeoutException, httpx.RemoteProtocolError, httpx.ReadError) as exc:
+                last_exception = exc
+                if attempt < self.max_retries:
+                    await asyncio.sleep(self.backoff_factor * (2**attempt))
+                    continue
+                raise_for_provider(exc, provider=self.provider)
+            except IntegrationError:
+                raise
+            except Exception as exc:
+                raise_for_provider(exc, provider=self.provider)
+
+        raise_for_provider(
+            last_exception or IntegrationUnavailable(provider=self.provider),
+            provider=self.provider,
+        )
 
     async def get(self, path: str, **kwargs) -> Any:
         return await self.request('GET', path, **kwargs)

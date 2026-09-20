@@ -27,8 +27,8 @@ const TYPE_OPTIONS = [
 export default function PortfolioTransactionsPage() {
   const refreshPortfolio = useRefreshPortfolio()
 
-  const trades = useTrades().data ?? EMPTY_LIST
-  const loading = useTrades().isPending
+  const { data, isPending: loading } = useTrades()
+  const trades = data ?? EMPTY_LIST
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedTrade, setSelectedTrade] = useState<Trade | undefined>()
@@ -59,8 +59,12 @@ export default function PortfolioTransactionsPage() {
   }
 
   const filteredTrades = useMemo(() => {
+    const term = search.toLowerCase()
     return trades.filter((trade) => {
-      const matchTicker = trade.ticker.toLowerCase().includes(search.toLowerCase())
+      const matchTicker =
+        term === '' ||
+        (trade.ticker?.toLowerCase().includes(term) ?? false) ||
+        (trade.name?.toLowerCase().includes(term) ?? false)
       const matchBroker = broker ? trade.broker === broker : true
       const matchType = type === 'Todos' || trade.type === type
       const matchStartDate = startDate

@@ -9,6 +9,13 @@ import {
   AppStack,
   AppText,
 } from '@/components/ui'
+/* Todo valor desta tela é em reais, e por isso não passa pelo seletor de
+ * moeda: a escala de patentes é fixa em reais no backend, e o aporte que
+ * projeta a chegada ao próximo degrau é pedido em reais pela mesma razão.
+ * Formatá-los com o símbolo escolhido na barra superior não convertia nada —
+ * só trocava "R$" por "US$" na frente do mesmo número, dizendo que o degrau
+ * custa duzentos mil dólares. */
+import { formatBRL } from '@/lib/utils/format'
 import type { PortfolioWealthTier, WealthTier } from '@/types'
 
 /* Quem se é hoje, e quando se deixa de ser: uma coisa só, escrita sobre a
@@ -79,7 +86,6 @@ export interface TierStandingProps {
   /** A posição da carteira na escala. Ausente enquanto carrega. */
   standing: PortfolioWealthTier | null
   loading: boolean
-  formatCurrency: (value: number) => string
   onPrevious: () => void
   onNext: () => void
   hasPrevious: boolean
@@ -91,7 +97,6 @@ export default function TierStanding({
   state,
   standing,
   loading,
-  formatCurrency,
   onPrevious,
   onNext,
   hasPrevious,
@@ -154,7 +159,7 @@ export default function TierStanding({
             <AppText variant="bodySmall" tone="inverse">
               {locked ? 'Desbloqueia em ' : 'Alcançada em '}
               <AppText variant="bodySmall" weight="strong" inline>
-                {formatCurrency(tier.threshold)}
+                {formatBRL(tier.threshold)}
               </AppText>
             </AppText>
           </AppStack>
@@ -178,14 +183,14 @@ export default function TierStanding({
                 <AppText variant="caption" tone="inverse">
                   Hoje{' '}
                   <AppText variant="caption" weight="strong" inline>
-                    {formatCurrency(standing.current_patrimony)}
+                    {formatBRL(standing.current_patrimony)}
                   </AppText>
                 </AppText>
                 {standing.remaining != null && next && (
                   <AppText variant="caption" tone="inverse" noWrap>
                     Faltam{' '}
                     <AppText variant="caption" weight="strong" inline>
-                      {formatCurrency(standing.remaining)}
+                      {formatBRL(standing.remaining)}
                     </AppText>{' '}
                     para{' '}
                     <AppText variant="caption" weight="strong" inline>
@@ -211,7 +216,7 @@ export default function TierStanding({
                     </AppText>
                     , no ritmo da carteira: aportes de{' '}
                     <AppText variant="caption" weight="strong" inline>
-                      {formatCurrency(projection.monthly_contribution)}
+                      {formatBRL(projection.monthly_contribution)}
                     </AppText>
                     /mês e CAGR de{' '}
                     <AppText variant="caption" weight="strong" inline>

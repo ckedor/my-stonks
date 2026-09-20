@@ -48,14 +48,14 @@ export default function PositionPieChart({ positions, height = 350, selectedCate
     } else {
       const filtered = positions
         .filter((pos) => pos.category === selectedCategory)
-        .map((pos) => ({ label: pos.ticker, value: pos.value }))
+        .map((pos) => ({ label: pos.ticker ?? pos.name, value: pos.value }))
         .sort((a, b) => b.value - a.value)
 
       // Build ticker -> asset_id map
       const idMap: Record<string, number> = {}
       for (const pos of positions) {
         if (pos.category === selectedCategory && pos.asset_id) {
-          idMap[pos.ticker] = pos.asset_id
+          idMap[pos.ticker ?? pos.name] = pos.asset_id
         }
       }
 

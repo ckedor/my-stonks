@@ -19,7 +19,9 @@ class QuoteResponse(BaseModel):
 
 class PersistedQuotesResponse(BaseModel):
     asset_id: int
-    ticker: str
+    #: Nulo em fundo cadastrado pelo registro do regulador, que não é negociado
+    #: em bolsa e não tem código. Exigir `str` aqui derruba a lista inteira.
+    ticker: str | None
     asset_type_id: int
     quotes: list[QuoteResponse]
 
@@ -41,7 +43,8 @@ class HistoricalCagrResponse(BaseModel):
 
 
 class AssetQuoteHistoryResponse(BaseModel):
-    ticker: str
+    #: Nulo pelo mesmo motivo de `PersistedQuotesResponse.ticker`.
+    ticker: str | None
     asset_type_id: int
     currency: str | None = None
     logo_url: str | None = None

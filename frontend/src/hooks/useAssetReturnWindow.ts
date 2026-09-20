@@ -30,7 +30,7 @@ export interface AssetReturnWindow {
 export function useAssetReturnWindow(
   portfolioId: number | undefined,
   assetId: number,
-  ticker: string,
+  ticker: string | null,
   months = 12,
 ): AssetReturnWindow {
   const { currency } = useCurrency()
@@ -43,7 +43,7 @@ export function useAssetReturnWindow(
       // série vazia viraria um espaço em branco no card — foi assim que um 500
       // do backend passou despercebido. Que a requisição falhe alto.
       const byTicker = await fetchAssetReturns(portfolioId!, assetId, currency, startDate)
-      const series = byTicker[ticker] ?? Object.values(byTicker)[0] ?? []
+      const series = (ticker ? byTicker[ticker] : undefined) ?? Object.values(byTicker)[0] ?? []
       return normalizeReturns(
         series,
         series.map((point) => point.date),

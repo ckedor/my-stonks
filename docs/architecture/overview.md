@@ -155,6 +155,34 @@ income, Treasury bonds and pension funds are in no catalogue, and they carry
 portfolio history. It is manual and defaults to `dry_run`, because it rewrites
 names screens display: the report says what would change before anything does.
 
+`POST /market_data/asset/registry_sync` is the other write into the registry,
+and it reads the regulator rather than a provider. It fills
+`asset.institution` from the CVM registry of listed companies and from the
+administrators the fund registry already carries, then resolves each stock to
+the company that issued it through the registration form, whose
+`valor_mobiliario` member is the only place in CVM open data that ties a
+negotiation code to a CNPJ. It also fills the exchange and the share class,
+which is what stops the market rule from depending on the shape of a ticker.
+
+Its guards come from what the files actually contain. The negotiation code is
+free text and filers abuse it — `ADR`, `4030`, `000000` — so a code that is not
+shaped like a B3 ticker is dropped. The form carries securities that left the
+exchange decades ago, so only the ones still trading identify an asset, and a
+ticker that appears solely among the ended ones marks the asset delisted. And
+only Brazilian assets are matched at all, by the same rule the segment uses: a
+CVM file cannot describe a Nasdaq stock, and `PNC` is a live American bank here
+and a company that left the B3 in 1996 there.
+
+A FII or a Brazilian ETF is tied to the regulator's fund registry, which the
+weekly ingestion already writes without filtering by fund kind — the cadastre
+is in the database before anybody links to it. `GET
+/market_data/asset/fund_link/suggestions` proposes the link for FIIs, pairing
+the CNPJ the provider states with the registered fund; a CNPJ naming more than
+one registration comes back ambiguous rather than guessed. `POST
+/market_data/asset/fund_link` confirms one, and it is also how an ETF is
+linked, since no catalogue publishes an ETF's CNPJ: the fund is found through
+`GET /market_data/fund_registry/fund` and confirmed by hand.
+
 ## Portfolio segment reads
 
 A specialized screen is about one **portfolio segment** — one part of the
@@ -205,6 +233,39 @@ None of these reads is cached. They are selects from a consolidated table, so
 the consolidator's commit is the only thing that changes what a reader sees.
 Patrimony evolution is the exception and the only portfolio read still computed
 per request, which is why it is also the only one with a cache in front of it.
+
+### Incremental position consolidation
+
+Routine manual and scheduled consolidation passes `incremental=True` to the
+position consolidator. For assets priced from persisted quotes, with no corporate
+events, it resumes from each asset's latest persisted position date minus 15
+calendar days. It requires a position on the preceding day; a missing checkpoint,
+a short or absent history, corporate events, fixed income and Treasury bonds use
+the full calculation.
+
+The incremental calculation reads recent quotes and exchange rates, continues
+quantity and accumulated returns from the opening position, and retains the
+original start date and historical return lookups for CAGR and twelve-month
+returns. Transaction history is still read to preserve average-cost semantics;
+persisted positions from the last year plus the overlap supply the checkpoint
+and historical lookups, with the first position retained for the inception date. Only
+the daily tail is calculated and replaced, with its deletion and insertion in
+one transaction. Deleting the tail also removes dates that no longer have a
+position after a sale. Aggregate return series still rebuild in full.
+
+Transaction and manual dividend writes dispatch the full asset recalculation
+after commit. For funds priced from regulator filings, that task first awaits
+share-value ingestion for the earliest purchase across portfolios, then reads
+the persisted quotes to consolidate. A failed or incomplete ingestion stops
+the recalculation and fails the task. Successful ingestion with unchanged quotes
+still recalculates the new transaction. Changed quotes also rebuild other
+portfolios holding the asset; those follow-up tasks skip ingestion to avoid a
+loop. Consolidation failures propagate to Celery instead of being logged as
+success. Moving a transaction between assets or portfolios rebuilds both
+its old and new positions. Newly ingested FII dividends likewise dispatch a full
+recalculation for each affected asset, including payments older than the overlap.
+The explicit asset/full-position recalculation routes retain full rebuilding;
+use them after historical quote or exchange-rate corrections outside the overlap.
 
 ## Recommendation ingestion
 
@@ -314,6 +375,82 @@ series that knows no entity, and the real portfolio and the theoretical one ask
 it the same question. A second copy would put two disagreeing Sharpe ratios on
 two screens.
 
+## AI features and their artifacts
+
+An AI feature is a registered capability, and what it answers is kept:
+
+```text
+GET /ai/asset_description_draft?asset_id=42
+  -> read the feature, its active prompt version, and the artifact stored
+     for (feature, prompt version, input)
+  -> current?  answer with it, and stop            (no provider call)
+  -> otherwise: assemble the generation context from the application's own
+                read services
+                render the active prompt version against that context
+                call the provider with the feature's schema enforced
+                validate the answer, and drop what it could not have known
+  -> persist the artifact
+```
+
+Three surfaces reach that flow, and only one of them is written per feature.
+`POST /ai/feature/{key}/run` generates and replaces what was stored — it is the
+refresh, for the admin and for the card — and it validates its body against the
+input model the handler declares, which is also what lets the admin build a run
+form for a feature nobody wrote a screen for. `run_ai_feature` is the single
+task the beat schedule and any manual dispatch go through; with no input it asks
+the handler which inputs to refresh, so a feature becomes schedulable by
+answering that question and taking a line in the schedule. The product route is
+the third, and it never regenerates on its own.
+
+**The prompt version is part of an artifact's identity.** The stored answer is
+keyed by feature, prompt version and input, so activating a new version retires
+what the previous one answered without anything having to invalidate it, and the
+older answers stay in place to be read against the new ones. The first version of
+this module keyed on the input alone, and a deploy that changed a prompt went on
+serving the old answer for a week.
+
+**Numbers come from the application; prose comes from the model.** Returns,
+volatility and drawdown are measured from persisted quotes and handed to the
+prompt already written. A figure that could not be measured is stated as
+unmeasured, because a model asked to describe a return will produce a plausible
+one whether or not it was given it.
+
+**Nothing is cached in Redis.** The artifact table *is* the cache: a read is a
+select by identity, and putting a cache in front of it would be caching a cache
+and would owe an invalidation to keep honest — the same reason a consolidated
+read has none. Whether an artifact is current is one comparison, because a
+manually-refreshed feature stores no expiry rather than a distant one.
+
+### The provider stack
+
+Every call goes through three layers, each of which is a provider:
+
+```text
+recording      writes the run — tokens, cost, latency — and traces it
+  fallback     walks the chain when a provider could not answer
+    OpenAI
+    Anthropic
+```
+
+Recording sits at the provider boundary rather than inside a feature's service,
+so nothing reaches a model without leaving a row behind and no later caller has
+to remember to instrument itself. That is also why the research extraction, which
+is not a registered feature, appears on the usage screen. The spend ceiling is
+checked in the same layer and before the call, where refusing still saves money.
+
+The chain moves on when a provider *could not* answer — timed out, unreachable,
+rate limited, out of funds — and never when it answered badly: a response that
+fails its schema is a prompt defect, and a second model reproduces it at twice
+the price. The model named by the prompt version decides which link answers
+first; a request that falls through asks the next link for its own model, since
+handing `gpt-4o` to another provider would fail for a reason unrelated to the
+first failure.
+
+Tracing is optional infrastructure on the same terms as the cache: an unreachable
+sink makes a call untraced, never failed. Prompts are managed in this application
+and traced elsewhere — putting prompt management in both places would be two
+sources of truth for the same text.
+
 ## Layer boundaries
 
 - **HTTP routers:** transport concerns only; call services.
@@ -367,13 +504,15 @@ keys do not require infrastructure entities to leak into application code.
 
 ## Market-data ingestion flows
 
-The three persistence operations have distinct entrypoints and one generic
+The five persistence operations have distinct entrypoints and one generic
 execution tracker:
 
 ```text
-quote page/task       -> quote ingestion service  -> quote history
-series page/task      -> series ingestion service -> market-data series history
-USD/BRL page/task     -> USD/BRL ingestion service -> USD/BRL history
+quote page/task         -> quote ingestion service         -> quote history
+series page/task        -> series ingestion service        -> market-data series history
+USD/BRL page/task       -> USD/BRL ingestion service       -> USD/BRL history
+fund registry page/task -> fund registry ingestion service -> fund registry tables
+share value page/task   -> share-value ingestion service   -> quote history (source 'cvm')
                               |
                               -> generic execution and attempt records
 ```
@@ -389,6 +528,103 @@ Portfolio position consolidation reads persisted quotes only. Scheduled quote
 ingestion runs before portfolio consolidation; missing quote history is an
 explicit failure and never triggers a provider call inside the portfolio write
 transaction.
+
+### Funds priced from regulator filings
+
+A fund sold outside any exchange — a FIDC bought through a broker, a pension
+fund — has no ticker and no provider quote. It is priced from the share value it
+files with the regulator (CVM open data), which is read directly because the
+provider that republishes it lags by a month, and a month is the whole signal of
+a monthly series.
+
+```text
+weekly (Tue 09:00) + manual  "Cadastro de fundos"
+  ingest_fund_registry -> FundRegistryIngestionService
+    -> CvmClient: registro_fundo_classe.zip, extrato_fi.csv (conditional GET, temp file)
+    -> asset.fund_registry / _class / _subclass            (one transaction per file)
+
+purchase "Buscar fundo por CNPJ" + admin "Ativos"
+  -> GET /market_data/fund_registry, /class/{id}, /class/{id}/series
+  -> POST /market_data/asset/fund                         (register or reuse an FI/PREV asset)
+admin "Ativos"
+  -> PUT /market_data/asset/fund/{id}/series               (confirm a legacy asset's series)
+  -> PUT /market_data/asset/fund/{id}/series-aliases
+
+daily (09:15) + manual  "Valores de cota"
+  ingest_fund_share_values_for_held_funds  (portfolio: which funds, since which purchase)
+    -> ingest_fund_share_values -> FundShareValueIngestionService
+         -> plan files per fund from coverage; read each file once for all funds
+         -> quotes + coverage per fund, in one transaction
+         -> recalculate_positions_for_assets   (by name, when stored values changed)
+```
+
+The registry lives in the database, not in a cache, because assets point at it.
+A registry row is not an asset: `asset.fund` gains a link to the **priced unit**
+— the class, a subclass, or a FIDC series — and the unit is unique, enforced by
+the database as well as the service.
+
+Any authenticated user can search the registry and confirm a fund while
+entering a purchase. `components/fund-registry/FundRegistrationDrawer.tsx`
+is shared with the admin: it carries the typed CNPJ, asks for the priced unit,
+and returns the selected asset to `AssetSelector`. Registering an already
+existing unit returns its asset id; a class row lock serializes concurrent
+confirmations. Tickerless funds are shown by name and their purchase price is
+entered by the user. Registry ingestion, legacy series assignment and alias
+editing remain admin operations.
+
+Nothing about the regulator passes the adapter: `app/infra/integrations/cvm_client.py`
+knows paths, packaging and listings, and
+`app/modules/market_data/adapters/fund_filings.py` knows columns, spellings and
+the three historical layouts. Files are streamed to temporary disk, read row by
+row off the event loop, and deleted — there is no bucket and no stored body.
+
+Skipping work is decided by **coverage**, never by a validator alone.
+`market_data.source_file` holds the validators and content digest of the last
+fully processed version of each file; `market_data.fund_share_value_coverage`
+records that a version was applied to one fund, for its selection version and
+from its purchase date, and commits with that fund's quotes. A `304` skips a
+file only for the funds already covered by that version. A retrodated purchase,
+a new series alias (which bumps the fund's selection version) or a failed
+earlier attempt makes the same file due again. A failure covers nobody and
+spares the other funds.
+
+Terms also depend on the registry they were applied to:
+`source_file.applied_registry_version` stores that registry content digest.
+An unchanged terms file is downloaded again after the registry changes or
+recovers from a failed first ingestion, so newly stored classes receive their
+fees and conditions.
+
+Applying a changed share-value file reconciles the source's quotes within
+that file's date range, including withdrawn observations and moved dates.
+Deletions, replacement values and coverage commit together. A withdrawn seed
+starts the backwards search again. A malformed header or numeric value fails
+the file rather than being mistaken for an empty snapshot.
+
+History starts at each fund's first purchase, plus the **seed**: the last value
+filed on or before it, found by reading earlier files one at a time down to the
+earliest the source lists. Consolidation reads that seed too — for every asset
+priced from persisted quotes it prepends the last quote on or before the first
+trade, so a purchase on a day without a quote is priced from the one before it.
+
+Routine runs re-read the files that may still change: those overlapping the
+last 35 days of stored values. The **revision sweep** — the same daily run from
+Tuesday on, until each fund succeeds, tracked in `market_data.ingestion_checkpoint`
+by asset id, selection version and first purchase date because execution
+history lasts two days — also re-reads daily months M−2 to
+M−11 and every FIDC month of the fund's history. A changed value dispatches a
+full recalculation of every position of that asset, because the routine
+consolidation only rebuilds a 15-day overlap. Withdrawals also trigger that
+recalculation. A manual subset or empty execution cannot complete another
+fund's revision; a failed fund stays due.
+
+FIDC series are identified by internal id, with confirmed label aliases per date
+interval; an alias cannot mean two series on the same date (an `EXCLUDE`
+constraint). A FIDC requires an explicitly confirmed series even when it has
+only one with shares. The registration form preselects that sole candidate,
+and confirmation persists its identity and first alias. A legacy asset without
+a series fails before checking coverage until the admin confirms its series;
+its asset id and transactions stay unchanged. A label nobody confirmed or two
+different values filed for one series on one date fail that fund explicitly.
 
 ### USD/BRL reads and their cache
 

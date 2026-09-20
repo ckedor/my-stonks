@@ -5,8 +5,8 @@ from dataclasses import dataclass
 
 import pytest
 
+from app.infra.ai.provider import AIGenerationResult
 from app.infra.exceptions import IntegrationBadResponse
-from app.modules.ai.domain.provider import AIGenerationResult
 from app.modules.research.adapters.recommended_portfolio_extractor import (
     EXTRACTION_MODEL,
     RecommendedPortfolioExtractor,

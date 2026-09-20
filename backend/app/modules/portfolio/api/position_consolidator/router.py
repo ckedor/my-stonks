@@ -33,12 +33,16 @@ router = APIRouter(
 )
 
 
-async def _recalculate_assets_in_parallel(portfolio_id: int, asset_ids: list[int]) -> None:
+async def _recalculate_assets_in_parallel(
+    portfolio_id: int, asset_ids: list[int], *, incremental: bool = False
+) -> None:
     """Paraleliza a consolidação dos ativos, uma sessão por ativo."""
 
     async def _recalculate_asset_position(asset_id: int) -> None:
         async with portfolio_consolidator_service_context() as service:
-            await service.recalculate_position_asset(portfolio_id, asset_id)
+            await service.recalculate_position_asset(
+                portfolio_id, asset_id, incremental=incremental
+            )
 
     await asyncio.gather(*(_recalculate_asset_position(asset_id) for asset_id in asset_ids))
 
@@ -50,7 +54,7 @@ async def consolidate_portfolio(
     position_service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
     asset_ids = await service.get_asset_ids_to_consolidate(portfolio_id)
-    await _recalculate_assets_in_parallel(portfolio_id, asset_ids)
+    await _recalculate_assets_in_parallel(portfolio_id, asset_ids, incremental=True)
     await position_service.invalidate_patrimony_evolution(portfolio_id)
     run_task_by_name(CONSOLIDATE_PORTFOLIO_RETURNS_TASK, portfolio_id)
     return {'message': 'OK'}

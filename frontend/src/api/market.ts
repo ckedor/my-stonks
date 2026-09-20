@@ -98,7 +98,8 @@ export interface PersistedQuote {
 
 export interface PersistedQuotesEntry {
   asset_id: number
-  ticker: string
+  /** Nulo em fundo cadastrado pelo registro, que não tem código de bolsa. */
+  ticker: string | null
   asset_type_id: number
   quotes: PersistedQuote[]
 }
@@ -945,11 +946,107 @@ export const syncAssetCatalogue = (
     })
     .then((r) => r.data)
 
+// ---------------------------------------------------------------------------
+// Cadastro do regulador: pessoas jurídicas, ações e o vínculo de fundos
+// ---------------------------------------------------------------------------
+
+export interface RegistrySyncEntry {
+  cnpj?: string | null
+  ticker?: string | null
+  name?: string | null
+  role?: string | null
+}
+
+export interface RegistrySyncFieldChange {
+  cnpj?: string | null
+  ticker?: string | null
+  name?: string | null
+  changes: Record<string, [string | null, string | null]>
+}
+
+export interface CvmRegistrySyncReport {
+  dry_run: boolean
+  institutions: {
+    created: RegistrySyncEntry[]
+    updated: RegistrySyncFieldChange[]
+    unchanged: number
+  }
+  assets: {
+    updated: RegistrySyncFieldChange[]
+    unchanged: number
+    unmatched: RegistrySyncEntry[]
+    /** Ativo de fora da B3 não é procurado num arquivo da CVM. */
+    skipped_foreign: number
+  }
+}
+
+/** Casa o cadastro com o que a CVM publica sobre companhias.
+ *
+ *  `dryRun` é o padrão da rota e o padrão daqui: devolve o relatório do que
+ *  mudaria sem escrever nada. */
+export const syncCvmRegistry = (dryRun: boolean): Promise<CvmRegistrySyncReport> =>
+  api
+    .post<CvmRegistrySyncReport>(ASSET_ROUTES.registrySync, null, {
+      params: { dry_run: dryRun },
+    })
+    .then((r) => r.data)
+
+export interface FundLinkCandidate {
+  id: number
+  name: string
+  status: string | null
+}
+
+export interface FundLinkSuggestion {
+  asset_id: number
+  ticker: string
+  cnpj: string
+  fund_registry_id?: number | null
+  fund_registry_name?: string | null
+  candidates?: FundLinkCandidate[] | null
+}
+
+export interface FundLinkSuggestionReport {
+  suggestions: FundLinkSuggestion[]
+  ambiguous: FundLinkSuggestion[]
+  unknown: FundLinkSuggestion[]
+  already_linked: number
+}
+
+/** As propostas de vínculo entre um FII e o fundo que o regulador registrou.
+ *
+ *  Só propõe: um CNPJ que aponta para mais de um registro volta como ambíguo,
+ *  e nada é gravado por esta chamada. */
+export const fetchFundLinkSuggestions = (): Promise<FundLinkSuggestionReport> =>
+  api.get<FundLinkSuggestionReport>(ASSET_ROUTES.fundLinkSuggestions).then((r) => r.data)
+
+export interface FundLinkResult {
+  asset_id: number
+  fund_registry_id: number
+  cnpj: string
+  name: string
+}
+
+/** Confirma o vínculo. É também por aqui que um ETF entra, achado à mão. */
+export const linkAssetToFundRegistry = (
+  assetId: number,
+  fundRegistryId: number,
+): Promise<FundLinkResult> =>
+  api
+    .post<FundLinkResult>(ASSET_ROUTES.fundLink, {
+      asset_id: assetId,
+      fund_registry_id: fundRegistryId,
+    })
+    .then((r) => r.data)
+
 export interface MarketAssetDetails {
   id: number
   ticker: string | null
   name: string
   logo_url?: string | null
+  /** Texto de cadastro, do mantenedor. Vazio é o estado normal. */
+  summary?: string | null
+  description?: string | null
   asset_type_id: number
   asset_type: {
     id: number

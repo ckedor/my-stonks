@@ -1,4 +1,5 @@
 import { AppProgressBar, AppStack, AppStackItem, AppText } from '@/components/ui'
+import { formatBRL } from '@/lib/utils/format'
 import type { PortfolioWealthTier } from '@/types'
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined'
 
@@ -38,7 +39,12 @@ export interface PortfolioStandingCardProps {
   cdiPct: number | null
   /** A posição na escala. Ausente enquanto não carregou. */
   standing: PortfolioWealthTier | null
-  /** A formatação de moeda da tela, para o card não escolher a sua. */
+  /** A formatação de moeda da tela, para o card não escolher a sua.
+   *
+   *  Vale para o patrimônio, que é da série na moeda exibida. O que falta
+   *  para o próximo degrau não passa por aqui: a escala de patentes é fixa em
+   *  reais, e formatá-la com o símbolo do seletor trocava "R$" por "US$" na
+   *  frente do mesmo número, sem converter nada. */
   formatCurrency: (value: number) => string
 }
 
@@ -101,7 +107,7 @@ export default function PortfolioStandingCard({
                   <AppText variant="caption" tone="secondary">
                     Faltam{' '}
                     <AppText variant="caption" weight="strong" inline>
-                      {formatCurrency(standing.remaining)}
+                      {formatBRL(standing.remaining)}
                     </AppText>
                   </AppText>
                 )}

@@ -5,6 +5,7 @@ import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
 import { AppPageHeader, AppStack } from '@/components/ui'
 import type { Dayjs } from 'dayjs'
+import type { PortfolioPositionEntry } from '@/types'
 import { useCallback, useState } from 'react'
 import AssetListTable from './AssetList'
 import AssetListSkeleton from './AssetListSkeleton'
@@ -33,7 +34,7 @@ export default function PortfolioAssetsPage() {
     storeAssetListView(next)
   }
 
-  const { data: positions } = useQuery<any[]>({
+  const { data: positions } = useQuery<PortfolioPositionEntry[]>({
     queryKey: ['portfolio', portfolioId, 'asset-list', groupBy, currency],
     queryFn: useCallback(() => {
       const params: Record<string, string> = { currency }

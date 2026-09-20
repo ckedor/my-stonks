@@ -11,10 +11,21 @@ import type { Dayjs } from 'dayjs'
 
 export interface AppDateFieldProps {
   label: string
+  density?: 'compact' | 'comfortable'
   value: Dayjs | null
   onChange: (value: Dayjs | null) => void
 }
 
-export default function AppDateField({ label, value, onChange }: AppDateFieldProps) {
-  return <DatePicker label={label} value={value} onChange={onChange} />
+export default function AppDateField({ label, value, onChange, density = 'comfortable' }: AppDateFieldProps) {
+  return (
+    <DatePicker
+      label={label}
+      value={value}
+      onChange={onChange}
+      slotProps={{ textField: {
+        size: density === 'compact' ? 'small' : 'medium',
+        ...(density === 'compact' ? { sx: { width: 170 } } : {}),
+      } }}
+    />
+  )
 }

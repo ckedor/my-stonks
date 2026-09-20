@@ -29,16 +29,21 @@ export default function MarketAssetPage() {
   const [quotes, setQuotes] = useState<AssetQuoteHistory | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const asset = storedAsset ?? fetchedAsset
+  // O detalhe vence o catálogo: só ele traz o texto de cadastro. O do store
+  // continua existindo para a pintura imediata, sem esperar a rede.
+  const asset = fetchedAsset ?? storedAsset
 
   useEffect(() => {
-    if (storedAsset || !id) {
+    if (!id) {
       setAssetLoading(false)
       return
     }
 
+    // Buscado sempre, mesmo com o ativo no store: o catálogo não carrega
+    // `summary` nem `description`, e sem isto o texto apareceria ou não
+    // conforme o caminho por onde o usuário chegou na tela.
     let active = true
-    setAssetLoading(true)
+    setAssetLoading(!storedAsset)
     fetchMarketAssetDetails(Number(id))
       .then((value) => {
         if (active) setFetchedAsset(value)
@@ -117,6 +122,8 @@ export default function MarketAssetPage() {
         <AssetMarketView
           assetId={asset.id}
           ticker={asset.ticker ?? ''}
+          summary={fetchedAsset?.summary}
+          description={fetchedAsset?.description}
           candleData={candleData}
           priceFormatter={format}
         />

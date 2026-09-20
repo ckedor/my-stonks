@@ -2,6 +2,7 @@ import {
   AppCard,
   AppSimpleTable,
   AppText,
+  AppTooltip,
   type AppSimpleTableColumn,
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
@@ -55,7 +56,16 @@ export default function TradesTable({ trades, onRowClick, maxHeight }: TradesTab
       sortValue: (trade) => dayjs(trade.date).valueOf(),
       render: (trade) => dayjs(trade.date).format('DD/MM/YYYY'),
     },
-    { label: 'Ativo', sortValue: (trade) => trade.ticker, render: (trade) => trade.ticker },
+    {
+      label: 'Ativo',
+      width: 'clamped',
+      sortValue: (trade) => trade.ticker ?? trade.name,
+      render: (trade) => (
+        <AppTooltip title={trade.ticker ?? trade.name ?? '—'}>
+          {trade.ticker ?? trade.name ?? '—'}
+        </AppTooltip>
+      ),
+    },
     { label: 'Corretora', sortValue: (trade) => trade.broker, render: (trade) => trade.broker },
     {
       label: 'Tipo',

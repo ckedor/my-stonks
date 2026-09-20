@@ -21,7 +21,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 interface Position {
-  ticker: string
+  ticker: string | null
   name?: string
   quantity: number
   price: number
@@ -84,8 +84,11 @@ export default function AssetList({ positions, groupBy, search, view }: AssetLis
     [positions],
   )
 
+  const term = search.toLowerCase()
   const filtered = positions.filter((pos) =>
-    pos.ticker.toLowerCase().includes(search.toLowerCase())
+    term === '' ||
+    (pos.ticker?.toLowerCase().includes(term) ?? false) ||
+    (pos.name?.toLowerCase().includes(term) ?? false)
   )
 
   const grouped = filtered.reduce<Record<string, Position[]>>((acc, pos) => {
@@ -153,13 +156,14 @@ export default function AssetList({ positions, groupBy, search, view }: AssetLis
     },
     {
       label: 'Ativo',
+      width: 'clamped',
       render: (pos) => (
         <AppStack>
           <AppText variant="bodySmall" weight="strong" noWrap>
             {pos.name || pos.ticker}
           </AppText>
           <AppText variant="caption" tone="secondary" noWrap>
-            {pos.ticker} · {pos.type}
+            {[pos.ticker, pos.type].filter(Boolean).join(' · ')}
           </AppText>
         </AppStack>
       ),

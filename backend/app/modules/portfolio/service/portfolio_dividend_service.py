@@ -117,6 +117,7 @@ class PortfolioDividendService:
             existing_dividend = await uow.portfolios.get(Dividend, dividend_id)
             if not existing_dividend:
                 return None
-            deleted = await uow.portfolios.delete(Dividend, dividend_id)
+            record = self._as_record(existing_dividend)
+            await uow.portfolios.delete(Dividend, dividend_id)
             await uow.commit()
-            return deleted
+            return record

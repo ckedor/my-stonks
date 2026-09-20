@@ -37,6 +37,13 @@ export interface AppTextFieldProps {
    *  relatório. Com ele o Enter quebra a linha em vez de enviar, que é o que
    *  se espera de um texto de várias linhas. */
   rows?: number
+  /** Teto de linhas antes de o campo passar a rolar por dentro. Sem ele, um
+   *  prompt de sessenta linhas empurra o resto do formulário para fora da
+   *  tela. Só faz sentido junto de `rows`. */
+  maxRows?: number
+  /** Fonte monoespaçada, para o texto em que a coluna importa — um prompt com
+   *  placeholders e listas indentadas, onde o alinhamento é o que se lê. */
+  monospace?: boolean
 }
 
 export default function AppTextField({
@@ -52,6 +59,8 @@ export default function AppTextField({
   placeholder,
   onSubmit,
   rows,
+  maxRows,
+  monospace = false,
 }: AppTextFieldProps) {
   return (
     <TextField
@@ -64,12 +73,21 @@ export default function AppTextField({
       onChange={(event) => onChange(event.target.value)}
       multiline={rows !== undefined}
       minRows={rows}
+      maxRows={maxRows}
       onKeyDown={(event) => {
         if (event.key === 'Enter' && rows === undefined) onSubmit?.()
       }}
       error={error}
       helperText={helperText}
-      slotProps={{ input: { readOnly, endAdornment } }}
+      slotProps={{
+        input: {
+          readOnly,
+          endAdornment,
+          ...(monospace
+            ? { sx: { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' } }
+            : null),
+        },
+      }}
     />
   )
 }

@@ -22,3 +22,17 @@ class EXCHANGE(StrEnum):
     B3 = 'B3'
     NASDAQ = 'NASDAQ'
     NYSE = 'NYSE'
+
+
+class AssetStatus(StrEnum):
+    """Se o papel ainda existe, e por que não existe mais.
+
+    Cadastral apenas: a seleção da ingestão de cotação não olha para ele, de
+    propósito. Mudar quem recebe cotação é mudança de comportamento e foi
+    deixada para quando doer.
+    """
+
+    ACTIVE = 'active'
+    MATURED = 'matured'
+    DELISTED = 'delisted'
+    CANCELLED = 'cancelled'

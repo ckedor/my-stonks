@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom'
 
 interface AssetCardPosition {
   asset_id: number
-  ticker: string
+  ticker: string | null
   name?: string
   type: string
   value: number
@@ -80,10 +80,10 @@ export default function AssetCard({ position, portfolioId, weight, accentColor }
         <AppStack direction="row" align="start" justify="between" gap="xs">
           <AppStackItem minWidth={0}>
             <AppText variant="bodySmall" weight="strong" noWrap>
-              {position.ticker}
+              {position.ticker ?? position.name ?? '—'}
             </AppText>
             <AppText variant="caption" tone="secondary" noWrap>
-              {remuneration || position.name || position.type}
+              {remuneration || (position.ticker ? position.name : null) || position.type}
             </AppText>
           </AppStackItem>
           {/* O peso como fatia, e não como frase: é o mesmo dado da lista, lido

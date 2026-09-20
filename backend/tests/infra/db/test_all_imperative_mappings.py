@@ -4,9 +4,15 @@ from sqlalchemy import inspect
 
 from app.infra.db.base import Base
 from app.infra.db.bootstrap import start_mappers
-from app.modules.ai.domain.entities import AIArtifact, AIFeature
+from app.modules.ai.domain.entities import (
+    AIArtifact,
+    AIFeature,
+    AIPromptVersion,
+    AIRun,
+)
 from app.modules.lab.domain.entities import TheoreticalPortfolio, TheoreticalPosition
 from app.modules.market_data.domain import assets as asset_entities
+from app.modules.market_data.domain import fund_registry, fund_share_value
 from app.modules.market_data.domain.asset_visit import AssetVisit
 from app.modules.market_data.domain.ingestion import (
     DataIngestionAttempt,
@@ -29,6 +35,7 @@ from app.modules.users.domain import User
 
 PERSISTED_ENTITIES = [
     asset_entities.Exchange,
+    asset_entities.Institution,
     asset_entities.AssetClass,
     asset_entities.AssetType,
     asset_entities.Currency,
@@ -43,6 +50,14 @@ PERSISTED_ENTITIES = [
     asset_entities.FixedIncomeType,
     asset_entities.FixedIncome,
     asset_entities.InvestmentFund,
+    fund_registry.FundRegistry,
+    fund_registry.FundRegistryClass,
+    fund_registry.FundRegistrySubclass,
+    fund_registry.FundShareSeries,
+    fund_registry.FundShareSeriesAlias,
+    fund_share_value.SourceFile,
+    fund_share_value.FundShareValueCoverage,
+    fund_share_value.IngestionCheckpoint,
     asset_entities.TreasuryBondType,
     asset_entities.TreasuryBond,
     asset_entities.Broker,
@@ -57,8 +72,6 @@ PERSISTED_ENTITIES = [
     portfolio_entities.ReturnSeries,
     portfolio_entities.PortfolioConsolidation,
     portfolio_entities.ConfigurationName,
-    AIFeature,
-    AIArtifact,
     User,
     MarketDataSeries,
     MarketDataSeriesHistory,
@@ -73,8 +86,12 @@ PERSISTED_ENTITIES = [
     RecommendedPosition,
     TheoreticalPortfolio,
     TheoreticalPosition,
+    AIFeature,
+    AIPromptVersion,
+    AIArtifact,
+    AIRun,
 ]
-EXPECTED_PERSISTED_ENTITY_COUNT = 45
+EXPECTED_PERSISTED_ENTITY_COUNT = 56
 
 
 def test_every_persisted_entity_is_one_mapped_domain_dataclass():

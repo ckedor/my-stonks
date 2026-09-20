@@ -13,11 +13,28 @@ import type { ReactNode } from 'react'
 
 export interface SectionTitleProps {
   children: ReactNode
+  /** Editorial lead, when the section introduces a complete reading. */
+  prominence?: 'standard' | 'lead'
 }
 
-export default function SectionTitle({ children }: SectionTitleProps) {
+export default function SectionTitle({ children, prominence = 'standard' }: SectionTitleProps) {
   return (
-    <Typography variant="subtitle1" component="h2" fontWeight={600}>
+    <Typography
+      variant="subtitle1"
+      component="h2"
+      fontWeight={prominence === 'lead' ? 700 : 600}
+      sx={
+        prominence === 'lead'
+          ? {
+              fontSize: { xs: '1.75rem', md: '2.5rem' },
+              lineHeight: 1.15,
+              letterSpacing: '-0.035em',
+              maxWidth: '26ch',
+              textWrap: 'balance',
+            }
+          : undefined
+      }
+    >
       {children}
     </Typography>
   )

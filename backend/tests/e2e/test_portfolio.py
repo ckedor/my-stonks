@@ -158,7 +158,7 @@ class TestTransactions:
 
     async def test_get_transactions(self, client, db, factory):
         portfolio = await _seed_portfolio(factory)
-        asset = await _seed_asset(factory)
+        asset = await _seed_asset(factory, ticker=None, name='Fundo Equipe')
         broker = await _seed_broker(factory)
 
         # Create a transaction first
@@ -176,6 +176,11 @@ class TestTransactions:
         response = await client.get('/portfolio/transaction', params={'portfolio_id': portfolio.id})
 
         assert response.status_code == HTTPStatus.OK
+        rows = response.json()
+        assert len(rows) == 1
+        assert rows[0]['asset_id'] == asset.id
+        assert rows[0]['ticker'] is None
+        assert rows[0]['name'] == 'Fundo Equipe'
 
     async def test_delete_transaction(self, client, db, factory):
         portfolio = await _seed_portfolio(factory)

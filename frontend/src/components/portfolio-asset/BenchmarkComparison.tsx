@@ -49,15 +49,19 @@ export default function BenchmarkComparison({ metrics }: Props) {
   }))
   if (!rows.length) return null
 
-  const format = (key: keyof BenchmarkMetrics, value: number) => {
+  const format = (key: keyof BenchmarkMetrics, value: number | null) => {
+    // Poucos dias de posição não produzem beta nem correlação. O traço diz
+    // "ainda não dá para calcular"; um zero diria "não há relação", que é outra
+    // afirmação — e falsa.
+    if (value == null) return '—'
     if (key === 'beta' || key === 'correlation') return value.toFixed(2)
     return `${value >= 0 ? '+' : ''}${value.toFixed(2).replace('.', ',')}%`
   }
 
   // Só o alfa se lê pelo sinal: ele é o que a posição fez *acima* do
   // benchmark. Um beta negativo é uma informação, não uma má notícia.
-  const toneOf = (key: keyof BenchmarkMetrics, value: number) =>
-    key !== 'alpha' ? 'default' : value >= 0 ? 'success' : 'danger'
+  const toneOf = (key: keyof BenchmarkMetrics, value: number | null) =>
+    key !== 'alpha' || value == null ? 'default' : value >= 0 ? 'success' : 'danger'
 
   const columns: AppSimpleTableColumn<BenchmarkRow>[] = [
     {

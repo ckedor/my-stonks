@@ -1,12 +1,14 @@
+import PsychologyIcon from '@mui/icons-material/Psychology'
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
 import { AppSidebar } from '@/components/ui'
 
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import BusinessIcon from '@mui/icons-material/Business'
 import CalculateIcon from '@mui/icons-material/Calculate'
 import EventIcon from '@mui/icons-material/Event'
 import PaletteIcon from '@mui/icons-material/Palette'
 import PeopleIcon from '@mui/icons-material/People'
-import PsychologyIcon from '@mui/icons-material/Psychology'
 import ShowChartIcon from '@mui/icons-material/ShowChart'
 import SyncAltIcon from '@mui/icons-material/SyncAlt'
 import TableChartIcon from '@mui/icons-material/TableChart'
@@ -17,6 +19,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { getAdminNavigationSection } from './navigation'
 
 const menuIcons: Record<string, React.ReactNode> = {
+  '/admin/ai-features': <PsychologyIcon fontSize="small" />,
+  '/admin/ai-usage': <ReceiptLongIcon fontSize="small" />,
   '/admin/assets': <TokenIcon fontSize="small" />,
   '/admin/brokers': <BusinessIcon fontSize="small" />,
   '/admin/events': <EventIcon fontSize="small" />,
@@ -28,9 +32,10 @@ const menuIcons: Record<string, React.ReactNode> = {
   '/admin/recommended-portfolios': <TokenIcon fontSize="small" />,
   '/admin/market-data-series-ingestion': <SyncAltIcon fontSize="small" />,
   '/admin/usd-brl-ingestion': <SyncAltIcon fontSize="small" />,
+  '/admin/fund-registry-ingestion': <AccountBalanceIcon fontSize="small" />,
+  '/admin/fund-share-value-ingestion': <SyncAltIcon fontSize="small" />,
   '/admin/consolidation': <CalculateIcon fontSize="small" />,
   '/admin/users': <PeopleIcon fontSize="small" />,
-  '/admin/ai-features': <PsychologyIcon fontSize="small" />,
   '/admin/design-system': <PaletteIcon fontSize="small" />,
 }
 

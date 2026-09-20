@@ -86,7 +86,9 @@ class PortfolioConsolidatorService:
             )
         return asset_ids
 
-    async def recalculate_position_asset(self, portfolio_id, asset_id):
+    async def recalculate_position_asset(
+        self, portfolio_id, asset_id, *, incremental: bool = False
+    ):
         async with self.uow as uow:
             repository = uow.portfolios
             asset = await repository.get_asset_details(asset_id)
@@ -116,24 +118,72 @@ class PortfolioConsolidatorService:
                 as_df=True,
             )
             init_date = pd.to_datetime(min(r['date'] for r in transaction_rows))
+            history = pd.DataFrame()
+            calculation_start = init_date
+            if (
+                incremental
+                and not events
+                and not (
+                    portfolio_consolidation.is_fixed_income(asset)
+                    or portfolio_consolidation.is_treasury(asset)
+                )
+            ):
+                history = await repository.get_position_consolidation_history(
+                    portfolio_id,
+                    asset_id,
+                    overlap_days=portfolio_consolidation.POSITION_OVERLAP_DAYS,
+                )
+                if not history.empty:
+                    history['date'] = pd.to_datetime(history['date'])
+                    candidate = history['date'].max() - pd.Timedelta(
+                        days=portfolio_consolidation.POSITION_OVERLAP_DAYS
+                    )
+                    # A daily opening row is required. A closed position or an
+                    # incomplete curve cannot serve as a continuation checkpoint.
+                    opening = history[history['date'] == candidate - pd.Timedelta(days=1)]
+                    if candidate > init_date and not opening.empty:
+                        calculation_start = candidate
+            is_incremental = calculation_start > init_date
             usd_brl_df = await self.usd_brl_service.get_history_df(
-                start_date=pd.Timestamp(init_date).date()
+                start_date=pd.Timestamp(calculation_start).date()
             )
+            if is_incremental:
+                rate = await self.usd_brl_service.get_rate_on_or_before(calculation_start.date())
+                # Seed a weekend/holiday window with the rate already in effect.
+                rate_seed = pd.DataFrame([
+                    {
+                        'date': calculation_start,
+                        'usd_brl': float(rate.usd_brl),
+                        'brl_usd': float(rate.brl_usd),
+                    }
+                ])
+                usd_brl_df = pd.concat([rate_seed, usd_brl_df], ignore_index=True)
+                usd_brl_df = usd_brl_df.drop_duplicates('date', keep='last').sort_values('date')
             close_prices_df = await self._get_asset_prices(
                 asset,
                 transaction_rows,
                 dividends_df,
-                init_date,
+                calculation_start,
                 repository=repository,
                 quote_repository=uow.quotes,
             )
-            position_df = portfolio_consolidation.consolidate_positions(
-                transaction_rows=transaction_rows,
-                events=events,
-                close_prices_df=close_prices_df,
-                usd_brl_df=usd_brl_df,
-                dividends_df=dividends_df,
-            )
+            if is_incremental:
+                position_df = portfolio_consolidation.consolidate_recent_positions(
+                    transaction_rows=transaction_rows,
+                    close_prices_df=close_prices_df,
+                    usd_brl_df=usd_brl_df,
+                    dividends_df=dividends_df,
+                    history=history,
+                    start_date=calculation_start,
+                )
+            else:
+                position_df = portfolio_consolidation.consolidate_positions(
+                    transaction_rows=transaction_rows,
+                    events=events,
+                    close_prices_df=close_prices_df,
+                    usd_brl_df=usd_brl_df,
+                    dividends_df=dividends_df,
+                )
             self._reject_unpriced_positions(position_df, asset)
             await self._persist_positions_db(
                 position_df,
@@ -141,6 +191,7 @@ class PortfolioConsolidatorService:
                 asset,
                 portfolio_id,
                 repository=repository,
+                replace_from=calculation_start if is_incremental else None,
             )
             await uow.commit()
             logger.info(f'Sucesso ao consolidar ativo: {asset.ticker}')
@@ -197,19 +248,24 @@ class PortfolioConsolidatorService:
         # Persisted quotes only: this read never falls back to a provider, so
         # missing history is explicit and quote ingestion can run before
         # consolidation.
-        quotes = await quote_repository.get_quotes(
-            [asset.id],
-            start_date=pd.Timestamp(init_date).date(),
-        )
+        start_date = pd.Timestamp(init_date).date()
+        quotes = await quote_repository.get_quotes([asset.id], start_date=start_date)
+        # A buy on a day without a quote is priced by the last quote before it.
+        # The seed only starts the forward fill: build_prices_df trims the frame
+        # to init_date, so no position is created before the first trade.
+        if not quotes or quotes[0].date > start_date:
+            seed = await quote_repository.get_latest_quote_on_or_before(asset.id, start_date)
+            if seed is not None:
+                quotes = [seed, *quotes]
         if not quotes:
             raise NotFoundError(
-                f'No persisted quotes found for asset {asset.ticker}',
+                f'No persisted quotes found for asset {asset.ticker or asset.name}',
                 context={'asset_id': asset.id, 'ticker': asset.ticker},
             )
         close_prices_df = persisted_close_prices_df(quotes)
         if close_prices_df.empty:
             raise NotFoundError(
-                f'No persisted close prices found for asset {asset.ticker}',
+                f'No persisted close prices found for asset {asset.ticker or asset.name}',
                 context={'asset_id': asset.id, 'ticker': asset.ticker},
             )
         return close_prices_df
@@ -230,7 +286,7 @@ class PortfolioConsolidatorService:
             return
         first, last = unpriced['date'].min(), unpriced['date'].max()
         raise NotFoundError(
-            f'No quotes for {asset.ticker} covering positions held between '
+            f'No quotes for {asset.ticker or asset.name} covering positions held between '
             f'{first:%Y-%m-%d} and {last:%Y-%m-%d}. Ingest its quote history '
             f'from {first:%Y-%m-%d} before consolidating.',
             context={
@@ -243,18 +299,22 @@ class PortfolioConsolidatorService:
         )
 
     @staticmethod
-    async def _persist_positions_db(
+    async def _persist_positions_db(  # noqa: PLR0913
         position_df: pd.DataFrame,
         min_date: pd.Timestamp,
         asset: Asset,
         portfolio_id: int,
         *,
         repository: PortfolioRepository,
+        replace_from: pd.Timestamp | None = None,
     ):
+        filters = {'portfolio_id': portfolio_id, 'asset_id': asset.id}
+        if replace_from is not None:
+            filters['date__gte'] = replace_from.date()
         if position_df.empty:
             await repository.delete(
                 Position,
-                by={'portfolio_id': portfolio_id, 'asset_id': asset.id},
+                by=filters,
             )
             return
 
@@ -268,17 +328,14 @@ class PortfolioConsolidatorService:
 
         values = position_df.to_dict(orient='records')
 
-        # Recalculation replaces this asset's whole curve. Upserting the new
+        # Replace the whole curve, or only the incremental tail. Upserting the new
         # dates and deleting only the old tail leaves stale rows when the first
         # trade is moved forward (and can also preserve holes removed by a new
         # calculation). Delete and rebuild inside the same transaction, so a
         # failed insert rolls the deletion back with it.
         await repository.delete(
             Position,
-            by={
-                'portfolio_id': portfolio_id,
-                'asset_id': asset.id,
-            },
+            by=filters,
         )
 
         await repository.upsert_bulk(
@@ -322,11 +379,12 @@ class PortfolioConsolidatorService:
     async def consolidate_fii_dividends(self, portfolio_id: int):
         async with self.uow as uow:
             repository = uow.portfolios
-            await self._consolidate_fii_dividends(
+            changed_assets = await self._consolidate_fii_dividends(
                 portfolio_id,
                 repository=repository,
             )
             await uow.commit()
+            return changed_assets
 
     async def _consolidate_fii_dividends(
         self,
@@ -358,7 +416,7 @@ class PortfolioConsolidatorService:
         # Sem configuração é integração desligada. Ler `.enabled` de None
         # levantava AttributeError e derrubava o loop das carteiras seguintes.
         if user_configuration is None or user_configuration.enabled is False:
-            return
+            return []
 
         logger.info(f'Consolidando dividendos de FIIs do portfolio {portfolio_id}')
         window_start = pd.Timestamp.now().normalize() - pd.DateOffset(days=FII_DIVIDEND_WINDOW_DAYS)
@@ -374,7 +432,7 @@ class PortfolioConsolidatorService:
             numeric_fillna_cols=['dividend', 'dividend_usd'],
         )
         if positions_df.empty:
-            return
+            return []
 
         dividends_by_ticker = await self.provider.fetch_fii_dividends(
             positions_df['ticker'].unique().tolist()
@@ -383,12 +441,12 @@ class PortfolioConsolidatorService:
         payments_df = payments_df[payments_df['date'] >= window_start]
         if payments_df.empty:
             logger.info(f'Nenhum provento de FII reportado para o portfolio {portfolio_id}')
-            return
+            return []
 
         new_dividends_df = self._payments_owed(payments_df, positions_df)
         if new_dividends_df.empty:
             logger.info(f'Nenhum novo dividendo de FIIs encontrado para o portfolio {portfolio_id}')
-            return
+            return []
 
         # Um provento já lançado -- à mão ou por uma corrida anterior -- não é
         # relançado. Vem da tabela, e não da linha de posição do dia do
@@ -399,6 +457,7 @@ class PortfolioConsolidatorService:
         )
         already_recorded = {(item.asset_id, pd.Timestamp(item.date)) for item in recorded}
 
+        changed_assets: set[int] = set()
         for _, row in new_dividends_df.iterrows():
             if (row['asset_id'], row['date']) in already_recorded:
                 continue
@@ -411,7 +470,10 @@ class PortfolioConsolidatorService:
                     'amount': row['amount'],
                 },
             )
+            changed_assets.add(int(row['asset_id']))
             logger.info('Provento de %s em %s consolidado', row['ticker'], row['date'].date())
+
+        return sorted(changed_assets)
 
     @staticmethod
     def _payments_owed(payments_df: pd.DataFrame, positions_df: pd.DataFrame) -> pd.DataFrame:

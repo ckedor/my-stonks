@@ -1,8 +1,8 @@
 from fastapi import Depends
 
+from app.infra.ai.factory import get_ai_provider
+from app.infra.ai.provider import AIProvider
 from app.infra.db.unit_of_work import UnitOfWork, get_uow
-from app.infra.openai.openai_client import get_ai_provider
-from app.modules.ai.domain.provider import AIProvider
 from app.modules.research.adapters.recommended_portfolio_extractor import (
     RecommendedPortfolioExtractor,
 )

@@ -55,20 +55,36 @@ class CurrencyOut(BaseModel):
     model_config = {'from_attributes': True}
 
 
+class InstitutionOut(BaseModel):
+    """Uma pessoa jurídica: companhia emissora, administradora, gestora."""
+
+    id: int
+    cnpj: str
+    name: str
+    legal_name: str
+    cvm_code: str | None = None
+    country: str
+    status: str | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+
 class StockOut(BaseModel):
     asset_id: int
     sector: str | None
     country: str | None
     industry: str | None
+    share_class: str | None = None
+    listing_segment: str | None = None
     model_config = {'from_attributes': True}
 
 
 class InvestmentFundOut(BaseModel):
     asset_id: int
     legal_id: str | None
-    anbima_code: str | None
-    anbima_code_class: str | None
     anbima_category: str | None
+    fund_registry_class_id: int | None = None
+    fund_registry_subclass_id: int | None = None
+    fund_share_series_id: int | None = None
     model_config = {'from_attributes': True}
 
 
@@ -141,6 +157,7 @@ class FIISegmentOut(BaseModel):
 class FIIOut(BaseModel):
     asset_id: int
     segment_id: int
+    fund_registry_id: int | None = None
     segment: FIISegmentOut
     model_config = {'from_attributes': True}
 
@@ -154,6 +171,7 @@ class ETFSegmentOut(BaseModel):
 class ETFOut(BaseModel):
     asset_id: int
     segment_id: int | None
+    fund_registry_id: int | None = None
     segment: ETFSegmentOut | None
     model_config = {'from_attributes': True}
 
@@ -165,9 +183,14 @@ class AssetDetailsOut(BaseModel):
     asset_type_id: int
     exchange_id: int | None = None
     logo_url: str | None = None
+    institution_id: int | None = None
+    status: str = 'active'
+    summary: str | None = None
+    description: str | None = None
 
     asset_type: AssetTypeOut
 
+    institution: InstitutionOut | None = None
     stock: StockOut | None = None
     fund: InvestmentFundOut | None = None
     fixed_income: FixedIncomeOut | None = None
@@ -223,6 +246,12 @@ class AssetCreate(BaseModel):
     name: str
     asset_type_id: int
     exchange_id: int | None = None
+    institution_id: int | None = None
+    status: str | None = None
+    # Texto de cadastro. A tela tem um botão que chama a IA para propor um
+    # rascunho, mas o que chega aqui é o que o mantenedor salvou.
+    summary: str | None = None
+    description: str | None = None
 
     # Stock
     country: str | None = None
@@ -243,8 +272,6 @@ class AssetCreate(BaseModel):
 
     # Investment Fund
     legal_id: str | None = None
-    anbima_code: str | None = None
-    anbima_code_class: str | None = None
     anbima_category: str | None = None
 
     # Treasury Bond
@@ -314,4 +341,95 @@ class FavoriteAsset(BaseModel):
     visit_count: int
     last_visited_at: datetime | None
 
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RegistrySyncFieldChange(BaseModel):
+    """O antes e o depois de um campo que o regulador corrige."""
+
+    cnpj: str | None = None
+    ticker: str | None = None
+    name: str | None = None
+    changes: dict[str, tuple[str | None, str | None]]
+
+
+class RegistrySyncEntry(BaseModel):
+    cnpj: str | None = None
+    ticker: str | None = None
+    name: str | None = None
+    role: str | None = None
+
+
+class InstitutionSyncSection(BaseModel):
+    created: list[RegistrySyncEntry]
+    updated: list[RegistrySyncFieldChange]
+    unchanged: int
+
+
+class AssetRegistrySyncSection(BaseModel):
+    updated: list[RegistrySyncFieldChange]
+    unchanged: int
+    unmatched: list[RegistrySyncEntry]
+    #: Ativo de fora da B3 não é procurado num arquivo da CVM.
+    skipped_foreign: int
+
+
+class CvmRegistrySyncReport(BaseModel):
+    """O que o sync do cadastro da CVM fez — ou faria, quando `dry_run`."""
+
+    dry_run: bool
+    institutions: InstitutionSyncSection
+    assets: AssetRegistrySyncSection
+
+
+class FundLinkCandidate(BaseModel):
+    id: int
+    name: str
+    status: str | None = None
+
+
+class FundLinkSuggestion(BaseModel):
+    asset_id: int
+    ticker: str
+    cnpj: str
+    fund_registry_id: int | None = None
+    fund_registry_name: str | None = None
+    candidates: list[FundLinkCandidate] | None = None
+
+
+class FundLinkSuggestionReport(BaseModel):
+    """As propostas de vínculo entre um FII e o fundo que o regulador registrou.
+
+    `ambiguous` é um CNPJ que aponta para mais de um registro e `unknown` é um
+    que o registro não conhece. Nenhum dos dois vira palpite.
+    """
+
+    suggestions: list[FundLinkSuggestion]
+    ambiguous: list[FundLinkSuggestion]
+    unknown: list[FundLinkSuggestion]
+    already_linked: int
+
+
+class FundLinkRequest(BaseModel):
+    asset_id: int
+    fund_registry_id: int
+
+
+class FundLinkResult(BaseModel):
+    asset_id: int
+    fund_registry_id: int
+    cnpj: str
+    name: str
+
+
+class RegisteredFundOut(BaseModel):
+    """Um fundo do cadastro do regulador, como a busca manual o devolve."""
+
+    id: int
+    cnpj: str
+    name: str
+    kind: str
+    status: str
+    administrator_name: str | None = None
+    manager_name: str | None = None
     model_config = ConfigDict(from_attributes=True)

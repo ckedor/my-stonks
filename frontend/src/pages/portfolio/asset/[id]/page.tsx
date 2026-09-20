@@ -102,7 +102,7 @@ function AssetSearchDrawer({
                   <AppStack direction="row" gap="sm" align="center" grow>
                     <AppStackItem>
                       <AppText variant="bodySmall" weight="strong" noWrap>
-                        {asset.ticker}
+                        {asset.ticker ?? asset.name}
                       </AppText>
                       <AppText variant="caption" tone="secondary" noWrap>
                         {asset.name}
@@ -130,7 +130,8 @@ export default function PortfolioAssetPage() {
   const portfolioId = selectedPortfolio?.id
   const positions = usePositions().data ?? EMPTY_LIST
   const assetId = id ? parseInt(id, 10) : null
-  const ticker = positions.find((p) => p.asset_id === assetId)?.ticker
+  const position = positions.find((p) => p.asset_id === assetId)
+  const ticker = position?.ticker ?? position?.name
 
   if (!portfolioId || !assetId) return null
 

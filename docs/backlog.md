@@ -355,3 +355,71 @@ consolidação quando dados novos forem necessários.
       trata explicitamente histórico ausente.
 - [x] Rodar testes funcionais e arquiteturais, preservando os resultados de
       posição e os contratos HTTP/tasks existentes.
+
+## 8. Módulo de IA: features, e o que cada uma exige
+
+### Objetivo
+
+Cobrir com IA as telas do app, sobre uma infraestrutura em que adicionar uma
+feature seja escrever um handler — o contexto que ela monta, a forma da resposta
+que ela devolve — e não uma tabela, uma rota, uma task e uma tela de admin.
+
+A fase 1 está entregue e é a régua: `asset_description` existe como handler,
+prompt versionado no banco, card na tela de mercado, execução pelo admin,
+agendamento pelo beat, e registro de token e custo. As decisões que sustentam
+isso, e as que foram recusadas, estão em `docs/architecture/ai.md`.
+
+### Entregue
+
+- [x] Pilha de providers em decoradores: registro de execução, cadeia de
+      fallback OpenAI → Anthropic, e o Protocol `AIProvider` movido para
+      `app/infra/ai/` (ele não é da OpenAI).
+- [x] Saída estruturada com `json_schema` estrito nos dois provedores, validada
+      por Pydantic no retorno mesmo assim.
+- [x] Quatro tabelas no schema `ai`: feature, versão de prompt, artefato e
+      execução. A versão do prompt entra na identidade do artefato.
+- [x] Validade por feature: por tempo, ou manual sem expiração.
+- [x] Guarda de placeholder ao salvar prompt, com teste que prova que dispara.
+- [x] Contexto determinístico: cadastro do ativo e desempenho medido das
+      cotações persistidas, entregues prontos ao prompt.
+- [x] Guarda de citação: fonte que a busca não trouxe não chega ao card.
+- [x] Teto de gasto diário, checado antes da chamada e para todo chamador.
+- [x] Rota genérica de execução com formulário montado do JSON Schema do input,
+      e task genérica `run_ai_feature` para o beat e para o disparo manual.
+- [x] Tracing opcional no Langfuse, isolado em `app/infra/ai/tracing.py`.
+- [x] `AiSurface` no design system, sem aviso de "a IA pode errar".
+
+### Próximas features
+
+- [ ] **Revisão da carteira.** Snapshot por carteira, contexto 100%
+      determinístico (posições, categorias, alvos, retornos, desvios) e sem
+      busca na web. Mais barato e mais rápido que a descrição, e o primeiro
+      caso em que o input não é um ativo — serve para provar que o registro
+      genérico aguenta uma feature de outra forma. Validade por tempo.
+- [ ] **Montagem de carteira no laboratório.** Prompt do usuário → alocação
+      estruturada com tickers resolvidos contra o cadastro → revisão humana →
+      carteira teórica que o backtest já sabe rodar. É o padrão do `research`:
+      a saída é leitura até alguém confirmar. Primeira feature em que o input
+      carrega texto livre do usuário, o que traz junto o cuidado de injeção.
+- [ ] **Chatbot da carteira.** Responde sobre posições e pesquisa ativos.
+      É aqui que o laço de tools aparece pela primeira vez, e é aqui que
+      PydanticAI deve ser reavaliado a sério (ver o registro de decisão). Lê
+      apenas, e escopado às carteiras do próprio usuário.
+- [ ] **OCR de relatório de fundo** e **de empresa**. Documento anexado ao
+      modelo, como a extração de carteira recomendada já faz. Acumular esses
+      documentos é o gatilho declarado para reconsiderar RAG.
+- [ ] **Import de dados da B3.** Pesquisar antes se é determinístico: se o
+      arquivo tiver layout fixo, um parser é mais barato, mais rápido e não
+      erra — IA aqui seria resolver com modelo o que um `split` resolve.
+
+### Infraestrutura, quando a necessidade aparecer
+
+- [ ] Datasets e experimentos no Langfuse, para comparar duas versões de prompt
+      contra as mesmas entradas. Vale quando houver a segunda versão disputando
+      com a primeira.
+- [ ] Golden dataset em pytest, com respostas gravadas, para pegar regressão de
+      schema sem chamar modelo no CI.
+- [ ] Diff entre versões de prompt na tela de prompts. Hoje elas são listadas e
+      pode-se partir de uma; o que falta é ver o que mudou entre duas.
+- [ ] Reavaliar `litellm` só para `completion_cost`, se manter a tabela de
+      preços em código virar incômodo.

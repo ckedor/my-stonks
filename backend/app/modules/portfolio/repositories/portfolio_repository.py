@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 from sqlalchemy import Date, Integer, and_, cast, desc, func, literal, or_, select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import aliased, joinedload
 
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.modules.market_data.domain.assets import (
@@ -20,10 +20,13 @@ from app.modules.market_data.domain.assets import (
     FIIType,
     FixedIncome,
     FixedIncomeType,
+    Institution,
+    InvestmentFund,
     Stock,
     TreasuryBond,
 )
 from app.modules.market_data.domain.enums import EXCHANGE
+from app.modules.market_data.domain.fund_registry import FundRegistry
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.domain.market_scope import B3_TICKER_PATTERN
 from app.modules.portfolio.domain.dividend import DividendQuery
@@ -38,7 +41,13 @@ from app.modules.portfolio.domain.entities import (
     Transaction,
 )
 from app.modules.portfolio.domain.portfolio_segment import SegmentDefinition
+from app.modules.portfolio.domain.quote_ingestion import FundPurchaseHistory
 from app.modules.portfolio.domain.return_scope import WHOLE_PORTFOLIO_KEY, ReturnScope
+
+#: Um FII e um ETF apontam para o mesmo cadastro de fundos, então a mesma
+#: tabela entra duas vezes na consulta e precisa de um apelido em cada ponta.
+FIIFundRegistry = aliased(FundRegistry)
+ETFFundRegistry = aliased(FundRegistry)
 
 
 def get_custom_category_subquery(portfolio_id):
@@ -89,6 +98,36 @@ class PortfolioRepository(SQLAlchemyRepository):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_position_consolidation_history(
+        self,
+        portfolio_id: int,
+        asset_id: int,
+        *,
+        overlap_days: int,
+    ) -> pd.DataFrame:
+        """Opening state and 12-month lookups, plus the first row for CAGR.
+
+        Do not hydrate the entire multi-year position curve just to append a
+        few days. The oldest row retains the original inception date.
+        """
+        filters = (Position.portfolio_id == portfolio_id, Position.asset_id == asset_id)
+        bounds = await self.session.execute(
+            select(func.min(Position.date), func.max(Position.date)).where(*filters)
+        )
+        first_date, last_date = bounds.one()
+        if last_date is None:
+            return pd.DataFrame()
+        cutoff = pd.Timestamp(last_date) - pd.Timedelta(days=overlap_days) - pd.DateOffset(years=1)
+        result = await self.session.execute(
+            select(*Position.__table__.columns)
+            .where(*filters, or_(Position.date == first_date, Position.date >= cutoff.date()))
+            .order_by(Position.date)
+        )
+        frame = pd.DataFrame(result.mappings().all())
+        if not frame.empty:
+            frame['date'] = pd.to_datetime(frame['date'])
+        return frame
+
     async def get_most_recent_asset_ids_from_position(
         self,
         portfolio_id: int,
@@ -137,6 +176,83 @@ class PortfolioRepository(SQLAlchemyRepository):
             )
         result = await self.session.execute(stmt)
         return list(result.scalars())
+
+    async def get_fund_purchase_histories(
+        self,
+        *,
+        asset_type_ids: Sequence[int],
+        asset_ids: Sequence[int] | None = None,
+    ) -> list[FundPurchaseHistory]:
+        """Funds without a ticker that the regulator identifies, per portfolio.
+
+        A fund with a ticker is quoted on the exchange and stays with the quote
+        ingestion; a fund with neither a registry link nor a CNPJ cannot be
+        found in any filing.
+        """
+        trades = (
+            select(
+                Transaction.portfolio_id,
+                Transaction.asset_id,
+                func.min(cast(Transaction.date, Date)).label('first_transaction'),
+                func.max(cast(Transaction.date, Date)).label('last_transaction'),
+            )
+            .join(Asset, Asset.id == Transaction.asset_id)
+            .join(InvestmentFund, InvestmentFund.asset_id == Asset.id)
+            .where(
+                Asset.ticker.is_(None),
+                Asset.asset_type_id.in_(list(asset_type_ids)),
+                or_(
+                    InvestmentFund.fund_registry_class_id.is_not(None),
+                    InvestmentFund.legal_id.is_not(None),
+                ),
+            )
+            .group_by(Transaction.portfolio_id, Transaction.asset_id)
+        )
+        if asset_ids is not None:
+            trades = trades.where(Transaction.asset_id.in_(list(asset_ids)))
+        trades = trades.subquery()
+        positions = (
+            select(
+                Position.portfolio_id,
+                Position.asset_id,
+                func.min(Position.date).label('first_position'),
+                func.max(Position.date).label('last_position'),
+            )
+            .group_by(Position.portfolio_id, Position.asset_id)
+            .subquery()
+        )
+        result = await self.session.execute(
+            select(
+                trades.c.portfolio_id,
+                trades.c.asset_id,
+                trades.c.first_transaction,
+                trades.c.last_transaction,
+                positions.c.first_position,
+                positions.c.last_position,
+            )
+            .outerjoin(
+                positions,
+                and_(
+                    positions.c.portfolio_id == trades.c.portfolio_id,
+                    positions.c.asset_id == trades.c.asset_id,
+                ),
+            )
+            .order_by(trades.c.asset_id, trades.c.portfolio_id)
+        )
+        return [FundPurchaseHistory(**row) for row in result.mappings()]
+
+    async def get_portfolio_asset_pairs_with_transactions(
+        self, asset_ids: Sequence[int]
+    ) -> list[tuple[int, int]]:
+        if not asset_ids:
+            return []
+        result = await self.session.execute(
+            select(Transaction.portfolio_id, Transaction.asset_id)
+            .where(Transaction.asset_id.in_(list(asset_ids)))
+            .distinct()
+            .order_by(Transaction.portfolio_id, Transaction.asset_id)
+        )
+        return [(row.portfolio_id, row.asset_id) for row in result]
 
     async def get_recent_position_asset_ids(
         self,
@@ -229,11 +345,30 @@ class PortfolioRepository(SQLAlchemyRepository):
                 Broker.id.label('broker_id'),
                 Broker.name.label('broker_name'),
                 Broker.cnpj.label('broker_cnpj'),
+                # O CNPJ que o informe de bens e direitos pede é o do emissor,
+                # não o da corretora. Para ação ele vem da companhia; para FII
+                # e ETF, do fundo que o registro do regulador nomeia. Os dois
+                # chegam aqui para que o serviço não precise de uma segunda ida
+                # ao banco por linha.
+                Institution.cnpj.label('issuer_cnpj'),
+                func.coalesce(
+                    FIIFundRegistry.cnpj, ETFFundRegistry.cnpj, InvestmentFund.legal_id
+                ).label('fund_cnpj'),
+                # A praça, para decidir Brasil ou exterior pela regra do
+                # domínio em vez da moeda da corretora.
+                Exchange.code.label('exchange_code'),
             )
             .join(Asset, Asset.id == txn_subq.c.asset_id)
             .join(Broker, Broker.id == txn_subq.c.broker_id)
             .join(AssetType, Asset.asset_type_id == AssetType.id)
             .join(AssetClass, AssetType.asset_class_id == AssetClass.id)
+            .outerjoin(Institution, Institution.id == Asset.institution_id)
+            .outerjoin(Exchange, Exchange.id == Asset.exchange_id)
+            .outerjoin(FII, FII.asset_id == Asset.id)
+            .outerjoin(FIIFundRegistry, FIIFundRegistry.id == FII.fund_registry_id)
+            .outerjoin(ETF, ETF.asset_id == Asset.id)
+            .outerjoin(ETFFundRegistry, ETFFundRegistry.id == ETF.fund_registry_id)
+            .outerjoin(InvestmentFund, InvestmentFund.asset_id == Asset.id)
             .outerjoin(cat_assignment_subq, cat_assignment_subq.c.asset_id == Asset.id)
             .join(
                 Position,
@@ -320,6 +455,7 @@ class PortfolioRepository(SQLAlchemyRepository):
                 Transaction.price_usd,
                 Asset.id.label('asset_id'),
                 Asset.ticker,
+                Asset.name,
                 Asset.asset_type_id,
                 cat_assignment_subq.c.category,
             )

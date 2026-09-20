@@ -17,6 +17,12 @@ from app.infra.db.tables.assets import (
     fii_type_table,
     fixed_income_table,
     fixed_income_type_table,
+    fund_registry_class_table,
+    fund_registry_subclass_table,
+    fund_registry_table,
+    fund_share_series_alias_table,
+    fund_share_series_table,
+    institution_table,
     investment_fund_table,
     stock_table,
     treasury_bond_table,
@@ -37,10 +43,18 @@ from app.modules.market_data.domain.assets import (
     FIIType,
     FixedIncome,
     FixedIncomeType,
+    Institution,
     InvestmentFund,
     Stock,
     TreasuryBond,
     TreasuryBondType,
+)
+from app.modules.market_data.domain.fund_registry import (
+    FundRegistry,
+    FundRegistryClass,
+    FundRegistrySubclass,
+    FundShareSeries,
+    FundShareSeriesAlias,
 )
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 
@@ -50,6 +64,7 @@ def map_assets() -> None:
         return
 
     Base.registry.map_imperatively(Exchange, exchange_table)
+    Base.registry.map_imperatively(Institution, institution_table)
     Base.registry.map_imperatively(AssetClass, asset_class_table)
     Base.registry.map_imperatively(
         AssetType,
@@ -91,6 +106,7 @@ def map_assets() -> None:
         properties={
             'asset_type': relationship(AssetType, lazy='joined'),
             'exchange': relationship(Exchange, lazy='joined'),
+            'institution': relationship(Institution, lazy='joined'),
             'stock': relationship(Stock, back_populates='asset', uselist=False),
             'fii': relationship(FII, back_populates='asset', uselist=False),
             'etf': relationship(ETF, back_populates='asset', uselist=False),
@@ -118,6 +134,7 @@ def map_assets() -> None:
         etf_table,
         properties={
             'segment': relationship(ETFSegment, lazy='joined'),
+            'registry_fund': relationship(FundRegistry, lazy='joined'),
             'asset': relationship(Asset, back_populates='etf'),
         },
     )
@@ -126,6 +143,7 @@ def map_assets() -> None:
         fii_table,
         properties={
             'segment': relationship(FIISegment, lazy='joined'),
+            'registry_fund': relationship(FundRegistry, lazy='joined'),
             'asset': relationship(Asset, back_populates='fii', lazy='joined'),
         },
     )
@@ -141,10 +159,43 @@ def map_assets() -> None:
             'index': relationship(MarketDataSeries, lazy='joined'),
         },
     )
+    Base.registry.map_imperatively(FundRegistry, fund_registry_table)
+    Base.registry.map_imperatively(
+        FundRegistryClass,
+        fund_registry_class_table,
+        properties={'fund': relationship(FundRegistry, lazy='joined')},
+    )
+    Base.registry.map_imperatively(FundRegistrySubclass, fund_registry_subclass_table)
+    Base.registry.map_imperatively(FundShareSeries, fund_share_series_table)
+    Base.registry.map_imperatively(FundShareSeriesAlias, fund_share_series_alias_table)
     Base.registry.map_imperatively(
         InvestmentFund,
         investment_fund_table,
-        properties={'asset': relationship(Asset, back_populates='fund')},
+        properties={
+            'asset': relationship(Asset, back_populates='fund'),
+            'registry_class': relationship(
+                FundRegistryClass,
+                foreign_keys=[investment_fund_table.c.fund_registry_class_id],
+                viewonly=True,
+            ),
+            'registry_subclass': relationship(
+                FundRegistrySubclass,
+                primaryjoin=(
+                    investment_fund_table.c.fund_registry_subclass_id
+                    == fund_registry_subclass_table.c.id
+                ),
+                foreign_keys=[investment_fund_table.c.fund_registry_subclass_id],
+                viewonly=True,
+            ),
+            'share_series': relationship(
+                FundShareSeries,
+                primaryjoin=(
+                    investment_fund_table.c.fund_share_series_id == fund_share_series_table.c.id
+                ),
+                foreign_keys=[investment_fund_table.c.fund_share_series_id],
+                viewonly=True,
+            ),
+        },
     )
     Base.registry.map_imperatively(
         TreasuryBond,

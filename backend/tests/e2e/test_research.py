@@ -62,10 +62,10 @@ async def fake_openai():
     Assim o caminho do provider — a mensagem com o documento anexado em base64
     — roda de verdade, e o teste continua sem chamar ninguém de fora.
     """
-    from app.infra.openai.openai_client import get_ai_provider
+    from app.infra.ai.factory import get_ai_provider
 
     get_ai_provider.cache_clear()
-    with patch('app.infra.openai.openai_client.AsyncOpenAI', FakeOpenAIClient):
+    with patch('app.infra.ai.openai_provider.AsyncOpenAI', FakeOpenAIClient):
         yield
     get_ai_provider.cache_clear()
 

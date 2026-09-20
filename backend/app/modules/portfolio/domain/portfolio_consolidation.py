@@ -282,3 +282,68 @@ def calculate_returns(position_df: pd.DataFrame) -> pd.DataFrame:
     ) - 1
 
     return position_df
+
+
+POSITION_OVERLAP_DAYS = 15
+
+
+def consolidate_recent_positions(  # noqa: PLR0913
+    transaction_rows,
+    close_prices_df: pd.DataFrame,
+    usd_brl_df: pd.DataFrame,
+    dividends_df: pd.DataFrame,
+    history: pd.DataFrame,
+    start_date: pd.Timestamp,
+) -> pd.DataFrame:
+    """Continue a persisted curve, replacing only dates from start_date onward.
+
+    Trades remain a small full-history input so average cost retains its exact
+    purchase/sale semantics. Daily prices and arithmetic cover only the tail.
+    Persisted returns supply the opening balance and the twelve-month lookups.
+    Corporate events and calculated fixed-income prices use the full path.
+    """
+    trades = build_transactions_df(transaction_rows)
+    before = history[history['date'] < start_date].sort_values('date')
+    opening = before.iloc[-1]
+    prices = build_prices_df(close_prices_df, usd_brl_df, start_date)
+    end_date = prices['date'].max()
+    if pd.isna(end_date) or end_date < start_date:
+        raise ValueError('No prices covering the incremental consolidation window')
+    dates = pd.DataFrame({'date': pd.date_range(start_date, end_date)})
+    frame = dates.merge(prices, on='date', how='left')
+    frame = frame.merge(trades[trades['date'] >= start_date], on='date', how='left')
+    previous_trades = trades[trades['date'] < start_date]
+    for column in ['price', 'price_usd', 'average_price', 'average_price_usd']:
+        frame[column] = frame[column].ffill().fillna(opening[column])
+    raw_qty = frame['quantity'].fillna(0)
+    frame['quantity'] = (opening['quantity'] + raw_qty.cumsum()).round(6)
+    for suffix, trade_column in [('', 'transaction_price_brl'), ('_usd', 'transaction_price_usd')]:
+        invested = (previous_trades['quantity'] * previous_trades[trade_column]).sum()
+        frame[f'total_invested{suffix}'] = (
+            invested + (raw_qty * frame[trade_column].fillna(0)).cumsum()
+        )
+    frame = trim_trailing_zero_positions(frame)
+    if frame.empty:
+        return frame
+    dividends = build_dividends_df(dividends_df)
+    frame = frame.merge(dividends, on='date', how='left')
+    frame[['dividend', 'dividend_usd']] = frame[['dividend', 'dividend_usd']].fillna(0)
+
+    # The opening row supplies yesterday's exposure and price. It is never
+    # persisted again and its own daily return is not part of this new tail.
+    seed = pd.DataFrame([opening.to_dict()])
+    combined = pd.concat([seed, frame], ignore_index=True)
+    calculate_returns(combined)
+    result = combined.iloc[1:].copy()
+    years = (result['date'] - history['date'].min()).dt.days / 365.25
+    for suffix in ['', '_usd']:
+        acc_column = f'acc_return{suffix}'
+        result[acc_column] = (1 + opening[acc_column]) * (
+            1 + result[f'daily_return{suffix}']
+        ).cumprod() - 1
+        accumulated = pd.concat([before[['date', acc_column]], result[['date', acc_column]]])
+        lookup = accumulated.set_index('date')[acc_column]
+        year_ago = (result['date'] - pd.DateOffset(years=1)).map(lookup)
+        result[f'twelve_months_return{suffix}'] = (1 + result[acc_column]) / (1 + year_ago) - 1
+        result[f'cagr{suffix}'] = (1 + result[acc_column]) ** (1 / years) - 1
+    return result.reset_index(drop=True)

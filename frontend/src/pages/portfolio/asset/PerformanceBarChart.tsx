@@ -59,7 +59,7 @@ export default function PerformanceBarChart({
 
   const bars: AppDivergingBar[] = sorted.map((pos) => ({
     key: pos.asset_id,
-    label: pos.ticker,
+    label: pos.ticker ?? pos.name,
     value: pos.metricValue,
     display: formatMetricValue(pos.metricValue, metric, formatCurrency),
   }))

@@ -7,7 +7,7 @@ import {
 } from '@/constants/routes'
 import api from '@/lib/api'
 import { toISODate } from '@/lib/utils/date'
-import type { AssetAnalysis, CategoryReturnEntry, Dividend, PatrimonyEntry, Portfolio, PortfolioPositionEntry, PortfolioReturnEntry, ReturnsEntry, Trade } from '@/types'
+import type { AssetAnalysis, CategoryReturnEntry, ContributionAverage, Dividend, PatrimonyEntry, Portfolio, PortfolioPositionEntry, PortfolioReturnEntry, ReturnsEntry, Trade } from '@/types'
 
 // ---------------------------------------------------------------------------
 // Pure API functions – no state management, no side-effects beyond the fetch.
@@ -27,6 +27,11 @@ export const fetchPatrimony = (portfolioId: number, currency: string = 'BRL'): P
     if (err?.response?.status === 404) return []
     throw err
   })
+
+// Carteira sem histórico devolve média zero, e não 404: a rota responde
+// sempre, então quem a lê não trata ausência como caso à parte.
+export const fetchContributionAverage = (portfolioId: number, currency: string = 'BRL'): Promise<ContributionAverage> =>
+  api.get<ContributionAverage>(POSITION_ROUTES.contributionAverage(portfolioId), { params: { currency } }).then((r) => r.data)
 
 export const fetchTrades = (portfolioId: number): Promise<Trade[]> =>
   api.get<Trade[]>(TRANSACTION_ROUTES.list, { params: { portfolio_id: portfolioId } }).then((r) => r.data)

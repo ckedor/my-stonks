@@ -50,19 +50,18 @@ export default function AppSearchField({
       label={hideLabel ? undefined : label}
       aria-label={hideLabel ? label : undefined}
       autoFocus={autoFocus}
-      slotProps={
-        icon
-          ? {
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-              },
-            }
-          : undefined
-      }
+      slotProps={{
+        htmlInput: hideLabel ? { 'aria-label': label } : undefined,
+        ...(icon ? {
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          },
+        } : {}),
+      }}
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}

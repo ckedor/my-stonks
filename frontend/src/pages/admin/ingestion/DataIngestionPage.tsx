@@ -1,12 +1,14 @@
 import {
   abortDataIngestion,
   getDataIngestion,
+  ingestionFiles,
   listDataIngestions,
   runDataIngestion,
   type DataIngestionType,
   type IngestionStatus,
   type DataIngestionExecution,
   type DataIngestionExecutionDetail,
+  type DataIngestionFile,
 } from '@/api/dataIngestion'
 import {
   AppAlert,
@@ -87,13 +89,48 @@ export interface DataIngestionPageProps {
   title: string
   description: string
   itemName: string
+  /** What "Histórico completo" does for this ingestion, when the default does not say it. */
+  forceFullHistoryDescription?: string
+  /** Show the source files the run requested, for ingestions that read files. */
+  showFiles?: boolean
 }
+
+const FILE_STATUS_LABELS: Record<DataIngestionFile['status'], string> = {
+  downloaded: 'Baixado',
+  not_modified: 'Sem mudança',
+  pending_publication: 'Não publicado',
+  failed: 'Falhou',
+}
+
+const FILE_STATUS_TONES: Record<DataIngestionFile['status'], 'neutral' | 'info' | 'success' | 'danger'> = {
+  downloaded: 'success',
+  not_modified: 'neutral',
+  pending_publication: 'info',
+  failed: 'danger',
+}
+
+const FILE_REASON_LABELS: Record<string, string> = {
+  routine: 'rotina',
+  coverage: 'cobertura',
+  revision: 'revisão',
+  seed: 'semente',
+}
+
+const DATASET_LABELS: Record<string, string> = {
+  daily_share_value: 'Informe diário',
+  fidc_monthly: 'Informe mensal FIDC',
+}
+
+const formatBytes = (value?: number) =>
+  value === undefined ? '—' : `${(value / 1_048_576).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB`
 
 export function DataIngestionPage({
   ingestionType,
   title,
   description,
   itemName,
+  forceFullHistoryDescription,
+  showFiles = false,
 }: DataIngestionPageProps) {
   const [executions, setExecutions] = useState<DataIngestionExecution[]>([])
   const [detail, setDetail] = useState<DataIngestionExecutionDetail | null>(null)
@@ -402,6 +439,48 @@ export function DataIngestionPage({
         />
       </AppStack>
 
+      {showFiles && (
+        <AppStack gap="sm">
+          <SectionTitle>Arquivos</SectionTitle>
+          <AppSimpleTable<DataIngestionFile>
+            rows={detail ? ingestionFiles(detail) : []}
+            getRowKey={(file) => `${file.dataset}-${file.period ?? ''}-${file.status}-${(file.reasons ?? []).join()}`}
+            surface="outlined"
+            emptyMessage="Nenhum arquivo solicitado nesta execução."
+            columns={[
+              { label: 'Conjunto', render: (file) => DATASET_LABELS[file.dataset] ?? file.dataset },
+              { label: 'Período', render: (file) => file.period ?? '—' },
+              {
+                label: 'Status',
+                render: (file) => (
+                  <AppChip
+                    label={FILE_STATUS_LABELS[file.status] ?? file.status}
+                    tone={FILE_STATUS_TONES[file.status] ?? 'neutral'}
+                    emphasis={file.status === 'pending_publication' ? 'outline' : 'solid'}
+                  />
+                ),
+              },
+              {
+                label: 'Motivo',
+                render: (file) =>
+                  (file.reasons ?? []).map((reason) => FILE_REASON_LABELS[reason] ?? reason).join(', ') || '—',
+              },
+              { label: 'Tamanho', align: 'right', render: (file) => formatBytes(file.size_bytes) },
+              { label: 'Linhas do fundo', align: 'right', render: (file) => file.matched_rows ?? '—' },
+              {
+                label: 'Erro',
+                width: 'clamped',
+                render: (file) => (
+                  <AppText variant="bodySmall" tone={file.error ? 'danger' : 'secondary'}>
+                    {file.error ?? '—'}
+                  </AppText>
+                ),
+              },
+            ]}
+          />
+        </AppStack>
+      )}
+
       <AppStack gap="sm">
         <SectionTitle>Tentativas por {itemName}</SectionTitle>
         <AppSimpleTable
@@ -477,8 +556,8 @@ export function DataIngestionPage({
         onConfirm={() => void startExecution(true)}
         onCancel={() => setForceDialogOpen(false)}
       >
-        Essa execução ignora a última data persistida e solicita o máximo disponível. Ela pode
-        consumir mais tempo e chamadas externas.
+        {forceFullHistoryDescription
+          ?? 'Essa execução ignora a última data persistida e solicita o máximo disponível. Ela pode consumir mais tempo e chamadas externas.'}
       </AppConfirmDialog>
 
       <AppConfirmDialog

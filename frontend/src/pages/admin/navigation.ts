@@ -43,6 +43,8 @@ export const adminNavigationSections: AdminNavigationSection[] = [
         path: '/admin/market-data-series-ingestion',
       },
       { label: 'USD/BRL', path: '/admin/usd-brl-ingestion' },
+      { label: 'Cadastro de fundos', path: '/admin/fund-registry-ingestion' },
+      { label: 'Valores de cota', path: '/admin/fund-share-value-ingestion' },
       { label: 'Consolidação', path: '/admin/consolidation' },
     ],
   },
@@ -56,7 +58,10 @@ export const adminNavigationSections: AdminNavigationSection[] = [
     id: 'ai',
     label: 'IA',
     defaultPath: '/admin/ai-features',
-    items: [{ label: 'Recursos de IA', path: '/admin/ai-features' }],
+    items: [
+      { label: 'Funcionalidades', path: '/admin/ai-features' },
+      { label: 'Uso e custo', path: '/admin/ai-usage' },
+    ],
   },
   {
     id: 'users',

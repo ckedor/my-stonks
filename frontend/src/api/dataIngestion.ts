@@ -1,7 +1,12 @@
 import { DATA_INGESTION_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 
-export type DataIngestionType = 'quote' | 'market_data_series' | 'usd_brl'
+export type DataIngestionType =
+  | 'quote'
+  | 'market_data_series'
+  | 'usd_brl'
+  | 'fund_registry'
+  | 'fund_share_value'
 export type IngestionStatus =
   | 'queued'
   | 'running'
@@ -44,6 +49,24 @@ export interface DataIngestionAttempt {
   fetched_rows: number
   upserted_rows: number
   error: string | null
+}
+
+/** One source file a file-based ingestion requested, as its runner logs it in
+ *  `parameters.files`. */
+export interface DataIngestionFile {
+  dataset: string
+  period?: string
+  status: 'downloaded' | 'not_modified' | 'pending_publication' | 'failed'
+  reasons?: string[]
+  asset_ids?: number[]
+  size_bytes?: number
+  matched_rows?: number
+  error?: string
+}
+
+export const ingestionFiles = (execution: DataIngestionExecution): DataIngestionFile[] => {
+  const files = execution.parameters.files
+  return Array.isArray(files) ? (files as DataIngestionFile[]) : []
 }
 
 export interface DataIngestionExecutionDetail extends DataIngestionExecution {

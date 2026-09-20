@@ -11,7 +11,7 @@ from app.composition.portfolio import (
     portfolio_consolidator_service_context,
 )
 from app.config.logger import logger
-from app.entrypoints.worker.task_runner import celery_async_task
+from app.entrypoints.worker.task_runner import celery_async_task, run_task_by_name
 
 
 @celery_async_task(name='consolidate_fiis_dividends')
@@ -26,7 +26,9 @@ async def consolidate_fiis_dividends():
     for portfolio in portfolios:
         try:
             async with portfolio_consolidator_service_context() as service:
-                await service.consolidate_fii_dividends(portfolio.id)
+                changed_assets = await service.consolidate_fii_dividends(portfolio.id)
+            for asset_id in changed_assets:
+                run_task_by_name('recalculate_asset_position', portfolio.id, asset_id)
         except Exception as e:
             # A falha de uma carteira não é a das outras: o provedor pode não
             # conhecer um fundo, e as demais continuam.

@@ -109,6 +109,29 @@ Provider calls use adapters/integrations behind the service layer.
   one — that is caching a cache, and it puts back an invalidation to keep
   honest.
 
+## IA
+
+- Toda chamada a um provedor passa por `app/infra/ai/`, e o registro em
+  `ai.ai_run` acontece lá, na fronteira — não no service da feature. Um
+  chamador novo não precisa lembrar de se instrumentar, e nada gasta a chave
+  sem deixar linha. O teto de gasto é checado na mesma camada, antes da
+  chamada.
+- **Artefato de IA não passa por Redis.** A tabela de artefatos é o cache:
+  a leitura é um select por (feature, versão do prompt, entrada). Cache na
+  frente seria cachear um cache, e deveria uma invalidação para manter
+  honesta — a mesma razão pela qual leitura consolidada não tem cache.
+- A versão do prompt faz parte da identidade do artefato. Não invalide
+  artefato por job ao trocar de prompt: a chave única já faz isso.
+- O schema de saída de uma feature mora em código (`domain/outputs.py`); só o
+  texto do prompt mora no banco. Salvar uma versão de prompt valida os
+  placeholders contra as `context_keys` do handler — um prompt que quebraria
+  na geração não pode ser gravado.
+- Número que uma feature afirma vem da aplicação, calculado antes da chamada e
+  entregue pronto ao prompt. O modelo escreve a prosa; ele não mede.
+- Uma feature nova é um handler mais uma linha no registro. Ela não pede rota,
+  task nem tela de admin: a execução genérica e o formulário montado do JSON
+  Schema do input já a atendem.
+
 ## Market data
 
 - Asset quotes and their scalar prices are central domain data. Brapi and other external sources are
@@ -119,6 +142,22 @@ Provider calls use adapters/integrations behind the service layer.
   whenever their business behavior is the same.
 - Use the distinctions between `price`, `quote`, and related concepts defined in
   `docs/domain.md`.
+- A file-based ingestion skips a file by **coverage**, never by a `304` alone:
+  validators say the body did not change, not that this asset, selection and
+  purchase date were applied from it. Coverage commits in the same transaction
+  as the rows it vouches for, and a failure writes none
+  (`tests/e2e/test_fund_share_value_ingestion.py` proves both).
+- Regulator file layouts are checked against the file headers, not the
+  published dictionaries: the FIDC dictionary still names a column the files
+  dropped in 2023. A missing column fails the file.
+- Reapplying a share-value snapshot also reconciles withdrawals, scoped to
+  its source, asset and period; removals commit with replacements and coverage.
+  Validate headers even for empty members before treating them as snapshots.
+- Fund revision checkpoints are per asset, selection version and purchase
+  boundary. A partial selection cannot satisfy another fund's weekly revision.
+- Registering a fund is available to authenticated users from a purchase and
+  reuses an existing priced unit. FIDCs require a confirmed series. Changes to
+  existing series/aliases and ingestion operations remain admin-only.
 
 ## Verificação
 

@@ -1,5 +1,6 @@
-import { createTheme, type Theme } from '@mui/material/styles';
+import { createTheme, getContrastRatio, type Theme } from '@mui/material/styles';
 import { fontFamily, fontStacks, radius, space, type RadiusScale } from './tokens';
+import { earthStudies } from './earth-studies';
 
 /* ──────────────────────────────────────────────
    Module augmentation (single source of truth)
@@ -47,11 +48,11 @@ export interface ThemeDefinition {
    Forma e tipografia — a parte do tema que não é cor
    ──────────────────────────────────────────────
 
-   Existe porque tema não é só paleta: o Pixel Art precisa de raio zero e de
-   fonte bitmap, e nenhum dos dois cabe em `ThemePaletteConfig`. Quem não
-   passa nada continua com os valores de `tokens.ts`, que são os do tema
-   padrão — por isso a introdução deste tipo não muda nenhuma tela. */
+   Tipografia e geometria complementam a paleta. Os valores de tokens.ts
+   são usados quando o tema não especifica sua própria forma. */
 export interface ThemeShapeConfig {
+  /** Flat surfaces and restrained controls. */
+  quiet?: boolean
   radius: RadiusScale
   /** Corpo: rótulo, tabela, botão — e o que o candle chart repassa para o
    *  canvas do lightweight-charts. */
@@ -210,7 +211,7 @@ export function buildMuiTheme(
       mode: config.mode,
       background: config.background,
       text: config.text,
-      primary: { main: config.primary },
+      primary: { main: config.primary, ...(shape.quiet ? { contrastText: getContrastRatio(config.primary, '#FFFFFF') >= 4.5 ? '#FFFFFF' : '#171614' } : {}) },
       secondary: { main: config.secondary },
       error: { main: config.error },
       warning: { main: config.warning },
@@ -223,7 +224,17 @@ export function buildMuiTheme(
       divider: config.divider,
       chart: config.chart,
     },
-    components: isLight ? lightComponents(shape) : darkComponents(shape),
+    components: {
+      ...(isLight ? lightComponents(shape) : darkComponents(shape)),
+      ...(shape.quiet ? {
+        MuiPaper: { styleOverrides: { root: { backgroundImage: 'none', boxShadow: 'none', border: `1px solid ${config.divider}` } } },
+        MuiButton: { styleOverrides: {
+          root: { borderRadius: shape.radius.lg, textTransform: 'none' as const, fontWeight: 600, boxShadow: 'none', '&:hover': { boxShadow: 'none' } },
+        } },
+        MuiOutlinedInput: { styleOverrides: { root: { borderRadius: shape.radius.sm, '& .MuiOutlinedInput-notchedOutline': { borderColor: config.divider } } } },
+        MuiCssBaseline: { styleOverrides: { body: { fontVariantNumeric: 'tabular-nums' } } },
+      } : {}),
+    },
     typography: baseTypography(shape),
     radius: shape.radius,
     space,
@@ -356,57 +367,8 @@ const sepiaNoturnoPalette: ThemePaletteConfig = {
   },
 }
 
-/* O azul-acinzentado que era o `Grafite Neutro`, mantido ao lado do
-   `Principal`: mesma estrutura (papel branco, header escuro), régua de
-   neutros fria em vez de quente. */
-const slateNeutralPalette: ThemePaletteConfig = {
-  mode: 'light',
-  background: { default: '#F3F4F6', paper: '#FFFFFF' },
-  text: { primary: '#111827', secondary: '#6B7280' },
-  primary: '#374151',
-  secondary: '#6366F1',
-  error: '#DC2626',
-  warning: '#F59E0B',
-  success: '#10B981',
-  info: '#3B82F6',
-  golden: '#F59E0B',
-  dark: '#111827',
-  sidebar: '#1F2937',
-  topbar: { background: '#2b3848', text: '#F3F4F6', activeText: '#FFFFFF', activeBg: '#374151' },
-  divider: 'rgba(17,24,39,0.10)',
-  chart: {
-    grid: 'rgba(17,24,39,0.10)',
-    label: '#111827',
-    /* Série do escuro antigo, que nasceu para o fundo #303030. A terceira era
-       #FFF5E1 — creme, 1.08:1 sobre o branco do paper, ou seja invisível. No
-       lugar dela vai o oposto do papel que ela cumpria lá: era o neutro claro
-       sobre fundo escuro, aqui é o neutro escuro sobre fundo claro (6.1:1), e
-       a luminosidade separa ela de todas as outras. A última, #FFD700, saiu
-       pelo mesmo motivo (1.4:1) e virou ouro velho. */
-    colors: ['#D2A679', '#D15F57', '#7A5C43', '#A3C1AD', '#AB4E52', '#a3c1bd', '#9CAFB7', '#B8860B'],
-  },
-}
-
-/* ══════════════════════════════════════════════
-   Editorial Sépia — a família de papel
-   ══════════════════════════════════════════════
-
-   Três temas claros com a mesma estrutura: papel bege, tinta escura, cantos
-   quase retos e um par serifa + grotesca. O que muda entre eles é a
-   temperatura do papel, a cor da tinta e qual serifa escreve os títulos.
-
-   A serifa fica só em `h1`–`h6`. Serifa em rótulo de 9px e em tabela de
-   dinheiro é o que faz um tema editorial parecer amador — o corpo continua
-   grotesco, que é o que essas telas pedem. */
-
 /** Raio pequeno: papel não tem canto arredondado. */
 const sepiaRadius: RadiusScale = { sm: 4, md: 6, lg: 6, pill: 9999 }
-
-const sepiaShape: ThemeShapeConfig = {
-  radius: sepiaRadius,
-  fontFamily: fontStacks.grotesk,
-  headingFontFamily: fontStacks.sourceSerif,
-}
 
 /* A dupla que mais se aproxima da tipografia do site do Claude sem depender
    de fonte licenciada: Newsreader no lugar da Tiempos/Copernicus, Figtree no
@@ -417,28 +379,6 @@ const claudeShape: ThemeShapeConfig = {
   headingFontFamily: fontStacks.newsreader,
 }
 
-/* O tema Pixel Art é o motivo de `ThemeShapeConfig` existir (veja o comentário
-   do tipo): sprite não tem canto arredondado nem letra vetorial, e nenhuma das
-   duas coisas cabia numa paleta.
-
-   Raio zero em toda a escala, `pill` incluído: um chip em formato de cápsula
-   entrega na hora que o desenho é vetorial.
-
-   Uma fonte só, título e corpo. A Press Start 2P chegou a entrar nos títulos
-   por ser a fonte de arcade de verdade, mas cada glifo dela ocupa uma célula
-   quadrada: o valor do patrimônio crescia a ponto de invadir a arte da patente
-   ao lado. Fonte de título é decisão que se paga no maior número da tela. */
-const pixelRadius: RadiusScale = { sm: 0, md: 0, lg: 0, pill: 0 }
-
-const pixelShape: ThemeShapeConfig = {
-  radius: pixelRadius,
-  fontFamily: fontStacks.pixelifySans,
-  headingFontFamily: fontStacks.pixelifySans,
-}
-
-/* Série compartilhada pelos três Sépia: nenhuma cor repete `primary` nem
-   `secondary` de nenhum deles, porque no gráfico de rentabilidade essas duas
-   já estão presas a Carteira e CDI. Todas passam de 4.5:1 sobre o paper. */
 const sepiaChartColors = [
   '#4E6E4A', '#9E3B2E', '#A98146', '#5C6B7A',
   '#7A5C6E', '#3F6B6B', '#8C6A4F', '#B08C3A',
@@ -448,8 +388,8 @@ const editorialSepiaPalette: ThemePaletteConfig = {
   mode: 'light',
   background: { default: '#F4EDE2', paper: '#FBF6EE' },
   text: { primary: '#2B241C', secondary: '#6B5D4C' },
-  primary: '#8A5A2B',
-  secondary: '#5F6B3C',
+  primary: '#A65336',
+  secondary: '#87644E',
   error: '#9E3B2E',
   warning: '#9A6516',
   success: '#4E6E4A',
@@ -473,256 +413,125 @@ const sepiaClaudePalette: ThemePaletteConfig = {
   chart: { grid: 'rgba(41,31,23,0.10)', label: '#291F17', colors: sepiaChartColors },
 }
 
-/* Papel quase sem cor e primária de tinta ferrogálica: o marrom escuro
-   substitui o nogueira, e o nogueira desce para `secondary`. É o Sépia sem
-   acento cromático — o contraste vem da tipografia. */
-const sepiaTintaPalette: ThemePaletteConfig = {
-  ...editorialSepiaPalette,
-  background: { default: '#F7F2EA', paper: '#FFFCF7' },
-  text: { primary: '#1F1A14', secondary: '#6B6055' },
-  primary: '#3E2E20',
-  secondary: '#8A5A2B',
-  success: '#43663F',
-  error: '#96382B',
-  golden: '#A98146',
-  dark: '#1F1A14',
-  sidebar: '#2A2018',
-  topbar: { background: '#2A2018', text: '#F2E9DC', activeText: '#FFFCF7', activeBg: '#463427' },
-  divider: 'rgba(31,26,20,0.14)',
+/* ══════════════════════════════════════════════
+   Névoa e Marinho — os dois claros frios
+   ══════════════════════════════════════════════
+
+   O catálogo claro tinha três temas e uma temperatura só: Argila, Tinta e
+   Sépia Claude são todos papel quente com acento de terra, e escolher entre
+   eles é escolher a fonte do título, não a cara da tela. O escuro tem sete e
+   varia bem mais que isso. Estes dois abrem o lado frio, e se dividem pelo
+   que a barra faz — que é a decisão que mais muda a tela:
+
+   - `Névoa` não tem barra escura. Barra, coluna e página são a mesma
+     superfície clara, separadas por um fio; a tela vira uma folha só e o
+     conteúdo é o único bloco de tinta. É o oposto do Tinta.
+   - `Marinho` faz o contrário: um azul quase preto emoldura o conteúdo, como
+     o preto do Tinta, mas frio e com cobre no lugar da terracota.
+
+   Nenhum dos dois repete `primary` ou `secondary` nas séries de gráfico: no
+   gráfico de rentabilidade essas duas já estão em uso fixo (Carteira e CDI). */
+const nevoaPalette: ThemePaletteConfig = {
+  mode: 'light',
+  background: { default: '#F1F4F7', paper: '#FCFDFE' },
+  text: { primary: '#1B2430', secondary: '#5B6875' },
+  primary: '#1F5468',
+  secondary: '#A2643C',
+  error: '#B03A34',
+  warning: '#96631A',
+  success: '#2F7A55',
+  info: '#35617D',
+  golden: '#A8801F',
+  dark: '#1B2430',
+  /* Barra clara: `getContrastText` é quem escolhe a tinta dela, e já servia
+     ao Argila claro — nenhum componente precisou saber deste caso. */
+  sidebar: '#E6EBF0',
+  topbar: { background: '#E6EBF0', text: '#35414E', activeText: '#16202B', activeBg: '#CFD8E1' },
+  divider: 'rgba(27,36,48,0.12)',
   chart: {
-    grid: 'rgba(31,26,20,0.10)',
-    label: '#1F1A14',
-    /* `secondary` aqui é o #8A5A2B, que na série dos outros dois não aparece;
-       o que sai é o dourado, perto demais do #A98146 que já está na lista. */
-    colors: ['#43663F', '#96382B', '#A98146', '#5C6B7A', '#7A5C6E', '#3F6B6B', '#8C6A4F', '#4A6076'],
+    grid: 'rgba(27,36,48,0.10)',
+    label: '#1B2430',
+    colors: ['#2E6B8A', '#C2703F', '#4F7A57', '#7C6BA0', '#A64F5E', '#3F8C93', '#8A7B4F', '#5A6B7C'],
   },
 }
 
-/* ══════════════════════════════════════════════
-   LIGHT THEMES
-   ══════════════════════════════════════════════ */
+const nevoaShape: ThemeShapeConfig = {
+  radius: { sm: 6, md: 10, lg: 10, pill: 9999 },
+  fontFamily: fontStacks.figtree,
+  headingFontFamily: fontStacks.figtree,
+  quiet: true,
+}
+
+const marinhoPalette: ThemePaletteConfig = {
+  mode: 'light',
+  background: { default: '#F3F5F8', paper: '#FFFFFF' },
+  text: { primary: '#16202C', secondary: '#58657A' },
+  primary: '#1B3A5C',
+  secondary: '#A05F2C',
+  error: '#B23A34',
+  warning: '#9A6516',
+  success: '#2C7A52',
+  info: '#2F6389',
+  golden: '#A8801F',
+  dark: '#16202C',
+  sidebar: '#142A42',
+  topbar: { background: '#142A42', text: '#C6D3E2', activeText: '#FFFFFF', activeBg: '#23415F' },
+  divider: 'rgba(22,32,44,0.12)',
+  chart: {
+    grid: 'rgba(22,32,44,0.10)',
+    label: '#16202C',
+    colors: ['#2C5F8A', '#C0703C', '#47806C', '#8E5F87', '#A8515A', '#5E7387', '#9A7A3C', '#3E6E4E'],
+  },
+}
+
+/** Canto quase reto e grotesca nos dois papéis: é a tela de painel, não a de
+ *  leitura — a serifa e o raio macio ficam com os temas editoriais. */
+const marinhoShape: ThemeShapeConfig = {
+  radius: { sm: 2, md: 4, lg: 4, pill: 9999 },
+  fontFamily: fontStacks.grotesk,
+  headingFontFamily: fontStacks.grotesk,
+  quiet: true,
+}
+
+const earthThemeDefinitions: ThemeDefinition[] = earthStudies.map((study) => ({
+  id: study.id,
+  name: study.name,
+  description: study.description,
+  mode: study.palette.mode,
+  preview: buildPreview(study.palette),
+  theme: buildMuiTheme(study.palette, study.shape),
+}))
 
 export const lightThemes: ThemeDefinition[] = [
-  /* ── 1. Principal ─────────────────────────── */
-  /* O preview não sai de `buildPreview`: ele mostra o texto do topbar (claro
-     sobre o header escuro), não o `text.primary` da página. */
-  {
-    id: 'principal-light',
-    name: 'Principal',
-    mode: 'light',
-    description: 'Off-white quente com header grafite, sóbrio e sem azul',
-    preview: {
-      background: '#FAF8F4',
-      paper: '#FFFFFF',
-      primary: '#44403C',
-      accent: '#B45309',
-      topbar: '#403B36',
-      sidebar: '#403B36',
-      text: '#EFEBE7',
-    },
-    theme: buildMuiTheme(defaultLightPalette),
-  },
-
-  /* ── 2. Grafite Neutro ────────────────────── */
-  {
-    id: 'slate-neutral',
-    name: 'Grafite Neutro',
-    mode: 'light',
-    description: 'Header cinza escuro azulado, clean e versátil',
-    preview: {
-      background: '#F3F4F6',
-      paper: '#FFFFFF',
-      primary: '#374151',
-      accent: '#6366F1',
-      topbar: '#2b3848',
-      sidebar: '#1F2937',
-      text: '#F3F4F6',
-    },
-    theme: buildMuiTheme(slateNeutralPalette),
-  },
-
-  /* ── 3. Editorial Sépia ───────────────────── */
-  /* O preview mostra o texto do topbar, não o `text.primary` da página —
-     mesma razão do `Principal`. */
-  {
-    id: 'editorial-sepia',
-    name: 'Editorial Sépia',
-    mode: 'light',
-    description: 'Papel bege com tinta de nogueira e títulos em Source Serif',
-    preview: {
-      background: '#F4EDE2',
-      paper: '#FBF6EE',
-      primary: '#8A5A2B',
-      accent: '#5F6B3C',
-      topbar: '#3A2E23',
-      sidebar: '#3A2E23',
-      text: '#F1E7D9',
-    },
-    theme: buildMuiTheme(editorialSepiaPalette, sepiaShape),
-  },
-
-  /* ── 4. Sépia Claude ──────────────────────── */
+  ...earthThemeDefinitions.filter((theme) => theme.mode === 'light'),
   {
     id: 'sepia-claude',
     name: 'Sépia Claude',
     mode: 'light',
-    description: 'O Sépia com a dupla Newsreader e Figtree',
-    preview: {
-      background: '#F4EDE2',
-      paper: '#FCF8F1',
-      primary: '#8A5A2B',
-      accent: '#5F6B3C',
-      topbar: '#3A2E23',
-      sidebar: '#3A2E23',
-      text: '#F1E7D9',
-    },
+    description: 'Papel creme, títulos serifados e detalhes em laranja queimado',
+    preview: buildPreview(sepiaClaudePalette),
     theme: buildMuiTheme(sepiaClaudePalette, claudeShape),
   },
-
-  /* ── 5. Sépia Tinta ───────────────────────── */
   {
-    id: 'sepia-tinta',
-    name: 'Sépia Tinta',
+    id: 'nevoa',
+    name: 'Névoa',
     mode: 'light',
-    description: 'Papel quase branco com primária de tinta ferrogálica',
-    preview: {
-      background: '#F7F2EA',
-      paper: '#FFFCF7',
-      primary: '#3E2E20',
-      accent: '#8A5A2B',
-      topbar: '#2A2018',
-      sidebar: '#2A2018',
-      text: '#F2E9DC',
-    },
-    theme: buildMuiTheme(sepiaTintaPalette, claudeShape),
+    description: 'Neutros frios sem barra escura: a tela inteira é uma superfície só.',
+    preview: buildPreview(nevoaPalette),
+    theme: buildMuiTheme(nevoaPalette, nevoaShape),
+  },
+  {
+    id: 'marinho',
+    name: 'Marinho',
+    mode: 'light',
+    description: 'Papel frio emoldurado por azul quase preto, com acento de cobre.',
+    preview: buildPreview(marinhoPalette),
+    theme: buildMuiTheme(marinhoPalette, marinhoShape),
   },
 ]
-
-/* ══════════════════════════════════════════════
-   DARK THEMES
-   ══════════════════════════════════════════════ */
-
-/* A paleta nasceu de um estudo de sprites em pixel art, e o que veio de lá
-   não é só a cor: é a regra de que tudo aqui é marrom de terra ou metal.
-   `error` foi o único valor que precisou sair do estudo — o #D1594F original
-   dá 3.85:1 sobre o paper, e retorno negativo é texto pequeno. O #DC6A5C
-   passa dos 4.5:1 sem sair do terracota.
-
-   `topbar.activeText` também foge do #FFFFFF dos outros temas: o item ativo
-   tem fundo #D4A76A, claro, então branco sobre ele daria 1.9:1. O texto do
-   item ativo aqui é o próprio fundo da página. */
-const pixelArtPalette: ThemePaletteConfig = {
-  mode: 'dark',
-  background: { default: '#221A15', paper: '#2C231D' },
-  text: { primary: '#EEE3D7', secondary: '#B9A794' },
-  primary: '#D4A76A',
-  secondary: '#E0B84A',
-  error: '#DC6A5C',
-  warning: '#E0B84A',
-  success: '#7BBE71',
-  info: '#78A6C8',
-  golden: '#E0B84A',
-  dark: '#12100E',
-  sidebar: '#1A1410',
-  topbar: { background: '#1A1410', text: '#EEE3D7', activeText: '#221A15', activeBg: '#D4A76A' },
-  divider: 'rgba(238,227,215,0.12)',
-  chart: {
-    grid: 'rgba(238,227,215,0.10)',
-    label: '#EEE3D7',
-    /* Mesma regra do `Principal`: nenhuma repete `primary` nem `secondary`,
-       que no gráfico de rentabilidade já estão presos a Carteira e CDI. */
-    colors: ['#78A6C8', '#7BBE71', '#DC6A5C', '#B9A794', '#A0724E', '#8FA98C', '#C9A227', '#9C6B5A'],
-  },
-}
-
-/* ══════════════════════════════════════════════
-   Grafite Quente — a família escura
-   ══════════════════════════════════════════════
-
-   Escuro neutro que não puxa para o azul: a primária quente é o que separa
-   esta família do `Principal` escuro, que é frio por vir do VS Code Dark. */
-
-const grafiteRadius: RadiusScale = { sm: 6, md: 8, lg: 10, pill: 9999 }
-
-const grafiteShape: ThemeShapeConfig = {
-  radius: grafiteRadius,
-  fontFamily: fontStacks.grotesk,
-  headingFontFamily: fontStacks.grotesk,
-}
-
-const grafiteClaudeShape: ThemeShapeConfig = {
-  radius: grafiteRadius,
-  fontFamily: fontStacks.figtree,
-  headingFontFamily: fontStacks.newsreader,
-}
-
-/* Série dos três Grafite, pela mesma regra dos claros: fora `primary` e
-   `secondary` de qualquer um deles. */
-const grafiteChartColors = [
-  '#79B58C', '#D97D6B', '#8FA8C4', '#C9A227',
-  '#9C8F80', '#6FA8A0', '#C08457', '#8C9A6B',
-]
-
-const grafiteQuentePalette: ThemePaletteConfig = {
-  mode: 'dark',
-  background: { default: '#17181A', paper: '#1F2124' },
-  text: { primary: '#E9E7E4', secondary: '#9A9793' },
-  primary: '#D8B98A',
-  secondary: '#B49AC7',
-  error: '#D97D6B',
-  warning: '#C9A227',
-  success: '#79B58C',
-  info: '#8FA8C4',
-  golden: '#C9A227',
-  dark: '#101112',
-  sidebar: '#1B1D1F',
-  /* `activeText` é o fundo da página, não branco: o item ativo tem fundo
-     areia claro, e branco sobre ele ficaria em 1.8:1. Mesma escolha do
-     Pixel Art, pelo mesmo motivo. */
-  topbar: { background: '#1B1D1F', text: '#E9E7E4', activeText: '#17181A', activeBg: '#D8B98A' },
-  divider: 'rgba(233,231,228,0.12)',
-  chart: { grid: 'rgba(233,231,228,0.09)', label: '#E9E7E4', colors: grafiteChartColors },
-}
-
-/* O mesmo grafite, com a dupla do Claude e o fundo um passo mais neutro:
-   sobre serifa clara o cinza levemente esverdeado do original aparecia. */
-const grafiteClaudePalette: ThemePaletteConfig = {
-  ...grafiteQuentePalette,
-  background: { default: '#1A1A1C', paper: '#222225' },
-  text: { primary: '#EAE8E4', secondary: '#9C9A96' },
-  dark: '#121214',
-  sidebar: '#1E1E21',
-  topbar: { background: '#1E1E21', text: '#EAE8E4', activeText: '#1A1A1C', activeBg: '#D8B98A' },
-  divider: 'rgba(234,232,228,0.12)',
-  chart: { grid: 'rgba(234,232,228,0.09)', label: '#EAE8E4', colors: grafiteChartColors },
-}
-
-/* A areia vira cobre e o grafite ganha marrom. É o mais quente dos três, e o
-   único em que a primária tem saturação suficiente para puxar a tela. */
-const grafiteCobrePalette: ThemePaletteConfig = {
-  ...grafiteQuentePalette,
-  background: { default: '#1A1715', paper: '#231F1C' },
-  text: { primary: '#EDE7E1', secondary: '#A0968F' },
-  primary: '#C4794A',
-  error: '#D2705C',
-  warning: '#D9B27A',
-  success: '#7FA36B',
-  golden: '#D9B27A',
-  dark: '#120F0E',
-  sidebar: '#201C19',
-  topbar: { background: '#201C19', text: '#EDE7E1', activeText: '#1A1715', activeBg: '#C4794A' },
-  divider: 'rgba(237,231,225,0.12)',
-  chart: {
-    grid: 'rgba(237,231,225,0.09)',
-    label: '#EDE7E1',
-    /* O #C08457 da série dos outros dois sai: ao lado do cobre da `primary`
-       as duas leem como a mesma cor. */
-    colors: ['#7FA36B', '#D2705C', '#8FA8C4', '#D9B27A', '#9C8F80', '#6FA8A0', '#8C9A6B', '#C9A227'],
-  },
-}
 
 export const darkThemes: ThemeDefinition[] = [
-  /* ── 1. Sépia Noturno ─────────────────────── */
+  ...earthThemeDefinitions.filter((theme) => theme.mode === 'dark'),
   /* O preview mostra o texto da barra, não o `text.primary` da página —
      mesma razão do `Principal` claro. */
   {
@@ -741,88 +550,6 @@ export const darkThemes: ThemeDefinition[] = [
     },
     theme: buildMuiTheme(sepiaNoturnoPalette),
   },
-
-  /* ── 2. Principal ─────────────────────────── */
-  {
-    id: 'principal-dark',
-    name: 'Principal',
-    mode: 'dark',
-    description: 'Escuro neutro no estilo do VS Code Dark',
-    preview: buildPreview(defaultDarkPalette),
-    theme: buildMuiTheme(defaultDarkPalette),
-  },
-
-  /* ── 3. Pixel Art ─────────────────────────── */
-  {
-    id: 'pixel-art',
-    name: 'Pixel Art',
-    mode: 'dark',
-    description: 'Marrom de caverna com ouro, verde de sprite e letra bitmap',
-    preview: {
-      background: '#221A15',
-      paper: '#2C231D',
-      primary: '#D4A76A',
-      accent: '#E0B84A',
-      topbar: '#1A1410',
-      sidebar: '#1A1410',
-      text: '#EEE3D7',
-    },
-    theme: buildMuiTheme(pixelArtPalette, pixelShape),
-  },
-
-  /* ── 4. Grafite Quente ────────────────────── */
-  {
-    id: 'grafite-quente',
-    name: 'Grafite Quente',
-    mode: 'dark',
-    description: 'Escuro neutro aquecido por uma primária areia',
-    preview: {
-      background: '#17181A',
-      paper: '#1F2124',
-      primary: '#D8B98A',
-      accent: '#B49AC7',
-      topbar: '#1B1D1F',
-      sidebar: '#1B1D1F',
-      text: '#E9E7E4',
-    },
-    theme: buildMuiTheme(grafiteQuentePalette, grafiteShape),
-  },
-
-  /* ── 5. Grafite Claude ────────────────────── */
-  {
-    id: 'grafite-claude',
-    name: 'Grafite Claude',
-    mode: 'dark',
-    description: 'O Grafite com a dupla Newsreader e Figtree',
-    preview: {
-      background: '#1A1A1C',
-      paper: '#222225',
-      primary: '#D8B98A',
-      accent: '#B49AC7',
-      topbar: '#1E1E21',
-      sidebar: '#1E1E21',
-      text: '#EAE8E4',
-    },
-    theme: buildMuiTheme(grafiteClaudePalette, grafiteClaudeShape),
-  },
-
-  /* ── 6. Grafite Cobre ─────────────────────── */
-  {
-    id: 'grafite-cobre',
-    name: 'Grafite Cobre',
-    mode: 'dark',
-    description: 'Grafite amarronzado com primária cobre',
-    preview: {
-      background: '#1A1715',
-      paper: '#231F1C',
-      primary: '#C4794A',
-      accent: '#B49AC7',
-      topbar: '#201C19',
-      sidebar: '#201C19',
-      text: '#EDE7E1',
-    },
-    theme: buildMuiTheme(grafiteCobrePalette, grafiteClaudeShape),
-  },
 ]
 
 /* ══════════════════════════════════════════════
@@ -835,5 +562,5 @@ export function getThemeById(id: string): ThemeDefinition | undefined {
   return allThemes.find((t) => t.id === id)
 }
 
-export const DEFAULT_LIGHT_THEME_ID = 'principal-light'
+export const DEFAULT_LIGHT_THEME_ID = 'earth-tinta-light'
 export const DEFAULT_DARK_THEME_ID = 'sepia-noturno'

@@ -80,6 +80,32 @@ class DataIngestionReadService:
             include_attempts=True,
         )
 
+    async def list_fund_registry_executions(self, *, limit: int):
+        return await self.list_executions(
+            ingestion_type=DataIngestionType.FUND_REGISTRY,
+            limit=limit,
+        )
+
+    async def get_fund_registry_execution(self, execution_id: int):
+        return await self.get_execution(
+            execution_id,
+            ingestion_type=DataIngestionType.FUND_REGISTRY,
+            include_attempts=True,
+        )
+
+    async def list_fund_share_value_executions(self, *, limit: int):
+        return await self.list_executions(
+            ingestion_type=DataIngestionType.FUND_SHARE_VALUE,
+            limit=limit,
+        )
+
+    async def get_fund_share_value_execution(self, execution_id: int):
+        return await self.get_execution(
+            execution_id,
+            ingestion_type=DataIngestionType.FUND_SHARE_VALUE,
+            include_attempts=True,
+        )
+
 
 class DataIngestionService:
     def __init__(
@@ -282,6 +308,15 @@ class DataIngestionService:
             execution = await uow.ingestions.get_execution(execution_id)
             execution.total_items = len(item_ids)
             execution.parameters = parameters
+            await uow.commit()
+
+    async def set_parameters(self, execution_id: int, parameters: dict) -> None:
+        """Replace the execution's parameters, for runners that report as they go."""
+        async with self.uow_factory() as uow:
+            execution = await uow.ingestions.get_execution(execution_id)
+            if execution is None:
+                return
+            execution.parameters = dict(parameters)
             await uow.commit()
 
     async def start_attempt(

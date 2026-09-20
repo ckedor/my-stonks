@@ -35,8 +35,13 @@ const EVENTS = [
 const AI_FEATURES = [
   {
     id: 1,
-    key: 'asset_overview',
-    default_ttl_hours: 24,
+    key: 'asset_description',
+    name: 'Descrição do ativo',
+    description: 'O que o ativo é e como performou.',
+    output_schema_version: 1,
+    enabled: true,
+    freshness: 'manual',
+    ttl_hours: null,
     created_at: '2026-01-15T10:30:00Z',
     updated_at: '2026-02-20T14:00:00Z',
   },
@@ -91,8 +96,8 @@ test('admin/ai-features — listagem', async ({ page, mockApi }) => {
 
   await page.goto('/admin/ai-features')
 
-  await expect(page.getByRole('heading', { name: 'AI Features' })).toBeVisible()
-  await expect(page.getByText('asset_overview')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Funcionalidades de IA' })).toBeVisible()
+  await expect(page.getByText('asset_description')).toBeVisible()
   await expectNothingClipped(page)
 
   await expect(page).toHaveScreenshot('admin-ai-features.png')

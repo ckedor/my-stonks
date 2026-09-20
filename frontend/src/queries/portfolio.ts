@@ -3,6 +3,7 @@ import {
   consolidatePortfolio,
   fetchAnalysis,
   fetchCategoryReturns,
+  fetchContributionAverage,
   fetchDividends,
   fetchPatrimony,
   fetchPortfolios,
@@ -41,7 +42,11 @@ const portfolioKeys = {
     [...portfolioKeys.all, id, 'dividends', currency] as const,
   patrimony: (id: number, currency: Currency) =>
     [...portfolioKeys.all, id, 'patrimony', currency] as const,
-  trades: (id: number) => [...portfolioKeys.all, id, 'trades'] as const,
+  contributionAverage: (id: number, currency: Currency) =>
+    [...portfolioKeys.all, id, 'contribution-average', currency] as const,
+  // The current response includes names for tickerless funds. Retire persisted
+  // results from the old response instead of treating them as current data.
+  trades: (id: number) => [...portfolioKeys.all, id, 'trades', 2] as const,
   wealthTier: (id: number) => [...portfolioKeys.all, id, 'wealth-tier'] as const,
   consolidation: (id: number) => [...portfolioKeys.all, id, 'consolidation'] as const,
   benchmarks: (currency: Currency) => ['benchmarks', currency] as const,
@@ -207,12 +212,35 @@ export function usePatrimony(explicitPortfolioId?: number) {
   })
 }
 
+/** O aporte médio mensal, como o backend o calcula.
+ *
+ *  A página não soma a série por conta própria: este mesmo número aparece na
+ *  jornada do herói, e enquanto cada tela fazia a sua conta as duas mostravam
+ *  valores diferentes sob o mesmo rótulo. A conta é uma só, e é de lá.
+ *
+ *  Leva moeda na chave como os vizinhos: o aporte é convertido pelo preço do
+ *  dia da transação, então a resposta muda com o seletor — ao contrário da
+ *  patente, que é sempre em BRL. */
+export function useContributionAverage(explicitPortfolioId?: number) {
+  const selectedPortfolioId = useSelectedPortfolioId()
+  const portfolioId = explicitPortfolioId ?? selectedPortfolioId
+  const currency = useCurrency()
+  return useQuery({
+    queryKey: portfolioKeys.contributionAverage(portfolioId!, currency),
+    queryFn: () => fetchContributionAverage(portfolioId!, currency),
+    enabled: portfolioId != null,
+  })
+}
+
 export function useTrades(explicitPortfolioId?: number) {
   const selectedPortfolioId = useSelectedPortfolioId()
   const portfolioId = explicitPortfolioId ?? selectedPortfolioId
   return useQuery({
     queryKey: portfolioKeys.trades(portfolioId!),
     queryFn: () => fetchTrades(portfolioId!),
+    // Trades are committed immediately; they do not follow the consolidation
+    // schedule that justifies the five-minute default for portfolio readings.
+    staleTime: 0,
     enabled: portfolioId != null,
   })
 }

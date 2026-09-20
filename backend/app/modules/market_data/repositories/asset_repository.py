@@ -16,6 +16,10 @@ class AssetRepository(SQLAlchemyRepository):
     def __init__(self, session):
         super().__init__(session)
 
+    async def get_exchange_id(self, code: str) -> int | None:
+        result = await self.session.execute(select(Exchange.id).where(Exchange.code == code))
+        return result.scalars().first()
+
     async def get_by_ids(self, asset_ids: list[int]) -> list[Asset]:
         if not asset_ids:
             return []

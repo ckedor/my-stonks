@@ -8,6 +8,8 @@ class DataIngestionType(StrEnum):
     QUOTE = 'quote'
     MARKET_DATA_SERIES = 'market_data_series'
     USD_BRL = 'usd_brl'
+    FUND_REGISTRY = 'fund_registry'
+    FUND_SHARE_VALUE = 'fund_share_value'
 
 
 #: An execution in one of these has not reached an outcome yet, so it still

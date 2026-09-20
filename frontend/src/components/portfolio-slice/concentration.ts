@@ -26,7 +26,7 @@ export interface ConcentrationEntry {
 
 /** As dimensões que existem, uma por campo que uma posição publica.
  *
- *  `asset` é a única que serve a qualquer recorte: todo ativo tem código, e
+ *  `asset` é a única que serve a qualquer recorte: todo ativo tem nome, e
  *  "quanto pesa cada ativo daqui" é a pergunta que toda tela especializada
  *  responde antes de qualquer outra. */
 export const CONCENTRATION_DIMENSIONS = {
@@ -34,7 +34,7 @@ export const CONCENTRATION_DIMENSIONS = {
     value: 'asset',
     label: 'Ativo',
     hint: 'O peso de cada posição do recorte',
-    read: (position) => position.ticker,
+    read: (position) => position.ticker ?? position.name,
   },
   category: {
     value: 'category',

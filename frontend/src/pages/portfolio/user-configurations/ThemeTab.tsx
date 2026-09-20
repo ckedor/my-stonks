@@ -37,9 +37,25 @@ function ThemeCard({
   onDelete?: () => void
 }) {
   return (
-    <AppCard padding="sm" interactive selected={selected} onClick={onSelect}>
+    <AppCard
+      padding="sm"
+      interactive
+      selected={selected}
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      aria-pressed={selected}
+      aria-label={`Aplicar tema ${def.name} ${def.mode === 'light' ? 'claro' : 'escuro'}`}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onSelect()
+        }
+      }}
+    >
       <AppStack gap="sm">
-        <AppThemePreview colors={def.preview} />
+        <AppThemePreview colors={def.preview} sampleTheme={def.theme} />
 
         <AppStack gap="none">
           <AppStack direction="row" justify="between" align="center" gap="xs">

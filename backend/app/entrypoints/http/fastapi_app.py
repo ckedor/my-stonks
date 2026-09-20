@@ -20,6 +20,7 @@ from app.core.exceptions import (
 )
 from app.entrypoints.http.module_docs import setup_module_docs
 from app.entrypoints.http.router import router as main_router
+from app.infra.ai.factory import close_ai_provider
 from app.infra.exceptions import (
     CacheError,
     DatabaseError,
@@ -30,7 +31,6 @@ from app.infra.exceptions import (
     IntegrationTimeout,
     IntegrationUnavailable,
 )
-from app.infra.openai.openai_client import close_ai_provider
 from app.modules.users.views import setup_user_views
 
 _STATUS_MAP: dict[type[AppError], int] = {

@@ -25,7 +25,9 @@ class WealthTierProjection(BaseModel):
     defende: ela vale o que valem o aporte médio e a taxa que a produziram.
     """
 
-    #: Média mensal de aporte na janela recente, na moeda base.
+    #: Aporte médio mensal da história inteira da carteira, sempre em BRL —
+    #: a escala de patentes é fixa em reais, e o ritmo que projeta a chegada a
+    #: um degrau tem de ser medido na moeda do degrau.
     monthly_contribution: float
     #: Taxa anual da carteira, como fração — 0.12 é 12% ao ano.
     annual_rate: float

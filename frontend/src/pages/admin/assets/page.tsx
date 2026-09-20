@@ -1,5 +1,6 @@
 import { ASSET_ROUTES, MARKET_DATA_SERIES_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance'
 import AddIcon from '@mui/icons-material/Add'
 import axios from 'axios'
 import {
@@ -7,7 +8,9 @@ import {
     AppConfirmDialog,
     AppCrudForm,
     AppCrudTable,
+    AppFilterBar,
     AppSearchField,
+    AppSelect,
     AppSnackbar,
     AppStack,
     type ColumnConfig,
@@ -15,6 +18,9 @@ import {
     PageTitle,
 } from '@/components/ui'
 import CrudPageSkeleton from '../CrudPageSkeleton'
+import { FundRegistrationDrawer } from '@/components/fund-registry/FundRegistrationDrawer'
+import AssetDescriptionDraftButton from './AssetDescriptionDraftButton'
+import { FundRegistryPanel } from './FundRegistryPanel'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 interface AssetType {
@@ -75,6 +81,8 @@ const FIXED_INCOME_TYPES = new Set([8, 9, 10, 11, 14]) // CDB, DEB, CRI, CRA, LC
 const FUND_TYPES = new Set([7, 6]) // FI, PREV
 const TREASURY_TYPES = new Set([3]) // TREASURY
 
+const ALL = 'all'
+
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   if (!axios.isAxiosError(error)) return fallback
   const message = error.response?.data?.message
@@ -83,12 +91,14 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
 
 export default function AdminAssetsPage() {
   const [assets, setAssets] = useState<AssetRow[]>([])
-  const [filteredAssets, setFilteredAssets] = useState<AssetRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [classFilter, setClassFilter] = useState(ALL)
+  const [typeFilter, setTypeFilter] = useState(ALL)
   const [formOpen, setFormOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState<AssetRow | null>(null)
+  const [fundRegistrationOpen, setFundRegistrationOpen] = useState(false)
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' })
 
   // Reference data
@@ -107,21 +117,46 @@ export default function AdminAssetsPage() {
     fetchData()
   }, [])
 
-  useEffect(() => {
-    if (search.trim() === '') {
-      setFilteredAssets(assets)
-    } else {
-      const s = search.toLowerCase()
-      setFilteredAssets(
-        assets.filter(
-          (a) =>
-            a.ticker?.toLowerCase().includes(s) ||
-            a.name.toLowerCase().includes(s) ||
-            a.asset_type?.short_name.toLowerCase().includes(s),
-        ),
+  const filteredAssets = useMemo(() => {
+    const s = search.trim().toLowerCase()
+    return assets.filter((a) => {
+      if (classFilter !== ALL && String(a.asset_type?.asset_class_id) !== classFilter) return false
+      if (typeFilter !== ALL && String(a.asset_type_id) !== typeFilter) return false
+      if (s === '') return true
+      return (
+        a.ticker?.toLowerCase().includes(s) ||
+        a.name.toLowerCase().includes(s) ||
+        a.asset_type?.short_name.toLowerCase().includes(s)
       )
-    }
-  }, [search, assets])
+    })
+  }, [search, classFilter, typeFilter, assets])
+
+  const classOptions = useMemo(() => {
+    const classes = new Map(assetTypes.map((t) => [t.asset_class.id, t.asset_class.name]))
+    return [
+      { value: ALL, label: 'Todas' },
+      ...[...classes]
+        .sort(([, a], [, b]) => a.localeCompare(b))
+        .map(([id, name]) => ({ value: String(id), label: name })),
+    ]
+  }, [assetTypes])
+
+  // O tipo depende da classe: escolhida uma classe, só os tipos dela aparecem.
+  const typeOptions = useMemo(
+    () => [
+      { value: ALL, label: 'Todos' },
+      ...assetTypes
+        .filter((t) => classFilter === ALL || String(t.asset_class_id) === classFilter)
+        .sort((a, b) => a.short_name.localeCompare(b.short_name))
+        .map((t) => ({ value: String(t.id), label: `${t.short_name} — ${t.name}` })),
+    ],
+    [assetTypes, classFilter],
+  )
+
+  const handleClassFilterChange = (value: string) => {
+    setClassFilter(value)
+    setTypeFilter(ALL)
+  }
 
   const fetchData = async () => {
     setLoading(true)
@@ -138,7 +173,6 @@ export default function AdminAssetsPage() {
           api.get(MARKET_DATA_SERIES_ROUTES.options),
         ])
       setAssets(assetsRes.data)
-      setFilteredAssets(assetsRes.data)
       setAssetTypes(typesRes.data)
       setExchanges(exchangesRes.data)
       setFiiSegments(fiiSegRes.data)
@@ -171,6 +205,8 @@ export default function AdminAssetsPage() {
         name: detail.name,
         asset_type_id: detail.asset_type_id,
         exchange_id: detail.exchange_id,
+        summary: detail.summary ?? '',
+        description: detail.description ?? '',
       }
       if (detail.stock) {
         flat.country = detail.stock.country
@@ -191,9 +227,9 @@ export default function AdminAssetsPage() {
       }
       if (detail.fund) {
         flat.legal_id = detail.fund.legal_id
-        flat.anbima_code = detail.fund.anbima_code
-        flat.anbima_code_class = detail.fund.anbima_code_class
         flat.anbima_category = detail.fund.anbima_category
+        flat.fund_registry_class_id = detail.fund.fund_registry_class_id
+        flat.fund_share_series_id = detail.fund.fund_share_series_id
       }
       if (detail.treasury_bond) {
         flat.treasury_bond_type_id = detail.treasury_bond.type_id
@@ -270,6 +306,9 @@ export default function AdminAssetsPage() {
     },
   ]
 
+  const registryClassId = (selectedAsset?.fund_registry_class_id as number | null | undefined) ?? null
+  const linkedFund = registryClassId !== null
+
   const getSubclassFields = useCallback(
     (typeId: number | null): FieldConfig[] => {
       if (!typeId) return []
@@ -320,11 +359,11 @@ export default function AdminAssetsPage() {
         ]
       }
       if (FUND_TYPES.has(typeId)) {
+        // Um fundo vinculado ao cadastro da CVM tem o CNPJ da classe; a categoria
+        // digitada só vale quando o cadastro não traz classificação ANBIMA.
         return [
-          { name: 'legal_id', label: 'CNPJ', type: 'text' },
-          { name: 'anbima_code', label: 'Código ANBIMA', type: 'text' },
-          { name: 'anbima_code_class', label: 'Classe ANBIMA', type: 'text' },
-          { name: 'anbima_category', label: 'Categoria ANBIMA', type: 'text' },
+          { name: 'legal_id', label: 'CNPJ', type: 'text', disabled: linkedFund },
+          { name: 'anbima_category', label: 'Categoria ANBIMA (se o cadastro não tiver)', type: 'text' },
         ]
       }
       if (TREASURY_TYPES.has(typeId)) {
@@ -342,7 +381,7 @@ export default function AdminAssetsPage() {
       }
       return []
     },
-    [fiiSegments, etfSegments, fixedIncomeTypes, treasuryBondTypes, referenceSeries],
+    [fiiSegments, etfSegments, fixedIncomeTypes, treasuryBondTypes, referenceSeries, linkedFund],
   )
 
   const baseFields: FieldConfig[] = useMemo(
@@ -366,9 +405,46 @@ export default function AdminAssetsPage() {
     [assetTypes, exchanges],
   )
 
+  /* O texto de cadastro é do mantenedor, e o botão só propõe.
+   *
+   * Nada do que a IA escreve chega ao banco por conta própria: o rascunho cai
+   * nos campos, quem edita e salva é quem está na tela. É por isso que não há
+   * coluna dizendo de onde o texto veio — o que está gravado é sempre o que
+   * alguém gravou. Só faz sentido com o ativo já existindo, porque o rascunho
+   * é montado a partir do cadastro e das cotações dele. */
+  const registryTextFields: FieldConfig[] = useMemo(
+    () => [
+      {
+        name: 'summary',
+        label: 'Resumo',
+        type: 'text',
+        helperText: 'Uma frase. É o que aparece numa linha de lista.',
+        action: selectedAsset
+          ? (setFieldValue) => (
+              <AssetDescriptionDraftButton
+                assetId={selectedAsset.id}
+                onDraft={(draft) => {
+                  setFieldValue('summary', draft.summary)
+                  setFieldValue('description', draft.description)
+                }}
+              />
+            )
+          : undefined,
+      },
+      {
+        name: 'description',
+        label: 'Descrição',
+        type: 'text',
+        rows: 6,
+        helperText: 'O texto da página do ativo.',
+      },
+    ],
+    [selectedAsset],
+  )
+
   const fields: FieldConfig[] = useMemo(
-    () => [...baseFields, ...getSubclassFields(selectedTypeId)],
-    [baseFields, getSubclassFields, selectedTypeId],
+    () => [...baseFields, ...getSubclassFields(selectedTypeId), ...registryTextFields],
+    [baseFields, getSubclassFields, selectedTypeId, registryTextFields],
   )
 
   // Watch when form opens with existing asset to set the type
@@ -384,17 +460,30 @@ export default function AdminAssetsPage() {
       <AppStack gap="lg">
         <AppStack direction="row" justify="between" align="center">
           <PageTitle>Gerenciamento de Ativos</PageTitle>
-          <AppButton icon={<AddIcon />} onClick={handleCreate}>
-            Novo Ativo
-          </AppButton>
+          <AppStack direction="row" gap="sm">
+            <AppButton emphasis="outline" icon={<AccountBalanceIcon />} onClick={() => setFundRegistrationOpen(true)}>
+              Cadastrar fundo
+            </AppButton>
+            <AppButton icon={<AddIcon />} onClick={handleCreate}>
+              Novo Ativo
+            </AppButton>
+          </AppStack>
         </AppStack>
 
         <AppStack gap="md">
-          <AppSearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Busque por ticker, nome ou tipo..."
-          />
+          <AppFilterBar>
+            <AppSearchField
+              label="Buscar ativo"
+              placeholder="Busque por ticker, nome ou tipo..."
+              hideLabel
+              icon
+              size="bar"
+              value={search}
+              onChange={setSearch}
+            />
+            <AppSelect label="Classe" options={classOptions} value={classFilter} onChange={handleClassFilterChange} />
+            <AppSelect label="Tipo" options={typeOptions} value={typeFilter} onChange={setTypeFilter} size="md" />
+          </AppFilterBar>
 
           <AppCrudTable data={filteredAssets} columns={columns} onEdit={handleEdit} onDelete={handleDelete} />
         </AppStack>
@@ -412,6 +501,23 @@ export default function AdminAssetsPage() {
           if (name === 'asset_type_id') {
             setSelectedTypeId(value as number)
           }
+        }}
+      >
+        {linkedFund && selectedAsset?.id && selectedTypeId !== null && FUND_TYPES.has(selectedTypeId) && (
+          <FundRegistryPanel
+            assetId={selectedAsset.id}
+            classId={registryClassId}
+            seriesId={(selectedAsset.fund_share_series_id as number | null | undefined) ?? null}
+          />
+        )}
+      </AppCrudForm>
+
+      <FundRegistrationDrawer
+        open={fundRegistrationOpen}
+        onClose={() => setFundRegistrationOpen(false)}
+        onRegistered={(assetId) => {
+          setSnackbar({ open: true, message: `Fundo cadastrado como ativo #${assetId}`, severity: 'success' })
+          fetchData()
         }}
       />
 

@@ -4,7 +4,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from app.composition.market_data import get_asset_catalogue_sync_service, get_asset_service
+from app.composition.market_data import (
+    get_asset_catalogue_sync_service,
+    get_asset_service,
+    get_cvm_registry_sync_service,
+    get_fund_registry_link_service,
+)
 from app.modules.market_data.api.asset.schemas import (
     AssetCreate,
     AssetDetailsOut,
@@ -12,17 +17,33 @@ from app.modules.market_data.api.asset.schemas import (
     AssetSyncReport,
     AssetType,
     AssetUpdate,
+    CvmRegistrySyncReport,
     ExchangeOut,
     FavoriteAsset,
     FavoriteAssetFilters,
     FixedIncomeAsset,
     FixedIncomeType,
+    FundLinkRequest,
+    FundLinkResult,
+    FundLinkSuggestionReport,
     TreasuryBondTypeOut,
+)
+from app.modules.market_data.api.fund_registry.schemas import (
+    ConfirmSeriesAliasesRequest,
+    FundShareSeriesAliasOut,
+    RegisterFundRequest,
+    SelectFundSeriesRequest,
 )
 from app.modules.market_data.service.asset_catalogue_sync_service import (
     AssetCatalogueSyncService,
 )
 from app.modules.market_data.service.asset_service import AssetService
+from app.modules.market_data.service.cvm_registry_sync_service import (
+    CvmRegistrySyncService,
+)
+from app.modules.market_data.service.fund_registry_link_service import (
+    FundRegistryLinkService,
+)
 from app.modules.users.domain import User
 from app.modules.users.views import current_active_user, current_superuser
 
@@ -79,6 +100,45 @@ async def list_treasury_bond_types(
 ):
     """List all treasury bond types."""
     return await service.list_treasury_bond_types()
+
+
+@router.post('/fund', dependencies=[Depends(current_active_user)])
+async def register_fund(
+    payload: RegisterFundRequest,
+    service: AssetService = Depends(get_asset_service),
+):
+    """Make one priced unit of a registered fund class an FI or PREV asset."""
+    return await service.register_fund(**payload.model_dump())
+
+
+@router.put('/fund/{asset_id}/series', dependencies=[Depends(current_superuser)])
+async def select_fund_series(
+    asset_id: int,
+    payload: SelectFundSeriesRequest,
+    service: AssetService = Depends(get_asset_service),
+):
+    """Confirm the series of a legacy FIDC asset without replacing its transactions."""
+    return await service.select_fund_series(asset_id, **payload.model_dump())
+
+
+@router.put(
+    '/fund/{asset_id}/series-aliases',
+    response_model=list[FundShareSeriesAliasOut],
+    dependencies=[Depends(current_superuser)],
+)
+async def confirm_fund_series_aliases(
+    asset_id: int,
+    payload: ConfirmSeriesAliasesRequest,
+    service: AssetService = Depends(get_asset_service),
+):
+    """Confirm filing labels that meant the asset's series, keeping earlier ones.
+
+    Share values applied under the previous aliases stop counting as covered,
+    so the next share-value ingestion re-reads the asset's history.
+    """
+    return await service.confirm_series_aliases(
+        asset_id, [alias.model_dump() for alias in payload.aliases]
+    )
 
 
 @router.get('/exchange', response_model=list[ExchangeOut])
@@ -177,6 +237,62 @@ async def sync_assets_with_catalogue(
     repete com `dry_run=false`.
     """
     return await service.sync(kinds=kinds, dry_run=dry_run)
+
+
+@router.post(
+    '/registry_sync',
+    response_model=CvmRegistrySyncReport,
+    dependencies=[Depends(current_superuser)],
+)
+async def sync_assets_with_regulator(
+    dry_run: bool = Query(default=True),
+    service: CvmRegistrySyncService = Depends(get_cvm_registry_sync_service),
+):
+    """Casar o cadastro local com o que a CVM publica sobre companhias.
+
+    Preenche as pessoas jurídicas e liga cada ação à companhia que a emitiu,
+    com a espécie do papel e o segmento de listagem que vêm junto. `dry_run` é
+    o padrão porque a rota reescreve dado que a tela mostra: primeiro se lê o
+    relatório, depois se repete com `dry_run=false`.
+    """
+    return await service.sync(dry_run=dry_run)
+
+
+@router.get(
+    '/fund_link/suggestions',
+    response_model=FundLinkSuggestionReport,
+    dependencies=[Depends(current_superuser)],
+)
+async def suggest_fund_links(
+    service: FundRegistryLinkService = Depends(get_fund_registry_link_service),
+):
+    """As propostas de vínculo entre um FII e o fundo registrado na CVM.
+
+    Só propõe: um CNPJ que aponta para mais de um registro sai como ambíguo, e
+    um que o registro não conhece sai como desconhecido. Nenhum dos dois vira
+    palpite, e nada é gravado aqui.
+    """
+    return await service.suggest_fii_links()
+
+
+@router.post(
+    '/fund_link',
+    response_model=FundLinkResult,
+    dependencies=[Depends(current_superuser)],
+)
+async def link_asset_to_fund_registry(
+    payload: FundLinkRequest,
+    service: FundRegistryLinkService = Depends(get_fund_registry_link_service),
+):
+    """Confirma o vínculo de um FII ou ETF com um fundo do registro.
+
+    É por aqui que o ETF entra: o catálogo do provedor não traz o CNPJ dele,
+    então o fundo é achado pela busca do registro e confirmado à mão.
+    """
+    return await service.link(
+        asset_id=payload.asset_id,
+        fund_registry_id=payload.fund_registry_id,
+    )
 
 
 # ---------------------------------------------------------------------------

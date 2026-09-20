@@ -1,5 +1,6 @@
 import {
   AppDateField,
+  AppFilterBar,
   AppSearchField,
   AppSelect,
   AppToggleGroup,
@@ -51,22 +52,31 @@ export default function AssetListToolbar({
   onViewChange,
 }: AssetListToolbarProps) {
   return (
-    <>
-      <AppSearchField label="Buscar Ativo" size="bar" value={search} onChange={onSearchChange} />
+    <AppFilterBar>
+      <AppSearchField
+        label="Buscar ativo"
+        placeholder="Buscar ativo…"
+        hideLabel
+        icon
+        size="bar"
+        value={search}
+        onChange={onSearchChange}
+      />
       <AppSelect
         label="Agrupar"
         options={GROUP_BY_OPTIONS}
         value={groupBy}
         onChange={(value) => onGroupByChange(value as AssetGroupBy)}
-        density="comfortable"
+        density="compact"
       />
-      <AppDateField label="Data" value={date} onChange={onDateChange} />
+      <AppDateField density="compact" label="Data" value={date} onChange={onDateChange} />
       <AppToggleGroup
         label="Modo de exibição"
+        presentation="view"
         options={VIEW_OPTIONS}
         value={view}
         onChange={onViewChange}
       />
-    </>
+    </AppFilterBar>
   )
 }

@@ -87,8 +87,9 @@ def _recorded(repository) -> list[dict]:
 async def test_a_payment_is_recorded_on_the_day_it_was_paid():
     service, repository = _service([_payment(0.09, event_type='RENDIMENTO')])
 
-    await service.consolidate_fii_dividends(7)
+    changed_assets = await service.consolidate_fii_dividends(7)
 
+    assert changed_assets == [10]
     recorded = _recorded(repository)
     assert len(recorded) == 1
     assert recorded[0]['portfolio_id'] == 7

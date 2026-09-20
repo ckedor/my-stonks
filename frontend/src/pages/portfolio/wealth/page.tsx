@@ -1,5 +1,10 @@
 import { EMPTY_LIST } from '@/queries/empty'
-import { usePatrimony, useReturnCurves, useSelectedPortfolio } from '@/queries/portfolio'
+import {
+  useContributionAverage,
+  usePatrimony,
+  useReturnCurves,
+  useSelectedPortfolio,
+} from '@/queries/portfolio'
 import PortfolioPatrimonyChart from '@/components/PortfolioPatrimonyChart'
 import {
   AppCard,
@@ -11,7 +16,6 @@ import {
   type AppSelectOption,
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
-import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
 import PortfolioMonthlyAportsChart from './PortfolioMonthlyAportsChart'
 
@@ -58,31 +62,20 @@ export default function PortfolioPatrimonyEvolution() {
     return cagr == null ? null : Number((cagr * 100).toFixed(2))
   }, [categoryCagr, selectedCategory])
 
-  /* O aporte é a média mensal do que entrou, e ele é líquido: `aported` vem do
-   *  backend como quantidade × preço somada por dia, e venda entra com
-   *  quantidade negativa — então resgate já desconta sozinho, sem a página
-   *  precisar tratar saída como caso à parte.
+  /* O aporte médio vem pronto do backend, e não somado aqui.
    *
-   *  A média é do histórico inteiro, e não dos últimos doze meses: o número
-   *  serve de ponto de partida para uma projeção de anos, e uma janela curta
-   *  faria um mês atípico virar a premissa de uma década. É portfolio-wide,
-   *  igual para toda categoria — `aported` não é recortado por categoria. */
-  const defaultContribution = useMemo(() => {
-    if (patrimonyEvolution.length === 0) return null
-
-    let total = 0
-    for (const entry of patrimonyEvolution) {
-      const value = entry.aported
-      if (typeof value === 'number' && Number.isFinite(value)) total += value
-    }
-    if (total === 0) return null
-
-    const first = dayjs(patrimonyEvolution[0].date)
-    const last = dayjs(patrimonyEvolution[patrimonyEvolution.length - 1].date)
-    const months = Math.max(1, last.diff(first, 'month'))
-
-    return Math.round(total / months)
-  }, [patrimonyEvolution])
+   *  Este mesmo número aparece na jornada do herói, e enquanto cada tela fazia
+   *  a sua conta as duas discordavam sob o mesmo rótulo — R$ 3.909 aqui e
+   *  R$ 2.831 lá, a diferença sendo o aporte que abriu a carteira. A conta é
+   *  uma só, no domínio do backend: ver `domain/contribution_average.py`.
+   *
+   *  Ele é líquido — venda entra com quantidade negativa, então resgate já
+   *  desconta —, é da história inteira, e é portfolio-wide: não muda com a
+   *  categoria escolhida, porque aporte não é recortado por categoria. Segue
+   *  o seletor de moeda como o resto da página, convertido pelo preço do dia
+   *  de cada transação. */
+  const contributionAverage = useContributionAverage().data ?? null
+  const defaultContribution = contributionAverage?.monthly_average || null
 
   if (loading) {
     return (

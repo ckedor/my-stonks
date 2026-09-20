@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from app.modules.portfolio.domain.contribution_average import contribution_average
 from app.modules.portfolio.domain.wealth_tier_ladder import LADDER as REAL_LADDER
 from app.modules.portfolio.domain.wealth_tier_ladder import WealthTier
 from app.modules.portfolio.service.portfolio_wealth_tier_service import (
@@ -18,10 +19,22 @@ LADDER = [
 
 
 def _build(evolution=None, tiers=None, returns=None):
-    """A service over a short, readable ladder and a fixed patrimony series."""
+    """A service over a short, readable ladder and a fixed patrimony series.
+
+    O aporte médio não é dublado por um número fixo: o duplo chama a mesma
+    função de domínio que o serviço real chamaria, sobre a mesma série. Assim
+    estes testes continuam provando a ligação — que a jornada pede a média, em
+    BRL, e lê o campo certo dela — enquanto a aritmética é provada em
+    `test_contribution_average.py`.
+    """
+
+    async def _average(portfolio_id, currency='BRL'):
+        return contribution_average(evolution or [])
+
     position_service = SimpleNamespace(
         get_patrimony_evolution=AsyncMock(return_value=evolution),
         get_portfolio_returns=AsyncMock(return_value=returns or []),
+        get_contribution_average=AsyncMock(side_effect=_average),
     )
     service = PortfolioWealthTierService(
         position_service=position_service,
@@ -185,8 +198,13 @@ async def test_gaps_in_the_series_do_not_break_the_reading():
 
 
 def _aported(*pairs):
-    """A evolução como a projeção a lê: data e aporte acumulado."""
-    return [{'date': date, 'portfolio': 100_000.0, 'acc_aported': value} for date, value in pairs]
+    """A evolução como a projeção a lê: data e aporte **daquele dia**.
+
+    Não o acumulado: a primeira ponta de um acumulado já inclui o aporte que
+    abriu a carteira, e era justamente por subtraí-la que a jornada mostrava
+    um ritmo menor do que a tela de patrimônio.
+    """
+    return [{'date': date, 'portfolio': 100_000.0, 'aported': value} for date, value in pairs]
 
 
 @pytest.mark.asyncio
@@ -209,21 +227,41 @@ async def test_the_annual_rate_is_the_cagr_as_stored():
 
 
 @pytest.mark.asyncio
-async def test_the_contribution_average_spans_the_whole_history():
-    """Doze mil em doze meses é mil por mês, e a janela é a história inteira.
+async def test_the_projection_uses_the_shared_contribution_average():
+    """O ritmo da projeção é o mesmo número que a tela de patrimônio mostra.
 
-    A média saía de uma janela curta, e com ela a data da próxima patente
-    pulava a cada semestre bom ou ruim. A projeção fala de anos: o ritmo que
-    ela usa é o de sempre, medido entre as duas pontas da série.
+    A jornada já teve conta própria, e as duas telas mostravam valores
+    diferentes sob o mesmo rótulo. Aqui se prova a ligação: doze mil em doze
+    meses, contando o primeiro dia, é mil por mês nas duas.
     """
-    service, *_ = _build(
-        _aported(('2024-01-01', 0.0), ('2024-07-01', 11_000.0), ('2025-01-01', 12_000.0)),
+    service, _, _, position_service = _build(
+        _aported(('2024-01-01', 4_000.0), ('2024-07-01', 7_000.0), ('2025-01-01', 1_000.0)),
         returns=[],
     )
 
     standing = await service.get_portfolio_tier(portfolio_id=1)
 
     assert standing['projection']['monthly_contribution'] == pytest.approx(1_000.0)
+    position_service.get_contribution_average.assert_awaited_once_with(1, currency='BRL')
+
+
+@pytest.mark.asyncio
+async def test_the_pace_is_measured_in_the_currency_of_the_ladder():
+    """A escala é fixa em reais, e o ritmo que projeta a chegada também.
+
+    O seletor de moeda da tela não chega aqui: um aporte médio em dólar
+    projetaria a chegada a um degrau que não é medido em dólar, e a data
+    mudaria de lugar ao trocar o seletor sem nada na carteira ter mudado.
+    """
+    service, _, _, position_service = _build(
+        _aported(('2024-01-01', 4_000.0), ('2025-01-01', 8_000.0)),
+        returns=[],
+    )
+
+    await service.get_portfolio_tier(portfolio_id=1)
+
+    _, kwargs = position_service.get_contribution_average.await_args
+    assert kwargs['currency'] == 'BRL'
 
 
 @pytest.mark.asyncio

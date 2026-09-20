@@ -17,6 +17,11 @@ import PortfolioStandingCard from './PortfolioStandingCard'
 
 const format = (value: number) => `R$ ${value.toLocaleString('pt-BR')}`
 
+/* O seletor de moeda da tela, como o card o recebe quando o usuário escolhe
+   dólar: o patrimônio vem convertido da série, então ele muda de símbolo. */
+const formatUSD = (value: number) =>
+  `US$ ${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+
 const tier = (rank: number, name: string, threshold: number): WealthTier => ({
   id: rank,
   rank,
@@ -24,7 +29,11 @@ const tier = (rank: number, name: string, threshold: number): WealthTier => ({
   threshold,
 })
 
-function renderCard(standing: PortfolioWealthTier | null, patrimony = 219_018.63) {
+function renderCard(
+  standing: PortfolioWealthTier | null,
+  patrimony = 219_018.63,
+  formatCurrency = format,
+) {
   return render(
     <ThemeRegistry>
       <PortfolioStandingCard
@@ -32,7 +41,7 @@ function renderCard(standing: PortfolioWealthTier | null, patrimony = 219_018.63
         cagr={24.03}
         cdiPct={185}
         standing={standing}
-        formatCurrency={format}
+        formatCurrency={formatCurrency}
       />
     </ThemeRegistry>,
   )
@@ -52,7 +61,7 @@ describe('PortfolioStandingCard', () => {
 
     expect(screen.getByText('Camponês')).toBeInTheDocument()
     expect(screen.getByText('Mercador')).toBeInTheDocument()
-    expect(screen.getByText('R$ 80.000')).toBeInTheDocument()
+    expect(screen.getByText('R$ 80.000,00')).toBeInTheDocument()
   })
 
   it('mantém a patente e mostra a distância de hoje quando a carteira caiu', () => {
@@ -71,7 +80,31 @@ describe('PortfolioStandingCard', () => {
     })
 
     expect(screen.getByText('Camponês')).toBeInTheDocument()
-    expect(screen.getByText('R$ 170.000')).toBeInTheDocument()
+    expect(screen.getByText('R$ 170.000,00')).toBeInTheDocument()
+  })
+
+  it('mede o degrau em reais mesmo com a tela em dólar', () => {
+    /* A escala é fixa em reais no backend, e o que falta vem dela. Formatado
+       com o símbolo da tela, o mesmo número virava "US$ 80.000" — o degrau
+       não custa oitenta mil dólares, e nada ali foi convertido. O patrimônio,
+       esse sim, vem da série na moeda exibida e segue o seletor. */
+    renderCard(
+      {
+        peak_patrimony: 120_000,
+        current_patrimony: 120_000,
+        current_tier: tier(3, 'Camponês', 100_000),
+        next_tier: tier(4, 'Mercador', 200_000),
+        remaining: 80_000,
+        progress: 0.2,
+        projection: null,
+      },
+      40_000,
+      formatUSD,
+    )
+
+    expect(screen.getByText('R$ 80.000,00')).toBeInTheDocument()
+    expect(screen.queryByText('US$ 80,000.00')).not.toBeInTheDocument()
+    expect(screen.getByText('US$ 40,000.00')).toBeInTheDocument()
   })
 
   it('no topo da escala não promete um próximo degrau', () => {

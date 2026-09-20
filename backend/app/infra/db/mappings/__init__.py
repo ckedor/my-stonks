@@ -1,6 +1,7 @@
 from app.infra.db.mappings.ai import map_ai
 from app.infra.db.mappings.asset_visit import map_asset_visit
 from app.infra.db.mappings.assets import map_assets
+from app.infra.db.mappings.fund_share_value import map_fund_share_value
 from app.infra.db.mappings.ingestion import map_data_ingestion
 from app.infra.db.mappings.lab import map_lab
 from app.infra.db.mappings.market_data_series import map_market_data_series
@@ -17,13 +18,14 @@ def start_mappers() -> None:
     map_users()
     map_assets()
     map_portfolio()
-    map_ai()
     map_asset_visit()
     map_usd_brl()
     map_quote()
+    map_fund_share_value()
     map_data_ingestion()
     map_research()
     map_lab()
+    map_ai()
 
 
 __all__ = ['start_mappers']

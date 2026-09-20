@@ -39,7 +39,14 @@ export const ASSET_ROUTES = {
   favorites: `${MARKET_DATA}/asset/favorites`,
   visit: (assetId: number | string) => `${MARKET_DATA}/asset/${assetId}/visit`,
   sync: `${MARKET_DATA}/asset/sync`,
+  registrySync: `${MARKET_DATA}/asset/registry_sync`,
+  fundLink: `${MARKET_DATA}/asset/fund_link`,
+  fundLinkSuggestions: `${MARKET_DATA}/asset/fund_link/suggestions`,
   event: `${MARKET_DATA}/asset/event`,
+  registerFund: `${MARKET_DATA}/asset/fund`,
+  fundSeries: (assetId: number | string) => `${MARKET_DATA}/asset/fund/${assetId}/series`,
+  fundSeriesAliases: (assetId: number | string) =>
+    `${MARKET_DATA}/asset/fund/${assetId}/series-aliases`,
   eventById: (eventId: number | string) => `${MARKET_DATA}/asset/event/${eventId}`,
 } as const
 
@@ -82,6 +89,14 @@ export const FII_ROUTES = {
 // Um fundo de investimento aqui é o que não é FII nem ETF: FIAGRO, FI-Infra,
 // FIDC, FIP e FIF. Os dois de fora têm leitura própria — o FII publica prédios
 // e vacância, e o ETF se lê como qualquer ativo listado.
+// O cadastro de fundos do regulador. Uma linha dele não é ativo: vira ativo só
+// quando a unidade precificada — classe, subclasse ou série — é cadastrada.
+export const FUND_REGISTRY_ROUTES = {
+  search: `${MARKET_DATA}/fund_registry`,
+  class: (classId: number | string) => `${MARKET_DATA}/fund_registry/class/${classId}`,
+  series: (classId: number | string) => `${MARKET_DATA}/fund_registry/class/${classId}/series`,
+} as const
+
 export const INVESTMENT_FUND_ROUTES = {
   market: `${MARKET_DATA}/investment_fund/market`,
   profile: (assetId: number | string) => `${MARKET_DATA}/investment_fund/${assetId}/profile`,
@@ -174,6 +189,8 @@ export const POSITION_ROUTES = {
     `${PORTFOLIO}/position/${portfolioId}/segment/${segment}/analysis`,
   patrimonyEvolution: (portfolioId: number | string) =>
     `${PORTFOLIO}/position/${portfolioId}/patrimony_evolution`,
+  contributionAverage: (portfolioId: number | string) =>
+    `${PORTFOLIO}/position/${portfolioId}/contribution-average`,
   analysis: (portfolioId: number | string) => `${PORTFOLIO}/position/${portfolioId}/analysis`,
   categoryReturns: (portfolioId: number | string) =>
     `${PORTFOLIO}/position/${portfolioId}/category/returns`,
@@ -223,17 +240,6 @@ export const USER_CONFIGURATION_ROUTES = {
 } as const
 
 // ---------------------------------------------------------------------------
-// AI
-// ---------------------------------------------------------------------------
-const AI = '/ai'
-
-export const AI_ROUTES = {
-  feature: `${AI}/feature`,
-  featureById: (featureId: number | string) => `${AI}/feature/${featureId}`,
-  assetOverviewAndNews: `${AI}/asset_overview_and_news`,
-} as const
-
-// ---------------------------------------------------------------------------
 // Laboratório
 // ---------------------------------------------------------------------------
 const LAB = '/lab'
@@ -263,4 +269,26 @@ export const RESEARCH_ROUTES = {
   recommendedPortfolioType: `${RESEARCH}/recommended_portfolio_type`,
   recommendedPortfolioTypeById: (id: number | string) =>
     `${RESEARCH}/recommended_portfolio_type/${id}`,
+} as const
+
+// ---------------------------------------------------------------------------
+// IA
+// ---------------------------------------------------------------------------
+const AI = '/ai'
+
+// A feature é endereçada pela `key` e não por id: a chave é a identidade de
+// domínio de uma capacidade de IA, é ela que o admin executa e ela que a rota
+// de produto pede.
+export const AI_ROUTES = {
+  feature: `${AI}/feature`,
+  featureByKey: (key: string) => `${AI}/feature/${key}`,
+  featureForm: (key: string) => `${AI}/feature/${key}/form`,
+  featureRun: (key: string) => `${AI}/feature/${key}/run`,
+  featureSchedule: (key: string) => `${AI}/feature/${key}/schedule`,
+  featurePromptVersion: (key: string) => `${AI}/feature/${key}/prompt_version`,
+  promptVersionActivate: (versionId: number | string) =>
+    `${AI}/prompt_version/${versionId}/activate`,
+  usage: `${AI}/usage`,
+  run: `${AI}/run`,
+  assetDescriptionDraft: `${AI}/asset_description_draft`,
 } as const

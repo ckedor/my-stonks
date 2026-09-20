@@ -9,6 +9,10 @@ SERVICE_ROOT = BACKEND_ROOT / 'app' / 'modules'
 # Services that legitimately need several independent transactions.
 UOW_FACTORY_ALLOWED = {
     'DataIngestionService',
+    # Each registry file is one transaction, apart from attempt tracking.
+    'FundRegistryIngestionService',
+    # Each fund's quotes and coverage commit alone, so one failure spares the rest.
+    'FundShareValueIngestionService',
     'MarketDataSeriesIngestionService',
     'QuoteService',
     'UsdBrlIngestionService',

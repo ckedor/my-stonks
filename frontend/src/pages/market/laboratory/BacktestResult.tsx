@@ -61,7 +61,8 @@ export default function BacktestResult({ result, tab, benchmarks }: Props) {
 
   const cagr = result.analysis?.performance_metrics.cagr ?? null
   const cdi = result.analysis?.performance_metrics.benchmarks_metrics.CDI
-  const overCdi = cagr != null && cdi && cdi.cagr !== 0 ? (cagr / cdi.cagr) * 100 : null
+  const overCdi =
+    cagr != null && cdi?.cagr != null && cdi.cagr !== 0 ? (cagr / cdi.cagr) * 100 : null
 
   const lineColumns: AppSimpleTableColumn<BacktestResultPayload['lines'][number]>[] = [
     { label: 'Linha', width: 'clamped', render: (line) => line.label },

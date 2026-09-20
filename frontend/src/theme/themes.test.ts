@@ -92,6 +92,21 @@ function contrastRatio(a: string, b: string): number {
   return (lighter + 0.05) / (darker + 0.05)
 }
 
+/* Positivo e negativo são número escrito com `success.main` e `error.main` em
+   cima do card — `AppTable` pinta a célula, `AppMetric` o valor. São texto
+   normal, então valem os mesmos 4.5:1 do `text.primary`, e não os 3:1 de
+   elemento de interface: um verde bonito e claro demais some na linha da
+   tabela, que é justamente onde ele mais é lido. */
+describe('legibilidade do sinal sobre o card', () => {
+  for (const { id, theme } of allThemes) {
+    it(id, () => {
+      const paper = theme.palette.background.paper
+      expect(contrastRatio(theme.palette.success.main, paper)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(theme.palette.error.main, paper)).toBeGreaterThanOrEqual(4.5)
+    })
+  }
+})
+
 describe('legibilidade do texto sobre o card', () => {
   /* Prova que a régua reprova de verdade: sem este caso, um erro no cálculo
      aprovaria todo tema e o teste viraria enfeite. */

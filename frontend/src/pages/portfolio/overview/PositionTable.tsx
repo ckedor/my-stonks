@@ -17,7 +17,8 @@ import { useMemo, useState } from 'react'
 
 interface Position {
   asset_id: number
-  ticker: string
+  ticker: string | null
+  name?: string
   category: string
   value: number
   acc_return: number
@@ -147,7 +148,7 @@ export default function PositionTable({
                         <MiniDonut value={assetPct} color={color} />
                         <AppStackItem>
                           <AppText variant="bodySmall" weight="strong">
-                            {asset.ticker}
+                            {asset.ticker ?? asset.name ?? '—'}
                           </AppText>
                         </AppStackItem>
                         <RowFigures value={fmt(asset.value)} changePct={assetCagr} />

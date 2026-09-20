@@ -21,6 +21,7 @@ export type {
   AppHeatmapTableProps,
 } from './AppHeatmapTable'
 export type { AppGridProps, AppGridItemProps } from './AppGrid'
+export { default as AiSurface } from './AiSurface'
 export { default as AppCard } from './AppCard'
 export { default as AppThemePreview } from './AppThemePreview'
 export type { AppThemePreviewProps } from './AppThemePreview'
@@ -54,6 +55,7 @@ export { default as AppPageShell } from './AppPageShell'
 export type { AppPageShellProps } from './AppPageShell'
 export { default as AppNavRail } from './AppNavRail'
 export type { AppNavRailGroup, AppNavRailItem, AppNavRailProps } from './AppNavRail'
+export type { AiSurfaceProps } from './AiSurface'
 export type { AppCardProps } from './AppCard'
 
 /* ── Controles e conteúdo ───────────────────── */
@@ -203,3 +205,5 @@ export { default as MarkdownText } from './MarkdownText'
 export { default as MiniDonut } from './MiniDonut'
 export { default as Sparkline } from './Sparkline'
 export { ThemeToggleButton } from './ThemeToggleButton'
+
+export { default as AppFilterBar } from './AppFilterBar'

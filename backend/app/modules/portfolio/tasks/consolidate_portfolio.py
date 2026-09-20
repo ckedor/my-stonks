@@ -34,7 +34,9 @@ async def consolidate_portfolio(portfolio_id: int):
         async def _recalculate_asset_position(asset_id: int) -> None:
             async with portfolio_consolidator_service_context() as service:
                 try:
-                    await service.recalculate_position_asset(portfolio_id, asset_id)
+                    await service.recalculate_position_asset(
+                        portfolio_id, asset_id, incremental=True
+                    )
                 except Exception as e:
                     failed_asset_ids.append(asset_id)
                     logger.error(
