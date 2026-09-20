@@ -733,7 +733,12 @@ class PortfolioRepository(SQLAlchemyRepository):
                 Position.quantity,
                 Position.price,
                 Position.price_usd,
+                # As duas moedas do preço médio, e não só a de reais: a leitura
+                # do histórico troca de coluna conforme a moeda pedida, e sem
+                # a de dólar aqui ela pedia uma coluna que a consulta não
+                # trazia — a tela de um ativo em dólar respondia 500.
                 Position.average_price,
+                Position.average_price_usd,
                 dividend_subquery.c.total_dividend.label('dividend'),
                 dividend_subquery.c.total_dividend_usd.label('dividend_usd'),
                 cat_assignment_subq.c.category,

@@ -475,6 +475,47 @@ class TestPosition:
 
         assert response.status_code == HTTPStatus.OK
 
+    async def test_get_position_history_answers_in_the_requested_currency(
+        self, client, db, factory
+    ):
+        """O histórico de um ativo vem na moeda pedida, e não sempre em reais.
+
+        A consulta trazia o preço médio em reais e não o em dólar, e a leitura
+        troca de coluna conforme a moeda: em dólar ela pedia uma coluna que a
+        consulta não tinha e a tela do ativo respondia 500.
+
+        As asserções são sobre os números, e não sobre o status. Um 200 que
+        devolve reais sob o rótulo de dólar é o mesmo defeito sem o estouro, e
+        seria o próximo jeito de esta regressão voltar.
+        """
+        portfolio = await _seed_portfolio(factory)
+        asset = await _seed_asset(factory)
+        # 100 cotas a R$ 15 e US$ 3, com preço médio de R$ 10 e US$ 2.
+        await _seed_position(db, portfolio.id, asset.id, date(2024, 3, 1))
+
+        in_dollars = await client.get(
+            f'/portfolio/position/{portfolio.id}',
+            params={'most_recent': 'false', 'asset_id': asset.id, 'currency': 'USD'},
+        )
+
+        assert in_dollars.status_code == HTTPStatus.OK
+        dollar_rows = in_dollars.json()
+        assert len(dollar_rows) == 1
+        assert dollar_rows[0]['price'] == 3
+        assert dollar_rows[0]['average_price'] == 2
+        assert dollar_rows[0]['value'] == 300
+
+        in_reais = await client.get(
+            f'/portfolio/position/{portfolio.id}',
+            params={'most_recent': 'false', 'asset_id': asset.id, 'currency': 'BRL'},
+        )
+
+        assert in_reais.status_code == HTTPStatus.OK
+        real_rows = in_reais.json()
+        assert real_rows[0]['price'] == 15
+        assert real_rows[0]['average_price'] == 10
+        assert real_rows[0]['value'] == 1500
+
     async def test_get_portfolio_returns(self, client, db, factory):
         portfolio = await _seed_portfolio(factory)
 
