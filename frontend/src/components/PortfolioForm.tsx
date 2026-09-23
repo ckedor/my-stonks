@@ -189,8 +189,8 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
         submitting={loading}
       >
         {categories.map((cat, index) => (
-          <AppStack key={index} direction="row" gap="md" align="center">
-            <AppStackItem grow={2}>
+          <AppStack key={index} direction="row" gap="md" align="center" wrap>
+            <AppStackItem grow={2} fullRowBelow="sm">
               <AppTextField
                 value={cat.name}
                 onChange={(value) => handleChange(index, 'name', value)}

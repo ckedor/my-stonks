@@ -124,18 +124,25 @@ export interface AppStackItemProps {
   /** Empurra o filho para baixo, para alinhá-lo com o conteúdo de um
    *  vizinho que reserva uma faixa no próprio topo. */
   offsetTop?: SpaceToken
+  /** Abaixo deste breakpoint o filho ocupa a linha inteira e empurra os
+   *  irmãos para a de baixo. Pede `wrap` no stack pai. Serve à linha de
+   *  formulário que no celular não cabe: o nome em cima, o resto embaixo. */
+  fullRowBelow?: 'sm' | 'md'
 }
 
-const ITEM_STYLE_PROPS = new Set(['grow', 'minWidth', 'width', 'offsetTop'])
+const ITEM_STYLE_PROPS = new Set(['grow', 'minWidth', 'width', 'offsetTop', 'fullRowBelow'])
 
 export const AppStackItem = styled('div', {
   shouldForwardProp: (prop) => !ITEM_STYLE_PROPS.has(prop as string),
-})<AppStackItemProps>(({ theme, grow = 1, minWidth, width, offsetTop }) => ({
+})<AppStackItemProps>(({ theme, grow = 1, minWidth, width, offsetTop, fullRowBelow }) => ({
   ...(width
     ? { flex: '0 0 auto', width, [theme.breakpoints.down('md')]: { width: '100%' } }
     : { flex: grow }),
   minWidth: minWidth ?? 0,
   ...(offsetTop ? { marginTop: theme.spacing(space[offsetTop]) } : null),
+  ...(fullRowBelow
+    ? { [theme.breakpoints.down(fullRowBelow)]: { flexBasis: '100%' } }
+    : null),
 }))
 
 export default AppStack

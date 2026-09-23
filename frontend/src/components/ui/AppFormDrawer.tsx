@@ -62,7 +62,19 @@ export default function AppFormDrawer({
 }: AppFormDrawerProps) {
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
-      <Box p={3} width={WIDTH[width]} display="flex" flexDirection="column" height="100%">
+      {/* No celular a largura fixa passaria da tela e cortaria o formulário
+          à esquerda: abaixo de `sm` o painel ocupa a tela inteira, com o
+          recuo contado dentro dela. Acima, a largura escolhida vale. */}
+      <Box
+        p={3}
+        sx={{
+          width: { xs: '100vw', sm: WIDTH[width] },
+          boxSizing: { xs: 'border-box', sm: 'content-box' },
+        }}
+        display="flex"
+        flexDirection="column"
+        height="100%"
+      >
         <Box
           display="flex"
           justifyContent="space-between"
