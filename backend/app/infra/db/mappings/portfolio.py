@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 
 from app.infra.db.base import Base
 from app.infra.db.tables.portfolio import (
+    brokerage_note_table,
     configuration_name_table,
     custom_category_assignment_table,
     custom_category_table,
@@ -18,6 +19,7 @@ from app.infra.db.tables.portfolio import (
 from app.modules.market_data.domain.assets import Asset, Broker
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.portfolio.domain.entities import (
+    BrokerageNote,
     ConfigurationName,
     CustomCategory,
     CustomCategoryAssignment,
@@ -58,6 +60,7 @@ def map_portfolio() -> None:
             'asset': relationship(Asset),
         },
     )
+    Base.registry.map_imperatively(BrokerageNote, brokerage_note_table)
     Base.registry.map_imperatively(
         Transaction,
         transaction_table,

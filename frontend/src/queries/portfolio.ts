@@ -1,3 +1,4 @@
+import { fetchBrokerageNotes } from '@/api/brokerageNote'
 import { fetchBenchmarks } from '@/api/market'
 import {
   consolidatePortfolio,
@@ -52,6 +53,7 @@ const portfolioKeys = {
   trades: (id: number) => [...portfolioKeys.all, id, 'trades', 2] as const,
   wealthTier: (id: number) => [...portfolioKeys.all, id, 'wealth-tier'] as const,
   consolidation: (id: number) => [...portfolioKeys.all, id, 'consolidation'] as const,
+  brokerageNotes: (id: number) => [...portfolioKeys.all, id, 'brokerage-notes'] as const,
   benchmarks: (currency: Currency) => ['benchmarks', currency] as const,
 }
 
@@ -258,6 +260,17 @@ export function useTrades(explicitPortfolioId?: number) {
     // Trades are committed immediately; they do not follow the consolidation
     // schedule that justifies the five-minute default for portfolio readings.
     staleTime: 0,
+    enabled: portfolioId != null,
+  })
+}
+
+/** Notas de corretagem importadas na carteira, do pregão mais recente ao mais antigo. */
+export function useBrokerageNotes(explicitPortfolioId?: number) {
+  const selectedPortfolioId = useSelectedPortfolioId()
+  const portfolioId = explicitPortfolioId ?? selectedPortfolioId
+  return useQuery({
+    queryKey: portfolioKeys.brokerageNotes(portfolioId!),
+    queryFn: () => fetchBrokerageNotes(portfolioId!),
     enabled: portfolioId != null,
   })
 }

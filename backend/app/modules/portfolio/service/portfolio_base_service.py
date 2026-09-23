@@ -7,6 +7,7 @@ from app.core.exceptions import BusinessRuleError, NotFoundError
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.portfolio.domain.category import NewCategory
 from app.modules.portfolio.domain.entities import (
+    BrokerageNote,
     CustomCategory,
     CustomCategoryAssignment,
     Dividend,
@@ -90,6 +91,7 @@ class PortfolioBaseService:
             await uow.portfolios.delete(PortfolioConsolidation, by={'portfolio_id': portfolio_id})
             await uow.portfolios.delete(Position, by={'portfolio_id': portfolio_id})
             await uow.portfolios.delete(Transaction, by={'portfolio_id': portfolio_id})
+            await uow.portfolios.delete(BrokerageNote, by={'portfolio_id': portfolio_id})
             await uow.portfolios.delete(Dividend, by={'portfolio_id': portfolio_id})
             await uow.portfolios.delete(Portfolio, portfolio_id)
             await uow.commit()

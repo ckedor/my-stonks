@@ -154,9 +154,15 @@ Do not use:
 
 | Canonical term | pt-BR | Definition |
 | --- | --- | --- |
-| Transaction | Operação | Recorded purchase or sale of an asset in a portfolio through a broker. It has date, signed quantity, unit price, and BRL/USD representations. |
+| Transaction | Operação | Recorded purchase or sale of an asset in a portfolio through a broker. It has date, signed quantity, unit price, and BRL/USD representations; when it came from a brokerage note it also carries settlement date, transaction fees, withheld income tax and a link to that note. |
 | Purchase | Compra | Transaction with positive quantity. |
 | Sale | Venda | Transaction with negative quantity. |
+| Brokerage note | Nota de corretagem | The document a broker issues for one trading day, listing each execution and the day's totals, fees, withheld tax and net amount, in the broker's currency. Brazilian brokers print it in the Sinacor layout (BRL); US brokers such as Avenue issue a trade confirmation (USD) with no note number and fees itemized per line. A confirmed note is stored per portfolio, identified by broker and note number — or by broker and trading day when it has no number — and links the transactions it created or completed — the import history. It is still not the identity of a transaction: no code is shared by the broker, the exchange and a manually entered transaction, so a reimported note is matched by content (asset, broker, trading day and side), and deleting a note only unlinks its transactions. |
+| Position statement | Extrato de posição | A broker's document stating what it holds in custody for the account on a date: each asset and its quantity. It is an input only — nothing reads it into the database. |
+| Position check | Conferência de posição | Comparing a position statement with the portfolio: for each asset, the statement's quantity against the sum of the portfolio's transactions at that broker up to the statement date, with splits and reverse splits applied. Each asset is equal, different, only in the statement, or only in the portfolio. Nothing is stored; the correction is editing the asset's transactions, and those entered without a brokerage note are the first suspects. |
+| Transaction fees | Custos da operação | What a brokerage note charges on top of the traded value, in the broker's currency: settlement and registration fees, exchange fees, brokerage, ISS and other costs. Costs the note itemizes per line stay on their line; costs it states for the whole note are split across its lines in proportion to each line's value. Null means "not informed", not zero. Stored only; average price, returns and income tax do not read it yet. |
+| Settlement date | Data de liquidação | Day the note's cash settles, printed as "Líquido para". |
+| Withheld income tax | IRRF retido | Income tax the broker withheld at source on sales, split only across the note's sale lines. |
 | Corporate event | Evento corporativo | Asset event that changes historical quantities by a factor, such as split, reverse split, bonus, or conversion. |
 | Dividend | Provento | Cash amount attributed to an asset and portfolio on a date, stored in BRL and USD representations. |
 | Position | Posição | Daily derived snapshot of a portfolio's holding in one asset. It includes quantity, price, average price, invested amount, and returns in BRL and USD. |

@@ -14,11 +14,13 @@ from app.modules.portfolio.service.portfolio_position_service import (
 from app.modules.users.domain import User
 from app.modules.users.views import current_active_user, current_superuser
 
+from .brokerage_note.router import router as brokerage_note_router
 from .category.router import router as category_router
 from .dividend.router import router as dividend_router
 from .income_tax.router import router as income_tax_router
 from .position.router import router as position_router
 from .position_consolidator.router import router as position_consolidator_router
+from .position_statement.router import router as position_statement_router
 from .rebalancing.router import router as rebalancing_router
 from .report.router import router as report_router
 from .transaction.router import router as transaction_router
@@ -91,6 +93,8 @@ async def delete_portfolio(
 router.include_router(dividend_router)
 router.include_router(category_router)
 router.include_router(transaction_router)
+router.include_router(brokerage_note_router)
+router.include_router(position_statement_router)
 router.include_router(position_router)
 router.include_router(position_consolidator_router)
 router.include_router(income_tax_router)

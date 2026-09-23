@@ -6,6 +6,7 @@ import {
   type AppSimpleTableColumn,
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
+import { formatMoney } from '@/lib/utils/format'
 import type { Trade } from '@/types'
 import dayjs from 'dayjs'
 
@@ -100,8 +101,19 @@ export default function TradesTable({ trades, onRowClick, maxHeight }: TradesTab
       sortValue: (trade) => trade.value,
       render: (trade) => formatCurrency(trade.value),
     },
+    {
+      label: 'Custos',
+      align: 'right',
+      hint: 'Custos da nota de corretagem, na moeda da corretora. Traço quando a operação foi lançada sem eles.',
+      sortValue: (trade) => trade.fees ?? null,
+      render: (trade) => (trade.fees == null ? '-' : formatMoney(trade.fees, trade.currency)),
+    },
     { label: 'Posição na Data', align: 'right', render: (trade) => formatCurrency(trade.position) },
-    { label: 'Preço Médio', align: 'right', render: (trade) => formatCurrency(trade.average_price) },
+    {
+      label: 'Preço Médio',
+      align: 'right',
+      render: (trade) => formatCurrency(trade.average_price),
+    },
     {
       label: 'Lucro Realizado',
       align: 'right',
@@ -109,8 +121,7 @@ export default function TradesTable({ trades, onRowClick, maxHeight }: TradesTab
          empilharia junto do prejuízo, então ela sai da conta e vai para o
          fim, que é onde a tabela põe o valor ausente. */
       sortValue: (trade) => (trade.type === 'Compra' ? null : trade.realized_profit),
-      render: (trade) =>
-        profitCell(trade.realized_profit, trade.type === 'Compra', formatCurrency),
+      render: (trade) => profitCell(trade.realized_profit, trade.type === 'Compra', formatCurrency),
     },
     {
       label: '%Lucro',
@@ -120,7 +131,7 @@ export default function TradesTable({ trades, onRowClick, maxHeight }: TradesTab
         profitCell(
           trade.profit_pct,
           trade.type === 'Compra',
-          (value) => `${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} %`,
+          (value) => `${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} %`
         ),
     },
   ]

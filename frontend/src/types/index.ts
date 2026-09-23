@@ -43,6 +43,14 @@ export interface Trade {
   portfolio_id: number
   original_price: number
   currency: string
+  /** Custos da operação, na moeda da corretora (`currency`). Nulo é "não
+   *  informado": o lançamento manual não traz custo, a nota de corretagem traz. */
+  fees?: number | null
+  settlement_date?: string | null
+  withheld_income_tax?: number | null
+  /** A nota de corretagem que criou ou completou a operação; nulo quando ela
+   *  foi lançada à mão. */
+  brokerage_note_id?: number | null
 }
 
 /** Quando a carteira foi reconstruída, e se a corrida deu certo.

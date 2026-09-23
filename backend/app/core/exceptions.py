@@ -26,6 +26,16 @@ class BusinessRuleError(AppError):
     default_message = 'Business rule violation'
 
 
+class ConflictError(AppError):
+    """The request was built on a state that changed before it arrived.
+
+    Not the same as `AlreadyExistsError`: nothing is duplicated, the client
+    decided over a reading that is no longer true and has to read again.
+    """
+
+    default_message = 'The data changed since it was read'
+
+
 class TaskDispatchError(AppError):
     """Work was accepted but could not be handed to a worker.
 

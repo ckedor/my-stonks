@@ -68,6 +68,38 @@ class Position:
 
 
 @dataclass(eq=False, kw_only=True)
+class BrokerageNote:
+    """Uma nota de corretagem importada: o pregão, os totais e os custos como impressos.
+
+    Guarda o histórico do que foi importado e liga as transações criadas ou
+    completadas por ela. Não é a identidade de uma transação: reimportar uma
+    nota continua sendo um cruzamento por conteúdo.
+    """
+
+    id: int | None = None
+    portfolio_id: int
+    broker_id: int
+    #: A moeda da nota, que é a da corretora: os valores abaixo estão nela.
+    currency: str = 'BRL'
+    note_number: str | None = None
+    trade_date: date
+    settlement_date: date | None = None
+    purchases_total: float | None = None
+    sales_total: float | None = None
+    operations_total: float | None = None
+    settlement_fee: float | None = None
+    registration_fee: float | None = None
+    emoluments: float | None = None
+    other_exchange_fees: float | None = None
+    brokerage: float | None = None
+    iss: float | None = None
+    other_costs: float | None = None
+    withheld_income_tax: float | None = None
+    net_amount: float | None = None
+    imported_at: datetime | None = None
+
+
+@dataclass(eq=False, kw_only=True)
 class Transaction:
     id: int | None = None
     portfolio_id: int
@@ -77,6 +109,14 @@ class Transaction:
     quantity: float
     price: float
     price_usd: float | None = None
+    settlement_date: date | None = None
+    #: Custos da operação — corretagem, emolumentos, taxas de liquidação e
+    #: registro, ISS —, na moeda da corretora, como a nota os cobrou. Nulo é
+    #: "não informado", não custo zero.
+    fees: float | None = None
+    #: IRRF retido na fonte sobre uma venda, na moeda da corretora.
+    withheld_income_tax: float | None = None
+    brokerage_note_id: int | None = None
     portfolio: Portfolio | None = None
     asset: Any | None = None
     broker: Any | None = None

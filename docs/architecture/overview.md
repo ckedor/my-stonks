@@ -315,6 +315,90 @@ What is persisted is what a later measurement of the recommendation needs: the
 source, the reference month, the weights, and the rationale the report gave.
 Nothing computes performance today — the data it would need is in place.
 
+## Brokerage note import
+
+A brokerage note enters the portfolio the way a recommendation enters research:
+the reading writes nothing, and a person confirms before anything is stored.
+It lives in `portfolio`, which owns transactions, and calls the AI provider
+through an adapter (`modules/portfolio/adapters/brokerage_note_extractor.py`),
+as research does — not through the `ai` feature module, whose artifacts are
+prompt-versioned and cached by input.
+
+```text
+upload (PDF) + portfolio
+  -> POST /portfolio/brokerage_note/extraction
+  -> AI provider, document attached, answer constrained to a schema
+  -> app checks each note's own totals and splits fees across its lines
+  -> broker by CNPJ, else by registered name; asset by ticker — the B3 code in
+     the ticker or the specification (BRL), the symbol column (USD)
+  -> per note: reconcile against the portfolio's transactions,
+     and flag a note already imported (same broker and number)   (nothing persisted)
+
+asset or broker chosen on screen
+  -> POST /portfolio/brokerage_note/reconciliation     (no model call)
+
+one note confirmed
+  -> POST /portfolio/brokerage_note
+  -> reconcile again; refuse with 409 if it changed
+  -> save the note (update it if already imported), then
+     create / update / replace its transactions, linked to it, in one unit of work
+  -> recalculate_asset_position per affected asset
+
+history
+  -> GET /portfolio/brokerage_note?portfolio_id=
+```
+
+Two document families are read: the Brazilian Sinacor note (BRL) and the US
+trade confirmation (USD, Avenue/Apex). A note's currency must be its broker's;
+a USD line is stored with `price_usd` as printed and `price` from the day's
+rate, the reverse of a BRL line. Everything that is stored — the note header
+and every line — is editable on screen before confirming, and each edit
+re-runs the reconciliation.
+
+The screen is the Trades page's "Importar nota" tab. Each note in a PDF is
+confirmed on its own: it is the unit the broker issued and the unit stored in
+`portfolio.brokerage_note`, and confirming one does not force a decision on the
+others.
+
+Numbers the screen trusts come from the application, not the model. Each line
+must equal quantity times price, the lines must add up to the note's operations
+total, and sales minus purchases minus fees and withheld tax must equal the net
+amount. A mismatch is shown on the note; it means a line was misread.
+
+A note is not the identity of a transaction, so reimporting is matching by
+content. Lines are grouped by asset, broker, trading day and side, and each
+group gets a proposal (`modules/portfolio/domain/brokerage_note.py`): new; the
+same lines already recorded (unchanged, or updated with the fees and settlement
+date the note adds); a manual aggregate with the same total and average price
+(replaced by the note's executions); or a conflict — a different quantity, or
+the same trade under another broker — which is skipped unless the person says
+otherwise. The write re-runs the matching and compares the transaction ids each
+decision was taken over, because a decision taken on a stale screen would
+delete a transaction nobody reviewed.
+
+## Position check
+
+A broker statement is read the same way as a brokerage note — the PDF goes to
+the provider as a document, through an adapter inside `portfolio` — but nothing
+is ever written:
+
+```text
+upload (PDF) + portfolio
+  -> POST /portfolio/position_statement/extraction
+  -> AI provider, answer constrained to a schema
+  -> broker by CNPJ or name, asset by ticker
+  -> compare: statement quantity per asset vs. the portfolio's transactions at
+     that broker up to the statement date, splits applied      (nothing persisted)
+
+statement or history corrected on screen
+  -> POST /portfolio/position_statement/comparison     (no model call)
+```
+
+The comparison lives in `modules/portfolio/domain/position_statement.py`. The
+screen is the Trades page's "Bater posição" tab: selecting a diverging asset
+lists its transactions at that broker, flags those without a brokerage note, and
+opens the ordinary transaction form to fix them.
+
 ## Laboratory backtests
 
 A theoretical portfolio is an allocation nobody bought, and the flow around it

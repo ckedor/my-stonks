@@ -238,6 +238,17 @@ export const TRANSACTION_ROUTES = {
   byId: (transactionId: number | string) => `${PORTFOLIO}/transaction/${transactionId}`,
 } as const
 
+export const BROKERAGE_NOTE_ROUTES = {
+  notes: `${PORTFOLIO}/brokerage_note`,
+  extraction: `${PORTFOLIO}/brokerage_note/extraction`,
+  reconciliation: `${PORTFOLIO}/brokerage_note/reconciliation`,
+} as const
+
+export const POSITION_STATEMENT_ROUTES = {
+  extraction: `${PORTFOLIO}/position_statement/extraction`,
+  comparison: `${PORTFOLIO}/position_statement/comparison`,
+} as const
+
 export const USER_CONFIGURATION_ROUTES = {
   byPortfolio: (portfolioId: number | string) =>
     `${PORTFOLIO}/user_configuration/${portfolioId}`,

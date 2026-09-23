@@ -11,12 +11,22 @@ import {
   AppSelect,
   AppStack,
   AppTableSkeleton,
+  AppTabs,
 } from '@/components/ui'
 import type { Trade } from '@/types'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
+import BrokerageNoteImport from './brokerage-note/BrokerageNoteImport'
+import PositionCheck from './position-statement/PositionCheck'
 
 type TradeType = 'Compra' | 'Venda' | 'Todos'
+type TradesTab = 'trades' | 'import' | 'position'
+
+const TABS: { id: TradesTab; label: string }[] = [
+  { id: 'trades', label: 'Operações' },
+  { id: 'import', label: 'Importar nota' },
+  { id: 'position', label: 'Bater posição' },
+]
 
 const TYPE_OPTIONS = [
   { value: 'Todos', label: 'Todos' },
@@ -30,6 +40,7 @@ export default function PortfolioTransactionsPage() {
   const { data, isPending: loading } = useTrades()
   const trades = data ?? EMPTY_LIST
 
+  const [tab, setTab] = useState<TradesTab>('trades')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedTrade, setSelectedTrade] = useState<Trade | undefined>()
   const [selectedAssetId, setSelectedAssetId] = useState<number | undefined>()
@@ -84,47 +95,55 @@ export default function PortfolioTransactionsPage() {
     <AppStack gap="lg">
       <AppPageHeader
         title="Trades"
-        breadcrumbs={[
-          { label: 'Carteira', href: '/portfolio/overview' },
-          { label: 'Trades' },
-        ]}
-        actions={<AppButton onClick={handleNew}>Nova Operação</AppButton>}
+        breadcrumbs={[{ label: 'Carteira', href: '/portfolio/overview' }, { label: 'Trades' }]}
+        actions={
+          tab === 'trades' ? <AppButton onClick={handleNew}>Nova Operação</AppButton> : undefined
+        }
       />
 
-      <AppStack direction="row" gap="md" align="end" wrap>
-        <AppSearchField
-          label="Buscar por ativo"
-          size="bar"
-          value={search}
-          onChange={setSearch}
-        />
-        <AppDayField label="Data início" value={startDate} onChange={setStartDate} />
-        <AppDayField label="Data fim" value={endDate} onChange={setEndDate} />
-        <AppSelect
-          label="Corretora"
-          options={[
-            { value: '', label: 'Todas' },
-            ...brokers.map((name) => ({ value: name, label: name })),
-          ]}
-          value={broker}
-          onChange={setBroker}
-        />
-        <AppSelect
-          label="Tipo"
-          options={TYPE_OPTIONS}
-          value={type}
-          onChange={(value) => setType(value as TradeType)}
-        />
-      </AppStack>
+      <AppTabs items={TABS} value={tab} onChange={setTab} label="Seções de trades" />
 
-      {/* Sem `maxHeight`: a tabela rolava por dentro do card, dando uma
+      {tab === 'import' && <BrokerageNoteImport />}
+      {tab === 'position' && <PositionCheck />}
+
+      {tab === 'trades' && (
+        <>
+          <AppStack direction="row" gap="md" align="end" wrap>
+            <AppSearchField
+              label="Buscar por ativo"
+              size="bar"
+              value={search}
+              onChange={setSearch}
+            />
+            <AppDayField label="Data início" value={startDate} onChange={setStartDate} />
+            <AppDayField label="Data fim" value={endDate} onChange={setEndDate} />
+            <AppSelect
+              label="Corretora"
+              options={[
+                { value: '', label: 'Todas' },
+                ...brokers.map((name) => ({ value: name, label: name })),
+              ]}
+              value={broker}
+              onChange={setBroker}
+            />
+            <AppSelect
+              label="Tipo"
+              options={TYPE_OPTIONS}
+              value={type}
+              onChange={(value) => setType(value as TradeType)}
+            />
+          </AppStack>
+
+          {/* Sem `maxHeight`: a tabela rolava por dentro do card, dando uma
           segunda barra de rolagem ao lado da barra da própria página. */}
-      {loading ? (
-        <AppCard padding="md">
-          <AppTableSkeleton columns={9} rows={12} />
-        </AppCard>
-      ) : (
-        <TradesTable trades={filteredTrades} onRowClick={handleEdit} />
+          {loading ? (
+            <AppCard padding="md">
+              <AppTableSkeleton columns={9} rows={12} />
+            </AppCard>
+          ) : (
+            <TradesTable trades={filteredTrades} onRowClick={handleEdit} />
+          )}
+        </>
       )}
 
       <TradeForm

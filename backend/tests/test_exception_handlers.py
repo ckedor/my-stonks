@@ -5,6 +5,7 @@ from httpx import ASGITransport, AsyncClient
 from app.core.exceptions import (
     AlreadyExistsError,
     BusinessRuleError,
+    ConflictError,
     NotFoundError,
     ValidationError,
 )
@@ -31,6 +32,10 @@ def _build_app_with_error_routes():
     @app.get('/raise-already-exists')
     async def raise_already_exists():
         raise AlreadyExistsError('Already exists')
+
+    @app.get('/raise-conflict')
+    async def raise_conflict():
+        raise ConflictError('Changed')
 
     @app.get('/raise-validation')
     async def raise_validation():
@@ -88,6 +93,13 @@ async def test_validation_returns_422(error_client):
     resp = await error_client.get('/raise-validation')
     assert resp.status_code == 422
     assert resp.json()['error'] == 'ValidationError'
+
+
+@pytest.mark.asyncio
+async def test_conflict_returns_409(error_client):
+    resp = await error_client.get('/raise-conflict')
+    assert resp.status_code == 409
+    assert resp.json()['error'] == 'ConflictError'
 
 
 @pytest.mark.asyncio

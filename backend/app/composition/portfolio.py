@@ -4,10 +4,19 @@ from contextlib import asynccontextmanager
 from fastapi import Depends
 
 from app.composition.market_data import build_usd_brl_read_service
+from app.infra.ai.factory import get_ai_provider
+from app.infra.ai.provider import AIProvider
 from app.infra.db.unit_of_work import UnitOfWork, get_uow
 from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.service.market_data_service import MarketDataReadService
+from app.modules.portfolio.adapters.brokerage_note_extractor import BrokerageNoteExtractor
+from app.modules.portfolio.adapters.position_statement_extractor import (
+    PositionStatementExtractor,
+)
+from app.modules.portfolio.service.brokerage_note_import_service import (
+    BrokerageNoteImportService,
+)
 from app.modules.portfolio.service.portfolio_base_service import PortfolioBaseService
 from app.modules.portfolio.service.portfolio_category_service import PortfolioCategoryService
 from app.modules.portfolio.service.portfolio_consolidator_service import (
@@ -40,6 +49,9 @@ from app.modules.portfolio.service.portfolio_user_configuration import (
 )
 from app.modules.portfolio.service.portfolio_wealth_tier_service import (
     PortfolioWealthTierService,
+)
+from app.modules.portfolio.service.position_statement_service import (
+    PositionStatementService,
 )
 
 
@@ -105,6 +117,24 @@ def get_portfolio_transaction_service(
     uow: UnitOfWork = Depends(get_uow),
 ) -> PortfolioTransactionService:
     return PortfolioTransactionService(uow, usd_brl_service=build_usd_brl_read_service())
+
+
+def get_brokerage_note_import_service(
+    uow: UnitOfWork = Depends(get_uow),
+    provider: AIProvider = Depends(get_ai_provider),
+) -> BrokerageNoteImportService:
+    return BrokerageNoteImportService(
+        uow=uow,
+        extractor=BrokerageNoteExtractor(provider),
+        usd_brl_service=build_usd_brl_read_service(),
+    )
+
+
+def get_position_statement_service(
+    uow: UnitOfWork = Depends(get_uow),
+    provider: AIProvider = Depends(get_ai_provider),
+) -> PositionStatementService:
+    return PositionStatementService(uow=uow, extractor=PositionStatementExtractor(provider))
 
 
 def get_portfolio_income_tax_service(

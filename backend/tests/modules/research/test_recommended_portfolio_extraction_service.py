@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock
 import pytest
 
 from app.core.exceptions import ValidationError
+from app.lib.utils.files import MAX_PDF_BYTES
 from app.modules.research.domain.draft import PositionMatch
 from app.modules.research.domain.extraction import (
     ExtractedPosition,
     ExtractedRecommendedPortfolio,
 )
 from app.modules.research.service.recommended_portfolio_extraction_service import (
-    MAX_PDF_BYTES,
     RecommendedPortfolioExtractionService,
 )
 from tests.fakes import FakeUnitOfWork

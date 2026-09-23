@@ -1192,6 +1192,16 @@
     "title": "AssetEvent",
     "type": "object"
    },
+   "AssetMatch": {
+    "description": "Se o ticker que o modelo sugeriu é um ativo do cadastro, como no research.",
+    "enum": [
+     "matched",
+     "unknown",
+     "ambiguous"
+    ],
+    "title": "AssetMatch",
+    "type": "string"
+   },
    "AssetQuoteHistoryResponse": {
     "properties": {
      "asset_type_id": {
@@ -2148,6 +2158,46 @@
     "title": "Body_delete_transaction_portfolio_transaction__transaction_id__delete",
     "type": "object"
    },
+   "Body_extract_brokerage_note_portfolio_brokerage_note_extraction_post": {
+    "properties": {
+     "file": {
+      "description": "Nota de corretagem em PDF",
+      "format": "binary",
+      "title": "File",
+      "type": "string"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "portfolio_id",
+     "file"
+    ],
+    "title": "Body_extract_brokerage_note_portfolio_brokerage_note_extraction_post",
+    "type": "object"
+   },
+   "Body_extract_position_statement_portfolio_position_statement_extraction_post": {
+    "properties": {
+     "file": {
+      "description": "Extrato de posição da corretora, em PDF",
+      "format": "binary",
+      "title": "File",
+      "type": "string"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "portfolio_id",
+     "file"
+    ],
+    "title": "Body_extract_position_statement_portfolio_position_statement_extraction_post",
+    "type": "object"
+   },
    "Body_extract_recommended_portfolio_research_recommended_portfolio_extraction_post": {
     "properties": {
      "file": {
@@ -2263,6 +2313,150 @@
      }
     },
     "title": "BrokerUpdate",
+    "type": "object"
+   },
+   "BrokerageNoteDraftResponse": {
+    "properties": {
+     "model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Model"
+     },
+     "notes": {
+      "items": {
+       "$ref": "#/components/schemas/DraftNoteResponse"
+      },
+      "title": "Notes",
+      "type": "array"
+     }
+    },
+    "required": [
+     "notes",
+     "model"
+    ],
+    "title": "BrokerageNoteDraftResponse",
+    "type": "object"
+   },
+   "BrokerageNoteResponse": {
+    "description": "Uma nota importada, para o histórico.",
+    "properties": {
+     "broker_id": {
+      "title": "Broker Id",
+      "type": "integer"
+     },
+     "broker_name": {
+      "title": "Broker Name",
+      "type": "string"
+     },
+     "currency": {
+      "enum": [
+       "BRL",
+       "USD"
+      ],
+      "title": "Currency",
+      "type": "string"
+     },
+     "fees": {
+      "title": "Fees",
+      "type": "number"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "imported_at": {
+      "format": "date-time",
+      "title": "Imported At",
+      "type": "string"
+     },
+     "net_amount": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Net Amount"
+     },
+     "note_number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note Number"
+     },
+     "operations_total": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Operations Total"
+     },
+     "settlement_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Settlement Date"
+     },
+     "trade_date": {
+      "format": "date",
+      "title": "Trade Date",
+      "type": "string"
+     },
+     "transaction_count": {
+      "title": "Transaction Count",
+      "type": "integer"
+     },
+     "withheld_income_tax": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Withheld Income Tax"
+     }
+    },
+    "required": [
+     "id",
+     "broker_id",
+     "broker_name",
+     "currency",
+     "note_number",
+     "trade_date",
+     "settlement_date",
+     "operations_total",
+     "fees",
+     "withheld_income_tax",
+     "net_amount",
+     "imported_at",
+     "transaction_count"
+    ],
+    "title": "BrokerageNoteResponse",
     "type": "object"
    },
    "CategoryAssignmentRequest": {
@@ -3196,6 +3390,320 @@
     "title": "DividendUpdateRequest",
     "type": "object"
    },
+   "DraftHoldingResponse": {
+    "properties": {
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "asset_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Name"
+     },
+     "index": {
+      "title": "Index",
+      "type": "integer"
+     },
+     "match": {
+      "$ref": "#/components/schemas/AssetMatch"
+     },
+     "quantity": {
+      "title": "Quantity",
+      "type": "number"
+     },
+     "security": {
+      "title": "Security",
+      "type": "string"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     }
+    },
+    "required": [
+     "index",
+     "security",
+     "ticker",
+     "quantity",
+     "asset_id",
+     "asset_name",
+     "match"
+    ],
+    "title": "DraftHoldingResponse",
+    "type": "object"
+   },
+   "DraftLineResponse": {
+    "properties": {
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "asset_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Name"
+     },
+     "fees": {
+      "title": "Fees",
+      "type": "number"
+     },
+     "index": {
+      "title": "Index",
+      "type": "integer"
+     },
+     "market": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Market"
+     },
+     "match": {
+      "$ref": "#/components/schemas/AssetMatch"
+     },
+     "price": {
+      "title": "Price",
+      "type": "number"
+     },
+     "quantity": {
+      "title": "Quantity",
+      "type": "number"
+     },
+     "security": {
+      "title": "Security",
+      "type": "string"
+     },
+     "side": {
+      "enum": [
+       "C",
+       "V"
+      ],
+      "title": "Side",
+      "type": "string"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     },
+     "value": {
+      "title": "Value",
+      "type": "number"
+     },
+     "withheld_income_tax": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Withheld Income Tax"
+     }
+    },
+    "required": [
+     "index",
+     "side",
+     "market",
+     "security",
+     "ticker",
+     "quantity",
+     "price",
+     "value",
+     "fees",
+     "withheld_income_tax",
+     "asset_id",
+     "asset_name",
+     "match"
+    ],
+    "title": "DraftLineResponse",
+    "type": "object"
+   },
+   "DraftNoteResponse": {
+    "properties": {
+     "amounts": {
+      "$ref": "#/components/schemas/NoteAmountsSchema"
+     },
+     "broker_cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Broker Cnpj"
+     },
+     "broker_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Broker Id"
+     },
+     "broker_name": {
+      "title": "Broker Name",
+      "type": "string"
+     },
+     "currency": {
+      "enum": [
+       "BRL",
+       "USD"
+      ],
+      "title": "Currency",
+      "type": "string"
+     },
+     "fees": {
+      "title": "Fees",
+      "type": "number"
+     },
+     "groups": {
+      "items": {
+       "$ref": "#/components/schemas/ReconciliationGroupResponse"
+      },
+      "title": "Groups",
+      "type": "array"
+     },
+     "imported_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Imported At"
+     },
+     "imported_note_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Imported Note Id"
+     },
+     "index": {
+      "title": "Index",
+      "type": "integer"
+     },
+     "lines": {
+      "items": {
+       "$ref": "#/components/schemas/DraftLineResponse"
+      },
+      "title": "Lines",
+      "type": "array"
+     },
+     "note_number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note Number"
+     },
+     "settlement_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Settlement Date"
+     },
+     "trade_date": {
+      "format": "date",
+      "title": "Trade Date",
+      "type": "string"
+     },
+     "warnings": {
+      "items": {
+       "$ref": "#/components/schemas/NoteWarningResponse"
+      },
+      "title": "Warnings",
+      "type": "array"
+     }
+    },
+    "required": [
+     "index",
+     "broker_name",
+     "broker_cnpj",
+     "broker_id",
+     "currency",
+     "note_number",
+     "trade_date",
+     "settlement_date",
+     "amounts",
+     "fees",
+     "warnings",
+     "lines",
+     "groups",
+     "imported_note_id",
+     "imported_at"
+    ],
+    "title": "DraftNoteResponse",
+    "type": "object"
+   },
    "DraftPositionResponse": {
     "properties": {
      "asset_id": {
@@ -3231,7 +3739,7 @@
       ]
      },
      "match": {
-      "$ref": "#/components/schemas/PositionMatch"
+      "$ref": "#/components/schemas/app__modules__research__domain__draft__PositionMatch"
      },
      "name": {
       "anyOf": [
@@ -6285,6 +6793,53 @@
     "title": "FundShareSeriesOut",
     "type": "object"
    },
+   "GroupAction": {
+    "enum": [
+     "create",
+     "update",
+     "replace",
+     "skip"
+    ],
+    "title": "GroupAction",
+    "type": "string"
+   },
+   "GroupDecisionRequest": {
+    "properties": {
+     "action": {
+      "$ref": "#/components/schemas/GroupAction"
+     },
+     "existing_ids": {
+      "items": {
+       "type": "integer"
+      },
+      "title": "Existing Ids",
+      "type": "array"
+     },
+     "key": {
+      "title": "Key",
+      "type": "string"
+     }
+    },
+    "required": [
+     "key",
+     "action",
+     "existing_ids"
+    ],
+    "title": "GroupDecisionRequest",
+    "type": "object"
+   },
+   "GroupStatus": {
+    "enum": [
+     "new",
+     "unchanged",
+     "update",
+     "replace",
+     "conflict",
+     "unresolved"
+    ],
+    "title": "GroupStatus",
+    "type": "string"
+   },
    "HTTPValidationError": {
     "properties": {
      "detail": {
@@ -6322,6 +6877,76 @@
      "end_date"
     ],
     "title": "HistoricalCagrResponse",
+    "type": "object"
+   },
+   "ImportRequest": {
+    "description": "Uma nota por vez: o cabeçalho que será gravado, as linhas e as decisões.",
+    "properties": {
+     "decisions": {
+      "items": {
+       "$ref": "#/components/schemas/GroupDecisionRequest"
+      },
+      "title": "Decisions",
+      "type": "array"
+     },
+     "lines": {
+      "items": {
+       "$ref": "#/components/schemas/NoteLineRequest"
+      },
+      "title": "Lines",
+      "type": "array"
+     },
+     "note": {
+      "$ref": "#/components/schemas/NoteHeaderRequest"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "portfolio_id",
+     "lines",
+     "note",
+     "decisions"
+    ],
+    "title": "ImportRequest",
+    "type": "object"
+   },
+   "ImportResponse": {
+    "properties": {
+     "asset_ids": {
+      "items": {
+       "type": "integer"
+      },
+      "title": "Asset Ids",
+      "type": "array"
+     },
+     "created": {
+      "title": "Created",
+      "type": "integer"
+     },
+     "deleted": {
+      "title": "Deleted",
+      "type": "integer"
+     },
+     "note_id": {
+      "title": "Note Id",
+      "type": "integer"
+     },
+     "updated": {
+      "title": "Updated",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "note_id",
+     "created",
+     "updated",
+     "deleted",
+     "asset_ids"
+    ],
+    "title": "ImportResponse",
     "type": "object"
    },
    "IndexCurrencyOut": {
@@ -7783,6 +8408,24 @@
     "title": "InvestmentFundRiskResponse",
     "type": "object"
    },
+   "LineRefResponse": {
+    "properties": {
+     "line_index": {
+      "title": "Line Index",
+      "type": "integer"
+     },
+     "note_index": {
+      "title": "Note Index",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "note_index",
+     "line_index"
+    ],
+    "title": "LineRefResponse",
+    "type": "object"
+   },
    "MarketCatalogueAssetResponse": {
     "properties": {
      "asset_id": {
@@ -8091,6 +8734,341 @@
     "title": "MarketDataSeriesTimeSeries",
     "type": "object"
    },
+   "NoteAmountsSchema": {
+    "description": "Totais, custos e líquido como a nota os imprime; os custos, positivos.",
+    "properties": {
+     "brokerage": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Brokerage"
+     },
+     "emoluments": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Emoluments"
+     },
+     "iss": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Iss"
+     },
+     "net_amount": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Net Amount"
+     },
+     "operations_total": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Operations Total"
+     },
+     "other_costs": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Other Costs"
+     },
+     "other_exchange_fees": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Other Exchange Fees"
+     },
+     "purchases_total": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Purchases Total"
+     },
+     "registration_fee": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Registration Fee"
+     },
+     "sales_total": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sales Total"
+     },
+     "settlement_fee": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Settlement Fee"
+     },
+     "withheld_income_tax": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Withheld Income Tax"
+     }
+    },
+    "title": "NoteAmountsSchema",
+    "type": "object"
+   },
+   "NoteHeaderRequest": {
+    "properties": {
+     "amounts": {
+      "$ref": "#/components/schemas/NoteAmountsSchema"
+     },
+     "broker_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Broker Id"
+     },
+     "currency": {
+      "default": "BRL",
+      "enum": [
+       "BRL",
+       "USD"
+      ],
+      "title": "Currency",
+      "type": "string"
+     },
+     "note_number": {
+      "anyOf": [
+       {
+        "maxLength": 40,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note Number"
+     },
+     "settlement_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Settlement Date"
+     },
+     "trade_date": {
+      "format": "date",
+      "title": "Trade Date",
+      "type": "string"
+     }
+    },
+    "required": [
+     "broker_id",
+     "trade_date",
+     "settlement_date",
+     "amounts"
+    ],
+    "title": "NoteHeaderRequest",
+    "type": "object"
+   },
+   "NoteLineRequest": {
+    "description": "Uma linha como a pessoa a conferiu: o ativo e a corretora já escolhidos, ou não.",
+    "properties": {
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "broker_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Broker Id"
+     },
+     "currency": {
+      "default": "BRL",
+      "enum": [
+       "BRL",
+       "USD"
+      ],
+      "title": "Currency",
+      "type": "string"
+     },
+     "fees": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fees"
+     },
+     "line_index": {
+      "title": "Line Index",
+      "type": "integer"
+     },
+     "note_index": {
+      "title": "Note Index",
+      "type": "integer"
+     },
+     "price": {
+      "minimum": 0.0,
+      "title": "Price",
+      "type": "number"
+     },
+     "quantity": {
+      "exclusiveMinimum": 0.0,
+      "title": "Quantity",
+      "type": "number"
+     },
+     "settlement_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Settlement Date"
+     },
+     "side": {
+      "enum": [
+       "C",
+       "V"
+      ],
+      "title": "Side",
+      "type": "string"
+     },
+     "trade_date": {
+      "format": "date",
+      "title": "Trade Date",
+      "type": "string"
+     },
+     "withheld_income_tax": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Withheld Income Tax"
+     }
+    },
+    "required": [
+     "note_index",
+     "line_index",
+     "broker_id",
+     "asset_id",
+     "trade_date",
+     "settlement_date",
+     "side",
+     "quantity",
+     "price"
+    ],
+    "title": "NoteLineRequest",
+    "type": "object"
+   },
+   "NoteWarningResponse": {
+    "properties": {
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "message": {
+      "title": "Message",
+      "type": "string"
+     }
+    },
+    "required": [
+     "code",
+     "message"
+    ],
+    "title": "NoteWarningResponse",
+    "type": "object"
+   },
    "OnDemandQuotesResponse": {
     "properties": {
      "asset_type_id": {
@@ -8339,15 +9317,198 @@
     "title": "PortfolioWealthTier",
     "type": "object"
    },
-   "PositionMatch": {
-    "description": "Whether the ticker a report names is one the catalogue carries.\n\nThree answers and not two: a ticker registered twice — the same code under\ntwo asset types — is not the same problem as one that is missing, and the\nscreen resolves them differently. Guessing between two candidates here\nwould link a recommendation to the wrong asset without saying so.",
-    "enum": [
-     "matched",
-     "unknown",
-     "ambiguous"
+   "PositionComparisonRequest": {
+    "properties": {
+     "as_of": {
+      "format": "date",
+      "title": "As Of",
+      "type": "string"
+     },
+     "broker_id": {
+      "title": "Broker Id",
+      "type": "integer"
+     },
+     "holdings": {
+      "items": {
+       "$ref": "#/components/schemas/StatementHoldingRequest"
+      },
+      "title": "Holdings",
+      "type": "array"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "portfolio_id",
+     "broker_id",
+     "as_of",
+     "holdings"
     ],
-    "title": "PositionMatch",
-    "type": "string"
+    "title": "PositionComparisonRequest",
+    "type": "object"
+   },
+   "PositionDiffResponse": {
+    "properties": {
+     "app_quantity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "App Quantity"
+     },
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "difference": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Difference"
+     },
+     "holdings": {
+      "items": {
+       "type": "integer"
+      },
+      "title": "Holdings",
+      "type": "array"
+     },
+     "key": {
+      "title": "Key",
+      "type": "string"
+     },
+     "statement_quantity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Statement Quantity"
+     },
+     "status": {
+      "$ref": "#/components/schemas/app__modules__portfolio__domain__position_statement__PositionMatch"
+     }
+    },
+    "required": [
+     "key",
+     "status",
+     "asset_id",
+     "statement_quantity",
+     "app_quantity",
+     "difference",
+     "holdings"
+    ],
+    "title": "PositionDiffResponse",
+    "type": "object"
+   },
+   "PositionStatementDraftResponse": {
+    "properties": {
+     "as_of": {
+      "format": "date",
+      "title": "As Of",
+      "type": "string"
+     },
+     "broker_cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Broker Cnpj"
+     },
+     "broker_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Broker Id"
+     },
+     "broker_name": {
+      "title": "Broker Name",
+      "type": "string"
+     },
+     "currency": {
+      "enum": [
+       "BRL",
+       "USD"
+      ],
+      "title": "Currency",
+      "type": "string"
+     },
+     "holdings": {
+      "items": {
+       "$ref": "#/components/schemas/DraftHoldingResponse"
+      },
+      "title": "Holdings",
+      "type": "array"
+     },
+     "model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Model"
+     },
+     "positions": {
+      "items": {
+       "$ref": "#/components/schemas/PositionDiffResponse"
+      },
+      "title": "Positions",
+      "type": "array"
+     },
+     "warnings": {
+      "items": {
+       "$ref": "#/components/schemas/StatementWarningResponse"
+      },
+      "title": "Warnings",
+      "type": "array"
+     }
+    },
+    "required": [
+     "broker_name",
+     "broker_cnpj",
+     "broker_id",
+     "currency",
+     "as_of",
+     "holdings",
+     "positions",
+     "warnings",
+     "model"
+    ],
+    "title": "PositionStatementDraftResponse",
+    "type": "object"
    },
    "PresetLineResponse": {
     "properties": {
@@ -9023,6 +10184,131 @@
      "change"
     ],
     "title": "RecommendedPositionResponse",
+    "type": "object"
+   },
+   "ReconciliationGroupResponse": {
+    "properties": {
+     "actions": {
+      "items": {
+       "$ref": "#/components/schemas/GroupAction"
+      },
+      "title": "Actions",
+      "type": "array"
+     },
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "broker_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Broker Id"
+     },
+     "default_action": {
+      "$ref": "#/components/schemas/GroupAction"
+     },
+     "existing_ids": {
+      "items": {
+       "type": "integer"
+      },
+      "title": "Existing Ids",
+      "type": "array"
+     },
+     "key": {
+      "title": "Key",
+      "type": "string"
+     },
+     "lines": {
+      "items": {
+       "$ref": "#/components/schemas/LineRefResponse"
+      },
+      "title": "Lines",
+      "type": "array"
+     },
+     "message": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Message"
+     },
+     "side": {
+      "enum": [
+       "C",
+       "V"
+      ],
+      "title": "Side",
+      "type": "string"
+     },
+     "status": {
+      "$ref": "#/components/schemas/GroupStatus"
+     },
+     "trade_date": {
+      "format": "date",
+      "title": "Trade Date",
+      "type": "string"
+     },
+     "warnings": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+     }
+    },
+    "required": [
+     "key",
+     "status",
+     "default_action",
+     "actions",
+     "broker_id",
+     "asset_id",
+     "trade_date",
+     "side",
+     "lines",
+     "existing_ids",
+     "message",
+     "warnings"
+    ],
+    "title": "ReconciliationGroupResponse",
+    "type": "object"
+   },
+   "ReconciliationRequest": {
+    "properties": {
+     "lines": {
+      "items": {
+       "$ref": "#/components/schemas/NoteLineRequest"
+      },
+      "title": "Lines",
+      "type": "array"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "portfolio_id",
+     "lines"
+    ],
+    "title": "ReconciliationRequest",
     "type": "object"
    },
    "RegisterFundRequest": {
@@ -9808,6 +11094,53 @@
     "title": "SeriesAliasIn",
     "type": "object"
    },
+   "StatementHoldingRequest": {
+    "properties": {
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "index": {
+      "title": "Index",
+      "type": "integer"
+     },
+     "quantity": {
+      "minimum": 0.0,
+      "title": "Quantity",
+      "type": "number"
+     },
+     "security": {
+      "default": "",
+      "title": "Security",
+      "type": "string"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     }
+    },
+    "required": [
+     "index",
+     "quantity",
+     "asset_id"
+    ],
+    "title": "StatementHoldingRequest",
+    "type": "object"
+   },
    "StatementScope": {
     "enum": [
      "portfolio",
@@ -9817,6 +11150,24 @@
     ],
     "title": "StatementScope",
     "type": "string"
+   },
+   "StatementWarningResponse": {
+    "properties": {
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "message": {
+      "title": "Message",
+      "type": "string"
+     }
+    },
+    "required": [
+     "code",
+     "message"
+    ],
+    "title": "StatementWarningResponse",
+    "type": "object"
    },
    "StockCashDividendResponse": {
     "description": "A payment in money, per share.\n\n``label`` tells a dividend from interest on own capital (``JCP``), which is\ntaxed at source. ``last_date_prior`` is the last day the share carried the\nright; the ex date is the trading day after. ``payment_date`` is regularly\nin the future, because a company announces months ahead.",
@@ -11269,6 +12620,17 @@
       "title": "Date",
       "type": "string"
      },
+     "fees": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fees"
+     },
      "id": {
       "anyOf": [
        {
@@ -11291,6 +12653,29 @@
      "quantity": {
       "title": "Quantity",
       "type": "number"
+     },
+     "settlement_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Settlement Date"
+     },
+     "withheld_income_tax": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Withheld Income Tax"
      }
     },
     "required": [
@@ -11892,6 +13277,27 @@
     ],
     "title": "CustomCategory",
     "type": "object"
+   },
+   "app__modules__portfolio__domain__position_statement__PositionMatch": {
+    "enum": [
+     "match",
+     "different",
+     "missing_in_app",
+     "missing_in_statement",
+     "unresolved"
+    ],
+    "title": "PositionMatch",
+    "type": "string"
+   },
+   "app__modules__research__domain__draft__PositionMatch": {
+    "description": "Whether the ticker a report names is one the catalogue carries.\n\nThree answers and not two: a ticker registered twice — the same code under\ntwo asset types — is not the same problem as one that is missing, and the\nscreen resolves them differently. Guessing between two candidates here\nwould link a recommendation to the wrong asset without saying so.",
+    "enum": [
+     "matched",
+     "unknown",
+     "ambiguous"
+    ],
+    "title": "PositionMatch",
+    "type": "string"
    }
   },
   "securitySchemes": {
@@ -16579,6 +17985,201 @@
     "summary": "List All Portfolios"
    }
   },
+  "/portfolio/brokerage_note": {
+   "get": {
+    "description": "Imported notes of the portfolio, newest trading day first.",
+    "operationId": "list_brokerage_notes_portfolio_brokerage_note_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/BrokerageNoteResponse"
+         },
+         "title": "Response List Brokerage Notes Portfolio Brokerage Note Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Brokerage Notes",
+    "tags": [
+     "Portfolio Brokerage Note"
+    ]
+   },
+   "post": {
+    "description": "Save one note and apply the decisions taken over a reconciliation that must still hold.",
+    "operationId": "import_brokerage_note_portfolio_brokerage_note_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ImportRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ImportResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Import Brokerage Note",
+    "tags": [
+     "Portfolio Brokerage Note"
+    ]
+   }
+  },
+  "/portfolio/brokerage_note/extraction": {
+   "post": {
+    "description": "Read a brokerage note and show what importing it would do. Writes nothing.",
+    "operationId": "extract_brokerage_note_portfolio_brokerage_note_extraction_post",
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_extract_brokerage_note_portfolio_brokerage_note_extraction_post"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/BrokerageNoteDraftResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Extract Brokerage Note",
+    "tags": [
+     "Portfolio Brokerage Note"
+    ]
+   }
+  },
+  "/portfolio/brokerage_note/reconciliation": {
+   "post": {
+    "description": "Cross reviewed lines with the portfolio again, without reading the PDF again.",
+    "operationId": "reconcile_brokerage_note_portfolio_brokerage_note_reconciliation_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ReconciliationRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ReconciliationGroupResponse"
+         },
+         "title": "Response Reconcile Brokerage Note Portfolio Brokerage Note Reconciliation Post",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Reconcile Brokerage Note",
+    "tags": [
+     "Portfolio Brokerage Note"
+    ]
+   }
+  },
   "/portfolio/category": {
    "post": {
     "operationId": "save_custom_category_portfolio_category_post",
@@ -18573,6 +20174,104 @@
     "summary": "Consolidate Portfolio Asset",
     "tags": [
      "Portfolio Position Consolidator"
+    ]
+   }
+  },
+  "/portfolio/position_statement/comparison": {
+   "post": {
+    "description": "Compare reviewed holdings with the portfolio again, without reading the PDF again.",
+    "operationId": "compare_position_statement_portfolio_position_statement_comparison_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PositionComparisonRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/PositionDiffResponse"
+         },
+         "title": "Response Compare Position Statement Portfolio Position Statement Comparison Post",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Compare Position Statement",
+    "tags": [
+     "Portfolio Position Statement"
+    ]
+   }
+  },
+  "/portfolio/position_statement/extraction": {
+   "post": {
+    "description": "Read a broker statement and compare its holdings with the portfolio. Writes nothing.",
+    "operationId": "extract_position_statement_portfolio_position_statement_extraction_post",
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_extract_position_statement_portfolio_position_statement_extraction_post"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PositionStatementDraftResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Extract Position Statement",
+    "tags": [
+     "Portfolio Position Statement"
     ]
    }
   },

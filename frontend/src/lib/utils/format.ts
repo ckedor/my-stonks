@@ -27,3 +27,16 @@ const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
 
 export const formatBRL = (value: number | null | undefined) =>
   value == null ? '—' : BRL.format(value)
+
+/* Dinheiro na moeda em que o valor foi emitido.
+ *
+ * Uma nota de corretagem americana é em dólar, e o valor dela não segue o
+ * seletor de moeda da carteira: converter diria que a nota cobrou o que ela
+ * não cobrou. */
+const MONEY: Record<string, Intl.NumberFormat> = {}
+
+export const formatMoney = (value: number | null | undefined, currency: string) => {
+  if (value == null) return '—'
+  MONEY[currency] ??= new Intl.NumberFormat('pt-BR', { style: 'currency', currency })
+  return MONEY[currency].format(value)
+}

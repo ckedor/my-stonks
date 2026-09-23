@@ -27,6 +27,8 @@ import AppTooltip from './AppTooltip'
  * duas linhas de texto empilhadas. */
 
 const CLAMPED_WIDTH = 320
+/** O bastante para um seletor mostrar "XPML11 · XP Malls FII" sem cortar. */
+const WIDE_WIDTH = 300
 
 /** Deixa a tabela ocupar a tela sem encostar no rodapé dela. */
 const VIEWPORT_MAX_HEIGHT = '80vh'
@@ -57,8 +59,10 @@ export interface AppSimpleTableColumn<Row> {
   align?: 'left' | 'right'
   /** `clamped` corta o conteúdo com reticências numa largura fixa — para a
    *  coluna que carrega um texto longo que não pode empurrar as outras.
+   *  `wide` garante uma largura mínima — para a coluna que carrega um campo
+   *  editável, que a tabela espremeria até o valor virar reticências.
    *  Padrão: `auto`. */
-  width?: 'auto' | 'clamped'
+  width?: 'auto' | 'clamped' | 'wide'
   /** Torna a coluna ordenável e diz por qual valor. Sem isto o cabeçalho não
    *  clica, e é assim de propósito para a coluna cujo número só significa
    *  alguma coisa na ordem em que veio — um acumulado por ativo, lido fora da
@@ -143,7 +147,7 @@ export default function AppSimpleTable<Row>({
     setSort((current) =>
       current?.column === label
         ? { column: label, direction: current.direction === 'asc' ? 'desc' : 'asc' }
-        : { column: label, direction: 'asc' },
+        : { column: label, direction: 'asc' }
     )
 
   return (
@@ -225,7 +229,9 @@ export default function AppSimpleTable<Row>({
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
                               }
-                            : undefined
+                            : column.width === 'wide'
+                              ? { minWidth: WIDE_WIDTH }
+                              : undefined
                         }
                       >
                         {column.render(row)}
@@ -260,7 +266,7 @@ export default function AppSimpleTable<Row>({
 function compare(
   a: string | number | null | undefined,
   b: string | number | null | undefined,
-  direction: 1 | -1,
+  direction: 1 | -1
 ) {
   if (a == null) return b == null ? 0 : 1
   if (b == null) return -1
@@ -288,11 +294,7 @@ function SortableHeader<Row>({
   const active = sort?.column === column.label
 
   return (
-    <TableSortLabel
-      active={active}
-      direction={active ? sort?.direction : 'asc'}
-      onClick={onToggle}
-    >
+    <TableSortLabel active={active} direction={active ? sort?.direction : 'asc'} onClick={onToggle}>
       {label}
     </TableSortLabel>
   )

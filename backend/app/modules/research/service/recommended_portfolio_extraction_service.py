@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from app.core.exceptions import ValidationError
 from app.infra.db.unit_of_work import UnitOfWork
+from app.lib.utils.files import unreadable_pdf_reason
 from app.modules.research.adapters.recommended_portfolio_extractor import (
     RecommendedPortfolioExtractor,
 )
@@ -11,13 +12,6 @@ from app.modules.research.domain.draft import (
     RecommendedPortfolioDraft,
 )
 from app.modules.research.domain.extraction import ExtractedPosition
-
-#: What a research report weighs. Above this the provider refuses the document
-#: anyway, and the refusal reaches the reader as an integration error instead
-#: of as the file being too big.
-MAX_PDF_BYTES = 20 * 1024 * 1024
-
-_PDF_MAGIC = b'%PDF-'
 
 
 class RecommendedPortfolioExtractionService:
@@ -55,17 +49,8 @@ class RecommendedPortfolioExtractionService:
 
     @staticmethod
     def _reject_unreadable(*, filename: str, content: bytes) -> None:
-        if not content:
-            raise ValidationError('O arquivo enviado está vazio.')
-        if len(content) > MAX_PDF_BYTES:
-            raise ValidationError(
-                f'O arquivo tem {len(content) // (1024 * 1024)} MB e o limite é '
-                f'{MAX_PDF_BYTES // (1024 * 1024)} MB.'
-            )
-        # The bytes decide, not the name: a .pdf that is not one comes back
-        # from the provider as an unhelpful integration failure.
-        if not content.startswith(_PDF_MAGIC):
-            raise ValidationError(f'O arquivo {filename} não é um PDF.')
+        if reason := unreadable_pdf_reason(filename=filename, content=content):
+            raise ValidationError(reason)
 
     @staticmethod
     def _by_ticker(assets: list) -> dict[str, list]:

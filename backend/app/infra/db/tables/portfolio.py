@@ -12,6 +12,7 @@ from sqlalchemy import (
     Table,
     Text,
     UniqueConstraint,
+    func,
 )
 
 from app.infra.db.base import Base
@@ -56,6 +57,35 @@ position_table = Table(
     schema='portfolio',
 )
 
+brokerage_note_table = Table(
+    'brokerage_note',
+    Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('portfolio_id', Integer, ForeignKey('portfolio.portfolio.id'), nullable=False),
+    Column('broker_id', Integer, ForeignKey('portfolio.broker.id'), nullable=False),
+    Column('currency', String(3), nullable=False, server_default='BRL'),
+    Column('note_number', String(40), nullable=True),
+    Column('trade_date', Date, nullable=False),
+    Column('settlement_date', Date, nullable=True),
+    Column('purchases_total', Float, nullable=True),
+    Column('sales_total', Float, nullable=True),
+    Column('operations_total', Float, nullable=True),
+    Column('settlement_fee', Float, nullable=True),
+    Column('registration_fee', Float, nullable=True),
+    Column('emoluments', Float, nullable=True),
+    Column('other_exchange_fees', Float, nullable=True),
+    Column('brokerage', Float, nullable=True),
+    Column('iss', Float, nullable=True),
+    Column('other_costs', Float, nullable=True),
+    Column('withheld_income_tax', Float, nullable=True),
+    Column('net_amount', Float, nullable=True),
+    Column('imported_at', DateTime(timezone=True), nullable=False, server_default=func.now()),
+    UniqueConstraint(
+        'portfolio_id', 'broker_id', 'note_number', name='uq_brokerage_note_by_broker_number'
+    ),
+    schema='portfolio',
+)
+
 transaction_table = Table(
     'transaction',
     Base.metadata,
@@ -67,6 +97,16 @@ transaction_table = Table(
     Column('quantity', Float, nullable=False),
     Column('price', Float, nullable=False),
     Column('price_usd', Float, nullable=True),
+    Column('settlement_date', Date, nullable=True),
+    Column('fees', Float, nullable=True),
+    Column('withheld_income_tax', Float, nullable=True),
+    Column(
+        'brokerage_note_id',
+        Integer,
+        ForeignKey('portfolio.brokerage_note.id', ondelete='SET NULL'),
+        nullable=True,
+        index=True,
+    ),
     schema='portfolio',
 )
 

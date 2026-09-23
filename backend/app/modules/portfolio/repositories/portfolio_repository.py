@@ -15,6 +15,7 @@ from app.modules.market_data.domain.assets import (
     AssetType,
     Broker,
     ETFSegment,
+    Event,
     Exchange,
     FIISegment,
     FIIType,
@@ -31,6 +32,7 @@ from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.domain.market_scope import B3_TICKER_PATTERN
 from app.modules.portfolio.domain.dividend import DividendQuery
 from app.modules.portfolio.domain.entities import (
+    BrokerageNote,
     CustomCategory,
     CustomCategoryAssignment,
     Dividend,
@@ -453,6 +455,10 @@ class PortfolioRepository(SQLAlchemyRepository):
                 Broker.currency_id.label('currency_id'),
                 Transaction.price,
                 Transaction.price_usd,
+                Transaction.settlement_date,
+                Transaction.fees,
+                Transaction.withheld_income_tax,
+                Transaction.brokerage_note_id,
                 Asset.id.label('asset_id'),
                 Asset.ticker,
                 Asset.name,
@@ -475,6 +481,116 @@ class PortfolioRepository(SQLAlchemyRepository):
 
         result = await self.session.execute(stmt)
         return result.mappings().all()
+
+    async def get_broker_transactions_until(
+        self, portfolio_id: int, broker_id: int, until: date_type
+    ) -> list[Transaction]:
+        """Every transaction of the portfolio at this broker up to ``until``."""
+        stmt = (
+            select(Transaction)
+            .where(Transaction.portfolio_id == portfolio_id)
+            .where(Transaction.broker_id == broker_id)
+            .where(cast(Transaction.date, Date) <= until)
+            .order_by(Transaction.date, Transaction.id)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_events_for_assets(self, asset_ids: Sequence[int]) -> list[Event]:
+        """Splits, reverse splits and bonuses of these assets, oldest first."""
+        if not asset_ids:
+            return []
+        stmt = select(Event).where(Event.asset_id.in_(asset_ids)).order_by(Event.date)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_asset_transactions_until(
+        self,
+        portfolio_id: int,
+        asset_ids: Sequence[int],
+        until: date_type,
+    ) -> list[Transaction]:
+        """Every transaction of these assets in the portfolio up to ``until``, any broker.
+
+        The import of a brokerage note reads both what it may collide with (the
+        note's days) and the position each sale starts from (everything before).
+        """
+        if not asset_ids:
+            return []
+        stmt = (
+            select(Transaction)
+            .where(Transaction.portfolio_id == portfolio_id)
+            .where(Transaction.asset_id.in_(asset_ids))
+            .where(cast(Transaction.date, Date) <= until)
+            .order_by(Transaction.date, Transaction.id)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_brokers(self) -> list[Broker]:
+        result = await self.session.execute(select(Broker).order_by(Broker.id))
+        return list(result.scalars().all())
+
+    async def find_brokerage_note(
+        self,
+        portfolio_id: int,
+        broker_id: int,
+        note_number: str | None,
+        trade_date: date_type,
+    ) -> BrokerageNote | None:
+        """The note already imported: by number, or by trading day when it has none.
+
+        A US confirmation prints no note number, and the broker issues one per
+        trading day, so the day stands in for it.
+        """
+        stmt = select(BrokerageNote).where(
+            BrokerageNote.portfolio_id == portfolio_id,
+            BrokerageNote.broker_id == broker_id,
+        )
+        if note_number:
+            stmt = stmt.where(BrokerageNote.note_number == note_number)
+        else:
+            stmt = stmt.where(
+                BrokerageNote.note_number.is_(None), BrokerageNote.trade_date == trade_date
+            )
+        result = await self.session.execute(stmt.limit(1))
+        return result.scalars().first()
+
+    async def list_brokerage_notes(self, portfolio_id: int) -> list[dict]:
+        """Imported notes, newest trading day first, with how many transactions they link."""
+        linked = func.count(Transaction.id).label('transaction_count')
+        stmt = (
+            select(
+                BrokerageNote.id,
+                BrokerageNote.currency,
+                BrokerageNote.note_number,
+                BrokerageNote.trade_date,
+                BrokerageNote.settlement_date,
+                BrokerageNote.operations_total,
+                BrokerageNote.net_amount,
+                BrokerageNote.withheld_income_tax,
+                BrokerageNote.imported_at,
+                (
+                    func.coalesce(BrokerageNote.settlement_fee, 0)
+                    + func.coalesce(BrokerageNote.registration_fee, 0)
+                    + func.coalesce(BrokerageNote.emoluments, 0)
+                    + func.coalesce(BrokerageNote.other_exchange_fees, 0)
+                    + func.coalesce(BrokerageNote.brokerage, 0)
+                    + func.coalesce(BrokerageNote.iss, 0)
+                    + func.coalesce(BrokerageNote.other_costs, 0)
+                ).label('fees'),
+                Broker.id.label('broker_id'),
+                Broker.name.label('broker_name'),
+                linked,
+            )
+            .join(Broker, Broker.id == BrokerageNote.broker_id)
+            .outerjoin(Transaction, Transaction.brokerage_note_id == BrokerageNote.id)
+            .where(BrokerageNote.portfolio_id == portfolio_id)
+            .group_by(BrokerageNote.id, Broker.id)
+            .order_by(desc(BrokerageNote.trade_date), desc(BrokerageNote.id))
+        )
+        result = await self.session.execute(stmt)
+        return [dict(row) for row in result.mappings().all()]
 
     async def get_portfolio_dividends(
         self, portfolio_id: int, filters: DividendQuery, currency: str = 'BRL'
