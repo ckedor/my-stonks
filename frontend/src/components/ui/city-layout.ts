@@ -18,7 +18,7 @@ function spiral(count: number) {
 const VALUE_PER_VOLUME = 17_500
 /** The measure of everything that is not a holding — streets, houses,
  *  trees, cars. Fixed, so the towers grow against a neighborhood that does not. */
-export const CITY_UNIT = 1.3
+const CITY_UNIT = 1.3
 /** Inside of a block: fixed, so the street grid never moves. */
 const BLOCK = CITY_UNIT * 1.25
 /** A building grows up before it grows out: its base follows the fourth
