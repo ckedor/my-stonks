@@ -36,6 +36,7 @@ BROKER = 7
 AVENUE = 2
 QQQM = 59
 PETR4 = 101
+PLGN = 77
 
 
 def _reading(**overrides) -> BrokerageNotesReading:
@@ -52,6 +53,7 @@ def _reading(**overrides) -> BrokerageNotesReading:
                 market='FRACIONARIO',
                 security='PETR4F PN N2',
                 ticker=None,
+                fund_cnpj=None,
                 quantity=10,
                 price=30,
                 value=300,
@@ -62,6 +64,7 @@ def _reading(**overrides) -> BrokerageNotesReading:
                 market='VISTA',
                 security='EMPRESA SEM CADASTRO ON',
                 ticker=None,
+                fund_cnpj=None,
                 quantity=100,
                 price=5,
                 value=500,
@@ -320,6 +323,7 @@ def _avenue_reading() -> BrokerageNotesReading:
                         market=None,
                         security='INVESCO EXCHANGE TRADED FD TR II INVESCO NASDAQ 100 ETF',
                         ticker='QQQM',
+                        fund_cnpj=None,
                         quantity=24.45205,
                         price=299.9923,
                         value=7335.43,
@@ -352,6 +356,87 @@ async def test_a_dollar_confirmation_finds_the_broker_by_name_and_the_us_ticker(
     assert (note.broker_id, note.currency, note.warnings) == (AVENUE, 'USD', ())
     (line,) = note.lines
     assert (line.ticker, line.asset_id, line.match) == ('QQQM', QQQM, AssetMatch.MATCHED)
+
+
+def _fund_statement_reading() -> BrokerageNotesReading:
+    """Uma aplicação num fundo, como o extrato de conta do BTG a mostra."""
+    return BrokerageNotesReading(
+        notes=[
+            BrokerageNoteReading(
+                broker_name='BTG Pactual',
+                broker_cnpj=None,
+                currency='BRL',
+                note_number=None,
+                trade_date=date(2026, 9, 17),
+                settlement_date=None,
+                lines=[
+                    BrokerageNoteLineReading(
+                        side='C',
+                        market='FUNDO',
+                        security='PLGN Equipe FICFIDC',
+                        ticker=None,
+                        fund_cnpj='55.139.905/0001-39',
+                        quantity=13697.925404,
+                        price=1.454548,
+                        value=19924.29,
+                        fees=75.71,
+                    )
+                ],
+                purchases_total=None,
+                sales_total=None,
+                operations_total=None,
+                settlement_fee=None,
+                registration_fee=None,
+                emoluments=None,
+                other_exchange_fees=None,
+                brokerage=None,
+                iss=None,
+                other_costs=None,
+                withheld_income_tax=None,
+                net_amount=None,
+            )
+        ]
+    )
+
+
+async def test_a_fund_line_without_ticker_is_found_by_the_class_cnpj():
+    service, uow = _service(reading=_fund_statement_reading())
+    uow.fund_registry = SimpleNamespace(
+        find_funds_by_legal_id=AsyncMock(return_value=[]),
+        find_classes_by_cnpj=AsyncMock(return_value=[SimpleNamespace(id=7, cnpj='55139905000139')]),
+        list_class_units=AsyncMock(return_value=[SimpleNamespace(asset_id=PLGN)]),
+    )
+    uow.assets.get_by_ids = AsyncMock(
+        return_value=[SimpleNamespace(id=PLGN, ticker=None, name='PLGN Equipe FICFIDC')]
+    )
+
+    draft = await service.extract(portfolio_id=PORTFOLIO, filename='report.pdf', content=PDF)
+
+    (note,) = draft.notes
+    (line,) = note.lines
+    assert (line.ticker, line.asset_id, line.match) == (None, PLGN, AssetMatch.MATCHED)
+    assert line.fees == pytest.approx(75.71)
+    uow.fund_registry.find_classes_by_cnpj.assert_awaited_once_with(['55139905000139'])
+
+
+async def test_a_fund_linked_to_another_class_is_still_found_by_its_own_cnpj():
+    """Um FIC ligado à classe do fundo master continua sendo achado pelo CNPJ dele."""
+    service, uow = _service(reading=_fund_statement_reading())
+    uow.fund_registry = SimpleNamespace(
+        find_funds_by_legal_id=AsyncMock(
+            return_value=[SimpleNamespace(asset_id=PLGN, legal_id='55139905000139')]
+        ),
+        find_classes_by_cnpj=AsyncMock(return_value=[SimpleNamespace(id=7, cnpj='55139905000139')]),
+        list_class_units=AsyncMock(return_value=[]),
+    )
+    uow.assets.get_by_ids = AsyncMock(
+        return_value=[SimpleNamespace(id=PLGN, ticker='PLGN EQUIPE', name='PLGN Equipe FICFIDC')]
+    )
+
+    draft = await service.extract(portfolio_id=PORTFOLIO, filename='report.pdf', content=PDF)
+
+    (line,) = draft.notes[0].lines
+    assert (line.asset_id, line.match) == (PLGN, AssetMatch.MATCHED)
 
 
 async def test_a_dollar_line_is_stored_with_the_real_price_from_the_day_rate():

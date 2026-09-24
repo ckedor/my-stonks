@@ -90,6 +90,14 @@ def match_broker(brokers: list, cnpj: str | None, name: str | None):
     return by_name[0] if len(by_name) == 1 else None
 
 
+def fund_key(cnpj: str | None) -> str | None:
+    """A chave de um fundo entre os candidatos a ativo, que o ticker não dá.
+
+    Prefixada, para um CNPJ nunca se confundir com um código de negociação.
+    """
+    return f'cnpj:{cnpj}' if cnpj else None
+
+
 def only_digits(value: str | None) -> str | None:
     digits = re.sub(r'\D', '', value or '')
     return digits or None

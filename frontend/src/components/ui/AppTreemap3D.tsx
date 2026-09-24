@@ -1208,6 +1208,15 @@ export default function AppTreemap3D(props: AppTreemapProps & {
       // a water tank and AC units; the largest tower also gets an antenna.
       const crown = new THREE.Group()
       crown.position.set(building.x, elevation, building.z)
+      // On smaller buildings the sign covers the top two floors, and windows
+      // behind the letters made them hard to read: those floors become a
+      // plain band in the building's color, a parapet wall the sign sits on.
+      if (base < unit * 0.8) {
+        const bandHeight = Math.min(FLOOR * 2, elevation * 0.3)
+        const band = new THREE.Mesh(new RoundedBoxGeometry(base + 0.002, bandHeight, base + 0.002, 2, Math.min(base * 0.035, bandHeight * 0.2)), roof)
+        band.position.y = -bandHeight / 2
+        crown.add(band)
+      }
       const lip = base * 0.025
       const lipHeight = unit * 0.014
       for (const [sx, sz, px, pz] of [[base, lip, 0, base / 2 - lip / 2], [base, lip, 0, -base / 2 + lip / 2], [lip, base - lip * 2, base / 2 - lip / 2, 0], [lip, base - lip * 2, -base / 2 + lip / 2, 0]]) {

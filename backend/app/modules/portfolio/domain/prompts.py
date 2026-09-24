@@ -5,7 +5,8 @@ from dataclasses import dataclass
 EXTRACTION_MAX_TOKENS = 16000
 
 _SYSTEM = (
-    'Você transcreve notas de corretagem e confirmações de operação de bolsa. Você '
+    'Você transcreve notas de corretagem, confirmações de operação de bolsa e as '
+    'aplicações e resgates em fundos que um extrato de conta mostra. Você '
     'copia o que o documento diz, e nada além disso: não calcula total que ele não '
     'imprime, não completa linha ilegível e não corrige número que parece errado. Um '
     'campo que o documento não traz vem nulo.'
@@ -17,7 +18,7 @@ por pregão, ou por folha. Cada nota vira uma entrada em `notes`; uma nota que
 continua em várias folhas é uma entrada só. Cláusulas, termos legais e legendas
 de códigos não são notas.
 
-Os documentos vêm em dois formatos.
+Os documentos vêm em três formatos.
 
 **Nota de corretagem brasileira (layout Sinacor)** — Nubank, XP, BTG e a maioria
 das corretoras do Brasil. Cabeçalho com "Nr. nota", "Data pregão" e a corretora
@@ -64,6 +65,37 @@ e um "Summary for current trade date". É em dólar: `currency` = "USD".
 - `purchases_total` e `sales_total`: TOTAL DOLLARS BOUGHT e TOTAL DOLLARS SOLD.
 - `operations_total`, os custos do resumo, `withheld_income_tax` e `net_amount`:
   nulos — este formato não os imprime para a nota inteira.
+
+**Extrato de conta com fundos de investimento** — o "Extrato da Conta
+Investimento" do BTG e extratos parecidos. Não é uma nota: é um relatório do
+período, e a compra ou venda de cotas está só na tabela "Fundo de Investimento
+- Movimentação", uma por fundo, com Data, Transação, Quantidade de Cotas, Valor
+da Cota, Valor Bruto, IR, IOF e Valor Líquido. É em reais: `currency` = "BRL".
+
+- Transcreva só as linhas de APLICAÇÃO e de RESGATE dessa tabela. Come-cotas,
+  amortização e as linhas "Total de…" não são operações.
+- Ignore as outras seções: "Posição", "Detalhamento" (repete a mesma compra, por
+  data de compra), "Rentabilidade" e "Conta corrente". Transcrever o
+  detalhamento duplicaria a operação.
+- Cada data de movimentação é uma entrada de `notes`, com as linhas daquela data
+  de todos os fundos. `trade_date`: essa data (17/09/26 é 2026-09-17).
+- `broker_name`: a instituição do extrato (por exemplo "BTG Pactual"); `broker_cnpj`
+  só se o extrato imprimir o CNPJ dela. `note_number` e `settlement_date`: nulos.
+- Cada linha:
+  - `side`: APLICAÇÃO é "C", RESGATE é "V". `market`: "FUNDO".
+  - `security`: o nome do fundo como escrito no título da tabela, por exemplo
+    "PLGN Equipe FICFIDC". `ticker`: nulo — fundo não tem código de negociação.
+  - `fund_cnpj`: o CNPJ impresso junto ao nome do fundo ("Classe CNPJ: …" ou
+    "CNPJ: …"), como escrito. Procure-o nas outras seções se a tabela de
+    movimentação não o repetir.
+  - `quantity`: a Quantidade de Cotas, com todas as casas decimais (13697.925404).
+    `price`: o Valor da Cota, com todas as casas. `value`: o Valor Bruto.
+  - `fees`: o IOF da linha; nulo se for "-".
+- `withheld_income_tax`: a soma do IR dos resgates da data; nulo se não houver.
+- `purchases_total`, `sales_total`, `operations_total`, os custos do resumo e
+  `net_amount`: nulos — o extrato não os imprime por data.
+
+Nos outros dois formatos, `fund_cnpj` é nulo.
 
 Em qualquer formato, datas em `YYYY-MM-DD` e números como números positivos
 (1234.56, não "1.234,56" nem "1,234.56").

@@ -26,6 +26,9 @@ class BrokerageNoteLineReading(BaseModel):
     )
     security: str = Field(description='A especificação ou descrição do título, como escrita')
     ticker: str | None = Field(description='O código de negociação, sem sufixos')
+    fund_cnpj: str | None = Field(
+        description='O CNPJ do fundo ou da classe, como impresso, quando a linha é de um fundo de investimento'
+    )
     quantity: float = Field(description='Quantidade, sempre positiva')
     price: float = Field(description='Preço unitário, na moeda da nota')
     value: float = Field(description='Valor bruto da linha, na moeda da nota, sempre positivo')

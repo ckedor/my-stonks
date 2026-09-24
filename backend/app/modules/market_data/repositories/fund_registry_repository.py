@@ -310,6 +310,20 @@ class FundRegistryRepository(SQLAlchemyRepository):
         )
         return list(result.scalars().all())
 
+    async def find_funds_by_legal_id(self, cnpjs: Sequence[str]) -> list[InvestmentFund]:
+        """The fund assets whose own CNPJ is one of these.
+
+        The CNPJ recorded on the asset, independent of the registry class it is
+        linked to — which a fund registered by hand does not have, and a
+        fund of funds may have pointing at its master.
+        """
+        if not cnpjs:
+            return []
+        result = await self.session.execute(
+            select(InvestmentFund).where(InvestmentFund.legal_id.in_(list(cnpjs)))
+        )
+        return list(result.scalars().all())
+
     async def find_classes_by_cnpj(self, cnpjs: Sequence[str]) -> list[FundRegistryClass]:
         if not cnpjs:
             return []

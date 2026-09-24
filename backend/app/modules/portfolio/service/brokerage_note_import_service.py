@@ -24,9 +24,11 @@ from app.modules.portfolio.domain.brokerage_note import (
     ReconciliationGroup,
     allocate_costs,
     check_note,
+    fund_key,
     line_ticker,
     match_broker,
     note_costs,
+    only_digits,
     reconcile,
 )
 from app.modules.portfolio.domain.entities import BrokerageNote, Transaction
@@ -71,6 +73,12 @@ class BrokerageNoteImportService:
             for line in note.lines
             if (ticker := line_ticker(line.ticker, line.security, note.currency))
         })
+        fund_cnpjs = sorted({
+            cnpj
+            for note in reading.notes
+            for line in note.lines
+            if (cnpj := only_digits(line.fund_cnpj))
+        })
         async with self.uow as uow:
             assets = await uow.assets.get_by_tickers(tickers)
             brokers = await uow.portfolios.list_brokers()
@@ -79,6 +87,8 @@ class BrokerageNoteImportService:
             for asset in assets:
                 if asset.ticker:
                     candidates[asset.ticker.upper()].append(asset)
+            for cnpj, funds in (await self._funds_by_cnpj(uow, fund_cnpjs)).items():
+                candidates[fund_key(cnpj)].extend(funds)
             notes = [
                 self._draft_note(index, note, brokers, candidates)
                 for index, note in enumerate(reading.notes)
@@ -381,9 +391,38 @@ class BrokerageNoteImportService:
         )
 
     @staticmethod
+    async def _funds_by_cnpj(uow: UnitOfWork, cnpjs: list[str]) -> dict[str, list]:
+        """Os fundos cadastrados de cada CNPJ lido.
+
+        Um fundo não tem código de negociação: o que o extrato imprime é o CNPJ.
+        Ele casa com o CNPJ gravado no próprio fundo ou com o da classe a que o
+        fundo está ligado — o gravado vale mesmo quando o vínculo com a classe
+        falta, ou aponta para o fundo master de um FIC.
+        """
+        if not cnpjs:
+            return {}
+        asset_ids: dict[str, set[int]] = defaultdict(set)
+        for fund in await uow.fund_registry.find_funds_by_legal_id(cnpjs):
+            asset_ids[fund.legal_id].add(fund.asset_id)
+        for fund_class in await uow.fund_registry.find_classes_by_cnpj(cnpjs):
+            for unit in await uow.fund_registry.list_class_units(fund_class.id):
+                asset_ids[fund_class.cnpj].add(unit.asset_id)
+        assets = {
+            asset.id: asset
+            for asset in await uow.assets.get_by_ids(
+                sorted({i for ids in asset_ids.values() for i in ids})
+            )
+        }
+        return {
+            cnpj: [assets[i] for i in sorted(ids) if i in assets] for cnpj, ids in asset_ids.items()
+        }
+
+    @staticmethod
     def _draft_line(index, line, costs, candidates, ticker) -> DraftLine:
         fees, tax = costs
-        matches = candidates.get(ticker, []) if ticker else []
+        # Fundo não tem ticker: a linha casa pelo CNPJ que o extrato imprime.
+        key = ticker or fund_key(only_digits(line.fund_cnpj))
+        matches = candidates.get(key, []) if key else []
         if len(matches) == 1:
             match, asset_id, asset_name = AssetMatch.MATCHED, matches[0].id, matches[0].name
         elif matches:

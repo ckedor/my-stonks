@@ -348,8 +348,12 @@ history
   -> GET /portfolio/brokerage_note?portfolio_id=
 ```
 
-Two document families are read: the Brazilian Sinacor note (BRL) and the US
-trade confirmation (USD, Avenue/Apex). A note's currency must be its broker's;
+Three document families are read: the Brazilian Sinacor note (BRL), the US
+trade confirmation (USD, Avenue/Apex), and an account statement that shows fund
+subscriptions and redemptions (BRL, BTG's "Extrato da Conta Investimento") —
+each movement date there becomes one note, with no note number. A line's asset
+is found by its ticker; a fund line has none and is found by the class CNPJ the
+statement prints. A note's currency must be its broker's;
 a USD line is stored with `price_usd` as printed and `price` from the day's
 rate, the reverse of a BRL line. Everything that is stored — the note header
 and every line — is editable on screen before confirming, and each edit
