@@ -48,6 +48,10 @@ export interface AppTreemapLeaf {
   caption?: string
   /** Área do bloco. */
   value: number
+  /** Valor formatado para o rótulo principal em 3D. */
+  valueDisplay?: string
+  /** Segundo volume, na mesma escala do valor atual. */
+  projectedValue?: number | null
   /** Cor de fundo do bloco, derivada do dado. */
   tint: string
 }

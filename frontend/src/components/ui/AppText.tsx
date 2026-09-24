@@ -120,9 +120,11 @@ export default function AppText({
       ? {
           sx: {
             /* Não quebrar sem cortar é escrever para fora do card: o texto
-               que não pode virar duas linhas termina em reticências. */
+               que não pode virar duas linhas termina em reticências. O
+               `caption` do MUI sai como `<span>`, e em elemento inline o
+               corte não acontece — daí o `display: block`. */
             ...(noWrap && !inline
-              ? { overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }
+              ? { display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }
               : {}),
             ...(variant === 'sceneHeading'
               ? { fontSize: { xs: '2.2rem', md: '3.2rem' }, lineHeight: 1.05 }
