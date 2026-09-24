@@ -30,18 +30,59 @@ function mix(from: THREE.ColorRepresentation, to: THREE.ColorRepresentation, amo
   return start.lerp(new THREE.Color(to).convertLinearToSRGB(), amount).convertSRGBToLinear()
 }
 
-/** One floor of facade: white wall and a darker pane, so the building's own
- *  tint colors both and the windows read as a shade of it. */
-function windowTile() {
+/** Eight by eight floors of facade, in the same grid as `litWindows`: a
+ *  wall of fine stone grain with a faint line at each floor, and windows
+ *  that each differ a little — the shade of the glass, a reflection across
+ *  it, now and then a blind half down — in a frame with a mullion and a
+ *  sill. White and grays, so the building's tint colors it. Glass is darker
+ *  than wall, and the same map sets roughness, so glass shines and the wall
+ *  does not. */
+function facadeTile() {
+  const cell = 64
+  const size = cell * 8
   const canvas = document.createElement('canvas')
-  canvas.width = 32
-  canvas.height = 32
+  canvas.width = size
+  canvas.height = size
   const context = canvas.getContext('2d')
+  let state = 17
+  const random = () => (state = (state * 16807) % 2147483647) / 2147483647
   if (context) {
     context.fillStyle = '#ffffff'
-    context.fillRect(0, 0, 32, 32)
-    context.fillStyle = '#a3abb5'
-    context.fillRect(8, 9, 16, 15)
+    context.fillRect(0, 0, size, size)
+    for (let index = 0; index < 9000; index++) {
+      const level = Math.round(255 * (0.9 + random() * 0.1))
+      context.fillStyle = `rgb(${level},${level},${level})`
+      context.fillRect(random() * size, random() * size, 1.5, 1.5)
+    }
+    for (let row = 0; row < 8; row++) {
+      context.fillStyle = '#e4e4e4'
+      context.fillRect(0, row * cell + cell - 3, size, 3)
+      for (let column = 0; column < 8; column++) {
+        const x = column * cell + 16
+        const y = row * cell + 18
+        const glass = Math.round(120 + random() * 40)
+        context.fillStyle = '#7c848c'
+        context.fillRect(x - 2, y - 2, 36, 34)
+        context.fillStyle = `rgb(${glass},${glass + 8},${glass + 16})`
+        context.fillRect(x, y, 32, 30)
+        // A pale streak of reflected sky across the upper corner.
+        context.fillStyle = 'rgba(255,255,255,0.18)'
+        context.beginPath()
+        context.moveTo(x, y + 12)
+        context.lineTo(x + 14, y)
+        context.lineTo(x + 22, y)
+        context.lineTo(x, y + 20)
+        context.fill()
+        if (random() < 0.22) {
+          context.fillStyle = '#cfc9bd'
+          context.fillRect(x, y, 32, 8 + random() * 14)
+        }
+        context.fillStyle = '#9aa1a8'
+        context.fillRect(x + 15, y, 2, 30)
+        context.fillStyle = '#d6d2ca'
+        context.fillRect(x - 3, y + 31, 38, 3)
+      }
+    }
   }
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
@@ -1105,7 +1146,8 @@ export default function AppTreemap3D(props: AppTreemapProps & {
       texture.anisotropy = renderer.capabilities.getMaxAnisotropy()
       return { texture, aspect: canvas.height / canvas.width }
     }
-    const tile = windowTile()
+    const tile = facadeTile()
+    const gravel = speckle(1400, [0.6, 1.6], [0.84, 1], 12)
     const lights = litWindows()
     tile.anisotropy = renderer.capabilities.getMaxAnisotropy()
     const parts: {
@@ -1122,19 +1164,24 @@ export default function AppTreemap3D(props: AppTreemapProps & {
     for (const building of buildings) {
       const { elevation, base } = building
       const windows = tile.clone()
-      windows.repeat.set(Math.max(1, Math.round(base / FLOOR)), elevation / FLOOR)
+      // One tile is eight floors by eight windows; each building starts at
+      // a different window of it, as its lights do.
+      windows.repeat.set(Math.max(1, Math.round(base / FLOOR)) / 8, elevation / FLOOR / 8)
+      windows.offset.set((parts.length * 3 % 8) / 8, (parts.length * 5 % 8) / 8)
       const tint = muted(new THREE.Color(building.leaf.tint))
       const grime = grounding.clone()
       grime.repeat.y = elevation / GRIME_HEIGHT
       const lit = lights.clone()
-      lit.repeat.set(windows.repeat.x / 8, windows.repeat.y / 8)
+      lit.repeat.copy(windows.repeat)
       lit.offset.set((parts.length * 3 % 8) / 8, (parts.length * 5 % 8) / 8)
       const facade = new THREE.MeshStandardMaterial({
-        color: tint, map: windows, aoMap: grime, roughness: 0.55, metalness: 0.12,
+        color: tint, map: windows, roughnessMap: windows, aoMap: grime, roughness: 0.75, metalness: 0.12,
         emissive: '#ffd08a', emissiveMap: lit, emissiveIntensity: 0,
       })
       glowing.push({ material: facade, strength: 1.1 })
-      const roof = new THREE.MeshStandardMaterial({ color: tint, roughness: 0.55, metalness: 0.12 })
+      const roofGrain = gravel.clone()
+      roofGrain.repeat.set(base / (unit * 0.3), base / (unit * 0.3))
+      const roof = new THREE.MeshStandardMaterial({ color: tint, map: roofGrain, roughness: 0.85, metalness: 0.05 })
       // Slightly rounded edges catch the light, which is most of what makes a
       // box read as a building on a model rather than a raw polygon.
       const mesh = new THREE.Mesh(new RoundedBoxGeometry(base, elevation, base, 2, Math.min(base * 0.035, elevation * 0.2)), [facade, facade, roof, roof, facade, facade])
@@ -1297,7 +1344,7 @@ export default function AppTreemap3D(props: AppTreemapProps & {
         const { mesh, outline, windows } = body.part
         mesh.scale.y = outline.scale.y = top / body.elevation
         mesh.position.y = outline.position.y = top / 2
-        windows.repeat.y = top / FLOOR
+        windows.repeat.y = top / FLOOR / 8
         body.part.lit.repeat.y = top / FLOOR / 8
         body.part.grime.repeat.y = top / GRIME_HEIGHT
         body.part.crown.position.y = top
@@ -1595,6 +1642,7 @@ export default function AppTreemap3D(props: AppTreemapProps & {
         }
       })
       tile.dispose()
+      gravel.dispose()
       lights.dispose()
       lampGlow.dispose()
       grounding.dispose()
