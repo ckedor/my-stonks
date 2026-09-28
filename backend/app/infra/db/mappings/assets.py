@@ -11,6 +11,7 @@ from app.infra.db.tables.assets import (
     etf_holding_report_table,
     etf_holding_table,
     etf_registry_class_table,
+    etf_registry_manager_table,
     etf_registry_table,
     etf_segment_table,
     etf_table,
@@ -58,6 +59,7 @@ from app.modules.market_data.domain.etf_registry import (
     EtfHoldingReport,
     EtfRegistry,
     EtfRegistryClass,
+    EtfRegistryManager,
 )
 from app.modules.market_data.domain.fund_registry import (
     FundRegistry,
@@ -173,6 +175,7 @@ def map_assets() -> None:
     Base.registry.map_imperatively(EtfRegistry, etf_registry_table)
     Base.registry.map_imperatively(EtfHoldingReport, etf_holding_report_table)
     Base.registry.map_imperatively(EtfHolding, etf_holding_table)
+    Base.registry.map_imperatively(EtfRegistryManager, etf_registry_manager_table)
     Base.registry.map_imperatively(
         EtfRegistryClass,
         etf_registry_class_table,

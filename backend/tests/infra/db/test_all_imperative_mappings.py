@@ -12,7 +12,7 @@ from app.modules.ai.domain.entities import (
 )
 from app.modules.lab.domain.entities import TheoreticalPortfolio, TheoreticalPosition
 from app.modules.market_data.domain import assets as asset_entities
-from app.modules.market_data.domain import fund_registry, fund_share_value
+from app.modules.market_data.domain import etf_registry, fund_registry, fund_share_value
 from app.modules.market_data.domain.asset_visit import AssetVisit
 from app.modules.market_data.domain.ingestion import (
     DataIngestionAttempt,
@@ -24,6 +24,7 @@ from app.modules.market_data.domain.market_data_series import (
 )
 from app.modules.market_data.domain.quote import Quote
 from app.modules.market_data.domain.usd_brl import UsdBrlHistory
+from app.modules.operations.domain.task_run import TaskRun
 from app.modules.portfolio.domain import entities as portfolio_entities
 from app.modules.research.domain.entities import (
     RecommendedPortfolio,
@@ -55,6 +56,11 @@ PERSISTED_ENTITIES = [
     fund_registry.FundRegistrySubclass,
     fund_registry.FundShareSeries,
     fund_registry.FundShareSeriesAlias,
+    etf_registry.EtfRegistry,
+    etf_registry.EtfRegistryManager,
+    etf_registry.EtfRegistryClass,
+    etf_registry.EtfHoldingReport,
+    etf_registry.EtfHolding,
     fund_share_value.SourceFile,
     fund_share_value.FundShareValueCoverage,
     fund_share_value.IngestionCheckpoint,
@@ -72,6 +78,7 @@ PERSISTED_ENTITIES = [
     portfolio_entities.ReturnSeries,
     portfolio_entities.PortfolioConsolidation,
     portfolio_entities.ConfigurationName,
+    portfolio_entities.BrokerageNote,
     User,
     MarketDataSeries,
     MarketDataSeriesHistory,
@@ -90,8 +97,9 @@ PERSISTED_ENTITIES = [
     AIPromptVersion,
     AIArtifact,
     AIRun,
+    TaskRun,
 ]
-EXPECTED_PERSISTED_ENTITY_COUNT = 56
+EXPECTED_PERSISTED_ENTITY_COUNT = 63
 
 
 def test_every_persisted_entity_is_one_mapped_domain_dataclass():

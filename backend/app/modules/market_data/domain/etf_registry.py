@@ -114,6 +114,15 @@ class EtfRegistry:
 
 
 @dataclass(eq=False, kw_only=True)
+class EtfRegistryManager:
+    """A manager of a registered ETF. A fund may have more than one, so they
+    live apart from it, one row per fund and institution."""
+
+    etf_registry_id: int
+    institution_id: int
+
+
+@dataclass(eq=False, kw_only=True)
 class EtfRegistryClass:
     """A share class: what an asset is a listing of."""
 
