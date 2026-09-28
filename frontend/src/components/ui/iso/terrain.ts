@@ -18,6 +18,9 @@ export interface IsoTerrain {
   beach?: IsoBeach
   /** Non-editable scenery beyond the tile board, in tiles on each side. */
   sceneryMargin?: number
+  /** Land of another colour — a desert —, painted over `land` inside these
+   *  polygons. It is still land: building there is the same. */
+  grounds?: { color: string; polygons: Pt[][] }[]
 }
 
 export function terrainPath(polygons: Pt[][], closed = true): Path2D {
@@ -39,6 +42,22 @@ function contains(polygon: Pt[], x: number, y: number) {
     if ((ay > y) !== (by > y) && x < (bx - ax) * (y - ay) / (by - ay) + ax) inside = !inside
   }
   return inside
+}
+
+/** Whether a tile lies wholly inside the union of `polygons`, in tiles.
+ *  Each sample point may fall in a different polygon, so two regions that
+ *  share an edge leave no unbuildable seam between them. Cached per tile. */
+export function regionAvailability(polygons: Pt[][], size: number): (x: number, y: number) => boolean {
+  const cells = new Uint8Array(size * size)
+  const samples = [[0.001, 0.001], [0.999, 0.001], [0.999, 0.999], [0.001, 0.999], [0.5, 0.5]]
+  return (x, y) => {
+    if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= size || y >= size) return false
+    const index = y * size + x
+    if (cells[index]) return cells[index] === 2
+    const inside = samples.every(([dx, dy]) => polygons.some(polygon => contains(polygon, x + dx, y + dy)))
+    cells[index] = inside ? 2 : 1
+    return inside
+  }
 }
 
 /** Check only requested tiles and cache them. Scanning the entire board

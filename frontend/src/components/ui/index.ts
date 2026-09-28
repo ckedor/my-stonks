@@ -118,6 +118,8 @@ export type {
 } from './AppMultiAutocomplete'
 export type { AppAutocompleteAction, AppAutocompleteProps } from './AppAutocomplete'
 export { default as AppConfirmDialog } from './AppConfirmDialog'
+export { default as AppDialog } from './AppDialog'
+export type { AppDialogProps } from './AppDialog'
 export type { AppConfirmDialogProps } from './AppConfirmDialog'
 export { default as AppColorField } from './AppColorField'
 export { default as AppColorSwatch } from './AppColorSwatch'

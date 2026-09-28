@@ -22,9 +22,9 @@ describe('preço dos itens', () => {
     expect(price('spiral-tower')).toBeGreaterThan(price('glass-tower'))
   })
 
-  it('custa o volume na régua dos ativos: o Burj fica perto dos US$ 100 mil da âncora', () => {
-    expect(price('spiral-tower')).toBeGreaterThan(90_000)
-    expect(price('spiral-tower')).toBeLessThan(120_000)
+  it('custa um décimo do volume na régua dos ativos: o Burj, âncora de US$ 100 mil, fica perto de US$ 10 mil', () => {
+    expect(price('spiral-tower')).toBeGreaterThan(9_000)
+    expect(price('spiral-tower')).toBeLessThan(12_000)
   })
 })
 
@@ -34,6 +34,11 @@ describe('saldo', () => {
     const balance = cityBalance({ patrimonyUsd: 20_000, dividendsUsd: 500 }, [placed('glass-tower'), placed('road')], items)
     expect(balance.spentUsd).toBe(price('glass-tower'))
     expect(balance.balanceUsd).toBe(20_500 - price('glass-tower'))
+  })
+
+  it('soma os bônus', () => {
+    const balance = cityBalance({ patrimonyUsd: 20_000, dividendsUsd: 500, bonusUsd: 1_000 }, [], byId)
+    expect(balance.balanceUsd).toBe(21_500)
   })
 
   it('fica negativo quando o patrimônio cai abaixo do que foi gasto', () => {

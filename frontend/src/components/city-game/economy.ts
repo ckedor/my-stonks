@@ -13,16 +13,24 @@ import {
    gasto, o saldo fica negativo, como uma dívida, e nada novo se compra até
    ele voltar.
 
-   Um item custa o volume que tem, na mesma régua dos prédios de ativo: um
-   prédio da loja do tamanho do prédio de um ativo de US$ 10 mil custa
-   US$ 10 mil. Ruas e árvores são de graça, e os prédios de ativo também —
-   eles não se compram, vêm do que se tem. */
+   Um item custa o volume que tem, na régua dos prédios de ativo com um
+   desconto de dez vezes: um prédio da loja do tamanho do prédio de um ativo
+   de US$ 10 mil custa US$ 1 mil. Na régua cheia, a loja inteira custava o
+   patrimônio de uma carteira grande, e o que entrava num mês — dividendos,
+   bônus — não comprava quase nada. Ruas e árvores são de graça, e os
+   prédios de ativo também — eles não se compram, vêm do que se tem.
+
+   Além do patrimônio, entram bônus (`bonuses.ts`): os dividendos contam em
+   dobro, cada aporte rende um quarto dele, e cada categoria que vence o
+   benchmark num mês fechado rende um prêmio fixo. */
 
 /** Onde ninguém paga: ruas de todo tipo e a árvore comum. */
 const FREE_GROUPS = new Set(['Ruas'])
 const FREE_ITEMS = new Set(['tree'])
 /** O menor preço de um item que não é de graça: chão, praça. */
 const MIN_PRICE = 10
+/** Quanto do valor em volume a loja cobra. */
+const PRICE_SCALE = 0.1
 
 /** Arredonda para dois algarismos: US$ 17.700, não US$ 17.696. */
 function roundPrice(value: number) {
@@ -33,7 +41,7 @@ function roundPrice(value: number) {
 
 export function itemPrice(item: IsoBuilderItem): number {
   if (FREE_GROUPS.has(item.group) || FREE_ITEMS.has(item.id)) return 0
-  return roundPrice(isoPieceVolume(item.recipe) / M3_PER_USD)
+  return roundPrice(isoPieceVolume(item.recipe) / M3_PER_USD * PRICE_SCALE)
 }
 
 /** O catálogo com o preço de cada item. Medir o volume desenha a receita,
@@ -44,18 +52,23 @@ export const withPrices = (catalog: IsoBuilderItem[]): IsoBuilderItem[] =>
 export interface CityBalance {
   patrimonyUsd: number
   dividendsUsd: number
+  /** Tudo o que os bônus somam: dividendo em dobro, aporte, benchmark. */
+  bonusUsd: number
   spentUsd: number
-  /** Patrimônio + dividendos − gasto. Negativo é dívida. */
+  /** Patrimônio + dividendos + bônus − gasto. Negativo é dívida. */
   balanceUsd: number
 }
 
 export function cityBalance(
-  { patrimonyUsd, dividendsUsd }: { patrimonyUsd: number; dividendsUsd: number },
+  { patrimonyUsd, dividendsUsd, bonusUsd = 0 }: { patrimonyUsd: number; dividendsUsd: number; bonusUsd?: number },
   placements: IsoBuilderPlacement[],
   itemsById: Map<string, IsoBuilderItem>,
 ): CityBalance {
   const spentUsd = placements.reduce((sum, placement) => sum + (itemsById.get(placement.item)?.price ?? 0), 0)
-  return { patrimonyUsd, dividendsUsd, spentUsd, balanceUsd: patrimonyUsd + dividendsUsd - spentUsd }
+  return {
+    patrimonyUsd, dividendsUsd, bonusUsd, spentUsd,
+    balanceUsd: patrimonyUsd + dividendsUsd + bonusUsd - spentUsd,
+  }
 }
 
 /** O que a cidade precisa de uma posição da carteira. */

@@ -140,6 +140,57 @@ export function useDividendsIn(currency: Currency) {
   })
 }
 
+/** O patrimônio dia a dia — com o aporte de cada dia — numa moeda fixa,
+ *  pelo mesmo motivo de `usePositionsIn`. */
+export function usePatrimonyIn(currency: Currency) {
+  const portfolioId = useSelectedPortfolioId()
+  return useQuery({
+    queryKey: portfolioKeys.patrimony(portfolioId!, currency),
+    queryFn: () => fetchPatrimony(portfolioId!, currency),
+    enabled: portfolioId != null,
+  })
+}
+
+/** A rentabilidade de cada categoria numa moeda fixa, linha a linha, como a
+ *  rota a devolve: quem a lê precisa do id da categoria, não só do nome. */
+export function useCategoryReturnsIn(currency: Currency) {
+  const portfolioId = useSelectedPortfolioId()
+  return useQuery({
+    queryKey: portfolioKeys.categoryReturns(portfolioId!, currency),
+    queryFn: () => fetchCategoryReturns(portfolioId!, undefined, undefined, currency),
+    enabled: portfolioId != null,
+  })
+}
+
+/** A rentabilidade da carteira inteira numa moeda fixa, linha a linha, pelo
+ *  mesmo motivo de `usePositionsIn`. */
+export function usePortfolioReturnsIn(currency: Currency) {
+  const portfolioId = useSelectedPortfolioId()
+  return useQuery({
+    queryKey: portfolioKeys.returns(portfolioId!, currency),
+    queryFn: () => fetchReturns(portfolioId!, currency),
+    enabled: portfolioId != null,
+  })
+}
+
+/** O aporte médio mensal numa moeda fixa, pelo mesmo motivo de `usePositionsIn`. */
+export function useContributionAverageIn(currency: Currency) {
+  const portfolioId = useSelectedPortfolioId()
+  return useQuery({
+    queryKey: portfolioKeys.contributionAverage(portfolioId!, currency),
+    queryFn: () => fetchContributionAverage(portfolioId!, currency),
+    enabled: portfolioId != null,
+  })
+}
+
+/** Os benchmarks numa moeda fixa, pelo mesmo motivo de `usePositionsIn`. */
+export function useBenchmarksIn(currency: Currency) {
+  return useQuery({
+    queryKey: portfolioKeys.benchmarks(currency),
+    queryFn: () => fetchBenchmarks(currency),
+  })
+}
+
 /** Os ativos que a carteira teve e não tem mais.
  *
  *  Só busca quando a aba que os mostra está aberta: é uma leitura que nenhuma

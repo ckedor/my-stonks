@@ -16,12 +16,13 @@ import { Box, ButtonBase } from '@mui/material'
 import { type Theme } from '@mui/material/styles'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import AppIconButton from './AppIconButton'
+import AppProgressBar from './AppProgressBar'
 import AppText from './AppText'
 import { HALF_H, HALF_W, mulberry, renderSprite, type Pt, type Recipe, type Sprite } from './iso/engine'
 import { spriteImageRevision, subscribeSpriteImages } from './iso/sprite-images'
 import { ISO_RECIPES, type IsoRecipeKey } from './iso/recipes'
 import { beachPainter, type BeachPainter } from './iso/beach'
-import { terrainAvailability, terrainPath, type IsoTerrain } from './iso/terrain'
+import { regionAvailability, terrainAvailability, terrainPath, type IsoTerrain } from './iso/terrain'
 import { isoPieceMeasure } from './iso/volume'
 import { space } from '@/theme/tokens'
 
@@ -80,12 +81,29 @@ export interface IsoBuilderPlacement {
 
 type StatusTone = 'default' | 'danger' | 'success'
 
-/** A figure the game keeps in view on the map: a headline and its parts. */
-export interface IsoBuilderStatus {
+interface IsoBuilderStatusRow {
   label: string
   value: string
   tone?: StatusTone
-  rows: { label: string; value: string; tone?: StatusTone }[]
+  /** The parts of this figure, folded under it until the row is clicked. */
+  details?: { label: string; value: string; tone?: StatusTone }[]
+}
+
+/** A figure the game keeps in view on the map: a headline and its parts. */
+export interface IsoBuilderStatus {
+  /** A goal and how far along it is, shown above the headline and kept in
+   *  view when the panel is folded. */
+  progress?: {
+    label: string
+    title: string
+    /** From 0 to 1. */
+    value: number
+    lines: string[]
+  }
+  label: string
+  value: string
+  tone?: StatusTone
+  rows: IsoBuilderStatusRow[]
   /** A line under the rows, for what the figures mean. */
   note?: string
 }
@@ -132,6 +150,10 @@ export interface AppIsoBuilderProps {
   marked?: ReadonlySet<string>
   /** Kept on the map, under the toolbar, in a panel that folds away. */
   status?: IsoBuilderStatus
+  /** Where new pieces may go, as polygons in tiles. The camera frames the
+   *  box round them and does not pan past it, and land outside them refuses
+   *  new pieces; pieces already there stay. Absent, all land is open. */
+  buildable?: [number, number][][]
 }
 
 /** The shop tab of the items waiting to be put down. */
@@ -206,6 +228,21 @@ function mipOf(source: HTMLCanvasElement, shrink: number) {
     chain.push(half)
   }
   return chain[Math.min(level, chain.length - 1)]
+}
+
+/** The box round the open land, on the board, kept per polygon set: the
+ *  camera asks for it at every drag. */
+const openBounds = new WeakMap<Pt[][], Rect>()
+function boundsOf(polygons: Pt[][], size: number): Rect {
+  let bounds = openBounds.get(polygons)
+  if (!bounds) {
+    const points = polygons.flat()
+    const clip = (value: number) => Math.min(size, Math.max(0, value))
+    const x0 = clip(Math.min(...points.map(([x]) => x))), x1 = clip(Math.max(...points.map(([x]) => x)))
+    const y0 = clip(Math.min(...points.map(([, y]) => y))), y1 = clip(Math.max(...points.map(([, y]) => y)))
+    openBounds.set(polygons, bounds = { x: x0, y: y0, w: x1 - x0, d: y1 - y0 })
+  }
+  return bounds
 }
 
 const sprites = new Map<string, Sprite>()
@@ -356,9 +393,11 @@ function paintOrder(pieces: Piece[]): Piece[] {
 export default function AppIsoBuilder({
   items, placements, size, height, boundless = false, terrain, onPlace, onMove, onRemove,
   upgradeOf, onUpgrade, pending = NO_ITEMS, onPlacePending, budget, priceLabel, marked = NONE, status, onReplace,
+  buildable,
 }: AppIsoBuilderProps) {
   const imageRevision = useSyncExternalStore(subscribeSpriteImages, spriteImageRevision, spriteImageRevision)
   const isLand = useMemo(() => terrain ? terrainAvailability(terrain, size) : null, [terrain, size])
+  const isOpen = useMemo(() => buildable ? regionAvailability(buildable, size) : null, [buildable, size])
   const host = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const itemsById = useMemo(() => new Map(items.map(item => [item.id, item])), [items])
@@ -375,6 +414,8 @@ export default function AppIsoBuilder({
   const [immersive, setImmersive] = useState(false)
   const [shopOpen, setShopOpen] = useState(true)
   const [statusOpen, setStatusOpen] = useState(true)
+  /** The status rows unfolded to show their parts. */
+  const [statusDetails, setStatusDetails] = useState<ReadonlySet<string>>(NONE)
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
 
   /* Worked out once per change of the city, not per frame. */
@@ -398,8 +439,8 @@ export default function AppIsoBuilder({
 
   /* The canvas reads the latest of everything through a ref, so the
      listeners are attached once and the view never resets. */
-  const live = useRef({ tool, camera, layers, occupancy, itemsById, selected, marked, budget, onPlace, onPlacePending, onMove, onRemove })
-  live.current = { tool, camera, layers, occupancy, itemsById, selected, marked, budget, onPlace, onPlacePending, onMove, onRemove }
+  const live = useRef({ tool, camera, layers, occupancy, itemsById, selected, marked, budget, buildable, onPlace, onPlacePending, onMove, onRemove })
+  live.current = { tool, camera, layers, occupancy, itemsById, selected, marked, budget, buildable, onPlace, onPlacePending, onMove, onRemove }
   const view = useRef({ zoom: 1, panX: 0, panY: 0, fitted: false })
   const hover = useRef<{ x: number; y: number } | null>(null)
   /** Selected pieces being dragged, and by how many tiles so far. */
@@ -411,6 +452,7 @@ export default function AppIsoBuilder({
   const marquee = useRef<{ from: { x: number; y: number }; to: { x: number; y: number }; add: boolean; start: { x: number; y: number }; dragged: boolean } | null>(null)
   const redraw = useRef<() => void>(() => {})
   const turnCamera = useRef<(step: 1 | -1) => void>(() => {})
+  const refit = useRef<() => void>(() => {})
   const actions = useRef({ setTool, setSelection, setCamera })
 
   /** Whether a footprint is free, counting the pieces in `ignore` as
@@ -419,6 +461,7 @@ export default function AppIsoBuilder({
     if (x < 0 || y < 0 || x + w > size || y + d > size) return false
     for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) {
       if (isLand && !isLand(x + i, y + j)) return false
+      if (isOpen && !isOpen(x + i, y + j)) return false
       const owner = live.current.occupancy.get(`${x + i},${y + j}`)
       if (owner && !ignore.has(owner)) return false
     }
@@ -481,7 +524,7 @@ export default function AppIsoBuilder({
     /* The terrain as each camera sees it, built the first time that camera
        turns to it. The beach painter is built with the canvas: it asks this
        context which side of the coast is sea. */
-    const scenes = new Map<number, { land: Path2D; rivers: Path2D[]; beach: BeachPainter | null }>()
+    const scenes = new Map<number, { land: Path2D; rivers: Path2D[]; grounds: { color: string; path: Path2D }[]; beach: BeachPainter | null }>()
     const sceneOf = (turns: number) => {
       if (!terrain) return null
       let scene = scenes.get(turns)
@@ -491,6 +534,7 @@ export default function AppIsoBuilder({
         scene = {
           land,
           rivers: (terrain.waterways ?? []).map(polygon => terrainPath([turn(polygon)])),
+          grounds: (terrain.grounds ?? []).map(ground => ({ color: ground.color, path: terrainPath(ground.polygons.map(turn)) })),
           beach: terrain.beach ? beachPainter({ ...terrain.beach, shores: terrain.beach.shores.map(turn) }, terrain.water, land, ctx) : null,
         }
         scenes.set(turns, scene)
@@ -546,11 +590,19 @@ export default function AppIsoBuilder({
     const sceneryMargin = terrain?.sceneryMargin ?? 0
     const cameraMin = cameraInset - sceneryMargin
     const cameraMax = size + sceneryMargin - cameraInset
+    /** What the camera keeps to, in tiles as camera `turns` sees them: the
+     *  box round the open land, or the whole board when all of it is open. */
+    const focusOf = (turns: number = live.current.camera): Rect => {
+      const { buildable } = live.current
+      return buildable ? turnRect(boundsOf(buildable, size), turns, size) : { x: 0, y: 0, w: size, d: size }
+    }
     const overviewZoom = () => {
       const { width, height: h } = cssSize()
-      // Fit the playable map between the toolbar and catalog. Scenery
-      // fills the margins, but must not enlarge the zoom-out range.
-      return Math.min(width * 0.94 / (size * HALF_W * 2), Math.max(80, h - 234) * 0.94 / (size * HALF_H * 2))
+      // Fit the playable map — or the open part of it — between the toolbar
+      // and catalog. Scenery fills the margins, but must not enlarge the
+      // zoom-out range. A box of w × d tiles spans w + d half-tiles each way.
+      const { w, d } = focusOf()
+      return Math.min(width * 0.94 / ((w + d) * HALF_W), Math.max(80, h - 234) * 0.94 / ((w + d) * HALF_H))
     }
     const minZoom = () => {
       const { width, height: h } = cssSize()
@@ -561,19 +613,23 @@ export default function AppIsoBuilder({
       }
       return terrain ? Math.min(0.25, width * 0.94 / (size * HALF_W * 2), Math.max(80, h - 234) / (size * HALF_H * 2 + 240)) : 0.25
     }
-    const clamp = () => {
+    /** `turns` is the camera the view is for, when it is about to change. */
+    const clamp = (turns: number = live.current.camera) => {
       if (!boundless) return
       const { width, height: h } = cssSize()
       if (terrain && sceneryMargin) {
-        // Keep navigation on the playable board. At the overview the
-        // camera stays centered; zooming in gradually opens the pan range.
-        // The outer terrain is only a backdrop, never a navigation target.
+        // Keep navigation on the playable board — or on the open part of it.
+        // At the overview the camera stays centered; zooming in gradually
+        // opens the pan range. The outer terrain is only a backdrop, never a
+        // navigation target.
         const center = toGrid(width / 2, (h - 170 + 64) / 2)
         const { zoom } = view.current
-        const range = size / 2 * Math.max(0, 1 - minZoom() / zoom)
-        const limit = (value: number) => Math.min(size / 2 + range, Math.max(size / 2 - range, value))
-        const dx = limit(center.gx) - center.gx
-        const dy = limit(center.gy) - center.gy
+        const focus = focusOf(turns)
+        const open = Math.max(0, 1 - minZoom() / zoom)
+        const limit = (value: number, from: number, span: number) =>
+          Math.min(from + span / 2 * (1 + open), Math.max(from + span / 2 * (1 - open), value))
+        const dx = limit(center.gx, focus.x, focus.w) - center.gx
+        const dy = limit(center.gy, focus.y, focus.d) - center.gy
         view.current = {
           ...view.current,
           panX: view.current.panX - (dx - dy) * HALF_W * zoom,
@@ -644,6 +700,12 @@ export default function AppIsoBuilder({
         scene.beach?.water(ctx)
         ctx.fillStyle = terrain.land
         ctx.fill(scene.land)
+        if (scene.grounds.length) {
+          ctx.save()
+          ctx.clip(scene.land)
+          for (const ground of scene.grounds) { ctx.fillStyle = ground.color; ctx.fill(ground.path) }
+          ctx.restore()
+        }
         scene.beach?.sand(ctx)
         ctx.strokeStyle = terrain.coast
         ctx.lineWidth = 1.5 / zoom
@@ -833,7 +895,8 @@ export default function AppIsoBuilder({
         if (boundless) {
           // Terrain opens near the widest safe view, without exposing its
           // outer edges. Plain boards retain their piece-scale view.
-          const [cx, cy] = world(size / 2, size / 2)
+          const focus = focusOf()
+          const [cx, cy] = world(focus.x + focus.w / 2, focus.y + focus.d / 2)
           const zoom = terrain ? minZoom() * (sceneryMargin ? 1 : 1.15) : 1
           const centerY = terrain && sceneryMargin ? (measured - 170 + 64) / 2 : measured / 2
           view.current = { zoom, panX: width / 2 - cx * zoom, panY: centerY - cy * zoom, fitted: true }
@@ -851,6 +914,8 @@ export default function AppIsoBuilder({
     }
     const observer = new ResizeObserver(fit)
     observer.observe(element)
+    // A new part of the map opened: frame it from scratch.
+    refit.current = () => { view.current = { ...view.current, fitted: false }; fit() }
 
     /** The footprint of what is in hand: one piece, or a copied group. */
     const handBox = (): [number, number] | null => {
@@ -921,7 +986,7 @@ export default function AppIsoBuilder({
       view.current = { ...view.current, panX: sx - wx * zoom, panY: sy - wy * zoom }
       hover.current = null
       carry.current = marquee.current = lay.current = press = null
-      clamp()
+      clamp(next)
       actions.current.setCamera(next)
     }
     const down = (event: PointerEvent) => {
@@ -1154,6 +1219,13 @@ export default function AppIsoBuilder({
   }, [size, boundless, terrain])
 
   useEffect(() => { redraw.current() }, [layers, tool, selected, immersive, marked])
+  // Not on mount: the first frame is fitted when the board is measured.
+  const framed = useRef(buildable)
+  useEffect(() => {
+    if (framed.current === buildable) return
+    framed.current = buildable
+    refit.current()
+  }, [buildable])
 
   // The tab of waiting items closes once the last one is down.
   useEffect(() => {
@@ -1341,7 +1413,13 @@ export default function AppIsoBuilder({
       </AppIconButton>
     </Box>
 
-    {status && <Box sx={{ position: 'absolute', top: { xs: 64, sm: 60 }, left: edge, width: 232, ...panel }}>
+    {status && <Box sx={{ position: 'absolute', top: { xs: 64, sm: 60 }, left: edge, width: 248, ...panel }}>
+      {status.progress && <Box sx={{ px: space.sm, pt: space.sm, pb: space.xs, display: 'flex', flexDirection: 'column', gap: '4px', borderBottom: `1px dashed rgba(42,32,36,0.3)` }}>
+        <AppText variant="caption" tint="rgba(42,32,36,0.65)">{status.progress.label}</AppText>
+        <AppText weight="strong" tint={INK}>{status.progress.title}</AppText>
+        <AppProgressBar value={Math.min(Math.max(status.progress.value, 0), 1) * 100} tone="golden" thickness={8} />
+        {status.progress.lines.map(line => <AppText key={line} variant="caption" tint="rgba(42,32,36,0.7)">{line}</AppText>)}
+      </Box>}
       <ButtonBase focusRipple onClick={() => setStatusOpen(open => !open)} aria-expanded={statusOpen}
         sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: space.xs, px: space.sm, py: space.xs, borderRadius: '8px' }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -1351,7 +1429,31 @@ export default function AppIsoBuilder({
         {statusOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
       </ButtonBase>
       {statusOpen && <Box sx={{ px: space.sm, pb: space.sm, display: 'flex', flexDirection: 'column', gap: '2px', borderTop: `1px dashed rgba(42,32,36,0.3)`, pt: space.xs }}>
-        {status.rows.map(row => (
+        {status.rows.map(row => row.details?.length ? (
+          <Box key={row.label} sx={{ display: 'flex', flexDirection: 'column' }}>
+            <ButtonBase focusRipple aria-expanded={statusDetails.has(row.label)}
+              onClick={() => setStatusDetails(open => {
+                const next = new Set(open)
+                if (!next.delete(row.label)) next.add(row.label)
+                return next
+              })}
+              sx={{ display: 'flex', justifyContent: 'space-between', gap: space.sm, borderRadius: '4px', textAlign: 'left' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                <AppText variant="caption" tint="rgba(42,32,36,0.7)">{row.label}</AppText>
+                {statusDetails.has(row.label) ? <ExpandLessIcon sx={{ fontSize: 14 }} /> : <ExpandMoreIcon sx={{ fontSize: 14 }} />}
+              </Box>
+              <AppText variant="caption" weight="strong" tint={TONE[row.tone ?? 'default']}>{row.value}</AppText>
+            </ButtonBase>
+            {statusDetails.has(row.label) && <Box sx={{ ml: space.sm, pl: space.xs, my: '2px', borderLeft: `1px solid rgba(42,32,36,0.25)`, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              {row.details.map(detail => (
+                <Box key={detail.label} sx={{ display: 'flex', justifyContent: 'space-between', gap: space.sm }}>
+                  <AppText variant="caption" tint="rgba(42,32,36,0.6)">{detail.label}</AppText>
+                  <AppText variant="caption" tint={TONE[detail.tone ?? 'default']}>{detail.value}</AppText>
+                </Box>
+              ))}
+            </Box>}
+          </Box>
+        ) : (
           <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', gap: space.sm }}>
             <AppText variant="caption" tint="rgba(42,32,36,0.7)">{row.label}</AppText>
             <AppText variant="caption" weight="strong" tint={TONE[row.tone ?? 'default']}>{row.value}</AppText>

@@ -10,6 +10,11 @@ export interface City {
   placements: IsoBuilderPlacement[]
   pending: string[]
   assetLayoutRevision?: number
+  /** Os dividendos cujo bônus o jogador já viu anunciado. O bônus conta no
+   *  saldo de qualquer jeito; isto só decide se o aviso ainda abre. */
+  seenDividends?: number[]
+  /** Quantas áreas do território o jogador já viu anunciadas. */
+  seenTerritory?: number
 }
 
 const EMPTY_CITY: City = { placements: [], pending: [] }
@@ -24,6 +29,8 @@ interface CityBuilderState {
   placePending: (portfolioId: number, piece: NewPiece) => void
   reconcileLayout: (portfolioId: number, revision: number, ids: string[]) => void
   replace: (portfolioId: number, id: string, item: string) => void
+  markDividendsSeen: (portfolioId: number, ids: number[]) => void
+  markTerritorySeen: (portfolioId: number, count: number) => void
   clear: (portfolioId: number) => void
 }
 
@@ -79,6 +86,12 @@ export const useCityBuilderStore = create<CityBuilderState>()(
         }),
         replace: (portfolioId, id, item) => edit(portfolioId, city => ({
           ...city, placements: city.placements.map(placement => placement.id === id ? { ...placement, item } : placement),
+        })),
+        markDividendsSeen: (portfolioId, ids) => edit(portfolioId, city => ({
+          ...city, seenDividends: [...new Set([...(city.seenDividends ?? []), ...ids])],
+        })),
+        markTerritorySeen: (portfolioId, count) => edit(portfolioId, city => ({
+          ...city, seenTerritory: Math.max(city.seenTerritory ?? 0, count),
         })),
         clear: (portfolioId) => edit(portfolioId, () => EMPTY_CITY),
       }
