@@ -42,13 +42,13 @@ describe('buildMuiTheme', () => {
     const theme = buildMuiTheme(defaultLightPalette, {
       ...defaultShape,
       fontFamily: fontStacks.figtree,
-      headingFontFamily: fontStacks.newsreader,
+      headingFontFamily: fontStacks.sourceSerif,
     })
 
     expect(theme.typography.fontFamily).toBe(fontStacks.figtree)
     expect(theme.typography.body1.fontFamily).toBe(fontStacks.figtree)
     for (const variant of ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const) {
-      expect(theme.typography[variant].fontFamily).toBe(fontStacks.newsreader)
+      expect(theme.typography[variant].fontFamily).toBe(fontStacks.sourceSerif)
     }
   })
 })

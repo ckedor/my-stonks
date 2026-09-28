@@ -323,182 +323,10 @@ export const defaultDarkPalette: ThemePaletteConfig = {
 }
 
 /* ══════════════════════════════════════════════
-   Sépia Noturno — o `Principal` depois do anoitecer
-   ══════════════════════════════════════════════
-
-   A mesma régua de neutros quentes do `Principal` claro, virada do avesso: o
-   off-white #FAF8F4 vira um quase-preto que ainda puxa para o marrom, e o
-   grafite #403B36 da barra desce para #100E0D. A barra continuar sendo a
-   coisa mais escura da tela é o ponto do desenho — é o que dá a leitura de
-   moldura em volta do conteúdo, e é justamente o que se perde num escuro
-   onde barra e página têm a mesma luminância.
-
-   O card é #211E1B, um degrau acima do fundo: como no claro, é a diferença
-   entre papel e página que separa um card do outro sem precisar de borda
-   forte.
-
-   A âmbar #B45309 do claro não sobrevive sobre fundo escuro (3.0:1), então
-   o acento sobe para #E0913F. A primária é o inverso da de lá: no claro é
-   tinta escura sobre papel, aqui é areia clara que preenche o botão e
-   recebe texto escuro por cima. */
-const sepiaNoturnoPalette: ThemePaletteConfig = {
-  mode: 'dark',
-  background: { default: '#171513', paper: '#211E1B' },
-  text: { primary: '#EDE8E2', secondary: '#A69E95' },
-  primary: '#D6CFC7',
-  secondary: '#E0913F',
-  error: '#F27171',
-  warning: '#E9A23B',
-  success: '#34D3A4',
-  info: '#7FB2E5',
-  golden: '#F0B44A',
-  dark: '#171513',
-  sidebar: '#100E0D',
-  topbar: { background: '#100E0D', text: '#D9D2CA', activeText: '#FFFFFF', activeBg: '#2A2622' },
-  divider: 'rgba(237,232,226,0.12)',
-  chart: {
-    grid: 'rgba(237,232,226,0.10)',
-    label: '#EDE8E2',
-    /* Nenhuma repete `primary` nem `secondary`: no gráfico de rentabilidade
-       essas duas já estão em uso fixo (Carteira e CDI) e o resto das séries
-       vem daqui por índice. O ouro é oliváceo (#B9A44E) e não dourado, senão
-       encostaria na âmbar do acento. Todas passam de 4.5:1 sobre o card. */
-    colors: ['#C88A6A', '#DE7A72', '#A3C1AD', '#9CAFB7', '#C4696D', '#A8886A', '#8FB8C9', '#B9A44E'],
-  },
-}
-
-/** Raio pequeno: papel não tem canto arredondado. */
-const sepiaRadius: RadiusScale = { sm: 4, md: 6, lg: 6, pill: 9999 }
-
-/* A dupla que mais se aproxima da tipografia do site do Claude sem depender
-   de fonte licenciada: Newsreader no lugar da Tiempos/Copernicus, Figtree no
-   lugar da Styrene. */
-const claudeShape: ThemeShapeConfig = {
-  radius: sepiaRadius,
-  fontFamily: fontStacks.figtree,
-  headingFontFamily: fontStacks.newsreader,
-}
-
-const sepiaChartColors = [
-  '#4E6E4A', '#9E3B2E', '#A98146', '#5C6B7A',
-  '#7A5C6E', '#3F6B6B', '#8C6A4F', '#B08C3A',
-]
-
-const editorialSepiaPalette: ThemePaletteConfig = {
-  mode: 'light',
-  background: { default: '#F4EDE2', paper: '#FBF6EE' },
-  text: { primary: '#2B241C', secondary: '#6B5D4C' },
-  primary: '#A65336',
-  secondary: '#87644E',
-  error: '#9E3B2E',
-  warning: '#9A6516',
-  success: '#4E6E4A',
-  info: '#4A6076',
-  golden: '#B08C3A',
-  dark: '#2B241C',
-  sidebar: '#3A2E23',
-  topbar: { background: '#3A2E23', text: '#F1E7D9', activeText: '#FBF6EE', activeBg: '#55432F' },
-  divider: 'rgba(43,36,28,0.14)',
-  chart: { grid: 'rgba(43,36,28,0.10)', label: '#2B241C', colors: sepiaChartColors },
-}
-
-/* Mesma tinta, papel um tom mais claro no `paper`: a Newsreader tem traço
-   mais fino que a Source Serif e some um pouco sobre bege fechado. */
-const sepiaClaudePalette: ThemePaletteConfig = {
-  ...editorialSepiaPalette,
-  background: { default: '#F4EDE2', paper: '#FCF8F1' },
-  text: { primary: '#291F17', secondary: '#6E6053' },
-  dark: '#291F17',
-  divider: 'rgba(41,31,23,0.14)',
-  chart: { grid: 'rgba(41,31,23,0.10)', label: '#291F17', colors: sepiaChartColors },
-}
-
-/* ══════════════════════════════════════════════
-   Névoa e Marinho — os dois claros frios
-   ══════════════════════════════════════════════
-
-   O catálogo claro tinha três temas e uma temperatura só: Argila, Tinta e
-   Sépia Claude são todos papel quente com acento de terra, e escolher entre
-   eles é escolher a fonte do título, não a cara da tela. O escuro tem sete e
-   varia bem mais que isso. Estes dois abrem o lado frio, e se dividem pelo
-   que a barra faz — que é a decisão que mais muda a tela:
-
-   - `Névoa` não tem barra escura. Barra, coluna e página são a mesma
-     superfície clara, separadas por um fio; a tela vira uma folha só e o
-     conteúdo é o único bloco de tinta. É o oposto do Tinta.
-   - `Marinho` faz o contrário: um azul quase preto emoldura o conteúdo, como
-     o preto do Tinta, mas frio e com cobre no lugar da terracota.
-
-   Nenhum dos dois repete `primary` ou `secondary` nas séries de gráfico: no
-   gráfico de rentabilidade essas duas já estão em uso fixo (Carteira e CDI). */
-const nevoaPalette: ThemePaletteConfig = {
-  mode: 'light',
-  background: { default: '#F1F4F7', paper: '#FCFDFE' },
-  text: { primary: '#1B2430', secondary: '#5B6875' },
-  primary: '#1F5468',
-  secondary: '#A2643C',
-  error: '#B03A34',
-  warning: '#96631A',
-  success: '#2F7A55',
-  info: '#35617D',
-  golden: '#A8801F',
-  dark: '#1B2430',
-  /* Barra clara: `getContrastText` é quem escolhe a tinta dela, e já servia
-     ao Argila claro — nenhum componente precisou saber deste caso. */
-  sidebar: '#E6EBF0',
-  topbar: { background: '#E6EBF0', text: '#35414E', activeText: '#16202B', activeBg: '#CFD8E1' },
-  divider: 'rgba(27,36,48,0.12)',
-  chart: {
-    grid: 'rgba(27,36,48,0.10)',
-    label: '#1B2430',
-    colors: ['#2E6B8A', '#C2703F', '#4F7A57', '#7C6BA0', '#A64F5E', '#3F8C93', '#8A7B4F', '#5A6B7C'],
-  },
-}
-
-const nevoaShape: ThemeShapeConfig = {
-  radius: { sm: 6, md: 10, lg: 10, pill: 9999 },
-  fontFamily: fontStacks.figtree,
-  headingFontFamily: fontStacks.figtree,
-  quiet: true,
-}
-
-const marinhoPalette: ThemePaletteConfig = {
-  mode: 'light',
-  background: { default: '#F3F5F8', paper: '#FFFFFF' },
-  text: { primary: '#16202C', secondary: '#58657A' },
-  primary: '#1B3A5C',
-  secondary: '#A05F2C',
-  error: '#B23A34',
-  warning: '#9A6516',
-  success: '#2C7A52',
-  info: '#2F6389',
-  golden: '#A8801F',
-  dark: '#16202C',
-  sidebar: '#142A42',
-  topbar: { background: '#142A42', text: '#C6D3E2', activeText: '#FFFFFF', activeBg: '#23415F' },
-  divider: 'rgba(22,32,44,0.12)',
-  chart: {
-    grid: 'rgba(22,32,44,0.10)',
-    label: '#16202C',
-    colors: ['#2C5F8A', '#C0703C', '#47806C', '#8E5F87', '#A8515A', '#5E7387', '#9A7A3C', '#3E6E4E'],
-  },
-}
-
-/** Canto quase reto e grotesca nos dois papéis: é a tela de painel, não a de
- *  leitura — a serifa e o raio macio ficam com os temas editoriais. */
-const marinhoShape: ThemeShapeConfig = {
-  radius: { sm: 2, md: 4, lg: 4, pill: 9999 },
-  fontFamily: fontStacks.grotesk,
-  headingFontFamily: fontStacks.grotesk,
-  quiet: true,
-}
-
-/* ══════════════════════════════════════════════
    Petróleo — o escuro que não é preto
    ══════════════════════════════════════════════
 
-   Os escuros do catálogo são quase-pretos, quentes ou frios. Este é um
-   azul-petróleo profundo, na linha de painéis de dado de mercado: fundo que
+   O Tinta escuro é um quase-preto. Este é um azul-petróleo profundo, na linha de painéis de dado de mercado: fundo que
    se lê como cor e não como apagão, e texto quase branco em vez do branco
    puro, que ofusca sobre fundo escuro.
 
@@ -553,30 +381,6 @@ const earthThemeDefinitions: ThemeDefinition[] = earthStudies.map((study) => ({
 
 export const lightThemes: ThemeDefinition[] = [
   ...earthThemeDefinitions.filter((theme) => theme.mode === 'light'),
-  {
-    id: 'sepia-claude',
-    name: 'Sépia Claude',
-    mode: 'light',
-    description: 'Papel creme, títulos serifados e detalhes em laranja queimado',
-    preview: buildPreview(sepiaClaudePalette),
-    theme: buildMuiTheme(sepiaClaudePalette, claudeShape),
-  },
-  {
-    id: 'nevoa',
-    name: 'Névoa',
-    mode: 'light',
-    description: 'Neutros frios sem barra escura: a tela inteira é uma superfície só.',
-    preview: buildPreview(nevoaPalette),
-    theme: buildMuiTheme(nevoaPalette, nevoaShape),
-  },
-  {
-    id: 'marinho',
-    name: 'Marinho',
-    mode: 'light',
-    description: 'Papel frio emoldurado por azul quase preto, com acento de cobre.',
-    preview: buildPreview(marinhoPalette),
-    theme: buildMuiTheme(marinhoPalette, marinhoShape),
-  },
 ]
 
 export const darkThemes: ThemeDefinition[] = [
@@ -588,24 +392,6 @@ export const darkThemes: ThemeDefinition[] = [
     description: 'Azul-petróleo profundo, texto marfim e o coral do Tinta.',
     preview: buildPreview(petroleoPalette),
     theme: buildMuiTheme(petroleoPalette, petroleoShape),
-  },
-  /* O preview mostra o texto da barra, não o `text.primary` da página —
-     mesma razão do `Principal` claro. */
-  {
-    id: 'sepia-noturno',
-    name: 'Sépia Noturno',
-    mode: 'dark',
-    description: 'Quase-preto quente com barra grafite e acento âmbar',
-    preview: {
-      background: '#171513',
-      paper: '#211E1B',
-      primary: '#D6CFC7',
-      accent: '#E0913F',
-      topbar: '#100E0D',
-      sidebar: '#100E0D',
-      text: '#D9D2CA',
-    },
-    theme: buildMuiTheme(sepiaNoturnoPalette),
   },
 ]
 
@@ -620,4 +406,4 @@ export function getThemeById(id: string): ThemeDefinition | undefined {
 }
 
 export const DEFAULT_LIGHT_THEME_ID = 'earth-tinta-light'
-export const DEFAULT_DARK_THEME_ID = 'sepia-noturno'
+export const DEFAULT_DARK_THEME_ID = 'petroleo'

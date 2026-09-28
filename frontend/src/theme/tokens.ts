@@ -35,11 +35,9 @@ export const fontFamily =
 export const fontStacks = {
   /** A do app: rótulo, tabela, botão. */
   grotesk: fontFamily,
-  /** Serifa de texto, alto contraste — títulos dos temas Sépia. */
+  /** Serifa de texto, alto contraste — títulos do Tinta e do Petróleo. */
   sourceSerif: `'Source Serif 4 Variable', 'Source Serif 4', Georgia, serif`,
-  /** Serifa de leitura, olho maior — títulos dos temas “Claude”. */
-  newsreader: `'Newsreader Variable', Newsreader, Georgia, serif`,
-  /** Grotesca geométrica que acompanha a Newsreader no corpo. */
+  /** Grotesca geométrica: o corpo do Tinta e do Petróleo. */
   figtree: `'Figtree Variable', Figtree, 'Helvetica Neue', Arial, sans-serif`,
   /** Bitmap de corpo — desenho pixelado com formas de letra ainda largas o
    *  bastante para uma tabela de números. É a do corpo no tema Pixel Art. */

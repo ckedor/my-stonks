@@ -6,7 +6,6 @@ import { QueryProvider } from '@/queries/client'
 // estar importadas aqui, senão o tema que escolher uma cai no fallback.
 import '@fontsource-variable/figtree'
 import '@fontsource-variable/hanken-grotesk'
-import '@fontsource-variable/newsreader'
 import '@fontsource-variable/pixelify-sans'
 import '@fontsource-variable/source-serif-4'
 import dayjs from 'dayjs'
