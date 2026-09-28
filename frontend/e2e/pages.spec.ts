@@ -44,6 +44,9 @@ const POSICOES = [
 test.use({ viewport: { width: 1440, height: 1200 } })
 
 test('login', async ({ page }) => {
+  /* O painel é um vídeo, e um quadro qualquer dele não é linha de base. Com
+     menos movimento ele não toca e mostra o pôster, que é sempre o mesmo. */
+  await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/login')
 
   await expect(page.getByRole('button', { name: 'Acessar conta' })).toBeVisible()

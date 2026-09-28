@@ -13,7 +13,8 @@
     "e2e": "playwright test",
     "e2e:update": "playwright test --update-snapshots",
     "knip": "knip",
-    "iso:render": "node scripts/iso-render.mjs"
+    "iso:render": "node scripts/iso-render.mjs",
+    "reel:cut": "node scripts/cut-reel.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

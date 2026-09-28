@@ -14,6 +14,8 @@
     "src/components/ui/index.ts",
     "e2e/**/*.spec.ts",
     "playwright.config.ts",
+    "playwright.reel.config.ts",
+    "reel/**/*.spec.ts",
     "eslint.config.js",
     "scripts/*.mjs",
     // Aberto por `scripts/iso-render.html`, que o knip não lê.

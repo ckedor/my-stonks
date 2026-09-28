@@ -38,7 +38,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <AppSplitScreen imageUrl="/home.png">
+      <AppSplitScreen videoUrl="/login-reel.webm" posterUrl="/login-reel.jpg">
         <AppStack gap="xl">
           <AppStack gap="md">
             <AppText variant="display">Acesse sua conta</AppText>
