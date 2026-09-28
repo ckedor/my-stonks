@@ -8,7 +8,7 @@ import {
   SectionLabel,
   SectionTitle,
 } from '@/components/ui'
-import { EMPTY, formatCNPJ, formatCount, formatDate } from '../format'
+import { EMPTY, formatCNPJ, formatCount, formatDate } from '@/components/asset/format'
 
 interface Entry {
   label: string

@@ -10,7 +10,7 @@ import {
   SectionTitle,
 } from '@/components/ui'
 import { useMemo } from 'react'
-import { EMPTY, formatCompactCount, formatDate, formatFiledPercent } from '../format'
+import { EMPTY, formatCompactCount, formatDate, formatFiledPercent } from '@/components/asset/format'
 
 const PIE_HEIGHT = 240
 const MIN_LABELLED_SLICE = 4

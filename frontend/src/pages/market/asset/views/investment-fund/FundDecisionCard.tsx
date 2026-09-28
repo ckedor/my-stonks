@@ -19,7 +19,7 @@ import {
   formatCompactCount,
   formatDate,
   formatPercent,
-} from '../format'
+} from '@/components/asset/format'
 import { incomeTrend, isIncome, navReading, navTrend, type IncomeTrend } from './readings'
 
 const SPARKLINE_PAYMENTS = 6

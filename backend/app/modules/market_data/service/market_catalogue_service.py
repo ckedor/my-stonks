@@ -114,6 +114,8 @@ class MarketCatalogueReadService:
                 'market_cap': None,
                 'currency': 'USD',
                 'logo_url': asset.logo_url,
+                'sector': None,
+                'subsector': None,
             })
 
         rows.sort(key=lambda row: row['ticker'] or '')
@@ -151,6 +153,7 @@ class MarketCatalogueReadService:
                 volume = self._number(row.get('regularMarketVolume'))
                 market_cap = self._positive_number(row.get('marketCap'))
                 logo_url = self._text(row.get('coinImageUrl'))
+                sector = subsector = None
             else:
                 name = self._text(row.get('name')) or ticker
                 price = self._number(row.get('close'))
@@ -158,6 +161,10 @@ class MarketCatalogueReadService:
                 volume = self._number(row.get('volume'))
                 market_cap = self._positive_number(row.get('market_cap'))
                 logo_url = self._text(row.get('logo'))
+                # The provider's economic classification: the sector is a
+                # fixed English list, the subsector its own Portuguese label.
+                sector = self._text(row.get('sector'))
+                subsector = self._text(row.get('subsector'))
 
             normalized[ticker] = {
                 'ticker': ticker,
@@ -168,6 +175,8 @@ class MarketCatalogueReadService:
                 'market_cap': market_cap,
                 'currency': 'BRL',
                 'logo_url': logo_url,
+                'sector': sector,
+                'subsector': subsector,
             }
 
         return sorted(

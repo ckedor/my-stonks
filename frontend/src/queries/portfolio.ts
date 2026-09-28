@@ -118,6 +118,28 @@ export function usePositions(explicitPortfolioId?: number) {
   })
 }
 
+/** As posições numa moeda fixa, qualquer que seja o seletor da tela: a
+ *  cidade conta em dólar mesmo quando o resto do app mostra reais. Mesma
+ *  chave das leituras vizinhas, então o cache é o mesmo. */
+export function usePositionsIn(currency: Currency) {
+  const portfolioId = useSelectedPortfolioId()
+  return useQuery({
+    queryKey: portfolioKeys.positions(portfolioId!, currency),
+    queryFn: () => fetchPositions(portfolioId!, currency),
+    enabled: portfolioId != null,
+  })
+}
+
+/** Os dividendos numa moeda fixa, pelo mesmo motivo de `usePositionsIn`. */
+export function useDividendsIn(currency: Currency) {
+  const portfolioId = useSelectedPortfolioId()
+  return useQuery({
+    queryKey: portfolioKeys.dividends(portfolioId!, currency),
+    queryFn: () => fetchDividends(portfolioId!, currency),
+    enabled: portfolioId != null,
+  })
+}
+
 /** Os ativos que a carteira teve e não tem mais.
  *
  *  Só busca quando a aba que os mostra está aberta: é uma leitura que nenhuma

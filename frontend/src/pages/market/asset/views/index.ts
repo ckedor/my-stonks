@@ -1,6 +1,7 @@
 import { ASSET_TYPES } from '@/constants/assetTypes'
 import type { ComponentType } from 'react'
 import DefaultAssetMarketView from './DefaultAssetMarketView'
+import EtfMarketView from './etf/EtfMarketView'
 import FIIMarketView from './fii/FIIMarketView'
 import InvestmentFundMarketView from './investment-fund/InvestmentFundMarketView'
 import StockMarketView from './stock/StockMarketView'
@@ -20,6 +21,7 @@ import type { AssetMarketViewProps } from './types'
  *  them under a Brazilian ticker would say something untrue.
  */
 const VIEWS: Partial<Record<number, ComponentType<AssetMarketViewProps>>> = {
+  [ASSET_TYPES.ETF]: EtfMarketView,
   [ASSET_TYPES.FII]: FIIMarketView,
   [ASSET_TYPES.FI]: InvestmentFundMarketView,
   [ASSET_TYPES.STOCK]: StockMarketView,

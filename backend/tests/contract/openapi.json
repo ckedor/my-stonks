@@ -3274,6 +3274,24 @@
     "title": "DataIngestionExecutionResponse",
     "type": "object"
    },
+   "DispatchedTaskResponse": {
+    "properties": {
+     "task": {
+      "title": "Task",
+      "type": "string"
+     },
+     "task_id": {
+      "title": "Task Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "task",
+     "task_id"
+    ],
+    "title": "DispatchedTaskResponse",
+    "type": "object"
+   },
    "Dividend": {
     "properties": {
      "amount": {
@@ -3883,6 +3901,641 @@
      "detail"
     ],
     "title": "ErrorModel",
+    "type": "object"
+   },
+   "EtfCvmFund": {
+    "properties": {
+     "administrator_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Administrator Name"
+     },
+     "cnpj": {
+      "title": "Cnpj",
+      "type": "string"
+     },
+     "manager_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Manager Name"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "started_at": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Started At"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "cnpj",
+     "name",
+     "status",
+     "started_at",
+     "administrator_name",
+     "manager_name"
+    ],
+    "title": "EtfCvmFund",
+    "type": "object"
+   },
+   "EtfFund": {
+    "properties": {
+     "domicile": {
+      "title": "Domicile",
+      "type": "string"
+     },
+     "fund_of_funds": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fund Of Funds"
+     },
+     "lei": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lei"
+     },
+     "leveraged_or_inverse": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Leveraged Or Inverse"
+     },
+     "managers": {
+      "items": {
+       "$ref": "#/components/schemas/EtfLegalEntity"
+      },
+      "title": "Managers",
+      "type": "array"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "sec_series_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sec Series Id"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     },
+     "tracks_index": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Tracks Index"
+     },
+     "umbrella": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/EtfLegalEntity"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "name",
+     "lei",
+     "sec_series_id",
+     "domicile",
+     "status",
+     "tracks_index",
+     "leveraged_or_inverse",
+     "fund_of_funds",
+     "umbrella",
+     "managers"
+    ],
+    "title": "EtfFund",
+    "type": "object"
+   },
+   "EtfHoldingReportSummary": {
+    "properties": {
+     "fetched_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fetched At"
+     },
+     "holdings_count": {
+      "title": "Holdings Count",
+      "type": "integer"
+     },
+     "net_assets": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Net Assets"
+     },
+     "report_date": {
+      "format": "date",
+      "title": "Report Date",
+      "type": "string"
+     },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
+     "total_assets": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Assets"
+     }
+    },
+    "required": [
+     "report_date",
+     "source",
+     "net_assets",
+     "total_assets",
+     "holdings_count",
+     "fetched_at"
+    ],
+    "title": "EtfHoldingReportSummary",
+    "type": "object"
+   },
+   "EtfHoldingResponse": {
+    "properties": {
+     "asset_category": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Category"
+     },
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "balance": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Balance"
+     },
+     "country": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Country"
+     },
+     "currency": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Currency"
+     },
+     "isin": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Isin"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "rank": {
+      "title": "Rank",
+      "type": "integer"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     },
+     "units": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Units"
+     },
+     "value_usd": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value Usd"
+     },
+     "weight": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Weight"
+     }
+    },
+    "required": [
+     "rank",
+     "name",
+     "isin",
+     "ticker",
+     "asset_id",
+     "asset_category",
+     "country",
+     "currency",
+     "balance",
+     "units",
+     "value_usd",
+     "weight"
+    ],
+    "title": "EtfHoldingResponse",
+    "type": "object"
+   },
+   "EtfHoldingsPageResponse": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/EtfHoldingResponse"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "page": {
+      "title": "Page",
+      "type": "integer"
+     },
+     "page_size": {
+      "title": "Page Size",
+      "type": "integer"
+     },
+     "report_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Report Date"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source"
+     },
+     "total": {
+      "title": "Total",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "report_date",
+     "source",
+     "total",
+     "page",
+     "page_size",
+     "items"
+    ],
+    "title": "EtfHoldingsPageResponse",
+    "type": "object"
+   },
+   "EtfLegalEntity": {
+    "properties": {
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "country": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Country"
+     },
+     "lei": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lei"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "lei",
+     "cnpj",
+     "country"
+    ],
+    "title": "EtfLegalEntity",
+    "type": "object"
+   },
+   "EtfProfileResponse": {
+    "properties": {
+     "cvm_fund": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/EtfCvmFund"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "fund": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/EtfFund"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "holdings": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/EtfHoldingReportSummary"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "holdings_available": {
+      "title": "Holdings Available",
+      "type": "boolean"
+     },
+     "registry": {
+      "anyOf": [
+       {
+        "enum": [
+         "sec",
+         "esma",
+         "cvm"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Registry"
+     },
+     "share_class": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/EtfShareClass"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "registry",
+     "fund",
+     "share_class",
+     "cvm_fund",
+     "holdings",
+     "holdings_available"
+    ],
+    "title": "EtfProfileResponse",
+    "type": "object"
+   },
+   "EtfShareClass": {
+    "properties": {
+     "cfi_code": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cfi Code"
+     },
+     "currency": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Currency"
+     },
+     "distribution_policy": {
+      "anyOf": [
+       {
+        "enum": [
+         "accumulating",
+         "distributing",
+         "mixed"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Distribution Policy"
+     },
+     "isin": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Isin"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "sec_class_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sec Class Id"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     }
+    },
+    "required": [
+     "name",
+     "ticker",
+     "isin",
+     "sec_class_id",
+     "currency",
+     "distribution_policy",
+     "cfi_code",
+     "status"
+    ],
+    "title": "EtfShareClass",
     "type": "object"
    },
    "ExchangeOut": {
@@ -5896,7 +6549,7 @@
     "title": "FixedIncomeTypeOut",
     "type": "object"
    },
-   "Frequency": {
+   "Frequency-Input": {
     "description": "Com que passo uma coisa se repete ao longo da simulação.\n\nAporte e rebalanceamento andam no mesmo calendário — de mês em mês, de\ntrimestre em trimestre —, então são a mesma enumeração e não duas iguais.\n`NONE` é a ausência do regime, e significa coisas diferentes em cada um:\nsem aporte, só o valor inicial trabalha; sem rebalanceamento, quem corrige\na carteira são os aportes.",
     "enum": [
      "none",
@@ -7021,6 +7674,82 @@
      "currency"
     ],
     "title": "IndexOut",
+    "type": "object"
+   },
+   "IngestionExecutionSummary": {
+    "properties": {
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "failed_items": {
+      "title": "Failed Items",
+      "type": "integer"
+     },
+     "finished_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Finished At"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "requested_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Requested At"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     },
+     "succeeded_items": {
+      "title": "Succeeded Items",
+      "type": "integer"
+     },
+     "total_items": {
+      "title": "Total Items",
+      "type": "integer"
+     },
+     "trigger": {
+      "title": "Trigger",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "status",
+     "trigger",
+     "requested_at",
+     "finished_at",
+     "total_items",
+     "succeeded_items",
+     "failed_items",
+     "error"
+    ],
+    "title": "IngestionExecutionSummary",
     "type": "object"
    },
    "InstitutionOut": {
@@ -8408,6 +9137,296 @@
     "title": "InvestmentFundRiskResponse",
     "type": "object"
    },
+   "LastRunResponse": {
+    "description": "The last run of a routine: its task run, what it sent, its execution.",
+    "properties": {
+     "children": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "title": "Children",
+      "type": "object"
+     },
+     "duration_seconds": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Duration Seconds"
+     },
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "execution": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/IngestionExecutionSummary"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "finished_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Finished At"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "started_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Started At"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TaskRunStatus"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "task_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Task Name"
+     },
+     "trigger": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TaskRunTrigger"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "children",
+     "execution"
+    ],
+    "title": "LastRunResponse",
+    "type": "object"
+   },
+   "LevelReadingResponse": {
+    "description": "A level against its own weekly history. Returns and distances are\nfractions; percentiles run from 0 to 1.",
+    "properties": {
+     "as_of": {
+      "format": "date",
+      "title": "As Of",
+      "type": "string"
+     },
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "distance_percentile": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Distance Percentile"
+     },
+     "distance_to_moving_average": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Distance To Moving Average"
+     },
+     "drawdown": {
+      "title": "Drawdown",
+      "type": "number"
+     },
+     "five_year_annualized_return": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Five Year Annualized Return"
+     },
+     "history": {
+      "items": {
+       "$ref": "#/components/schemas/ReadingPointResponse"
+      },
+      "title": "History",
+      "type": "array"
+     },
+     "key": {
+      "title": "Key",
+      "type": "string"
+     },
+     "moving_average": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Moving Average"
+     },
+     "one_year_return": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "One Year Return"
+     },
+     "series_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Series Id"
+     },
+     "since": {
+      "format": "date",
+      "title": "Since",
+      "type": "string"
+     },
+     "since_start_annualized_return": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Since Start Annualized Return"
+     },
+     "ten_year_annualized_return": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ten Year Annualized Return"
+     },
+     "ten_year_return_percentile": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ten Year Return Percentile"
+     },
+     "value": {
+      "title": "Value",
+      "type": "number"
+     },
+     "year_to_date_return": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Year To Date Return"
+     }
+    },
+    "required": [
+     "key",
+     "as_of",
+     "since",
+     "value",
+     "since_start_annualized_return",
+     "year_to_date_return",
+     "one_year_return",
+     "five_year_annualized_return",
+     "ten_year_annualized_return",
+     "ten_year_return_percentile",
+     "moving_average",
+     "distance_to_moving_average",
+     "distance_percentile",
+     "drawdown",
+     "history"
+    ],
+    "title": "LevelReadingResponse",
+    "type": "object"
+   },
    "LineRefResponse": {
     "properties": {
      "line_index": {
@@ -8425,6 +9444,16 @@
     ],
     "title": "LineRefResponse",
     "type": "object"
+   },
+   "ManualStart": {
+    "description": "How a person starts the routine.",
+    "enum": [
+     "task",
+     "ingestion",
+     "screen"
+    ],
+    "title": "ManualStart",
+    "type": "string"
    },
    "MarketCatalogueAssetResponse": {
     "properties": {
@@ -8490,6 +9519,28 @@
        }
       ],
       "title": "Price"
+     },
+     "sector": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sector"
+     },
+     "subsector": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subsector"
      },
      "ticker": {
       "title": "Ticker",
@@ -9117,6 +10168,109 @@
     "title": "OnDemandQuotesResponse",
     "type": "object"
    },
+   "OperationsDashboardResponse": {
+    "properties": {
+     "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+     },
+     "recent_runs": {
+      "items": {
+       "$ref": "#/components/schemas/TaskRunResponse"
+      },
+      "title": "Recent Runs",
+      "type": "array"
+     },
+     "routines": {
+      "items": {
+       "$ref": "#/components/schemas/RoutineResponse"
+      },
+      "title": "Routines",
+      "type": "array"
+     },
+     "summary": {
+      "$ref": "#/components/schemas/OperationsSummaryResponse"
+     },
+     "timezone": {
+      "title": "Timezone",
+      "type": "string"
+     },
+     "upcoming": {
+      "items": {
+       "$ref": "#/components/schemas/UpcomingRunResponse"
+      },
+      "title": "Upcoming",
+      "type": "array"
+     }
+    },
+    "required": [
+     "generated_at",
+     "timezone",
+     "summary",
+     "routines",
+     "upcoming",
+     "recent_runs"
+    ],
+    "title": "OperationsDashboardResponse",
+    "type": "object"
+   },
+   "OperationsSummaryResponse": {
+    "properties": {
+     "attention": {
+      "title": "Attention",
+      "type": "integer"
+     },
+     "failures_last_day": {
+      "title": "Failures Last Day",
+      "type": "integer"
+     },
+     "failures_last_week": {
+      "title": "Failures Last Week",
+      "type": "integer"
+     },
+     "next_run_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Next Run At"
+     },
+     "routines": {
+      "title": "Routines",
+      "type": "integer"
+     },
+     "running": {
+      "title": "Running",
+      "type": "integer"
+     },
+     "runs_last_day": {
+      "title": "Runs Last Day",
+      "type": "integer"
+     },
+     "scheduled_routines": {
+      "title": "Scheduled Routines",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "routines",
+     "scheduled_routines",
+     "running",
+     "attention",
+     "runs_last_day",
+     "failures_last_day",
+     "failures_last_week",
+     "next_run_at"
+    ],
+    "title": "OperationsSummaryResponse",
+    "type": "object"
+   },
    "PersistedQuotesResponse": {
     "properties": {
      "asset_id": {
@@ -9253,7 +10407,7 @@
     "type": "object"
    },
    "PortfolioWealthTier": {
-    "description": "A portfolio's standing on the ladder, as it is today.\n\n`current_patrimony` decides everything: `current_tier`, `remaining` and\n`progress` all falam do valor de hoje, e a patente desce quando a carteira\ndesce.\n\n`peak_patrimony` é o mais alto que a carteira já valeu. Ele é história —\no álbum de cenários já visitados —, e não decide o título.",
+    "description": "A portfolio's standing on the ladder, as it is today.\n\n`current_patrimony` decides everything: `current_tier`, `remaining` and\n`progress` all falam do valor de hoje, e a patente desce quando a carteira\ndesce.\n\n`peak_patrimony` é o mais alto que a carteira já valeu. Ele é história,\ne não decide o título.",
     "properties": {
      "current_patrimony": {
       "title": "Current Patrimony",
@@ -9560,7 +10714,7 @@
    "PresetResponse": {
     "properties": {
      "contribution_frequency": {
-      "$ref": "#/components/schemas/Frequency"
+      "$ref": "#/components/schemas/app__modules__lab__domain__enums__Frequency"
      },
      "description": {
       "title": "Description",
@@ -9582,7 +10736,7 @@
       "type": "string"
      },
      "rebalance_frequency": {
-      "$ref": "#/components/schemas/Frequency"
+      "$ref": "#/components/schemas/app__modules__lab__domain__enums__Frequency"
      }
     },
     "required": [
@@ -9697,6 +10851,110 @@
      "close"
     ],
     "title": "QuoteResponse",
+    "type": "object"
+   },
+   "RateReadingResponse": {
+    "description": "A rate, as a fraction per year, against its own weekly history.",
+    "properties": {
+     "as_of": {
+      "format": "date",
+      "title": "As Of",
+      "type": "string"
+     },
+     "history": {
+      "items": {
+       "$ref": "#/components/schemas/ReadingPointResponse"
+      },
+      "title": "History",
+      "type": "array"
+     },
+     "key": {
+      "title": "Key",
+      "type": "string"
+     },
+     "one_year_ago": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "One Year Ago"
+     },
+     "percentile": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Percentile"
+     },
+     "series_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Series Id"
+     },
+     "since": {
+      "format": "date",
+      "title": "Since",
+      "type": "string"
+     },
+     "value": {
+      "title": "Value",
+      "type": "number"
+     }
+    },
+    "required": [
+     "key",
+     "as_of",
+     "since",
+     "value",
+     "one_year_ago",
+     "percentile",
+     "history"
+    ],
+    "title": "RateReadingResponse",
+    "type": "object"
+   },
+   "ReadingPointResponse": {
+    "properties": {
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "moving_average": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Moving Average"
+     },
+     "value": {
+      "title": "Value",
+      "type": "number"
+     }
+    },
+    "required": [
+     "date",
+     "value"
+    ],
+    "title": "ReadingPointResponse",
     "type": "object"
    },
    "RebalancingResponse": {
@@ -10311,6 +11569,83 @@
     "title": "ReconciliationRequest",
     "type": "object"
    },
+   "ReferenceEtfReadingResponse": {
+    "description": "A reference ETF read on its adjusted close — dividends in, as in the\nMSCI net indexes. `reading.history` is the last year only, for a sparkline;\n`day_change` is the last close against the one before, a fraction.",
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "currency": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Currency"
+     },
+     "day_change": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Day Change"
+     },
+     "exposure": {
+      "enum": [
+       "usa",
+       "world",
+       "world_ex_usa",
+       "emerging",
+       "dividends",
+       "themes",
+       "bonds",
+       "gold",
+       "real_estate"
+      ],
+      "title": "Exposure",
+      "type": "string"
+     },
+     "listing": {
+      "enum": [
+       "us",
+       "ucits"
+      ],
+      "title": "Listing",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "reading": {
+      "$ref": "#/components/schemas/LevelReadingResponse"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "ticker",
+     "name",
+     "asset_id",
+     "exposure",
+     "listing",
+     "currency",
+     "day_change",
+     "reading"
+    ],
+    "title": "ReferenceEtfReadingResponse",
+    "type": "object"
+   },
    "RegisterFundRequest": {
     "additionalProperties": false,
     "properties": {
@@ -10616,6 +11951,215 @@
     "title": "ResearchSourceResponse",
     "type": "object"
    },
+   "RoutineGroup": {
+    "enum": [
+     "market_data",
+     "reference_data",
+     "portfolios",
+     "ai",
+     "maintenance"
+    ],
+    "title": "RoutineGroup",
+    "type": "string"
+   },
+   "RoutineKey": {
+    "enum": [
+     "quotes",
+     "market_series",
+     "usd_brl",
+     "fund_share_values",
+     "etf_holdings",
+     "fund_registry",
+     "etf_registry",
+     "asset_catalogue",
+     "company_registry",
+     "fund_links",
+     "portfolio_consolidation",
+     "fii_dividends",
+     "ai_features",
+     "execution_history"
+    ],
+    "title": "RoutineKey",
+    "type": "string"
+   },
+   "RoutineResponse": {
+    "properties": {
+     "description": {
+      "title": "Description",
+      "type": "string"
+     },
+     "frequency": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/app__modules__operations__domain__schedule__Frequency"
+       },
+       {
+        "const": "on_demand",
+        "type": "string"
+       }
+      ],
+      "title": "Frequency"
+     },
+     "group": {
+      "$ref": "#/components/schemas/RoutineGroup"
+     },
+     "health": {
+      "enum": [
+       "ok",
+       "warning",
+       "failing",
+       "running",
+       "missed",
+       "never",
+       "on_demand"
+      ],
+      "title": "Health",
+      "type": "string"
+     },
+     "ingestion_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ingestion Type"
+     },
+     "key": {
+      "$ref": "#/components/schemas/RoutineKey"
+     },
+     "last_run": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/LastRunResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "manual": {
+      "$ref": "#/components/schemas/ManualStart"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "next_run_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Next Run At"
+     },
+     "schedules": {
+      "items": {
+       "$ref": "#/components/schemas/RoutineScheduleResponse"
+      },
+      "title": "Schedules",
+      "type": "array"
+     },
+     "tasks": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Tasks",
+      "type": "array"
+     }
+    },
+    "required": [
+     "key",
+     "name",
+     "group",
+     "description",
+     "manual",
+     "ingestion_type",
+     "tasks",
+     "schedules",
+     "frequency",
+     "next_run_at",
+     "last_run",
+     "health"
+    ],
+    "title": "RoutineResponse",
+    "type": "object"
+   },
+   "RoutineRunResponse": {
+    "properties": {
+     "dispatched": {
+      "items": {
+       "$ref": "#/components/schemas/DispatchedTaskResponse"
+      },
+      "title": "Dispatched",
+      "type": "array"
+     },
+     "routine": {
+      "$ref": "#/components/schemas/RoutineKey"
+     }
+    },
+    "required": [
+     "routine",
+     "dispatched"
+    ],
+    "title": "RoutineRunResponse",
+    "type": "object"
+   },
+   "RoutineScheduleResponse": {
+    "properties": {
+     "description": {
+      "title": "Description",
+      "type": "string"
+     },
+     "entry": {
+      "title": "Entry",
+      "type": "string"
+     },
+     "frequency": {
+      "$ref": "#/components/schemas/app__modules__operations__domain__schedule__Frequency"
+     },
+     "next_runs": {
+      "items": {
+       "format": "date-time",
+       "type": "string"
+      },
+      "title": "Next Runs",
+      "type": "array"
+     },
+     "previous_run_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Previous Run At"
+     },
+     "task": {
+      "title": "Task",
+      "type": "string"
+     }
+    },
+    "required": [
+     "entry",
+     "task",
+     "description",
+     "frequency",
+     "next_runs",
+     "previous_run_at"
+    ],
+    "title": "RoutineScheduleResponse",
+    "type": "object"
+   },
    "RunBacktestRequest": {
     "description": "Uma simulação pedida.\n\nA alocação vem inteira no corpo, e não como o id de uma carteira salva: é o\nque deixa a tela simular um rascunho que ninguém salvou, e o que faz o\ncomparador e o painel de variações usarem a mesma rota.",
     "properties": {
@@ -10633,7 +12177,7 @@
       "type": "number"
      },
      "contribution_frequency": {
-      "$ref": "#/components/schemas/Frequency",
+      "$ref": "#/components/schemas/Frequency-Input",
       "default": "none"
      },
      "currency": {
@@ -10679,7 +12223,7 @@
       "type": "array"
      },
      "rebalance_frequency": {
-      "$ref": "#/components/schemas/Frequency",
+      "$ref": "#/components/schemas/Frequency-Input",
       "default": "none"
      },
      "start_date": {
@@ -10990,7 +12534,7 @@
       "type": "number"
      },
      "contribution_frequency": {
-      "$ref": "#/components/schemas/Frequency",
+      "$ref": "#/components/schemas/Frequency-Input",
       "default": "none"
      },
      "initial_amount": {
@@ -11013,7 +12557,7 @@
       "type": "array"
      },
      "rebalance_frequency": {
-      "$ref": "#/components/schemas/Frequency",
+      "$ref": "#/components/schemas/Frequency-Input",
       "default": "none"
      }
     },
@@ -12385,6 +13929,124 @@
     "title": "StockSubscriptionResponse",
     "type": "object"
    },
+   "TaskRunResponse": {
+    "properties": {
+     "arguments": {
+      "title": "Arguments",
+      "type": "object"
+     },
+     "duration_seconds": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Duration Seconds"
+     },
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "finished_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Finished At"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "result": {
+      "title": "Result"
+     },
+     "routine_key": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RoutineKey"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "routine_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Routine Name"
+     },
+     "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+     },
+     "status": {
+      "$ref": "#/components/schemas/TaskRunStatus"
+     },
+     "task_name": {
+      "title": "Task Name",
+      "type": "string"
+     },
+     "trigger": {
+      "$ref": "#/components/schemas/TaskRunTrigger"
+     }
+    },
+    "required": [
+     "id",
+     "task_name",
+     "routine_key",
+     "routine_name",
+     "trigger",
+     "status",
+     "started_at",
+     "finished_at",
+     "duration_seconds",
+     "arguments",
+     "error"
+    ],
+    "title": "TaskRunResponse",
+    "type": "object"
+   },
+   "TaskRunStatus": {
+    "enum": [
+     "running",
+     "success",
+     "failure"
+    ],
+    "title": "TaskRunStatus",
+    "type": "string"
+   },
+   "TaskRunTrigger": {
+    "enum": [
+     "scheduled",
+     "manual",
+     "chained"
+    ],
+    "title": "TaskRunTrigger",
+    "type": "string"
+   },
    "TheoreticalPortfolioResponse": {
     "properties": {
      "benchmark_id": {
@@ -12403,7 +14065,7 @@
       "type": "number"
      },
      "contribution_frequency": {
-      "$ref": "#/components/schemas/Frequency"
+      "$ref": "#/components/schemas/app__modules__lab__domain__enums__Frequency"
      },
      "id": {
       "title": "Id",
@@ -12425,7 +14087,7 @@
       "type": "array"
      },
      "rebalance_frequency": {
-      "$ref": "#/components/schemas/Frequency"
+      "$ref": "#/components/schemas/app__modules__lab__domain__enums__Frequency"
      }
     },
     "required": [
@@ -12762,6 +14424,34 @@
      "description"
     ],
     "title": "TreasuryBondTypeOut",
+    "type": "object"
+   },
+   "UpcomingRunResponse": {
+    "properties": {
+     "at": {
+      "format": "date-time",
+      "title": "At",
+      "type": "string"
+     },
+     "routine_key": {
+      "$ref": "#/components/schemas/RoutineKey"
+     },
+     "routine_name": {
+      "title": "Routine Name",
+      "type": "string"
+     },
+     "schedule": {
+      "title": "Schedule",
+      "type": "string"
+     }
+    },
+    "required": [
+     "routine_key",
+     "routine_name",
+     "at",
+     "schedule"
+    ],
+    "title": "UpcomingRunResponse",
     "type": "object"
    },
    "UpdatePortfolioRequest": {
@@ -13142,7 +14832,7 @@
     "type": "object"
    },
    "WealthTier": {
-    "description": "Um degrau da escala: um título e o preço dele.\n\nO cenário do degrau não viaja aqui. Ele é um arquivo do repositório,\nescolhido pela posição na escala, então a imagem não é dado de API: nem\nsobe, nem é guardada, nem engorda a resposta que lista a escala inteira.",
+    "description": "Um degrau da escala: um título e o preço dele.",
     "properties": {
      "name": {
       "title": "Name",
@@ -13193,6 +14883,61 @@
     ],
     "title": "WealthTierProjection",
     "type": "object"
+   },
+   "WorldMarketReadingsResponse": {
+    "properties": {
+     "comparisons": {
+      "items": {
+       "$ref": "#/components/schemas/LevelReadingResponse"
+      },
+      "title": "Comparisons",
+      "type": "array"
+     },
+     "levels": {
+      "items": {
+       "$ref": "#/components/schemas/LevelReadingResponse"
+      },
+      "title": "Levels",
+      "type": "array"
+     },
+     "rates": {
+      "items": {
+       "$ref": "#/components/schemas/RateReadingResponse"
+      },
+      "title": "Rates",
+      "type": "array"
+     }
+    },
+    "required": [
+     "levels",
+     "comparisons",
+     "rates"
+    ],
+    "title": "WorldMarketReadingsResponse",
+    "type": "object"
+   },
+   "app__modules__lab__domain__enums__Frequency": {
+    "description": "Com que passo uma coisa se repete ao longo da simulação.\n\nAporte e rebalanceamento andam no mesmo calendário — de mês em mês, de\ntrimestre em trimestre —, então são a mesma enumeração e não duas iguais.\n`NONE` é a ausência do regime, e significa coisas diferentes em cada um:\nsem aporte, só o valor inicial trabalha; sem rebalanceamento, quem corrige\na carteira são os aportes.",
+    "enum": [
+     "none",
+     "monthly",
+     "quarterly",
+     "semiannual",
+     "annual"
+    ],
+    "title": "Frequency",
+    "type": "string"
+   },
+   "app__modules__operations__domain__schedule__Frequency": {
+    "enum": [
+     "intraday",
+     "daily",
+     "weekly",
+     "monthly",
+     "other"
+    ],
+    "title": "Frequency",
+    "type": "string"
    },
    "app__modules__portfolio__api__category__schema__CustomCategory": {
     "properties": {
@@ -15812,6 +17557,125 @@
     ]
    }
   },
+  "/market_data/etf/{asset_id}/holdings": {
+   "get": {
+    "description": "One page of the latest holding report, largest position first.",
+    "operationId": "get_etf_holdings_market_data_etf__asset_id__holdings_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "page",
+      "required": false,
+      "schema": {
+       "default": 1,
+       "minimum": 1,
+       "title": "Page",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "page_size",
+      "required": false,
+      "schema": {
+       "default": 20,
+       "maximum": 100,
+       "minimum": 1,
+       "title": "Page Size",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EtfHoldingsPageResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Etf Holdings",
+    "tags": [
+     "ETF"
+    ]
+   }
+  },
+  "/market_data/etf/{asset_id}/profile": {
+   "get": {
+    "description": "The fund and share class the ETF is registered as, and its latest report.",
+    "operationId": "get_etf_profile_market_data_etf__asset_id__profile_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "asset_id",
+      "required": true,
+      "schema": {
+       "title": "Asset Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EtfProfileResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Etf Profile",
+    "tags": [
+     "ETF"
+    ]
+   }
+  },
   "/market_data/fii/market": {
    "get": {
     "description": "Complete FII catalogue with summarized BRAPI indicators.",
@@ -16177,6 +18041,350 @@
     "summary": "Search Registered Funds",
     "tags": [
      "Fund registry"
+    ]
+   }
+  },
+  "/market_data/ingestions/etf_holdings": {
+   "get": {
+    "operationId": "list_etf_holdings_ingestions_market_data_ingestions_etf_holdings_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+         },
+         "title": "Response List Etf Holdings Ingestions Market Data Ingestions Etf Holdings Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Etf Holdings Ingestions",
+    "tags": [
+     "Data Ingestion"
+    ]
+   },
+   "post": {
+    "operationId": "run_etf_holdings_ingestion_market_data_ingestions_etf_holdings_post",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Run Etf Holdings Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/etf_holdings/{execution_id}": {
+   "get": {
+    "operationId": "get_etf_holdings_ingestion_market_data_ingestions_etf_holdings__execution_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionDetailResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Etf Holdings Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/etf_holdings/{execution_id}/abort": {
+   "post": {
+    "operationId": "abort_etf_holdings_ingestion_market_data_ingestions_etf_holdings__execution_id__abort_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Abort Etf Holdings Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/etf_registry": {
+   "get": {
+    "operationId": "list_etf_registry_ingestions_market_data_ingestions_etf_registry_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+         },
+         "title": "Response List Etf Registry Ingestions Market Data Ingestions Etf Registry Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Etf Registry Ingestions",
+    "tags": [
+     "Data Ingestion"
+    ]
+   },
+   "post": {
+    "operationId": "run_etf_registry_ingestion_market_data_ingestions_etf_registry_post",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Run Etf Registry Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/etf_registry/{execution_id}": {
+   "get": {
+    "operationId": "get_etf_registry_ingestion_market_data_ingestions_etf_registry__execution_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionDetailResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Etf Registry Ingestion",
+    "tags": [
+     "Data Ingestion"
+    ]
+   }
+  },
+  "/market_data/ingestions/etf_registry/{execution_id}/abort": {
+   "post": {
+    "operationId": "abort_etf_registry_ingestion_market_data_ingestions_etf_registry__execution_id__abort_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "execution_id",
+      "required": true,
+      "schema": {
+       "title": "Execution Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DataIngestionExecutionResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Abort Etf Registry Ingestion",
+    "tags": [
+     "Data Ingestion"
     ]
    }
   },
@@ -17556,6 +19764,63 @@
     ]
    }
   },
+  "/market_data/readings/etfs": {
+   "get": {
+    "description": "The reference ETFs, in the order of the curated list: exposure first.",
+    "operationId": "get_reference_etf_readings_market_data_readings_etfs_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ReferenceEtfReadingResponse"
+         },
+         "title": "Response Get Reference Etf Readings Market Data Readings Etfs Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Reference Etf Readings",
+    "tags": [
+     "Market Readings"
+    ]
+   }
+  },
+  "/market_data/readings/world": {
+   "get": {
+    "operationId": "get_world_market_readings_market_data_readings_world_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WorldMarketReadingsResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get World Market Readings",
+    "tags": [
+     "Market Readings"
+    ]
+   }
+  },
   "/market_data/series": {
    "get": {
     "operationId": "list_market_data_series_market_data_series_get",
@@ -17888,6 +20153,175 @@
     "summary": "Get Usd Brl History",
     "tags": [
      "USD/BRL"
+    ]
+   }
+  },
+  "/operations/dashboard": {
+   "get": {
+    "operationId": "get_operations_dashboard_operations_dashboard_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/OperationsDashboardResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Operations Dashboard",
+    "tags": [
+     "Operations"
+    ]
+   }
+  },
+  "/operations/routines/{routine}/run": {
+   "post": {
+    "description": "Send what the schedule sends for this routine, now.\n\nOnly for routines started by a task. An ingestion is started through its\nown route, which opens its execution first; a routine that shows a diff\nbefore writing is started on its own screen.",
+    "operationId": "run_routine_operations_routines__routine__run_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "routine",
+      "required": true,
+      "schema": {
+       "$ref": "#/components/schemas/RoutineKey"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RoutineRunResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Run Routine",
+    "tags": [
+     "Operations"
+    ]
+   }
+  },
+  "/operations/runs": {
+   "get": {
+    "operationId": "list_task_runs_operations_runs_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "routine",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/RoutineKey"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Routine"
+      }
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/TaskRunStatus"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      }
+     },
+     {
+      "in": "query",
+      "name": "include_chained",
+      "required": false,
+      "schema": {
+       "default": true,
+       "title": "Include Chained",
+       "type": "boolean"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 100,
+       "maximum": 500,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/TaskRunResponse"
+         },
+         "title": "Response List Task Runs Operations Runs Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Task Runs",
+    "tags": [
+     "Operations"
     ]
    }
   },

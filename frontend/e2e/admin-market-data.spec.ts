@@ -18,7 +18,7 @@ test('admin/market-data/usd-brl', async ({ page, mockApi }) => {
 
   await page.goto('/admin/market-data/usd-brl')
 
-  await expect(page.getByRole('heading', { name: 'Dólar' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Histórico do dólar' })).toBeVisible()
   await expect(page.getByText('3 observações', { exact: false })).toBeVisible()
   await expectNothingClipped(page)
 
@@ -37,7 +37,7 @@ test('admin/market-data/series', async ({ page, mockApi }) => {
 
   await page.goto('/admin/market-data/series')
 
-  await expect(page.getByRole('heading', { name: 'Séries' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Histórico das séries' })).toBeVisible()
   await expect(page.getByText('2 observações', { exact: false })).toBeVisible()
   await expectNothingClipped(page)
 
@@ -54,7 +54,7 @@ test('admin/market-data/quotes', async ({ page, mockApi }) => {
 
   await page.goto('/admin/market-data/quotes')
 
-  await expect(page.getByRole('heading', { name: 'Cotações de ativos' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Histórico de cotações' })).toBeVisible()
   /* Sem ativo escolhido a tela mostra o convite, que é o estado inicial
      real de quem abre a página. */
   await expect(page.getByText('Selecione um ativo', { exact: false })).toBeVisible()

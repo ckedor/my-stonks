@@ -1,6 +1,8 @@
 export interface AdminNavigationItem {
   label: string
   path: string
+  /** O assunto do item dentro da seção; vira um título no menu lateral. */
+  group?: string
 }
 
 export interface AdminNavigationSection {
@@ -10,7 +12,70 @@ export interface AdminNavigationSection {
   items: AdminNavigationItem[]
 }
 
+export const INTEGRATIONS_PATH = '/admin/integrations'
+
+/* Tudo o que sincroniza ou integra dado de fora mora em Integrações, com o
+ * painel à frente: é onde se vê o que roda, quando, e como terminou. As outras
+ * seções são o que se edita ou consulta à mão. Os rótulos das rotinas são os
+ * nomes do catálogo do backend (`operations/domain/routines.py`), e o título
+ * de cada tela é o rótulo dela aqui. */
 export const adminNavigationSections: AdminNavigationSection[] = [
+  {
+    id: 'integrations',
+    label: 'Integrações',
+    defaultPath: INTEGRATIONS_PATH,
+    items: [
+      { group: 'Monitoramento', label: 'Painel', path: INTEGRATIONS_PATH },
+      { group: 'Monitoramento', label: 'Execuções', path: `${INTEGRATIONS_PATH}/runs` },
+      { group: 'Dados de mercado', label: 'Cotações', path: `${INTEGRATIONS_PATH}/quotes` },
+      {
+        group: 'Dados de mercado',
+        label: 'Séries de mercado',
+        path: `${INTEGRATIONS_PATH}/market-series`,
+      },
+      { group: 'Dados de mercado', label: 'Dólar (USD/BRL)', path: `${INTEGRATIONS_PATH}/usd-brl` },
+      {
+        group: 'Dados de mercado',
+        label: 'Valores de cota (CVM)',
+        path: `${INTEGRATIONS_PATH}/fund-share-values`,
+      },
+      {
+        group: 'Dados de mercado',
+        label: 'Carteira dos ETFs',
+        path: `${INTEGRATIONS_PATH}/etf-holdings`,
+      },
+      {
+        group: 'Cadastros de referência',
+        label: 'Cadastro de fundos (CVM)',
+        path: `${INTEGRATIONS_PATH}/fund-registry`,
+      },
+      {
+        group: 'Cadastros de referência',
+        label: 'Cadastro de ETFs estrangeiros',
+        path: `${INTEGRATIONS_PATH}/etf-registry`,
+      },
+      {
+        group: 'Cadastros de referência',
+        label: 'Catálogo de ativos',
+        path: `${INTEGRATIONS_PATH}/asset-catalogue`,
+      },
+      {
+        group: 'Cadastros de referência',
+        label: 'Companhias e emissores (CVM)',
+        path: `${INTEGRATIONS_PATH}/company-registry`,
+      },
+      {
+        group: 'Cadastros de referência',
+        label: 'Vínculo de FIIs e ETFs brasileiros',
+        path: `${INTEGRATIONS_PATH}/fund-links`,
+      },
+      {
+        group: 'Carteiras',
+        label: 'Consolidação das carteiras',
+        path: `${INTEGRATIONS_PATH}/consolidation`,
+      },
+    ],
+  },
   {
     id: 'registrations',
     label: 'Cadastros',
@@ -23,29 +88,12 @@ export const adminNavigationSections: AdminNavigationSection[] = [
   },
   {
     id: 'market-data',
-    label: 'Dados de Mercado',
-    defaultPath: '/admin/market-data/usd-brl',
+    label: 'Dados de mercado',
+    defaultPath: '/admin/market-data/quotes',
     items: [
-      { label: 'Dólar', path: '/admin/market-data/usd-brl' },
-      { label: 'Séries', path: '/admin/market-data/series' },
-      { label: 'Cotações de ativos', path: '/admin/market-data/quotes' },
-    ],
-  },
-  {
-    id: 'integrations',
-    label: 'Integrações',
-    defaultPath: '/admin/asset-sync',
-    items: [
-      { label: 'Sincronização de ativos', path: '/admin/asset-sync' },
-      { label: 'Importação de cotações', path: '/admin/quote-ingestion' },
-      {
-        label: 'Séries de mercado',
-        path: '/admin/market-data-series-ingestion',
-      },
-      { label: 'USD/BRL', path: '/admin/usd-brl-ingestion' },
-      { label: 'Cadastro de fundos', path: '/admin/fund-registry-ingestion' },
-      { label: 'Valores de cota', path: '/admin/fund-share-value-ingestion' },
-      { label: 'Consolidação', path: '/admin/consolidation' },
+      { label: 'Histórico de cotações', path: '/admin/market-data/quotes' },
+      { label: 'Histórico das séries', path: '/admin/market-data/series' },
+      { label: 'Histórico do dólar', path: '/admin/market-data/usd-brl' },
     ],
   },
   {
@@ -68,6 +116,12 @@ export const adminNavigationSections: AdminNavigationSection[] = [
     label: 'Usuários',
     defaultPath: '/admin/users',
     items: [{ label: 'Usuários', path: '/admin/users' }],
+  },
+  {
+    id: 'game',
+    label: 'Jogo',
+    defaultPath: '/admin/game/sandbox',
+    items: [{ label: 'Sandbox', path: '/admin/game/sandbox' }],
   },
   {
     id: 'design-system',

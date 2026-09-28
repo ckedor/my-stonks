@@ -1,7 +1,7 @@
 import type { InvestmentFundIdentity, InvestmentFundIndicators } from '@/api/market'
 import { AppCard, AppGrid, AppStack, AppText, SectionTitle } from '@/components/ui'
 import { fundKindLabel } from '@/constants/investmentFunds'
-import { EMPTY, formatCNPJ, formatDate } from '../format'
+import { EMPTY, formatCNPJ, formatDate } from '@/components/asset/format'
 
 interface Entry {
   label: string

@@ -1,5 +1,5 @@
 import type { StockStatementPoint } from '@/api/market'
-import { formatCompactBRL } from '../format'
+import { formatCompactBRL } from '@/components/asset/format'
 import type { PublishedSeriesMetric } from '../PublishedSeriesChart'
 
 /** Quais linhas de um demonstrativo viram tela, e em que ordem.

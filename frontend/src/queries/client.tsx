@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/react-query'
+import { defaultShouldDehydrateQuery, QueryClient } from '@tanstack/react-query'
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import {
   PersistQueryClientProvider,
@@ -51,7 +51,18 @@ export function QueryProvider({ children }: { children: ReactNode }) {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister, maxAge: MAX_PERSISTED_AGE }}
+      persistOptions={{
+        persister,
+        maxAge: MAX_PERSISTED_AGE,
+        /* Uma leitura pesada que o servidor calcula de novo a cada dia pede
+           `meta: { persist: false }`: guardá-la tomaria a cota do
+           localStorage e, pelo `removeOldestQuery`, empurraria para fora a
+           carteira, que é quem precisa da partida quente. */
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) =>
+            defaultShouldDehydrateQuery(query) && query.meta?.persist !== false,
+        },
+      }}
     >
       {children}
     </PersistQueryClientProvider>

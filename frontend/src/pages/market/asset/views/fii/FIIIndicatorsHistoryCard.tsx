@@ -8,7 +8,7 @@ import {
   formatDate,
   formatMultiple,
   formatPercent,
-} from '../format'
+} from '@/components/asset/format'
 
 /** The same indicators the card above shows, month by month.
  *

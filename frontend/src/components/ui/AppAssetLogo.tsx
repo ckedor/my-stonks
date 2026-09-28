@@ -10,22 +10,30 @@ import { useState } from 'react'
  *
  * Sem `src`, ou com uma que falhe, não desenha nada: a linha começa no ticker,
  * que é o que identifica o papel. Um quadrado cinza no lugar do logo pareceria
- * um carregamento que nunca termina. */
+ * um carregamento que nunca termina.
+ *
+ * Numa lista em que umas linhas têm logo e outras não, isso desalinha os
+ * tickers: `reserve` guarda o lugar vazio do tamanho do logo, e a coluna do
+ * ticker fica reta. */
 
 export interface AppAssetLogoProps {
   /** Nulo, vazio ou quebrado não desenha nada. */
   src?: string | null
   /** Lado do círculo em px. Padrão: 24. */
   size?: number
+  /** Sem logo, ocupa o lugar dele em branco em vez de sumir. */
+  reserve?: boolean
 }
 
-export default function AppAssetLogo({ src, size = 24 }: AppAssetLogoProps) {
+export default function AppAssetLogo({ src, size = 24, reserve = false }: AppAssetLogoProps) {
   /* Guarda a `src` que falhou, e não um booleano: a mesma instância é
      reaproveitada entre linhas ao rolar a lista, e um booleano esconderia o
      logo seguinte por causa do erro do anterior. */
   const [failed, setFailed] = useState<string | null>(null)
 
-  if (!src || failed === src) return null
+  if (!src || failed === src) {
+    return reserve ? <Box aria-hidden sx={{ width: size, height: size, flexShrink: 0 }} /> : null
+  }
 
   return (
     <Box

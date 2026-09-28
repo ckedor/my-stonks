@@ -1,12 +1,13 @@
-import { fetchMarketCatalogue, type MarketCatalogueKind } from '@/api/market'
-import { useQueries } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import type { MarketCatalogueAsset, MarketCatalogueKind } from '@/api/market'
+import { ASSET_TYPES } from '@/constants/assetTypes'
+import { useMarketCatalogues } from '@/queries/market'
+import { useCallback, useMemo } from 'react'
 
-/* O preço de mercado dos ativos que a listagem mostra.
+/* O preço de mercado dos ativos que a listagem do cadastro mostra.
  *
  * A lista de ativos é o cadastro do app — é ele que diz o que existe, e é dele
  * que saem tipo, classe e id. O que o cadastro não tem é o mercado: preço,
- * variação do dia e volume. Isso vem do catálogo do provedor, que o backend já
+ * variação do dia e volume. Isso vem do catálogo de mercado, que o backend já
  * guarda em cache por seis horas e devolve inteiro por classe.
  *
  * Casar os dois por ticker, e não por id, é o que faz a tela funcionar antes de
@@ -14,16 +15,13 @@ import { useMemo } from 'react'
  * `asset_id` nulo, e um papel só do cadastro — renda fixa, tesouro — não
  * aparece em catálogo nenhum e simplesmente fica sem cotação.
  *
- * As classes são buscadas em paralelo porque são endpoints diferentes do mesmo
- * assunto; uma que falhe deixa a sua fatia sem preço em vez de derrubar a
- * listagem. */
+ * O ticker só é único dentro de uma praça. Cripto é outra: o ETF de bitcoin da
+ * Grayscale também se chama BTC, e num mapa só ele herdava o preço do bitcoin.
+ * Por isso a cripto tem o seu mapa, e só um criptoativo o consulta. */
 
-/** Seis horas, o mesmo que o cache do servidor: revalidar antes disso é pedir
- *  de novo o que ele vai responder do cache. */
-const CATALOGUE_STALE_TIME = 6 * 60 * 60 * 1000
-
-/** As classes que a listagem cobre. Cripto entra: o app tem posições nela. */
-const KINDS: MarketCatalogueKind[] = ['stock', 'etf', 'fii', 'bdr', 'crypto']
+/** As classes de bolsa que a listagem cobre, B3 e fora dela. */
+const EXCHANGE_KINDS: MarketCatalogueKind[] = ['stock', 'etf', 'fii', 'bdr', 'stock-us', 'etf-us']
+const KINDS: MarketCatalogueKind[] = [...EXCHANGE_KINDS, 'crypto']
 
 export interface MarketQuote {
   price: number | null
@@ -33,41 +31,55 @@ export interface MarketQuote {
 }
 
 export interface MarketQuotes {
-  /** Cotação por ticker em caixa alta. */
-  byTicker: Map<string, MarketQuote>
+  quoteOf: (asset: { ticker: string | null; asset_type_id: number }) => MarketQuote | undefined
   loading: boolean
 }
 
-export function useMarketQuotes(): MarketQuotes {
-  const results = useQueries({
-    queries: KINDS.map((kind) => ({
-      queryKey: ['market-catalogue', kind] as const,
-      queryFn: () => fetchMarketCatalogue(kind),
-      staleTime: CATALOGUE_STALE_TIME,
-    })),
-  })
+export interface QuoteIndex {
+  exchange: Map<string, MarketQuote>
+  crypto: Map<string, MarketQuote>
+}
 
-  const loading = results.some((result) => result.isPending)
-  /* A dependência é o dado, e não o array de resultados: o `useQueries`
-     devolve um array novo a cada render, e memorizar sobre ele não memoriza
-     nada. */
-  const payloads = results.map((result) => result.data)
-
-  const byTicker = useMemo(() => {
-    const map = new Map<string, MarketQuote>()
-    for (const payload of payloads) {
-      for (const asset of payload?.assets ?? []) {
-        map.set(asset.ticker.toUpperCase(), {
-          price: asset.price,
-          changePercent: asset.change_percent,
-          volume: asset.volume,
-          logoUrl: asset.logo_url,
-        })
-      }
+/** Os catálogos indexados por ticker, uma praça por mapa. */
+export function indexQuotes(
+  catalogues: Map<MarketCatalogueKind, { assets: MarketCatalogueAsset[] }>
+): QuoteIndex {
+  const exchange = new Map<string, MarketQuote>()
+  const crypto = new Map<string, MarketQuote>()
+  for (const [kind, catalogue] of catalogues) {
+    const target = kind === 'crypto' ? crypto : exchange
+    for (const asset of catalogue.assets) {
+      const key = asset.ticker.toUpperCase()
+      // O mesmo ticker em dois catálogos, um deles sem preço: fica o que tem.
+      if (asset.price == null && target.has(key)) continue
+      target.set(key, {
+        price: asset.price,
+        changePercent: asset.change_percent,
+        volume: asset.volume,
+        logoUrl: asset.logo_url,
+      })
     }
-    return map
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, payloads)
+  }
+  return { exchange, crypto }
+}
 
-  return { byTicker, loading }
+/** A cotação de um ativo do cadastro: um criptoativo só no mapa da cripto,
+ *  todo o resto só no da bolsa. */
+export function lookupQuote(
+  index: QuoteIndex,
+  asset: { ticker: string | null; asset_type_id: number }
+): MarketQuote | undefined {
+  if (!asset.ticker) return undefined
+  const map = asset.asset_type_id === ASSET_TYPES.CRIPTO ? index.crypto : index.exchange
+  return map.get(asset.ticker.toUpperCase())
+}
+
+export function useMarketQuotes(): MarketQuotes {
+  const { catalogues, loading } = useMarketCatalogues(KINDS)
+  const index = useMemo(() => indexQuotes(catalogues), [catalogues])
+  const quoteOf = useCallback(
+    (asset: { ticker: string | null; asset_type_id: number }) => lookupQuote(index, asset),
+    [index]
+  )
+  return { quoteOf, loading }
 }

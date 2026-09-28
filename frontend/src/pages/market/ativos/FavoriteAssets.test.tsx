@@ -19,21 +19,23 @@ describe('FavoriteAssets', () => {
   beforeEach(() => vi.mocked(fetchFavoriteAssets).mockReset())
 
   it('asks the backend to rank only assets in the page universe', async () => {
-    vi.mocked(fetchFavoriteAssets).mockResolvedValue([{
-      id: 42,
-      ticker: 'BOVA11',
-      name: 'iShares Ibovespa',
-      asset_type_id: 1,
-      asset_type: { id: 1, short_name: 'ETF', name: 'Exchange Traded Fund' },
-      logo_url: null,
-      visit_count: 5,
-      last_visited_at: '2026-08-22T12:00:00Z',
-    }])
+    vi.mocked(fetchFavoriteAssets).mockResolvedValue([
+      {
+        id: 42,
+        ticker: 'BOVA11',
+        name: 'iShares Ibovespa',
+        asset_type_id: 1,
+        asset_type: { id: 1, short_name: 'ETF', name: 'Exchange Traded Fund' },
+        logo_url: null,
+        visit_count: 5,
+        last_visited_at: '2026-08-22T12:00:00Z',
+      },
+    ])
 
     renderWithTheme(
       <MemoryRouter>
         <FavoriteAssets limit={8} assetTypeId={1} assetIds={[42, 47]} />
-      </MemoryRouter>,
+      </MemoryRouter>
     )
 
     await waitFor(() => {
@@ -48,7 +50,7 @@ describe('FavoriteAssets', () => {
     renderWithTheme(
       <MemoryRouter>
         <FavoriteAssets limit={8} assetTypeId={1} assetIds={[]} />
-      </MemoryRouter>,
+      </MemoryRouter>
     )
 
     expect(fetchFavoriteAssets).not.toHaveBeenCalled()

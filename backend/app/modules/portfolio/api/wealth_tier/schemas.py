@@ -4,12 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class WealthTier(BaseModel):
-    """Um degrau da escala: um título e o preço dele.
-
-    O cenário do degrau não viaja aqui. Ele é um arquivo do repositório,
-    escolhido pela posição na escala, então a imagem não é dado de API: nem
-    sobe, nem é guardada, nem engorda a resposta que lista a escala inteira.
-    """
+    """Um degrau da escala: um título e o preço dele."""
 
     rank: int
     name: str
@@ -44,8 +39,8 @@ class PortfolioWealthTier(BaseModel):
     `progress` all falam do valor de hoje, e a patente desce quando a carteira
     desce.
 
-    `peak_patrimony` é o mais alto que a carteira já valeu. Ele é história —
-    o álbum de cenários já visitados —, e não decide o título.
+    `peak_patrimony` é o mais alto que a carteira já valeu. Ele é história,
+    e não decide o título.
     """
 
     peak_patrimony: float

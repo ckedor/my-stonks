@@ -13,8 +13,8 @@ from app.modules.portfolio.service.portfolio_wealth_tier_service import (
 
 router = APIRouter(prefix='/wealth_tier', tags=['Wealth Tier'])
 
-# Sem POST, PUT ou DELETE: a escala é fixa em código, ao lado dos cenários
-# desenhados para ela. Ver `domain.wealth_tier_ladder`.
+# Sem POST, PUT ou DELETE: a escala é fixa em código. Ver
+# `domain.wealth_tier_ladder`.
 
 
 @router.get('', response_model=list[WealthTier])

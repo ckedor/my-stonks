@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import Any
 
 from app.modules.market_data.domain.enums import AssetStatus
+from app.modules.market_data.domain.etf_registry import EtfRegistryClass
 from app.modules.market_data.domain.fund_registry import (
     FundRegistry,
     FundRegistryClass,
@@ -74,7 +75,10 @@ class Institution:
     """
 
     id: int | None = None
-    cnpj: str
+    #: Identificada por CNPJ, por LEI ou pelos dois, nunca por nenhum. A
+    #: gestora de um ETF de fora não tem CNPJ; o LEI é o que a nomeia lá.
+    cnpj: str | None = None
+    lei: str | None = None
     #: Nome de exibição: o comercial quando existe, senão a razão social.
     name: str
     legal_name: str
@@ -87,7 +91,7 @@ class Institution:
     refreshed_at: datetime | None = None
 
     def __repr__(self) -> str:
-        return f'{self.name} ({self.cnpj})'
+        return f'{self.name} ({self.cnpj or self.lei})'
 
 
 @dataclass(eq=False, kw_only=True)
@@ -104,6 +108,9 @@ class Asset:
     status: str = AssetStatus.ACTIVE
     summary: str | None = None
     description: str | None = None
+    #: O ISIN da classe que o papel negocia; não é único entre ativos, porque
+    #: a mesma classe negocia em mais de uma praça.
+    isin: str | None = None
     asset_type: AssetType | None = None
     exchange: Exchange | None = None
     institution: Institution | None = None
@@ -146,8 +153,12 @@ class ETF:
     #: O fundo no cadastro do regulador, que já está no banco. Nulo para ETF
     #: de fora, que não é registrado aqui.
     fund_registry_id: int | None = None
+    #: A classe registrada de um ETF de fora. Um ETF tem um dos dois vínculos,
+    #: nunca os dois.
+    etf_registry_class_id: int | None = None
     segment: ETFSegment | None = None
     registry_fund: FundRegistry | None = None
+    registry_class: EtfRegistryClass | None = None
     asset: Asset | None = None
 
 

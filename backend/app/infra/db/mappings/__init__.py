@@ -5,6 +5,7 @@ from app.infra.db.mappings.fund_share_value import map_fund_share_value
 from app.infra.db.mappings.ingestion import map_data_ingestion
 from app.infra.db.mappings.lab import map_lab
 from app.infra.db.mappings.market_data_series import map_market_data_series
+from app.infra.db.mappings.operations import map_operations
 from app.infra.db.mappings.portfolio import map_portfolio
 from app.infra.db.mappings.quote import map_quote
 from app.infra.db.mappings.research import map_research
@@ -26,6 +27,7 @@ def start_mappers() -> None:
     map_research()
     map_lab()
     map_ai()
+    map_operations()
 
 
 __all__ = ['start_mappers']

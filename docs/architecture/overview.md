@@ -6,6 +6,138 @@ when code conflicts with it, do not silently copy the conflicting pattern.
 
 ## Product context
 
+The admin city sandbox (`/admin/game/sandbox`) uses one fixed terrain map
+from `frontend/src/components/city-game/map.ts`: mainland, a central island
+and three smaller islands. `AppIsoBuilder` renders the supplied land polygons
+and checks placement footprints against land before placing or moving pieces.
+Terrain is independent of the browser-persisted pieces in `game-sandbox`;
+clearing those pieces preserves the map. Existing pieces are retained when
+the terrain changes. The map spans 512 × 512 tiles. The sandbox opens with
+an overview of the editable area. Water and mainland continue beyond the
+512 × 512 tile board as non-editable scenery. Zoom stops at the playable
+board's overview. Panning stays centered at that zoom and opens progressively
+within the playable area as the camera zooms in. Scenery only fills the
+viewport margins, hiding the mainland's artificial outer boundary.
+The terrain also supplies one river, reaching the sea through a single
+mouth, and the coastlines that get the same strip of sand and shallows all
+the way round. The river uses the sea color and is excluded from placement
+checks; both land and water availability are checked lazily per tile and
+cached, so opening the map does not scan the full board.
+The camera turns in quarter turns; placements stay in board tiles and only
+drawing and pointer picking go through the turn. Roads, avenues, sidewalks
+and lawns are laid by dragging a straight line.
+
+The shared catalogue groups housing under **Residencial**, with **Casas**,
+**Prédios pequenos**, **Prédios médios** and **Prédios grandes** submenus;
+urban buildings, office towers and skyscrapers share **Prédios**, with
+**Edifícios urbanos**, **Torres** and **Arranha-céus** submenus. Every group
+has submenus — `IsoBuilderItem.subgroup` is required — so the shop keeps its
+height from tab to tab; asset sculptures are split by asset type, and pending
+pieces by their own submenus. Pieces and submenus are ordered cheapest first,
+with the volume breaking ties, which also orders the free sandbox the same
+way. The builder remembers the chosen submenu per group during the session.
+A selected piece shows its height and volume, measured from the same solids
+as the price (`recipeMeasure` in `iso/engine.ts`): trees, masts and ground
+count for neither. Existing catalogue ids keep rendering saved neighbourhoods.
+`iso/residential.ts` supplies houses, terraces, villas and apartment courts
+in a common muted slate/terracotta/plaster palette. Houses have 3 m storeys,
+roughly 5.5–8 m frontages, porches and gardens on the existing 12 m tile grid.
+The vegetation primitive in `iso/engine.ts` now draws irregular layered
+canopies and ground shadows wherever a recipe calls `tree`, including roof
+gardens. Tree height follows the metres ruler (about 11 m at size one), and
+its shadow contributes no built volume. `iso/vegetation.ts` adds tree variants,
+groves, dense woodland, a garden walk and an orchard.
+
+An asset is rendered as a sculpture on a thick civic stone pedestal
+(`frontend/src/components/ui/iso/asset-sculpture.ts`). The class selects the
+silhouette: an ETF bull, a stock flame, an FII tortoise carrying a house, a
+fixed-income piggy bank, an FI octopus, a Treasury shield or a crypto phoenix.
+FI has its own game type; saved fixed-income ids resolve through current
+portfolio types so investment funds adopt the octopus. The pedestal has the same design
+and black-and-gold identification on every side. Gold, silver, bronze, stone, wood,
+topiary, glass and a yellow-to-red fire gradient are player-selected finishes, available while placing or
+selecting a sculpture. The finish is encoded in the item's persisted id;
+old ids without it remain readable and use bronze (fire for crypto). Portfolio holdings supply
+the actual class for legacy ids that grouped ETFs with stocks or bank notes
+with Treasury bonds. Position types are display labels (`Cripto`, `Tesouro`),
+so the city adapter accepts these labels as well as its canonical sandbox codes;
+legacy BTC ids mistakenly saved as STOCK resolve to the phoenix recipe. Changing finish preserves placement, value, uniqueness
+and footprint; growing preserves the chosen finish.
+
+The artwork's mesh volume is normalized before uniform cube-root scaling by
+holding value in USD: US$ 20,000 has 200 times the artwork volume and about
+5.85 times each dimension of US$ 100. The latest adjustment doubles all
+linear dimensions (eight times the volume), consistently across asset classes.
+The stone pedestal fills the exact rectangular tile footprint, rounded up to
+whole cells; this grid rounding means its volume is not strictly proportional.
+Statues stand directly on the masonry pedestal, without additional grass,
+water, fire or terrain surfaces. The octopus retains its original authored
+boulder inside the animal mesh, with no extension or deformation to fill the
+pedestal footprint. The entire octopus cast (animal and boulder) is uniformly
+enlarged by 20% on all three axes relative to its unchanged pedestal; terminal
+tentacles may overhang it. This multiplier is constant across holding values.
+Crypto uses the approved transparent reference cutout at
+`frontend/src/assets/sculptures/phoenix.png`, loaded by `iso/phoenix-sprite.ts`.
+The old procedural phoenix mesh is removed. Its pose and brown/gold colors
+are fixed: camera rotation turns the pedestal but retains the sprite view,
+and crypto offers no material selector. Saved material-bearing IDs remain
+readable. Sprite width and height follow the same cube-root wealth scale;
+a nominal cubic artwork volume is used for measurements, not a reconstructed
+3D mesh volume. The masonry pedestal still carries ticker and dollar value.
+`iso/sprite-images.ts` notifies the builder after image loading, invalidating
+board sprites and shop thumbnails. Export recipes await their image dependency
+before rendering. No external image host is required at runtime.
+The prior US$ 200,000 value cap and legacy growth threshold remain.
+Ground surfaces render before the combined shadow pass and solid geometry,
+so neighbouring lawns cannot cut tree shadows. Pine catalogue entries are
+hidden; saved pine placements render as broadleaf trees.
+On opening a saved city or sandbox, asset layout revision 20
+checks enlarged footprints against other pieces, the board and land. Only
+assets that no longer fit move to the existing pending tray, preserving their
+value and material. This reconciliation happens once and does not delete
+pieces. The resized Woolworth is also reconciled; other decorative buildings
+keep their positions. The shop's price ruler remains 9.5 m³ per USD and is independent of the
+sculptures' miniature visual scale.
+
+The bull is an original continuous anatomical mesh generated by
+`frontend/scripts/sculptures/bull.py`, checked in as `iso/models/bull.json`.
+Its smooth normals and depth-tested metallic surfaces are rendered offscreen
+by `iso/sculpture-surface.ts` while baking the ordinary canvas sprites; the
+board still composites cached sprites and supports all four camera turns.
+The octopus includes a broad sculpted boulder in the same mesh and material,
+a lower bulbous mantle, eight long curling arms and thin scalloped membranes
+between their roots. Its total sculpture volume, including the boulder,
+follows the holding value.
+The tortoise, piggy bank and octopus are authored by
+`frontend/scripts/sculptures/animals.py` with the same continuous mesh pipeline.
+Silver uses a cool neutral metallic reflection rather than the warm gold one.
+Asset items also supply an `appearanceKey`: sprites, measurements and thumbnails
+use the resolved class and visual revision rather than just the persisted id.
+An old fixed-income id can therefore display the new FI mesh without reusing
+a cached piggy bank or an earlier octopus.
+The scenic ground and animal share a depth-tested mesh, so flames, waves and
+the sculpture occlude correctly in every camera turn. Authored RGB paint is
+carried per vertex; unpainted vertices retain the selected sculpture finish.
+Canvas shading remains the fallback if WebGL is unavailable.
+
+Growing is never automatic: the builder offers an upgrade on a selected
+asset, takes it off the board and keeps its successor pending (persisted with
+the placements) until the player puts it down. In the sandbox the upgrade
+target is the value chosen in the picker above the map.
+
+The player's game is `/portfolio/city` ("Cidade"; `/portfolio/city-builder`
+redirects there), on the same
+512 × 512 map. It reads the selected portfolio's positions and dividends in
+USD whatever the currency selector says, and keeps one city per portfolio in
+the browser (`city-game` in `frontend/src/stores/city-builder.ts`). Money is
+the city balance (`frontend/src/components/city-game/economy.ts`): current
+value plus received dividends, minus what is built, shown in a foldable panel
+on the map. A shop item costs its
+built volume at the same ratio as asset buildings, measured from its drawing
+(`isoPieceVolume`); roads and the plain tree are free, and asset buildings
+are free and unique per asset. An asset building is flagged for upgrade when
+its asset is worth at least one more floor than the building on the map.
+
 My Stonks is a portfolio application whose calculations and visualizations depend
 on asset quotes and their scalar prices. Today, most market data is obtained from
 Brapi, but providers are an infrastructure detail and may change or coexist.
@@ -144,7 +276,21 @@ universe for one class of instrument, one class per call: `stock`, `etf`, `fii`,
 `bdr` and `crypto`. It is a provider read held in cache for six hours, enriched
 with the id of the asset the application already has registered for each ticker,
 so a screen can link a listed instrument to a registered one without a second
-round trip.
+round trip. Each B3 row also carries the provider's sector and subsector.
+`stock-us` and `etf-us` are not the provider's: they are the registry's assets
+outside the B3 with their latest stored quote.
+
+`/market/assets` is built on these catalogues and on the reference ETF
+readings. It opens with the assets the user visits most, each with today's
+price — the portfolio stays in the portfolio's own screens — then the leaders of each
+category, each ranked by the measure that exists for it (ten-year growth for
+the reference ETFs, market value for B3 stocks, one line per company, money
+traded for B3 stocks and ETFs and crypto, shareholders for FIIs), and ends in a
+screener with the reference ETFs as the first tab and the whole registry in the
+last. The screen reads the fund catalogue as FIIs only when
+`/market_data/fii/market` knows the ticker: the provider lists index ETFs, the
+Ibovespa itself and FIAGROs as funds too. The sector map of the largest B3
+companies is the Brasil tab of `/market/overview`.
 
 `POST /market_data/asset/sync` is the write that pairs with it, and the only
 place the registry takes dictated data from a provider. It is a merge, not a
@@ -182,6 +328,54 @@ one registration comes back ambiguous rather than guessed. `POST
 /market_data/asset/fund_link` confirms one, and it is also how an ETF is
 linked, since no catalogue publishes an ETF's CNPJ: the fund is found through
 `GET /market_data/fund_registry/fund` and confirmed by hand.
+
+A foreign ETF is tied to the ETF registry instead, which the weekly
+`ingest_etf_registry` writes from three public sources, each one attempt of
+the execution (`/market_data/ingestions/etf_registry`), so one failing spares
+the others:
+
+```text
+weekly (Wed 09:30) + manual  "Cadastro de ETFs estrangeiros"
+  ingest_etf_registry -> EtfRegistryIngestionService
+    1. SEC:   company_tickers_mf.json + the last four N-CEN data sets
+              (+ EDGAR, per series, for the app's ETFs no data set carries)
+              -> asset.etf_registry / _class / _manager, asset.institution by LEI
+    2. FIRDS: every EU-traded ETF class but the American ones, by ISIN
+       GLEIF: relationship golden copy (manager, umbrella) + LEI records
+              -> the same tables
+    3. Links: asset.etf.etf_registry_class_id — by ISIN when the asset has one,
+              by the SEC's current ticker for an American listing
+```
+
+What each held American ETF owns is a routine of its own. The portfolio task
+`ingest_etf_holdings_for_held_etfs` picks the ETFs recently held, as the quotes
+do, and chains into `ingest_etf_holdings`, one attempt per ETF: the series'
+latest N-PORT is found through EDGAR's full-text search — the only index that
+tells one series' filing apart among the hundreds a trust files each quarter —
+skipped when that accession is the one stored, and otherwise read and written
+in one transaction to `asset.etf_holding_report` and `asset.etf_holding`.
+The same run ends with one more attempt that ties holdings to assets. A
+filing gives each holding's ISIN and no ticker, and American stocks are
+registered by ticker, so the ISINs no asset carries are asked of OpenFIGI
+(`OPENFIGI_API_KEY` is optional and only raises its rate limit); a ticker that
+names exactly one American asset gives that asset its ISIN, never replacing
+one, and every unlinked holding is then pointed at the asset with its ISIN.
+`/market_data/etf/{asset_id}/profile` and `/holdings` serve the market page
+from storage, the holdings a page at a time, largest weight first.
+
+The shape follows from what the sources contain, measured on 2026-09-25. An
+American fund is keyed by its SEC series and a UCITS fund by its LEI, because
+BondBloxx files one LEI for 27 series. The N-CEN data sets leave out about one
+ETF filing in fourteen that EDGAR holds, which is why the app's own ETFs are
+completed from EDGAR, per series: a trust whose funds close their years on
+different dates files one N-CEN per group. An open-end fund listed on an
+exchange is read as an ETF even without the ETF box, which 42 filers left
+unchecked. A FIRDS class whose issuer LEI is an umbrella and not itself a
+sub-fund is left out, since which sub-fund it belongs to is not in the data.
+London left FIRDS with Brexit, so a London listing reaches its class through
+the ISIN on the asset, which a migration sets and nothing infers. The SEC
+refuses anonymous clients: `SEC_USER_AGENT` names who is asking, and without it
+the SEC step fails and says so.
 
 ## Portfolio segment reads
 
@@ -592,7 +786,7 @@ keys do not require infrastructure entities to leak into application code.
 
 ## Market-data ingestion flows
 
-The five persistence operations have distinct entrypoints and one generic
+The seven persistence operations have distinct entrypoints and one generic
 execution tracker:
 
 ```text
@@ -600,6 +794,8 @@ quote page/task         -> quote ingestion service         -> quote history
 series page/task        -> series ingestion service        -> market-data series history
 USD/BRL page/task       -> USD/BRL ingestion service       -> USD/BRL history
 fund registry page/task -> fund registry ingestion service -> fund registry tables
+ETF registry page/task  -> ETF registry ingestion service  -> ETF registry tables, ETF links
+ETF holdings page/task  -> ETF holdings ingestion service  -> ETF holding reports
 share value page/task   -> share-value ingestion service   -> quote history (source 'cvm')
                               |
                               -> generic execution and attempt records
@@ -611,6 +807,45 @@ Series metadata and observations are stored in two different tables:
 stored independently in `usd_brl_history`. Ingestion persists only observations
 returned by the provider; calendar expansion and missing-date conversion belong
 to read/domain flows.
+
+Each series has one source, chosen by id in the provider adapter: CDI and IPCA
+from the central bank, IFIX from B3's own daily tables, the MSCI indexes (World,
+ACWI, EM, USA, ACWI ex-USA) from MSCI's end-of-day service, and the rest from
+the quote provider. The MSCI series are net total return in USD and carry
+MSCI's index code as their symbol; that service is undocumented, refuses dates
+before 1997, and answers a bad request with HTTP 200 and the error in the body,
+which the client turns into a failed attempt. Gold also comes from the quote
+provider, but unlike the older provider series it is not filled forward over
+days without a close. A series with no stored
+observation is read whole even by the scheduled incremental run, so registering
+one is enough for the next night to fill it.
+
+### Market readings
+
+`/market_data/readings/world` is a read computed on request from stored
+history: the exchange rate (from the real on, July 1994 — earlier rows are
+unscaled cruzeiros), bitcoin's quotes, gold, the CDI and IPCA, the MSCI indexes, and
+the Ibovespa restated in dollars through the exchange rate of each day.
+`/market_data/readings/etfs` reads the reference ETFs the same way, on the
+adjusted close and with only the last year of history, for a sparkline. They
+are priced by `ingest_quotes_for_reference_etfs`, part of the quotes routine:
+it selects the ETFs and chains into `ingest_quotes`, asking the whole history
+for one with no quote yet — an incremental run asks an empty asset for a week,
+and a held asset gets its history when it is bought, which a reference ETF
+never is.
+
+`MarketReadingService` reduces each to weekly closes and the pure functions in
+`market_data/domain/market_reading.py` measure returns, the 40-week moving
+average, the drawdown from the peak and percentiles against the series' own
+history, plus two index ratios and the real interest rate. Nothing is persisted
+or cached; the answer carries weekly points for five years and monthly before
+that, so the screen never downloads decades of daily closes. The frontend keeps
+it out of the persisted query cache (`meta: { persist: false }`): a few hundred
+kilobytes recomputed daily would otherwise evict the portfolio's warm start. The Mundo tab of
+the market overview (`frontend/src/pages/market/overview/world/`) draws it, and
+each card opens what it reads: an index or the CDI at `/market/series/:id`
+(the CDI drawn per year, on session days only), bitcoin at its asset page, and
+the dollar at `/market/usd-brl`, since the exchange rate is not a series.
 
 Portfolio position consolidation reads persisted quotes only. Scheduled quote
 ingestion runs before portfolio consolidation; missing quote history is an
@@ -713,6 +948,47 @@ and confirmation persists its identity and first alias. A legacy asset without
 a series fails before checking coverage until the admin confirms its series;
 its asset id and transactions stay unchanged. A label nobody confirmed or two
 different values filed for one series on one date fail that fund explicitly.
+
+### Operations: what runs, when, and how it ended
+
+Everything that brings data in or keeps it consistent is a **routine** in
+`app/modules/operations/domain/routines.py`, and the admin's integrations
+dashboard (`/admin/integrations`) is where they are watched and started.
+
+```text
+beat_schedule (entrypoints/worker/scheduler.py)  --the only place times live
+   | translated at the edge (composition/operations.py) into CronSpec
+   v
+GET /operations/dashboard -> OperationsReadService
+   schedules  : description, frequency, next runs, previous due time
+   last run   : operations.task_run (+ what it sent, by parent task id)
+              + the latest ingestion execution, for an ingestion routine
+   health     : ok / warning / failing / running / missed / never / on demand
+GET  /operations/runs                 the run record, filtered
+POST /operations/routines/{key}/run   sends what the schedule sends
+```
+
+The run record is written by `celery_async_task`, around every task, into
+`operations.task_run`. A task does nothing to be recorded, which is the point:
+the consolidation, the dividend sweep and the history cleanup used to leave a
+log line and nothing else. Who sent a run is read off the message — a task sent
+from inside another carries it as parent, the scheduler's messages carry a
+`trigger` header that `celery_app` stamps on every entry, and anything else
+came from a screen. Recording never decides a task's fate: a record that cannot
+be written is logged and the task runs anyway. The record is kept 45 days, so a
+weekly or monthly routine is still on the dashboard after its ingestion
+execution — kept two days — is gone.
+
+A routine is started by hand the way it runs: an ingestion through its own
+route, which opens its execution first; a plain task by the operations route,
+which sends exactly the tasks its schedule entries send; a routine that shows
+a diff before writing (the asset catalogue, the CVM company registry, the fund
+links) only on its own screen.
+
+Two tests keep the catalog whole: every scheduler entry and every registered
+task belongs to exactly one routine. Operations is a leaf module — no other
+module imports it (`.importlinter`) — and reads the others only through the
+unit of work.
 
 ### USD/BRL reads and their cache
 

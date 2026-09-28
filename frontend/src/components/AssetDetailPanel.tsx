@@ -8,6 +8,8 @@ import DividendForm from '@/components/DividendForm'
 import PortfolioDividendsChart from '@/components/PortfolioDividendsChart'
 import RiskAnalysisCards from '@/components/RiskAnalysisCards'
 import AssetHeader from '@/components/asset/AssetHeader'
+import EtfHoldingsTab from '@/components/etf/EtfHoldingsTab'
+import { ASSET_TYPES } from '@/constants/assetTypes'
 import BenchmarkComparison from '@/components/portfolio-asset/BenchmarkComparison'
 import ChartSection from '@/components/portfolio-asset/ChartSection'
 import PortfolioAssetChart from '@/components/portfolio-asset/PortfolioAssetChart'
@@ -55,10 +57,9 @@ interface AssetBundle {
  *  O principal é mais alto porque carrega três modos e os marcadores de
  *  operação; os demais compartilham uma altura só, para as seções terem o mesmo
  *  peso ao rolar a página. */
-const MAIN_CHART_HEIGHT = 420
-const SECTION_CHART_HEIGHT = 320
+const CHART_HEIGHT = { main: 420, section: 320 }
 
-type TabKey = 'visao-geral' | 'risco' | 'dividendos' | 'trades'
+type TabKey = 'visao-geral' | 'risco' | 'dividendos' | 'trades' | 'carteira-etf'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'visao-geral', label: 'Visão geral' },
@@ -66,6 +67,13 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'dividendos', label: 'Dividendos' },
   { key: 'trades', label: 'Trades' },
 ]
+
+/** A carteira do ETF é aba só de ETF. "do ETF" no nome porque esta tela é
+ *  sobre uma posição da carteira do usuário, e "Carteira" sozinho diria a dele. */
+const ETF_HOLDINGS_TAB: { key: TabKey; label: string } = {
+  key: 'carteira-etf',
+  label: 'Carteira do ETF',
+}
 
 function EmptyTabContent({ label }: { label: string }) {
   return (
@@ -99,6 +107,7 @@ interface AssetDetailPanelProps {
 }
 
 export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }: AssetDetailPanelProps) {
+  const { main: mainChartHeight, section: sectionChartHeight } = CHART_HEIGHT
   const [activeTab, setActiveTab] = useState<TabKey>('visao-geral')
   const [recalculating, setRecalculating] = useState(false)
   const [dividendFormOpen, setDividendFormOpen] = useState(false)
@@ -181,6 +190,10 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
   }
 
   const asset = assetBundle?.asset
+  const tabs = asset?.asset_type?.id === ASSET_TYPES.ETF ? [...TABS, ETF_HOLDINGS_TAB] : TABS
+  // A aba escolhida pode não existir no ativo seguinte do seletor — a carteira
+  // do ETF numa ação. Sem esta queda a tela ficaria sem painel nenhum.
+  const currentTab = tabs.some((tab) => tab.key === activeTab) ? activeTab : 'visao-geral'
   const patrimonyEvolution = assetBundle?.patrimony ?? []
   const dividends = assetBundle?.dividends ?? []
   const analysis = assetBundle?.analysis ?? null
@@ -212,7 +225,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
     : ''
 
   const renderTabContent = () => {
-    switch (activeTab) {
+    switch (currentTab) {
       case 'visao-geral':
         return (
           <AppStack gap="lg">
@@ -223,7 +236,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
                 returns={assetReturns}
                 benchmarks={benchmarks}
                 rollingCagr={analysis?.rolling_cagr}
-                height={MAIN_CHART_HEIGHT}
+                height={mainChartHeight}
                 priceFormatter={formatCurrency}
                 currencySymbol={currencySymbol}
                 persistKey={`portfolio-asset:${asset.ticker}`}
@@ -250,7 +263,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
             <ChartSection title="Evolução Patrimonial">
               <PortfolioAssetPatrimonyChart
                 data={patrimonyEvolution}
-                height={SECTION_CHART_HEIGHT}
+                height={sectionChartHeight}
                 currencySymbol={currencySymbol}
                 persistKey={`portfolio-asset-patrimony:${asset.ticker}`}
               />
@@ -259,7 +272,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
         )
       case 'risco':
         return analysis ? (
-          <RiskAnalysisCards analysis={analysis} drawdownSize={SECTION_CHART_HEIGHT} />
+          <RiskAnalysisCards analysis={analysis} drawdownSize={sectionChartHeight} />
         ) : (
           <EmptyTabContent label="Risco — dados não disponíveis" />
         )
@@ -269,7 +282,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
             <PortfolioDividendsChart
               dividends={dividends}
               selected={'portfolio'}
-              size={SECTION_CHART_HEIGHT}
+              size={sectionChartHeight}
             />
           </ChartSection>
         )
@@ -279,6 +292,8 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
             <Trades assetId={assetId} />
           </ChartSection>
         )
+      case 'carteira-etf':
+        return <EtfHoldingsTab assetId={assetId} />
       default:
         return null
     }
@@ -364,8 +379,8 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
 
       <AppTabs
         label="Seções do ativo"
-        items={TABS.map((tab) => ({ id: tab.key, label: tab.label }))}
-        value={activeTab}
+        items={tabs.map((tab) => ({ id: tab.key, label: tab.label }))}
+        value={currentTab}
         onChange={setActiveTab}
       />
 

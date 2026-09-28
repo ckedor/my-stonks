@@ -90,7 +90,7 @@ export default function AdminMarketDataQuotesPage() {
 
   return (
     <AppStack gap="lg">
-      <PageTitle>Cotações de ativos</PageTitle>
+      <PageTitle>Histórico de cotações</PageTitle>
 
       {loadingAssets ? (
         <AppStack gap="md">

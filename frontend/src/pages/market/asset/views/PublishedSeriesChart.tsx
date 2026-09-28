@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { formatMonth } from './format'
+import { formatMonth } from '@/components/asset/format'
 
 /** O dia, curto, para o eixo: a data cheia repetida em cada marca não cabe. */
 const formatDay = (value: string) => dayjs(value).format('DD/MM/YY')

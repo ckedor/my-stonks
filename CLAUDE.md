@@ -67,6 +67,13 @@ tenha mudado — o resultado não é um sinal, é ruído caro.
 
 Quando eu pedir a verificação completa, aí sim rode tudo.
 
+**Peça do jogo da cidade é exceção: olhe o render.** Receita isométrica
+escrita sem ver o resultado sai com outra identidade visual. Ao criar ou
+mudar uma peça, rode `npm run iso:render -- <receita> --ref <imagem>` (em
+`frontend/`) e abra o PNG, quantas vezes precisar — é barato (~7 s) e não é a
+regressão visual: não compara pixel, então a build do Chromium não importa.
+O roteiro completo está na skill `.claude/skills/iso-asset/SKILL.md`.
+
 ## Main applications
 
 - `backend/`: FastAPI, application services, persistence, integrations, and

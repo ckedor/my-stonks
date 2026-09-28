@@ -241,3 +241,44 @@ async def test_ifix_incremental_ingestion_keeps_a_repair_window():
     assert provider.get_series_historical_data.await_args.kwargs['init_date'] == (
         date.today() - pd.Timedelta(days=550)
     )
+
+
+@pytest.mark.asyncio
+async def test_series_with_no_history_is_read_whole_even_when_incremental():
+    market_series = MarketDataSeries(
+        id=SERIES.MSCI_WORLD,
+        symbol='990100',
+        short_name='MSCI World',
+        name='MSCI World Net Total Return',
+        series_type='market_index',
+        value_type='level',
+        frequency='daily',
+    )
+    repository = SimpleNamespace(
+        get_all=AsyncMock(return_value=[market_series]),
+        get_latest_series_dates=AsyncMock(return_value={}),
+        upsert_bulk=AsyncMock(),
+    )
+    provider = SimpleNamespace(
+        get_series_source=lambda _: 'msci',
+        get_series_historical_data=AsyncMock(return_value=pd.DataFrame(columns=['date', 'close'])),
+    )
+    tracker = SimpleNamespace(
+        prepare_execution=AsyncMock(return_value=(12, False, [SERIES.MSCI_WORLD])),
+        set_execution_items=AsyncMock(),
+        start_attempt=AsyncMock(return_value=70),
+        finish_attempt=AsyncMock(),
+        finish=AsyncMock(),
+        fail=AsyncMock(),
+        is_aborted=AsyncMock(return_value=False),
+    )
+    service = MarketDataSeriesIngestionService(
+        uow_factory=FakeUoWFactory(repository),
+        ingestion_service=tracker,
+        provider=provider,
+        cache=FakeCache(),
+    )
+
+    await service.run(execution_id=12)
+
+    assert provider.get_series_historical_data.await_args.kwargs['init_date'] is None

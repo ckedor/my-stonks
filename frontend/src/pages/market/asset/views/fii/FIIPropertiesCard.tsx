@@ -12,7 +12,7 @@ import {
 } from '@/components/ui'
 import { useMemo } from 'react'
 import PublishedSeriesChart, { type PublishedSeriesMetric } from '../PublishedSeriesChart'
-import { EMPTY, formatArea, formatCompactBRL, formatCount, formatDate, formatPercent } from '../format'
+import { EMPTY, formatArea, formatCompactBRL, formatCount, formatDate, formatPercent } from '@/components/asset/format'
 
 /** What a building the fund chose not to name is called. */
 const CONFIDENTIAL = 'Confidencial'

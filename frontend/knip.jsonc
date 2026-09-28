@@ -15,7 +15,9 @@
     "e2e/**/*.spec.ts",
     "playwright.config.ts",
     "eslint.config.js",
-    "scripts/*.mjs"
+    "scripts/*.mjs",
+    // Aberto por `scripts/iso-render.html`, que o knip não lê.
+    "src/dev/*.ts"
   ],
   "project": ["src/**/*.{ts,tsx}"],
 

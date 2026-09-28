@@ -10,6 +10,8 @@ class DataIngestionType(StrEnum):
     USD_BRL = 'usd_brl'
     FUND_REGISTRY = 'fund_registry'
     FUND_SHARE_VALUE = 'fund_share_value'
+    ETF_REGISTRY = 'etf_registry'
+    ETF_HOLDINGS = 'etf_holdings'
 
 
 #: An execution in one of these has not reached an outcome yet, so it still

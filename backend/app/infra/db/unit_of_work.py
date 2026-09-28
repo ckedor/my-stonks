@@ -8,6 +8,7 @@ from app.infra.db.repositories.ai_repository import AIRepository
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.infra.db.session import AsyncSessionLocal
 from app.modules.market_data.repositories.asset_repository import AssetRepository
+from app.modules.market_data.repositories.etf_registry_repository import EtfRegistryRepository
 from app.modules.market_data.repositories.fund_registry_repository import (
     FundRegistryRepository,
 )
@@ -15,6 +16,7 @@ from app.modules.market_data.repositories.ingestion_repository import DataIngest
 from app.modules.market_data.repositories.market_data_repository import MarketDataRepository
 from app.modules.market_data.repositories.quote_repository import QuoteRepository
 from app.modules.market_data.repositories.source_file_repository import SourceFileRepository
+from app.modules.operations.repositories.task_run_repository import TaskRunRepository
 from app.modules.portfolio.repositories.portfolio_repository import PortfolioRepository
 
 
@@ -43,10 +45,12 @@ class UnitOfWork:
         self.market_data = MarketDataRepository(self._session)
         self.quotes = QuoteRepository(self._session)
         self.fund_registry = FundRegistryRepository(self._session)
+        self.etf_registry = EtfRegistryRepository(self._session)
         self.source_files = SourceFileRepository(self._session)
         self.ingestions = DataIngestionRepository(self._session)
         self.portfolios = PortfolioRepository(self._session)
         self.ai = AIRepository(self._session)
+        self.task_runs = TaskRunRepository(self._session)
         return self
 
     async def commit(self) -> None:

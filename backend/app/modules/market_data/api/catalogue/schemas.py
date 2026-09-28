@@ -11,6 +11,8 @@ class MarketCatalogueAssetResponse(BaseModel):
     market_cap: float | None = None
     currency: str
     logo_url: str | None = None
+    sector: str | None = None
+    subsector: str | None = None
 
 
 class MarketCatalogueResponse(BaseModel):

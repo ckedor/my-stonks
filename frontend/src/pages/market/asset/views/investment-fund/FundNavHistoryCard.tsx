@@ -1,7 +1,7 @@
 import type { InvestmentFundNavPoint } from '@/api/market'
 import { AppCard, AppSelect, AppStack, AppText, SectionTitle } from '@/components/ui'
 import { useMemo, useState } from 'react'
-import { formatBRL, formatCompactBRL, formatCompactCount, formatDate, formatPercent } from '../format'
+import { formatBRL, formatCompactBRL, formatCompactCount, formatDate, formatPercent } from '@/components/asset/format'
 import PublishedSeriesChart, { type PublishedSeriesMetric } from '../PublishedSeriesChart'
 
 /** As séries que o arquivamento do valor da cota carrega.

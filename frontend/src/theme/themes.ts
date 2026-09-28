@@ -493,6 +493,55 @@ const marinhoShape: ThemeShapeConfig = {
   quiet: true,
 }
 
+/* ══════════════════════════════════════════════
+   Petróleo — o escuro que não é preto
+   ══════════════════════════════════════════════
+
+   Os escuros do catálogo são quase-pretos, quentes ou frios. Este é um
+   azul-petróleo profundo, na linha de painéis de dado de mercado: fundo que
+   se lê como cor e não como apagão, e texto quase branco em vez do branco
+   puro, que ofusca sobre fundo escuro.
+
+   O acento é o coral do Tinta claro. Na tinta exata (#BB5630) ele dá 2,5:1
+   sobre o card — ilegível em aba e link —, então entra clareado no mesmo
+   matiz (#EA9670, 4,6:1), como o próprio Tinta escuro faz; na barra, a aba
+   ativa usa o pêssego que o Tinta claro já usa ali (#EDA37C). A tipografia
+   também é a do Tinta: trocar entre o claro e o escuro troca a luz, não a
+   voz da tela. */
+const petroleoPalette: ThemePaletteConfig = {
+  mode: 'dark',
+  /* Azul-petróleo, e não verde-petróleo: a primeira versão (#16323D) puxava
+     para o verde. Mesma claridade no fundo; o card sobe um degrau para se
+     destacar dele (1,28:1). */
+  background: { default: '#182F42', paper: '#24405A' },
+  text: { primary: '#E3EAEE', secondary: '#A6B7C4' },
+  primary: '#EA9670',
+  secondary: '#7CC0D1',
+  error: '#F59488',
+  warning: '#E2B25C',
+  success: '#66CE9B',
+  info: '#7CC0D1',
+  golden: '#D2A85F',
+  dark: '#10253A',
+  sidebar: '#10253A',
+  topbar: { background: '#10253A', text: '#C3D1DC', activeText: '#EDA37C', activeBg: '#223F58' },
+  divider: 'rgba(227,234,238,0.12)',
+  chart: {
+    grid: 'rgba(227,234,238,0.08)',
+    label: '#C3D1DC',
+    /* Nenhuma repete o coral nem o azul-claro de `secondary`, que o gráfico de
+       rentabilidade usa fixos para Carteira e CDI. */
+    colors: ['#9FD3DF', '#A896D8', '#86B87A', '#D2A85F', '#D98098', '#93A9BA', '#B4BE73', '#C88FB4'],
+  },
+}
+
+const petroleoShape: ThemeShapeConfig = {
+  radius: { sm: 2, md: 3, lg: 3, pill: 9999 },
+  fontFamily: fontStacks.figtree,
+  headingFontFamily: fontStacks.sourceSerif,
+  quiet: true,
+}
+
 const earthThemeDefinitions: ThemeDefinition[] = earthStudies.map((study) => ({
   id: study.id,
   name: study.name,
@@ -532,6 +581,14 @@ export const lightThemes: ThemeDefinition[] = [
 
 export const darkThemes: ThemeDefinition[] = [
   ...earthThemeDefinitions.filter((theme) => theme.mode === 'dark'),
+  {
+    id: 'petroleo',
+    name: 'Petróleo',
+    mode: 'dark',
+    description: 'Azul-petróleo profundo, texto marfim e o coral do Tinta.',
+    preview: buildPreview(petroleoPalette),
+    theme: buildMuiTheme(petroleoPalette, petroleoShape),
+  },
   /* O preview mostra o texto da barra, não o `text.primary` da página —
      mesma razão do `Principal` claro. */
   {

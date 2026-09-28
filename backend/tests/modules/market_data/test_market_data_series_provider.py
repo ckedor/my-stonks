@@ -5,6 +5,8 @@ from unittest.mock import AsyncMock, call
 import pandas as pd
 import pytest
 
+from app.infra.exceptions import IntegrationBadResponse
+from app.infra.integrations.msci_index_client import MsciIndexClient
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.domain.constants import SERIES
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
@@ -84,3 +86,82 @@ async def test_ifix_uses_market_history_and_normalizes_ohlc_without_filling_date
         call(index='IFIX', year=2026),
     ]
     assert provider.get_series_source(series) == 'b3'
+
+
+@pytest.mark.asyncio
+async def test_msci_index_reads_net_levels_by_index_code_without_filling_dates():
+    provider = MarketDataProvider.__new__(MarketDataProvider)
+    provider.msci_index_client = SimpleNamespace(
+        get_daily_levels=AsyncMock(
+            return_value=[
+                {'level_eod': 16110.4, 'calc_date': 20260921},
+                {'level_eod': 16046.7, 'calc_date': 20260925},
+            ]
+        )
+    )
+    series = build_series(series_id=SERIES.MSCI_WORLD, symbol='990100')
+
+    result = await provider.get_series_historical_data(series, init_date=date(2026, 9, 20))
+
+    assert result[['date', 'close']].to_dict(orient='records') == [
+        {'date': pd.Timestamp('2026-09-21'), 'close': 16110.4},
+        {'date': pd.Timestamp('2026-09-25'), 'close': 16046.7},
+    ]
+    kwargs = provider.msci_index_client.get_daily_levels.await_args.kwargs
+    assert kwargs['index_code'] == '990100'
+    assert kwargs['start_date'] == date(2026, 9, 20)
+    assert provider.get_series_source(series) == 'msci'
+
+
+@pytest.mark.asyncio
+async def test_gold_reads_the_provider_history_without_filling_dates():
+    provider = MarketDataProvider.__new__(MarketDataProvider)
+    provider.brapi_client = SimpleNamespace(
+        get_stock_historical=AsyncMock(
+            return_value={
+                'results': [
+                    {
+                        'symbol': 'GC=F',
+                        'data': {
+                            'historicalDataPrice': [
+                                {'date': 1789700400, 'close': 4300.0},
+                                {'date': 1789959600, 'close': 4321.2},
+                            ]
+                        },
+                    }
+                ]
+            }
+        )
+    )
+    series = build_series(series_id=SERIES.GOLD, symbol='GC=F')
+
+    result = await provider.get_series_historical_data(series, init_date=date(2026, 9, 14))
+
+    # Friday then Monday: the weekend stays out.
+    assert result['date'].tolist() == [pd.Timestamp('2026-09-18'), pd.Timestamp('2026-09-21')]
+    assert result['close'].tolist() == [4300.0, 4321.2]
+    assert provider.get_series_source(series) == 'brapi'
+
+
+@pytest.mark.asyncio
+async def test_msci_error_answered_with_200_fails_instead_of_returning_no_rows():
+    client = MsciIndexClient()
+    client.http = SimpleNamespace(
+        request=AsyncMock(
+            return_value={
+                'error_code': ' 100',
+                'error_message': " null Invalid Parameter start_date : '19691231'",
+            }
+        )
+    )
+
+    with pytest.raises(IntegrationBadResponse):
+        await client.get_daily_levels(
+            index_code='990100',
+            start_date=date(1969, 12, 31),
+            end_date=date(2026, 9, 26),
+        )
+
+    params = client.http.request.await_args.kwargs['params']
+    assert params['start_date'] == '19970101'
+    assert params['index_variant'] == 'NETR'

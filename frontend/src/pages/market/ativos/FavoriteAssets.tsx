@@ -51,9 +51,8 @@ export default function FavoriteAssets({
       .catch(() => undefined)
   }, [refresh, limit, assetTypeId, assetIds, brazilian])
 
-  const visibleFavorites = assetTypeId == null && assetIds == null && brazilian == null
-    ? favorites
-    : filteredFavorites
+  const visibleFavorites =
+    assetTypeId == null && assetIds == null && brazilian == null ? favorites : filteredFavorites
 
   if (!visibleFavorites.length) return null
 
@@ -64,11 +63,7 @@ export default function FavoriteAssets({
         <SectionLabel>Acessados recentemente</SectionLabel>
       </AppStack>
 
-      <AppStack
-        direction={orientation}
-        gap="sm"
-        scrollX={orientation === 'row'}
-      >
+      <AppStack direction={orientation} gap="sm" scrollX={orientation === 'row'}>
         {visibleFavorites.slice(0, limit).map((asset) => (
           <AppCard
             key={asset.id}
@@ -82,9 +77,7 @@ export default function FavoriteAssets({
                 <AppText weight="strong" noWrap>
                   {asset.ticker ?? asset.name}
                 </AppText>
-                {asset.asset_type?.short_name && (
-                  <TypeBadge label={asset.asset_type.short_name} />
-                )}
+                {asset.asset_type?.short_name && <TypeBadge label={asset.asset_type.short_name} />}
               </AppStack>
               {/* The visit count only ranks the shelf -- showing it tells the
                   user about our bookkeeping, not about the asset. */}

@@ -16,7 +16,6 @@ import { useAppTheme } from './useAppTheme'
 type Variant =
   | 'display'
   | 'pageHeading'
-  | 'sceneHeading'
   | 'cardValue'
   | 'body'
   | 'bodySmall'
@@ -28,7 +27,6 @@ type Tone =
   | 'success'
   | 'caution'
   | 'danger'
-  | 'inverse'
   | 'disabled'
 
 /* Os títulos têm peso próprio: um `display` fino não é título, e deixar
@@ -36,7 +34,6 @@ type Tone =
 const VARIANT_WEIGHT: Partial<Record<Variant, number | 'bold'>> = {
   display: 700,
   pageHeading: 'bold',
-  sceneHeading: 900,
   cardValue: 700,
 }
 
@@ -48,8 +45,6 @@ const VARIANT: Record<Variant, 'h3' | 'h4' | 'h6' | 'body1' | 'body2' | 'caption
    *  o `PageTitle` de propósito: ali o título nomeia a tela, aqui nomeia o
    *  assunto dela. */
   pageHeading: 'h4',
-  /** Nome grande escrito diretamente sobre uma cena imersiva. */
-  sceneHeading: 'h3',
   /** O número que um card existe para mostrar — o valor da posição num card
    *  de ativo. Menor que o `pageHeading`: o card é um item de uma grade, e
    *  não o assunto da tela. */
@@ -66,7 +61,6 @@ const TONE: Record<Tone, string | undefined> = {
   success: 'success.main',
   caution: 'warning.main',
   danger: 'error.main',
-  inverse: '#fff',
   disabled: 'text.disabled',
 }
 
@@ -116,7 +110,7 @@ export default function AppText({
     color: gradient ? undefined : (tint ?? TONE[tone]),
     fontWeight: VARIANT_WEIGHT[variant] ?? (weight === 'strong' ? 600 : undefined),
     whiteSpace: noWrap ? ('nowrap' as const) : undefined,
-    ...((gradient || variant === 'sceneHeading' || (noWrap && !inline))
+    ...((gradient || (noWrap && !inline))
       ? {
           sx: {
             /* Não quebrar sem cortar é escrever para fora do card: o texto
@@ -125,9 +119,6 @@ export default function AppText({
                corte não acontece — daí o `display: block`. */
             ...(noWrap && !inline
               ? { display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }
-              : {}),
-            ...(variant === 'sceneHeading'
-              ? { fontSize: { xs: '2.2rem', md: '3.2rem' }, lineHeight: 1.05 }
               : {}),
             ...(gradient
               ? {

@@ -13,3 +13,6 @@ backend/app/domain/finance/main.py
 test-results/
 
 .ruff_cache
+
+# Folhas de estudo de `npm run iso:render`: rascunho de quem modela uma peça.
+output/iso-render/

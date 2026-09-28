@@ -8,7 +8,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard'
 import DonutSmallIcon from '@mui/icons-material/DonutSmall'
 import LayersIcon from '@mui/icons-material/Layers'
 import ManageSearchIcon from '@mui/icons-material/ManageSearch'
-import MilitaryTechIcon from '@mui/icons-material/MilitaryTech'
+import LocationCityIcon from '@mui/icons-material/LocationCity'
 import PaidIcon from '@mui/icons-material/Paid'
 import PublicIcon from '@mui/icons-material/Public'
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
@@ -48,7 +48,7 @@ const NAVIGATION_ICONS: Record<string, ReactNode> = {
   '/portfolio/trades': <SwapHorizIcon />,
   '/portfolio/dividends': <PaidIcon />,
   '/portfolio/tax-income': <ReceiptLongIcon />,
-  '/portfolio/tiers': <MilitaryTechIcon />,
+  '/portfolio/city': <LocationCityIcon />,
   '/market/overview': <PublicIcon />,
   '/market/assets': <ManageSearchIcon />,
   '/market/br': <ShowChartIcon />,

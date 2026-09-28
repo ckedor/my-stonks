@@ -16,7 +16,7 @@ import {
   formatDate,
   formatMultiple,
   formatPercent,
-} from '../format'
+} from '@/components/asset/format'
 import {
   dividendReading,
   isInterestOnEquity,

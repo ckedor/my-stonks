@@ -67,7 +67,11 @@ institution_table = Table(
     'institution',
     Base.metadata,
     Column('id', Integer, primary_key=True),
-    Column('cnpj', String(14), nullable=False, unique=True),
+    #: Uma pessoa jurídica é identificada por CNPJ, por LEI, ou pelos dois — e
+    #: nunca por nenhum. A gestora de um ETF americano ou irlandês não tem
+    #: CNPJ; o que a nomeia em toda fonte de lá é o LEI.
+    Column('cnpj', String(14), nullable=True, unique=True),
+    Column('lei', String(20), nullable=True, unique=True),
     #: Nome de exibição: o nome comercial quando existe, senão a razão social.
     Column('name', String(300), nullable=False),
     Column('legal_name', String(300), nullable=False),
@@ -78,6 +82,8 @@ institution_table = Table(
     Column('status', String(40), nullable=True),
     Column('registered_at', Date, nullable=True),
     Column('refreshed_at', DateTime(timezone=True), nullable=False, server_default=func.now()),
+    CheckConstraint('cnpj IS NOT NULL OR lei IS NOT NULL', name='ck_institution_identified'),
+    CheckConstraint("lei ~ '^[A-Z0-9]{18}[0-9]{2}$'", name='ck_institution_lei_format'),
     schema='asset',
 )
 
@@ -101,6 +107,10 @@ asset_table = Table(
     #: nada é gravado aqui sem alguém salvar.
     Column('summary', String(300), nullable=True),
     Column('description', Text, nullable=True),
+    #: O ISIN da classe que este papel negocia. Não é único: CSPX em Londres e
+    #: SXR8 na Xetra são a mesma classe, `IE00B5BMR087`, em duas praças.
+    Column('isin', String(12), nullable=True, index=True),
+    CheckConstraint("isin ~ '^[A-Z]{2}[A-Z0-9]{9}[0-9]$'", name='ck_asset_isin_format'),
     UniqueConstraint(
         'ticker',
         'exchange_id',
@@ -163,6 +173,20 @@ etf_table = Table(
         ForeignKey('asset.fund_registry.id'),
         nullable=True,
         unique=True,
+    ),
+    #: A classe registrada de um ETF de fora — a série da SEC, o ISIN de um
+    #: UCITS. Não é única, ao contrário do vínculo acima: uma classe negocia em
+    #: mais de uma praça, e cada praça é um ativo.
+    Column(
+        'etf_registry_class_id',
+        Integer,
+        ForeignKey('asset.etf_registry_class.id'),
+        nullable=True,
+        index=True,
+    ),
+    CheckConstraint(
+        'num_nonnulls(fund_registry_id, etf_registry_class_id) <= 1',
+        name='ck_etf_one_registry',
     ),
     schema='asset',
 )
@@ -433,4 +457,160 @@ broker_table = Table(
     Column('cnpj', String(18), unique=True, nullable=True),
     Column('currency_id', Integer, ForeignKey('asset.currency.id'), nullable=False),
     schema='portfolio',
+)
+
+
+#: Um ETF de fora como o regulador o registra: a série de um trust americano na
+#: SEC, o subfundo de um guarda-chuva UCITS na ESMA. É dado de referência, como
+#: o cadastro de fundos da CVM: a lista inteira entra toda semana, e uma linha
+#: aqui não é um ativo.
+#:
+#: Cada fonte tem a sua chave. Na SEC é a série: há filer que declara o mesmo
+#: LEI para as 27 séries do trust, e um LEI de muitas séries não identifica
+#: nenhuma — ele só é gravado quando é de uma série só. Na ESMA é o LEI, que é
+#: também o que liga o fundo à gestora e ao guarda-chuva na GLEIF.
+etf_registry_table = Table(
+    'etf_registry',
+    Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('lei', String(20), nullable=True, unique=True),
+    #: Qual sync escreve a linha. Um fundo tem um dono só, e é o dono quem pode
+    #: marcá-lo inativo quando ele some da própria fonte.
+    Column('source', String(10), nullable=False),
+    Column('sec_series_id', String(10), nullable=True, unique=True),
+    Column('name', String(300), nullable=False),
+    Column('domicile', String(2), nullable=False),
+    #: O trust americano, o guarda-chuva irlandês. A gestora não cabe aqui: um
+    #: fundo pode ter mais de uma, e elas moram em `etf_registry_manager`.
+    Column(
+        'umbrella_institution_id',
+        Integer,
+        ForeignKey('asset.institution.id'),
+        nullable=True,
+        index=True,
+    ),
+    #: Os três vêm do N-CEN. Nulo quer dizer que a fonte não diz, e não "não".
+    Column('tracks_index', Boolean, nullable=True),
+    Column('leveraged_or_inverse', Boolean, nullable=True),
+    Column('fund_of_funds', Boolean, nullable=True),
+    Column('status', String(20), nullable=False),
+    Column('refreshed_at', DateTime(timezone=True), nullable=False, server_default=func.now()),
+    CheckConstraint("source IN ('sec', 'esma')", name='ck_etf_registry_source'),
+    CheckConstraint(
+        "(source = 'sec' AND sec_series_id IS NOT NULL) OR (source = 'esma' AND lei IS NOT NULL)",
+        name='ck_etf_registry_identified',
+    ),
+    CheckConstraint("status IN ('active', 'inactive')", name='ck_etf_registry_status'),
+    CheckConstraint("lei ~ '^[A-Z0-9]{18}[0-9]{2}$'", name='ck_etf_registry_lei_format'),
+    schema='asset',
+)
+
+etf_registry_manager_table = Table(
+    'etf_registry_manager',
+    Base.metadata,
+    Column(
+        'etf_registry_id',
+        Integer,
+        ForeignKey('asset.etf_registry.id', ondelete='CASCADE'),
+        primary_key=True,
+    ),
+    Column(
+        'institution_id',
+        Integer,
+        ForeignKey('asset.institution.id'),
+        primary_key=True,
+        index=True,
+    ),
+    schema='asset',
+)
+
+#: A classe de cotas: o que tem ticker nos EUA e ISIN na Europa, e para onde o
+#: ativo aponta.
+etf_registry_class_table = Table(
+    'etf_registry_class',
+    Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column(
+        'etf_registry_id',
+        Integer,
+        ForeignKey('asset.etf_registry.id'),
+        nullable=False,
+        index=True,
+    ),
+    Column('sec_class_id', String(10), nullable=True, unique=True),
+    Column('isin', String(12), nullable=True, unique=True),
+    #: O ticker que a SEC publica para a classe. FIRDS não tem ticker.
+    Column('ticker', String(20), nullable=True, index=True),
+    Column('name', String(300), nullable=False),
+    Column('currency', String(3), nullable=True),
+    Column('distribution_policy', String(20), nullable=True),
+    #: O código ISO 10962 que FIRDS publica, cru. A política de distribuição
+    #: sai dele; o resto dos atributos fica aqui para quem precisar.
+    Column('cfi_code', String(6), nullable=True),
+    Column('status', String(20), nullable=False),
+    Column('refreshed_at', DateTime(timezone=True), nullable=False, server_default=func.now()),
+    CheckConstraint(
+        'sec_class_id IS NOT NULL OR isin IS NOT NULL', name='ck_etf_registry_class_identified'
+    ),
+    CheckConstraint(
+        "distribution_policy IN ('accumulating', 'distributing', 'mixed')",
+        name='ck_etf_registry_class_distribution_policy',
+    ),
+    CheckConstraint("status IN ('active', 'inactive')", name='ck_etf_registry_class_status'),
+    CheckConstraint(
+        "isin ~ '^[A-Z]{2}[A-Z0-9]{9}[0-9]$'", name='ck_etf_registry_class_isin_format'
+    ),
+    schema='asset',
+)
+
+
+#: A report is per fund and date; a newer filing for the same date (an
+#: amendment) replaces its lines.
+etf_holding_report_table = Table(
+    'etf_holding_report',
+    Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column(
+        'etf_registry_id',
+        Integer,
+        ForeignKey('asset.etf_registry.id'),
+        nullable=False,
+    ),
+    Column('report_date', Date, nullable=False),
+    Column('source', String(20), nullable=False),
+    Column('accession', String(20), nullable=False),
+    Column('net_assets', Numeric(24, 2), nullable=True),
+    Column('total_assets', Numeric(24, 2), nullable=True),
+    Column('holdings_count', Integer, nullable=False, server_default='0'),
+    Column('fetched_at', DateTime(timezone=True), nullable=False, server_default=func.now()),
+    UniqueConstraint('etf_registry_id', 'report_date', name='uq_etf_holding_report_fund_date'),
+    schema='asset',
+)
+
+etf_holding_table = Table(
+    'etf_holding',
+    Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column(
+        'report_id',
+        Integer,
+        ForeignKey('asset.etf_holding_report.id', ondelete='CASCADE'),
+        nullable=False,
+    ),
+    Column('name', String(300), nullable=False),
+    Column('title', String(300), nullable=True),
+    Column('isin', String(12), nullable=True, index=True),
+    Column('cusip', String(9), nullable=True),
+    Column('lei', String(20), nullable=True),
+    Column('ticker', String(30), nullable=True),
+    Column('asset_category', String(10), nullable=True),
+    Column('country', String(3), nullable=True),
+    Column('currency', String(3), nullable=True),
+    Column('balance', Numeric(28, 8), nullable=True),
+    Column('units', String(10), nullable=True),
+    Column('value_usd', Numeric(24, 2), nullable=True),
+    Column('weight', Numeric(18, 12), nullable=True),
+    Column('asset_id', Integer, ForeignKey('asset.asset.id'), nullable=True, index=True),
+    Index('ix_etf_holding_report_weight', 'report_id', 'weight'),
+    schema='asset',
 )

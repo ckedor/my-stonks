@@ -48,11 +48,11 @@ def _series(*values):
 
 
 def test_the_real_ladder_climbs_without_ties():
-    """A escala é a ordem em que a galeria é percorrida, e é fixa em código.
+    """A escala é fixa em código, e a ordem dela é a ordem dos degraus.
 
     Um limiar repetido ou fora de ordem tornaria ambíguo justamente o ponto
-    onde ela é lida — que degrau um pico alcança —, e desalinharia cada cenário
-    do degrau para o qual foi desenhado. É barato provar que não aconteceu.
+    onde ela é lida — que degrau um pico alcança. É barato provar que não
+    aconteceu.
     """
     ranks = [tier.rank for tier in REAL_LADDER]
     thresholds = [tier.threshold for tier in REAL_LADDER]

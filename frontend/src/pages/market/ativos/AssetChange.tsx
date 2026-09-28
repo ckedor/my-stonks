@@ -15,7 +15,7 @@ export default function AssetChange({ value }: { value: number | null | undefine
   return (
     <AppText variant="bodySmall" weight="strong" tone={value >= 0 ? 'success' : 'danger'} inline>
       {value >= 0 ? '+' : ''}
-      {value.toFixed(2)}%
+      {value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
     </AppText>
   )
 }

@@ -36,6 +36,10 @@ INGEST_QUOTES_TASK = 'ingest_quotes'
 INGEST_MARKET_DATA_SERIES_TASK = 'ingest_market_data_series'
 INGEST_USD_BRL_TASK = 'ingest_usd_brl'
 INGEST_FUND_REGISTRY_TASK = 'ingest_fund_registry'
+INGEST_ETF_REGISTRY_TASK = 'ingest_etf_registry'
+#: Owned by the portfolio module: it picks the held ETFs, then chains into the
+#: market-data task.
+INGEST_ETF_HOLDINGS_FOR_HELD_ETFS_TASK = 'ingest_etf_holdings_for_held_etfs'
 #: Owned by the portfolio module: it resolves each fund's first purchase, also
 #: for funds chosen by id, before chaining into the market-data task.
 INGEST_FUND_SHARE_VALUES_FOR_HELD_FUNDS_TASK = 'ingest_fund_share_values_for_held_funds'
@@ -279,6 +283,114 @@ async def abort_fund_registry_ingestion(
 ):
     execution = await service.abort_execution(
         ingestion_type=DataIngestionType.FUND_REGISTRY,
+        execution_id=execution_id,
+    )
+    _revoke_pending_task(execution)
+    return execution
+
+
+@router.get('/etf_registry', response_model=list[DataIngestionExecutionResponse])
+async def list_etf_registry_ingestions(
+    limit: int = Query(default=50, ge=1, le=200),
+    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+):
+    return await service.list_etf_registry_executions(limit=limit)
+
+
+@router.get(
+    '/etf_registry/{execution_id}',
+    response_model=DataIngestionExecutionDetailResponse,
+)
+async def get_etf_registry_ingestion(
+    execution_id: int,
+    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+):
+    return await service.get_etf_registry_execution(execution_id)
+
+
+@router.post('/etf_registry', response_model=DataIngestionExecutionResponse)
+async def run_etf_registry_ingestion(
+    user: User = Depends(current_superuser),
+    service: DataIngestionService = Depends(get_data_ingestion_service),
+):
+    execution = await service.request_manual_execution(
+        ingestion_type=DataIngestionType.ETF_REGISTRY,
+        requested_by_user_id=user.id,
+        item_ids=None,
+        force_full_history=False,
+    )
+    try:
+        task = run_task_by_name(INGEST_ETF_REGISTRY_TASK, execution.id)
+        return await service.set_task_id(execution.id, task.id)
+    except Exception as exc:
+        await service.fail(execution.id, exc)
+        raise TaskDispatchError from exc
+
+
+@router.post(
+    '/etf_registry/{execution_id}/abort',
+    response_model=DataIngestionExecutionResponse,
+)
+async def abort_etf_registry_ingestion(
+    execution_id: int,
+    service: DataIngestionService = Depends(get_data_ingestion_service),
+):
+    execution = await service.abort_execution(
+        ingestion_type=DataIngestionType.ETF_REGISTRY,
+        execution_id=execution_id,
+    )
+    _revoke_pending_task(execution)
+    return execution
+
+
+@router.get('/etf_holdings', response_model=list[DataIngestionExecutionResponse])
+async def list_etf_holdings_ingestions(
+    limit: int = Query(default=50, ge=1, le=200),
+    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+):
+    return await service.list_etf_holdings_executions(limit=limit)
+
+
+@router.get(
+    '/etf_holdings/{execution_id}',
+    response_model=DataIngestionExecutionDetailResponse,
+)
+async def get_etf_holdings_ingestion(
+    execution_id: int,
+    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+):
+    return await service.get_etf_holdings_execution(execution_id)
+
+
+@router.post('/etf_holdings', response_model=DataIngestionExecutionResponse)
+async def run_etf_holdings_ingestion(
+    user: User = Depends(current_superuser),
+    service: DataIngestionService = Depends(get_data_ingestion_service),
+):
+    execution = await service.request_manual_execution(
+        ingestion_type=DataIngestionType.ETF_HOLDINGS,
+        requested_by_user_id=user.id,
+        item_ids=None,
+        force_full_history=False,
+    )
+    try:
+        task = run_task_by_name(INGEST_ETF_HOLDINGS_FOR_HELD_ETFS_TASK, execution.id)
+        return await service.set_task_id(execution.id, task.id)
+    except Exception as exc:
+        await service.fail(execution.id, exc)
+        raise TaskDispatchError from exc
+
+
+@router.post(
+    '/etf_holdings/{execution_id}/abort',
+    response_model=DataIngestionExecutionResponse,
+)
+async def abort_etf_holdings_ingestion(
+    execution_id: int,
+    service: DataIngestionService = Depends(get_data_ingestion_service),
+):
+    execution = await service.abort_execution(
+        ingestion_type=DataIngestionType.ETF_HOLDINGS,
         execution_id=execution_id,
     )
     _revoke_pending_task(execution)

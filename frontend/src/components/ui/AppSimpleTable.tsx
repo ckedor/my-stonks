@@ -63,6 +63,11 @@ export interface AppSimpleTableColumn<Row> {
    *  editável, que a tabela espremeria até o valor virar reticências.
    *  Padrão: `auto`. */
   width?: 'auto' | 'clamped' | 'wide'
+  /** A fração da largura da tabela que a coluna ocupa, de 0 a 1. Com ela em
+   *  alguma coluna, a tabela passa a ter largura fixa por coluna — é o que
+   *  alinha tabelas irmãs empilhadas na mesma tela, uma por grupo, que de
+   *  outro jeito medem cada uma o próprio conteúdo e desencontram as colunas. */
+  share?: number
   /** Torna a coluna ordenável e diz por qual valor. Sem isto o cabeçalho não
    *  clica, e é assim de propósito para a coluna cujo número só significa
    *  alguma coisa na ordem em que veio — um acumulado por ativo, lido fora da
@@ -160,14 +165,22 @@ export default function AppSimpleTable<Row>({
           ...(fixedHeight ? { height: fixedHeight, overflowY: 'auto' } : null),
         }}
       >
-        <Table size="small" stickyHeader={Boolean(height || fixedHeight)}>
+        <Table
+          size="small"
+          stickyHeader={Boolean(height || fixedHeight)}
+          sx={columns.some((column) => column.share) ? { tableLayout: 'fixed' } : undefined}
+        >
           <TableHead>
             <TableRow>
               {columns.map((column) => (
                 <TableCell
                   key={column.label}
                   align={column.align ?? 'left'}
-                  sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}
+                  sx={{
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    ...(column.share ? { width: `${column.share * 100}%` } : null),
+                  }}
                   sortDirection={sort?.column === column.label ? sort.direction : false}
                 >
                   <SortableHeader

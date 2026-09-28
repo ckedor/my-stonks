@@ -64,7 +64,7 @@ export default function PortfolioPatrimonyEvolution() {
 
   /* O aporte médio vem pronto do backend, e não somado aqui.
    *
-   *  Este mesmo número aparece na jornada do herói, e enquanto cada tela fazia
+   *  Este mesmo número aparece na projeção da patente, e enquanto cada tela fazia
    *  a sua conta as duas discordavam sob o mesmo rótulo — R$ 3.909 aqui e
    *  R$ 2.831 lá, a diferença sendo o aporte que abriu a carteira. A conta é
    *  uma só, no domínio do backend: ver `domain/contribution_average.py`.

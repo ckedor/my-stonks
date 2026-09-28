@@ -8,6 +8,7 @@ class MarketDataSeriesType(StrEnum):
     MARKET_INDEX = 'market_index'
     INTEREST_RATE = 'interest_rate'
     INFLATION_RATE = 'inflation_rate'
+    COMMODITY_PRICE = 'commodity_price'
 
 
 class MarketDataSeriesValueType(StrEnum):

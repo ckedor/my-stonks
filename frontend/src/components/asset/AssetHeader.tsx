@@ -1,11 +1,4 @@
-import {
-  AppChip,
-  AppIconLink,
-  AppLogoImage,
-  AppStack,
-  AppText,
-  AppTooltip,
-} from '@/components/ui'
+import { AppChip, AppIconLink, AppLogoImage, AppStack, AppText, AppTooltip } from '@/components/ui'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import dayjs from 'dayjs'
 import type { ReactNode } from 'react'
@@ -35,6 +28,10 @@ interface Props {
   marketHref?: string
   /** Espaço à direita, para o que a página precisar pôr ali. */
   action?: ReactNode
+  /** O rastro da página, acima do ticker. Mora aqui dentro, e não acima do
+   *  header, para que a ação à direita comece na mesma linha dele — de fora,
+   *  ela começava na altura do ticker e ficava desencontrada do rastro. */
+  breadcrumbs?: ReactNode
 }
 
 /** Quem é o ativo, do mesmo jeito na visão de mercado e na de carteira.
@@ -53,32 +50,36 @@ export default function AssetHeader({
   cagrHint,
   marketHref,
   action,
+  breadcrumbs,
 }: Props) {
   return (
     <AppStack direction="row" justify="between" align="start" gap="xl" collapseBelow="md">
-      <AppStack gap="xs" grow>
-        <AppStack direction="row" align="center" gap="sm" wrap>
-          <AppLogoImage src={logoUrl} />
-          <AppText variant="pageHeading">{ticker}</AppText>
-          {typeShortName && <AppChip label={typeShortName} />}
-        </AppStack>
+      <AppStack gap="md" grow>
+        {breadcrumbs}
+        <AppStack gap="xs">
+          <AppStack direction="row" align="center" gap="sm" wrap>
+            <AppLogoImage src={logoUrl} />
+            <AppText variant="pageHeading">{ticker}</AppText>
+            {typeShortName && <AppChip label={typeShortName} />}
+          </AppStack>
 
-        <AppStack direction="row" align="center" gap="xs">
-          {name && (
-            <AppText variant="body" tone="secondary">
-              {name}
-            </AppText>
-          )}
-          {marketHref && (
-            <AppTooltip title="Ver no mercado">
-              <AppIconLink to={marketHref} label="Ver no mercado">
-                <OpenInNewIcon fontSize="inherit" />
-              </AppIconLink>
-            </AppTooltip>
-          )}
-        </AppStack>
+          <AppStack direction="row" align="center" gap="xs">
+            {name && (
+              <AppText variant="body" tone="secondary">
+                {name}
+              </AppText>
+            )}
+            {marketHref && (
+              <AppTooltip title="Ver no mercado">
+                <AppIconLink to={marketHref} label="Ver no mercado">
+                  <OpenInNewIcon fontSize="inherit" />
+                </AppIconLink>
+              </AppTooltip>
+            )}
+          </AppStack>
 
-        {cagr && <CagrLine cagr={cagr} hint={cagrHint} />}
+          {cagr && <CagrLine cagr={cagr} hint={cagrHint} />}
+        </AppStack>
       </AppStack>
 
       {action}

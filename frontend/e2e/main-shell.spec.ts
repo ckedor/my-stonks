@@ -1,4 +1,5 @@
 import { expect, expectNothingClipped, test } from './fixtures/app'
+import { WORLD_READINGS } from './fixtures/world-readings'
 
 /* A casca do app fora do admin: `MainLayout` e `MainTopbar`.
  *
@@ -67,8 +68,10 @@ test('main shell — a navegação continua na tela ao rolar', async ({ page, mo
   /* O Mercado, e não a Carteira: sem dado mockado a Carteira para no estado
      vazio, que cabe na viewport. Numa tela que não rola, "continua na tela"
      é verdade sozinho e o teste passaria mesmo com a coluna quebrada. */
+  await mockApi('/market_data/readings/world', WORLD_READINGS)
   await page.goto('/market/overview')
   await expect(page.getByRole('heading', { name: 'Visão geral' })).toBeVisible()
+  await expect(page.getByText('Onde cada mercado está na própria história')).toBeVisible()
 
   await page.mouse.wheel(0, 1200)
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(600)

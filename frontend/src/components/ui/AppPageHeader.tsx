@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import AppBreadcrumbs from './AppBreadcrumbs'
 import AppCard from './AppCard'
+import AppMetricRow from './AppMetricRow'
 import AppStack from './AppStack'
 import PageTitle from './PageTitle'
 
@@ -73,9 +74,7 @@ export default function AppPageHeader({
 
       {metrics && (
         <AppCard>
-          <AppStack direction="row" gap="lg" wrap>
-            {metrics}
-          </AppStack>
+          <AppMetricRow>{metrics}</AppMetricRow>
         </AppCard>
       )}
     </AppStack>

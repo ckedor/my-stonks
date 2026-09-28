@@ -42,6 +42,8 @@ async def test_stock_market_normalizes_provider_and_links_registered_assets():
                     'volume': 52657800,
                     'market_cap': 603115978244,
                     'logo': 'https://example.test/petr4.svg',
+                    'sector': 'Energy Minerals',
+                    'subsector': 'Petróleo, Gás e Biocombustíveis',
                 }
             ]
         )
@@ -67,6 +69,8 @@ async def test_stock_market_normalizes_provider_and_links_registered_assets():
                 'market_cap': 603115978244.0,
                 'currency': 'BRL',
                 'logo_url': 'https://example.test/petr4.svg',
+                'sector': 'Energy Minerals',
+                'subsector': 'Petróleo, Gás e Biocombustíveis',
             }
         ],
         'total': 1,

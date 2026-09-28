@@ -112,15 +112,18 @@ class MarketDataSeriesIngestionService:
         force_full_history: bool,
         semaphore: asyncio.Semaphore,
     ) -> None:
+        # A series with nothing stored yet has no point to be incremental from.
+        # Starting it a week back, as the scheduled run used to, registered a
+        # series that stayed a week long until someone asked for its history.
         start_date = (
             None
-            if force_full_history
-            else (latest_date or date.today()) - timedelta(days=SERIES_HISTORY_OVERLAP_DAYS)
+            if force_full_history or latest_date is None
+            else latest_date - timedelta(days=SERIES_HISTORY_OVERLAP_DAYS)
         )
         # BRAPI silently returned one IFIX point for months, leaving a hole
         # while each execution still looked successful. The official B3 feed
         # is cheap by year, so keep a longer repair window for this series.
-        if series.id == SERIES.IFIX and not force_full_history:
+        if series.id == SERIES.IFIX and start_date is not None:
             repair_start = date.today() - timedelta(days=IFIX_REPAIR_LOOKBACK_DAYS)
             start_date = min(start_date, repair_start)
         parameters = {

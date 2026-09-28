@@ -8,6 +8,10 @@ from app.infra.db.tables.assets import (
     asset_type_table,
     broker_table,
     currency_table,
+    etf_holding_report_table,
+    etf_holding_table,
+    etf_registry_class_table,
+    etf_registry_table,
     etf_segment_table,
     etf_table,
     event_table,
@@ -48,6 +52,12 @@ from app.modules.market_data.domain.assets import (
     Stock,
     TreasuryBond,
     TreasuryBondType,
+)
+from app.modules.market_data.domain.etf_registry import (
+    EtfHolding,
+    EtfHoldingReport,
+    EtfRegistry,
+    EtfRegistryClass,
 )
 from app.modules.market_data.domain.fund_registry import (
     FundRegistry,
@@ -135,6 +145,7 @@ def map_assets() -> None:
         properties={
             'segment': relationship(ETFSegment, lazy='joined'),
             'registry_fund': relationship(FundRegistry, lazy='joined'),
+            'registry_class': relationship(EtfRegistryClass, lazy='joined'),
             'asset': relationship(Asset, back_populates='etf'),
         },
     )
@@ -158,6 +169,14 @@ def map_assets() -> None:
             ),
             'index': relationship(MarketDataSeries, lazy='joined'),
         },
+    )
+    Base.registry.map_imperatively(EtfRegistry, etf_registry_table)
+    Base.registry.map_imperatively(EtfHoldingReport, etf_holding_report_table)
+    Base.registry.map_imperatively(EtfHolding, etf_holding_table)
+    Base.registry.map_imperatively(
+        EtfRegistryClass,
+        etf_registry_class_table,
+        properties={'fund': relationship(EtfRegistry, lazy='joined')},
     )
     Base.registry.map_imperatively(FundRegistry, fund_registry_table)
     Base.registry.map_imperatively(

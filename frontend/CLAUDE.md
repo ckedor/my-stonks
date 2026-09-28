@@ -92,6 +92,17 @@ ainda dispara; sem esse teste a regra pode parar de casar em silêncio.
 `src/pages/admin/**` ainda está fora da regra, e é dívida declarada: o admin
 tem shell e navegação próprios. Quando migrar, o glob vira `src/pages/**`.
 
+### Integrações no admin
+
+Tudo o que sincroniza ou integra dado de fora mora em uma seção só,
+Integrações (`/admin/integrations/...`), aberta pelo painel. Cada tela ali é
+uma rotina do catálogo do backend (`operations/domain/routines.py`), com o
+mesmo nome, e abre com `RoutineScheduleNote` — quando roda, quando rodou,
+como terminou —, lida da mesma resposta do painel. Horário não se escreve no
+front: vem do agendamento do worker, já descrito. `ROUTINE_PAGES` liga cada
+rotina à sua tela, e `src/pages/admin/navigation.test.ts` prova que o menu e o
+painel continuam listando as mesmas telas.
+
 ### Recorte da carteira
 
 Uma categoria personalizada e um segmento por tipo de ativo são a mesma
@@ -172,7 +183,9 @@ São duas coisas, e ficam em lugares diferentes.
   `persist` de cada store —, elas hidratavam a mesma série em momentos
   diferentes, e a identidade do objeto mudava a cada hidratação: as curvas
   eram reanimadas com dado idêntico, e havia uma comparação de conteúdo à mão
-  só para calar isso.
+  só para calar isso. Uma leitura pesada que o servidor recalcula todo dia
+  sai dela com `meta: { persist: false }`: o localStorage tem cota, e o que
+  ela empurraria para fora é a carteira.
 - `select` de query mora no topo do módulo, nunca inline: um `select` que muda
   de identidade a cada render descarta a memoização e devolve um objeto novo
   toda vez. Pelo mesmo motivo, o vazio de uma query que ainda não respondeu
@@ -195,7 +208,9 @@ Os quatro primeiros a cada commit, `build` e `e2e` no push.
 
 **Fora da máquina do mantenedor — sessão remota, agente — rode só
 `npx tsc -b --noEmit` e `eslint` nos arquivos tocados.** O resto fica para o
-push local. E `npm run e2e` não roda ali de jeito nenhum: ver o aviso sobre a
+push local. A exceção é peça do jogo da cidade: `npm run iso:render` grava a
+peça ao lado da referência e deve ser olhado a cada mudança de receita (ver
+a skill `iso-asset`). E `npm run e2e` não roda ali de jeito nenhum: ver o aviso sobre a
 build do Chromium em **Regressão visual**, logo abaixo. Verificação completa
 só quando pedida.
 

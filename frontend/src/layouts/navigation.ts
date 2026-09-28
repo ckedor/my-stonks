@@ -77,9 +77,14 @@ export const navigationSections: NavigationSection[] = [
           path: segment.path,
         })),
       },
+      /* O jogo da cidade é a carteira como lugar, e não um ângulo de
+         análise: por isso tem grupo próprio, fora da lista que espelha as
+         abas de um recorte. */
       {
         title: 'Jornada',
-        items: [{ label: 'Jornada do Herói', path: '/portfolio/tiers' }],
+        items: [
+          { label: 'Cidade', path: '/portfolio/city' },
+        ],
       },
       {
         title: 'Operações',

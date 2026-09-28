@@ -100,6 +100,8 @@ async def test_each_ingestion_history_route_filters_its_own_type():
         list_usd_brl_executions=AsyncMock(return_value=[]),
         list_fund_registry_executions=AsyncMock(return_value=[]),
         list_fund_share_value_executions=AsyncMock(return_value=[]),
+        list_etf_registry_executions=AsyncMock(return_value=[]),
+        list_etf_holdings_executions=AsyncMock(return_value=[]),
     )
     app = FastAPI()
     app.include_router(router, prefix='/market_data')
@@ -119,3 +121,5 @@ async def test_each_ingestion_history_route_filters_its_own_type():
     read_service.list_usd_brl_executions.assert_awaited_once_with(limit=50)
     read_service.list_fund_registry_executions.assert_awaited_once_with(limit=50)
     read_service.list_fund_share_value_executions.assert_awaited_once_with(limit=50)
+    read_service.list_etf_registry_executions.assert_awaited_once_with(limit=50)
+    read_service.list_etf_holdings_executions.assert_awaited_once_with(limit=50)

@@ -93,6 +93,32 @@ class DataIngestionReadService:
             include_attempts=True,
         )
 
+    async def list_etf_registry_executions(self, *, limit: int):
+        return await self.list_executions(
+            ingestion_type=DataIngestionType.ETF_REGISTRY,
+            limit=limit,
+        )
+
+    async def get_etf_registry_execution(self, execution_id: int):
+        return await self.get_execution(
+            execution_id,
+            ingestion_type=DataIngestionType.ETF_REGISTRY,
+            include_attempts=True,
+        )
+
+    async def list_etf_holdings_executions(self, *, limit: int):
+        return await self.list_executions(
+            ingestion_type=DataIngestionType.ETF_HOLDINGS,
+            limit=limit,
+        )
+
+    async def get_etf_holdings_execution(self, execution_id: int):
+        return await self.get_execution(
+            execution_id,
+            ingestion_type=DataIngestionType.ETF_HOLDINGS,
+            include_attempts=True,
+        )
+
     async def list_fund_share_value_executions(self, *, limit: int):
         return await self.list_executions(
             ingestion_type=DataIngestionType.FUND_SHARE_VALUE,

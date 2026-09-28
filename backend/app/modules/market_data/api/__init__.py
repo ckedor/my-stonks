@@ -4,6 +4,7 @@ from app.modules.market_data.api.asset.router import router as asset_router
 from app.modules.market_data.api.broker.router import router as broker_router
 from app.modules.market_data.api.catalogue.router import router as catalogue_router
 from app.modules.market_data.api.currency.router import router as currency_router
+from app.modules.market_data.api.etf.router import router as etf_router
 from app.modules.market_data.api.fii.router import router as fii_router
 from app.modules.market_data.api.fund_registry.router import router as fund_registry_router
 from app.modules.market_data.api.ingestion.router import router as ingestion_router
@@ -11,6 +12,7 @@ from app.modules.market_data.api.investment_fund.router import (
     router as investment_fund_router,
 )
 from app.modules.market_data.api.quote.router import router as quote_router
+from app.modules.market_data.api.reading.router import router as reading_router
 from app.modules.market_data.api.series.router import router as series_router
 from app.modules.market_data.api.stock.router import router as stock_router
 from app.modules.market_data.api.usd_brl.router import router as usd_brl_router
@@ -23,8 +25,10 @@ router.include_router(broker_router)
 router.include_router(currency_router)
 router.include_router(ingestion_router)
 router.include_router(series_router)
+router.include_router(reading_router)
 router.include_router(usd_brl_router)
 router.include_router(fii_router)
+router.include_router(etf_router)
 router.include_router(investment_fund_router)
 router.include_router(fund_registry_router)
 router.include_router(stock_router)

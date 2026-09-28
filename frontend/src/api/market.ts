@@ -1,5 +1,5 @@
 import type { CandleDataPoint } from '@/components/charts/CandleChart'
-import { ASSET_ROUTES, CURRENCY_ROUTES, FII_ROUTES, INVESTMENT_FUND_ROUTES, MARKET_CATALOGUE_ROUTES, MARKET_DATA_SERIES_ROUTES, QUOTE_ROUTES, STOCK_ROUTES, USD_BRL_ROUTES, type MarketCatalogueKind } from '@/constants/routes'
+import { ASSET_ROUTES, CURRENCY_ROUTES, FII_ROUTES, INVESTMENT_FUND_ROUTES, MARKET_CATALOGUE_ROUTES, MARKET_DATA_SERIES_ROUTES, MARKET_READING_ROUTES, QUOTE_ROUTES, STOCK_ROUTES, USD_BRL_ROUTES, type MarketCatalogueKind } from '@/constants/routes'
 import api from '@/lib/api'
 import type { ReturnsEntry } from '@/types'
 
@@ -56,6 +56,17 @@ export interface MarketDataSeriesOption {
 export const fetchMarketDataSeriesOptions = (): Promise<MarketDataSeriesOption[]> =>
   api.get<MarketDataSeriesOption[]>(MARKET_DATA_SERIES_ROUTES.options).then((r) => r.data)
 
+/** A registered series with what types it: an index is `market_index`. */
+export interface MarketDataSeries extends MarketDataSeriesOption {
+  series_type: 'market_index' | 'interest_rate' | 'inflation_rate' | string
+  value_type: 'level' | 'percentage' | string
+  frequency: 'daily' | 'monthly' | string
+  currency: Currency | null
+}
+
+export const fetchMarketDataSeriesList = (): Promise<MarketDataSeries[]> =>
+  api.get<MarketDataSeries[]>(MARKET_DATA_SERIES_ROUTES.list).then((r) => r.data)
+
 export interface MarketDataSeriesHistoryPoint {
   date: string
   close: number | null
@@ -75,8 +86,94 @@ export const fetchMarketDataSeriesHistory = (
     })
     .then((r) => r.data)
 
+// ---------------------------------------------------------------------------
+// Market readings
+// ---------------------------------------------------------------------------
+
+export interface ReadingPoint {
+  date: string
+  value: number
+  /** Média de 40 semanas no ponto; nula nas primeiras 39. */
+  moving_average: number | null
+}
+
+/** Um nível contra a própria história semanal. Retornos e distâncias vêm em
+ *  fração; percentis, de 0 a 1 — nulos quando não há um ano para comparar. */
+export interface LevelReading {
+  key: string
+  series_id: number | null
+  /** O ativo, quando a leitura é das cotações de um (o bitcoin). */
+  asset_id: number | null
+  as_of: string
+  since: string
+  value: number
+  /** Crescimento anual composto do primeiro ao último ponto; nulo abaixo de um ano. */
+  since_start_annualized_return: number | null
+  year_to_date_return: number | null
+  one_year_return: number | null
+  five_year_annualized_return: number | null
+  ten_year_annualized_return: number | null
+  ten_year_return_percentile: number | null
+  moving_average: number | null
+  distance_to_moving_average: number | null
+  distance_percentile: number | null
+  drawdown: number
+  history: ReadingPoint[]
+}
+
+/** Uma taxa, em fração ao ano, contra a própria história semanal. */
+export interface RateReading {
+  key: string
+  series_id: number | null
+  as_of: string
+  since: string
+  value: number
+  one_year_ago: number | null
+  percentile: number | null
+  history: ReadingPoint[]
+}
+
+export interface WorldMarketReadings {
+  levels: LevelReading[]
+  comparisons: LevelReading[]
+  rates: RateReading[]
+}
+
+export const fetchWorldMarketReadings = (): Promise<WorldMarketReadings> =>
+  api.get<WorldMarketReadings>(MARKET_READING_ROUTES.world).then((r) => r.data)
+
+export type EtfExposure =
+  | 'usa'
+  | 'world'
+  | 'world_ex_usa'
+  | 'emerging'
+  | 'dividends'
+  | 'themes'
+  | 'bonds'
+  | 'gold'
+  | 'real_estate'
+
+/** Um ETF de referência lido como nível, no fechamento ajustado: os
+ *  dividendos estão dentro, como nos índices MSCI líquidos. O histórico da
+ *  leitura é só o último ano, para o minigráfico. */
+export interface ReferenceEtfReading {
+  ticker: string
+  name: string
+  asset_id: number
+  exposure: EtfExposure
+  /** `us`: listado em Nova York. `ucits`: o irlandês listado em Londres. */
+  listing: 'us' | 'ucits'
+  currency: string | null
+  day_change: number | null
+  reading: LevelReading
+}
+
+export const fetchReferenceEtfReadings = (): Promise<ReferenceEtfReading[]> =>
+  api.get<ReferenceEtfReading[]>(MARKET_READING_ROUTES.etfs).then((r) => r.data)
+
 export interface Currency {
   id: number
+
   code: string
   name: string
 }
@@ -184,7 +281,6 @@ export function quotesToCandleData(quotes: QuotesResponse['quotes']): CandleData
     volume: q.volume ?? undefined,
   }))
 }
-
 
 // ---------------------------------------------------------------------------
 // Real-estate fund profile
@@ -329,6 +425,7 @@ export interface FIILand {
   identifier: string | null
   address: string | null
   area: number | null
+
   invested_share: number | null
   equity_share: number | null
   confidential: boolean | null
@@ -436,7 +533,6 @@ export interface FIIMarket {
 
 export const fetchFIIMarket = (): Promise<FIIMarket> =>
   api.get<FIIMarket>(FII_ROUTES.market).then((r) => r.data)
-
 
 // ---------------------------------------------------------------------------
 // Investment-fund profile
@@ -894,6 +990,10 @@ export interface MarketCatalogueAsset {
   market_cap: number | null
   currency: string
   logo_url: string | null
+  /** Classificação econômica da B3: o setor numa lista fixa, em inglês; o
+   *  subsetor com o rótulo do próprio provedor. Nulos fora da B3. */
+  sector: string | null
+  subsector: string | null
 }
 
 export interface MarketCatalogue {
@@ -947,6 +1047,7 @@ export const syncAssetCatalogue = (
     .then((r) => r.data)
 
 // ---------------------------------------------------------------------------
+
 // Cadastro do regulador: pessoas jurídicas, ações e o vínculo de fundos
 // ---------------------------------------------------------------------------
 
@@ -1058,7 +1159,6 @@ export interface MarketAssetDetails {
 
 export const fetchMarketAssetDetails = (assetId: number): Promise<MarketAssetDetails> =>
   api.get<MarketAssetDetails>(ASSET_ROUTES.byId(assetId)).then((r) => r.data)
-
 
 // ---------------------------------------------------------------------------
 // Favourites, ranked by how often the user opens an asset

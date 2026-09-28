@@ -20,7 +20,7 @@ import {
   formatMonth,
   formatPercent,
   formatPercentagePoints,
-} from '../format'
+} from '@/components/asset/format'
 import { incomeTrend, isIncome, navReading, vacancyReading, type IncomeTrend } from './readings'
 
 const SPARKLINE_MONTHS = 6

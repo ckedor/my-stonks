@@ -35,7 +35,7 @@ export default function AdminMarketDataUsdBrlPage() {
 
   return (
     <AppStack gap="lg">
-      <PageTitle>Dólar</PageTitle>
+      <PageTitle>Histórico do dólar</PageTitle>
 
       {loading ? (
         <AppStack gap="md">

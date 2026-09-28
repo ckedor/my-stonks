@@ -12,7 +12,7 @@ import {
   type AppSimpleTableColumn,
 } from '@/components/ui'
 import { useMemo } from 'react'
-import { EMPTY, formatBRL, formatCompactBRL, formatCount, formatDate } from '../format'
+import { EMPTY, formatBRL, formatCompactBRL, formatCount, formatDate } from '@/components/asset/format'
 import { holdingsByBucket, portfolioSlices } from './readings'
 
 const PIE_HEIGHT = 260

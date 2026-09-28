@@ -1,6 +1,7 @@
 import { Box, Typography } from '@mui/material'
-import type { ReactNode } from 'react'
+import { useContext, type ReactNode } from 'react'
 import AppTooltip from './AppTooltip'
+import { MetricRowContext } from './metric-row'
 
 /* Um número com o nome dele em cima.
  *
@@ -18,6 +19,10 @@ const TONE: Record<Tone, string | undefined> = {
   success: 'success.main',
   danger: 'error.main',
 }
+
+/** A caixa da linha do valor `lg`: é a altura que um valor `sm` reserva
+ *  numa `AppMetricRow` para assentar na mesma linha de base. */
+const LARGE_VALUE_LINE_HEIGHT = 1.15
 
 /** Largura mínima no mobile: sem ela os itens de uma linha que quebra
  *  encolhem até o rótulo virar duas linhas. */
@@ -52,23 +57,27 @@ export default function AppMetric({
   align = 'start',
   hint,
 }: AppMetricProps) {
+  const inRow = useContext(MetricRowContext)
+  // O rótulo é sempre um bloco da mesma altura, com ou sem dica: o
+  // sublinhado mora num `span` dentro dele. Quando era o próprio rótulo que
+  // virava `inline-block` com borda, a linha crescia e o número daquela
+  // métrica descia em relação aos vizinhos da mesma fileira.
   const heading = (
     <Typography
-      variant={size === 'lg' ? 'body2' : 'caption'}
+      variant={size === 'lg' && !inRow ? 'body2' : 'caption'}
       color="text.secondary"
-      sx={{
-        /* Com dica, o rótulo encolhe até o próprio texto: em `block` o
-           sublinhado pontilhado atravessava a coluna inteira e virava uma
-           régua entre o rótulo e o número, em vez de marcar a palavra que
-           tem o que ler. */
-        display: hint ? 'inline-block' : 'block',
-        lineHeight: 1.2,
-        ...(hint
-          ? { borderBottom: '1px dotted', borderColor: 'text.disabled', cursor: 'help' }
-          : null),
-      }}
+      sx={{ display: 'block', lineHeight: 1.2 }}
     >
-      {label}
+      {hint ? (
+        <Box
+          component="span"
+          sx={{ borderBottom: '1px dotted', borderColor: 'text.disabled', cursor: 'help' }}
+        >
+          {label}
+        </Box>
+      ) : (
+        label
+      )}
     </Typography>
   )
 
@@ -76,16 +85,26 @@ export default function AppMetric({
     <Box sx={{ minWidth: { xs: MIN_WIDTH_XS, sm: 'auto' }, textAlign: align }}>
       {hint ? <AppTooltip title={hint}>{heading}</AppTooltip> : heading}
       <Box
-        sx={{
+        sx={(theme) => ({
           display: 'flex',
           alignItems: 'baseline',
           justifyContent: align === 'center' ? 'center' : 'flex-start',
           gap: 1,
-        }}
+          ...(inRow && size === 'sm'
+            ? {
+                minHeight: `calc(${theme.typography.h5.fontSize} * ${LARGE_VALUE_LINE_HEIGHT})`,
+                alignItems: 'flex-end',
+              }
+            : null),
+        })}
       >
         <Typography
           variant={size === 'lg' ? 'h5' : 'body1'}
-          sx={{ fontWeight: 700, color: TONE[tone], lineHeight: size === 'lg' ? 1.15 : 1.35 }}
+          sx={{
+            fontWeight: 700,
+            color: TONE[tone],
+            lineHeight: size === 'lg' ? LARGE_VALUE_LINE_HEIGHT : 1.35,
+          }}
         >
           {value}
         </Typography>

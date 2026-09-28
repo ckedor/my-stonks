@@ -1,15 +1,18 @@
 import { EMPTY_LIST } from '@/queries/empty'
-import { useAnalysis, useBenchmarks, useDividends, usePatrimony, usePositions, useReturnCurves, useWealthTier } from '@/queries/portfolio'
+import { useAnalysis, useBenchmarks, useDividends, usePatrimony, usePositions, useReturnCurves } from '@/queries/portfolio'
 import { useCurrency } from '@/hooks/useCurrency'
 import { useTradeFormStore } from '@/stores/trade-form'
 import {
   AppButton,
+  AppCard,
   AppChartArea,
   AppEmptyState,
   AppGrid,
   AppGridItem,
   AppStack,
+  AppToggleGroup,
   AppTabs,
+  SectionTitle,
 } from '@/components/ui'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -18,11 +21,16 @@ import OverviewDividendsChart from './OverviewDividendsChart'
 import OverviewPatrimonyChart from './OverviewPatrimonyChart'
 import OverviewReturnsChart from './OverviewReturnsChart'
 import OverviewSkeleton from './OverviewSkeleton'
-import PositionPieChart from './PositionPieChart'
+import PositionPieChart, { type CompositionGrouping } from './PositionPieChart'
 import PositionTable from './PositionTable'
 import PortfolioStandingCard from './PortfolioStandingCard'
 
 const OVERVIEW_PANEL_HEIGHT = 360
+
+const COMPOSITION_GROUPINGS: { value: CompositionGrouping; label: string }[] = [
+  { value: 'category', label: 'Categoria' },
+  { value: 'asset', label: 'Ativo' },
+]
 
 type BottomTab = 'dividends' | 'patrimony' | 'aports'
 
@@ -39,7 +47,6 @@ export default function PortfolioOverviewPage() {
   const positionsQuery = usePositions()
   const patrimonyQuery = usePatrimony()
   const dividendsQuery = useDividends()
-  const wealthTierQuery = useWealthTier()
   const benchmarksQuery = useBenchmarks()
   const analysisQuery = useAnalysis()
   const returnCurves = useReturnCurves()
@@ -48,7 +55,6 @@ export default function PortfolioOverviewPage() {
   const patrimonyEvolution = patrimonyQuery.data ?? EMPTY_LIST
   const dividends = dividendsQuery.data ?? EMPTY_LIST
   const categoryCagr = returnCurves.cagr
-  const wealthTierStanding = wealthTierQuery.data ?? null
   const analysis = analysisQuery.data
   const { format: formatCurrency } = useCurrency()
 
@@ -73,13 +79,13 @@ export default function PortfolioOverviewPage() {
     positionsQuery.isPending ||
     patrimonyQuery.isPending ||
     dividendsQuery.isPending ||
-    wealthTierQuery.isPending ||
     benchmarksQuery.isPending ||
     analysisQuery.isPending ||
     returnCurves.isPending
 
   const [selectedCategory, setSelectedCategory] = useState<string>('portfolio')
   const [bottomTab, setBottomTab] = useState<BottomTab>('dividends')
+  const [grouping, setGrouping] = useState<CompositionGrouping>('category')
 
   // The chart matches the height the category list has with its drawers closed.
   // Measured from the data, never from interaction, so expanding a category
@@ -115,74 +121,99 @@ export default function PortfolioOverviewPage() {
 
   return (
     <AppStack gap="lg">
-      {/* ── Hero: patrimônio e patente, um bloco só ── */}
-      {/* A arte do personagem não mora aqui: ela vive no pé da coluna de
-          navegação, onde tem largura fixa e não disputa espaço com o gráfico. */}
+      {/* O cabeçalho da carteira é o patrimônio, sem caixa em volta. */}
       <PortfolioStandingCard
         patrimony={totalValue}
         cagr={cagr}
         cdiPct={cdiPct}
-        standing={wealthTierStanding}
         formatCurrency={formatCurrency}
       />
 
-      {/* ── Linha 1: rentabilidade (70%) + pizza (30%) ── */}
+      {/* ── Linha 1: rentabilidade + composição ── */}
       <AppGrid cols={{ xs: 1, lg: 12 }} gap="md">
         <AppGridItem span={{ xs: 1, lg: 8 }}>
-          <OverviewReturnsChart size={OVERVIEW_PANEL_HEIGHT} selectedCategory={selectedCategory} />
+          <AppCard>
+            <AppStack gap="sm">
+              <SectionTitle>Rentabilidade</SectionTitle>
+              <OverviewReturnsChart size={OVERVIEW_PANEL_HEIGHT} selectedCategory={selectedCategory} />
+            </AppStack>
+          </AppCard>
         </AppGridItem>
         <AppGridItem span={{ xs: 1, lg: 4 }}>
-          <PositionPieChart
-            positions={positions}
-            height={OVERVIEW_PANEL_HEIGHT}
-            selectedCategory={selectedCategory}
-            onCategorySelect={setSelectedCategory}
-            onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
-          />
+          <AppCard>
+            <AppStack gap="sm">
+              <AppStack direction="row" justify="between" align="center" gap="sm" wrap>
+                <SectionTitle>Composição</SectionTitle>
+                <AppToggleGroup
+                  label="Fatiar a composição por"
+                  options={COMPOSITION_GROUPINGS}
+                  value={grouping}
+                  onChange={setGrouping}
+                />
+              </AppStack>
+              <PositionPieChart
+                positions={positions}
+                height={OVERVIEW_PANEL_HEIGHT}
+                selectedCategory={selectedCategory}
+                grouping={grouping}
+                onCategorySelect={setSelectedCategory}
+                onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
+              />
+            </AppStack>
+          </AppCard>
         </AppGridItem>
       </AppGrid>
 
-      {/* ── Linha 2: lista de categorias + aba de proventos/patrimônio/aportes ── */}
+      {/* ── Linha 2: categorias + proventos/patrimônio/aportes ── */}
       <AppGrid cols={{ xs: 1, lg: 12 }} gap="md" align="start">
         <AppGridItem span={{ xs: 1, lg: 5 }} ref={positionListRef}>
-          <PositionTable
-            positions={positions}
-            selectedCategory={selectedCategory}
-            onCategorySelect={setSelectedCategory}
-            onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
-          />
+          <AppCard>
+            <AppStack gap="sm">
+              <SectionTitle>Categorias</SectionTitle>
+              <PositionTable
+                positions={positions}
+                selectedCategory={selectedCategory}
+                onCategorySelect={setSelectedCategory}
+                onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
+              />
+            </AppStack>
+          </AppCard>
         </AppGridItem>
         <AppGridItem span={{ xs: 1, lg: 7 }}>
-          <AppChartArea
-            height={chartHeight}
-            sizing="frame"
-            toolbar={
-              <AppTabs
-                items={BOTTOM_TABS}
-                value={bottomTab}
-                onChange={setBottomTab}
-                label="Séries da carteira"
-              />
-            }
-          >
-            {bottomTab === 'dividends' && (
-              <OverviewDividendsChart
-                dividends={dividends}
-                selected={selectedCategory}
-                size="100%"
-              />
-            )}
-            {bottomTab === 'patrimony' && (
-              <OverviewPatrimonyChart
-                patrimonyEvolution={patrimonyEvolution}
-                selected={selectedCategory}
-                size="100%"
-              />
-            )}
-            {bottomTab === 'aports' && (
-              <OverviewAportsChart patrimonyEvolution={patrimonyEvolution} size="100%" />
-            )}
-          </AppChartArea>
+          {/* A altura do card é a da lista ao lado, medida fechada; o gráfico
+              ocupa o que sobra dentro dele. */}
+          <AppCard height={chartHeight}>
+            <AppChartArea
+              height="100%"
+              sizing="frame"
+              toolbar={
+                <AppTabs
+                  items={BOTTOM_TABS}
+                  value={bottomTab}
+                  onChange={setBottomTab}
+                  label="Séries da carteira"
+                />
+              }
+            >
+              {bottomTab === 'dividends' && (
+                <OverviewDividendsChart
+                  dividends={dividends}
+                  selected={selectedCategory}
+                  size="100%"
+                />
+              )}
+              {bottomTab === 'patrimony' && (
+                <OverviewPatrimonyChart
+                  patrimonyEvolution={patrimonyEvolution}
+                  selected={selectedCategory}
+                  size="100%"
+                />
+              )}
+              {bottomTab === 'aports' && (
+                <OverviewAportsChart patrimonyEvolution={patrimonyEvolution} size="100%" />
+              )}
+            </AppChartArea>
+          </AppCard>
         </AppGridItem>
       </AppGrid>
     </AppStack>

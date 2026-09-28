@@ -7,6 +7,8 @@ export type DataIngestionType =
   | 'usd_brl'
   | 'fund_registry'
   | 'fund_share_value'
+  | 'etf_registry'
+  | 'etf_holdings'
 export type IngestionStatus =
   | 'queued'
   | 'running'

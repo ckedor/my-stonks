@@ -1,4 +1,11 @@
-import { AppGrid, AppGridItem, AppSkeleton, AppStack, AppStackItem } from '@/components/ui'
+import {
+  AppCard,
+  AppGrid,
+  AppGridItem,
+  AppSkeleton,
+  AppStack,
+  AppStackItem,
+} from '@/components/ui'
 
 function CategoryRowSkeleton() {
   return (
@@ -15,45 +22,61 @@ function CategoryRowSkeleton() {
   )
 }
 
-/** Reserva o espaço da visão geral: o bloco de patrimônio, a linha de gráficos
- *  e a linha da lista de categorias com o gráfico ao lado. */
+/** Reserva o espaço do resumo: o patrimônio no topo, a linha de
+ *  gráficos e a linha da lista de categorias com o gráfico ao lado — cada
+ *  bloco no card em que ele chega. */
 export default function OverviewSkeleton() {
   return (
     <AppStack gap="lg">
-      {/* Hero */}
+      {/* Patrimônio e CAGR */}
       <AppStack gap="xs">
         <AppSkeleton shape="text" width={90} height={20} />
         <AppSkeleton shape="text" width={220} height={42} />
         <AppSkeleton shape="text" width={160} height={20} />
       </AppStack>
 
-      {/* Gráfico de rentabilidade + pizza */}
+      {/* Rentabilidade + composição */}
       <AppGrid cols={{ xs: 1, lg: 12 }} gap="md">
         <AppGridItem span={{ xs: 1, lg: 8 }}>
-          <AppSkeleton height={360} />
+          <AppCard>
+            <AppStack gap="sm">
+              <AppSkeleton shape="text" width={120} height={26} />
+              <AppSkeleton height={360} />
+            </AppStack>
+          </AppCard>
         </AppGridItem>
         <AppGridItem span={{ xs: 1, lg: 4 }}>
-          <AppSkeleton height={360} />
+          <AppCard>
+            <AppStack gap="sm">
+              <AppSkeleton shape="text" width={120} height={26} />
+              <AppSkeleton height={360} />
+            </AppStack>
+          </AppCard>
         </AppGridItem>
       </AppGrid>
 
-      {/* Lista de categorias + gráfico da aba de baixo */}
+      {/* Categorias + gráfico da aba de baixo */}
       <AppGrid cols={{ xs: 1, lg: 12 }} gap="md" align="start">
         <AppGridItem span={{ xs: 1, lg: 5 }}>
-          <AppStack gap="md">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <CategoryRowSkeleton key={i} />
-            ))}
-          </AppStack>
+          <AppCard>
+            <AppStack gap="md">
+              <AppSkeleton shape="text" width={120} height={26} />
+              {Array.from({ length: 5 }).map((_, i) => (
+                <CategoryRowSkeleton key={i} />
+              ))}
+            </AppStack>
+          </AppCard>
         </AppGridItem>
         <AppGridItem span={{ xs: 1, lg: 7 }}>
-          <AppStack gap="sm">
-            <AppStack direction="row" gap="sm">
-              <AppSkeleton width={70} height={24} />
-              <AppSkeleton width={80} height={24} />
+          <AppCard>
+            <AppStack gap="sm">
+              <AppStack direction="row" gap="sm">
+                <AppSkeleton width={70} height={24} />
+                <AppSkeleton width={80} height={24} />
+              </AppStack>
+              <AppSkeleton height={320} />
             </AppStack>
-            <AppSkeleton height={320} />
-          </AppStack>
+          </AppCard>
         </AppGridItem>
       </AppGrid>
     </AppStack>

@@ -6,7 +6,7 @@ import type {
 } from '@/api/market'
 import { describe, expect, it } from 'vitest'
 
-import { formatFiledPercent, formatPercent } from '../format'
+import { formatFiledPercent, formatPercent } from '@/components/asset/format'
 import { holdingsByBucket, incomeTrend, navReading, navTrend, portfolioSlices } from './readings'
 
 const indicators = (

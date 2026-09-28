@@ -8,7 +8,7 @@ import {
   SectionTitle,
 } from '@/components/ui'
 import { useMemo } from 'react'
-import { formatCompactBRL, formatDate } from '../format'
+import { formatCompactBRL, formatDate } from '@/components/asset/format'
 import PublishedSeriesChart, { type PublishedSeriesMetric } from '../PublishedSeriesChart'
 import { statementLineLabel, type StatementGroup } from './labels'
 

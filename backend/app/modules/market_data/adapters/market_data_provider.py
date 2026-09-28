@@ -16,10 +16,11 @@ from app.infra.integrations.bcb_client import BCBClient
 from app.infra.integrations.brapi_client import BrapiClient
 from app.infra.integrations.crypto_compare_client import CryptoCompareClient
 from app.infra.integrations.mais_retorno_client import MaisRetornoClient
+from app.infra.integrations.msci_index_client import MSCI_EARLIEST_DATE, MsciIndexClient
 from app.infra.integrations.status_invest_client import StatusInvestClient
 from app.infra.integrations.tesouro_client import TesouroClient
 from app.lib.utils.df import extend_values_to_today
-from app.modules.market_data.domain.constants import ASSET_TYPE, FII_SEGMENT, SERIES
+from app.modules.market_data.domain.constants import ASSET_TYPE, FII_SEGMENT, MSCI_SERIES, SERIES
 from app.modules.market_data.domain.enums import EXCHANGE
 from app.modules.market_data.domain.fii import (
     FIIAllocation,
@@ -409,6 +410,7 @@ class MarketDataProvider:
     def __init__(self):
         self.brapi_client = BrapiClient()
         self.b3_index_client = B3IndexClient()
+        self.msci_index_client = MsciIndexClient()
         self.bcb_api_client = BCBClient()
         self.mais_retorno_client = MaisRetornoClient()
         self.crypto_compare_client = CryptoCompareClient()
@@ -435,6 +437,20 @@ class MarketDataProvider:
                 init_date=init_date,
             )
 
+        elif series.id in MSCI_SERIES:
+            history_df = await self._fetch_msci_index_history(
+                series.symbol,
+                init_date=init_date,
+            )
+
+        elif series.id == SERIES.GOLD:
+            # Same provider route as the indexes, but a new series: nothing
+            # stored under it was ever filled forward, so it starts without.
+            history_df = await self._fetch_market_index_history(
+                series.symbol,
+                init_date=init_date,
+            )
+
         else:
             history_df = await self._fetch_market_index_history(
                 series.symbol,
@@ -453,6 +469,8 @@ class MarketDataProvider:
             return 'bcb'
         if series.id == SERIES.IFIX:
             return 'b3'
+        if series.id in MSCI_SERIES:
+            return 'msci'
         return 'brapi'
 
     async def _fetch_b3_index_history(
@@ -496,6 +514,40 @@ class MarketDataProvider:
                         continue
                     points.append({'date': pd.Timestamp(point_date), 'close': close})
 
+        if not points:
+            return pd.DataFrame(columns=['date', 'close'])
+        return (
+            pd.DataFrame(points)
+            .drop_duplicates(subset=['date'])
+            .sort_values('date')
+            .reset_index(drop=True)
+        )
+
+    async def _fetch_msci_index_history(
+        self,
+        index_code: str,
+        *,
+        init_date: pd.Timestamp | date | None,
+    ) -> pd.DataFrame:
+        """Net total return levels in USD, only on the days MSCI calculated.
+
+        Not filled forward like the provider's indexes: a filled day would be
+        a close MSCI never published.
+        """
+        today = datetime.now(MARKET_TIMEZONE).date()
+        levels = await self.msci_index_client.get_daily_levels(
+            index_code=index_code,
+            start_date=pd.Timestamp(init_date).date() if init_date else MSCI_EARLIEST_DATE,
+            end_date=today,
+        )
+        points = [
+            {
+                'date': pd.Timestamp(str(level['calc_date'])),
+                'close': float(level['level_eod']),
+            }
+            for level in levels
+            if level.get('calc_date') and level.get('level_eod') is not None
+        ]
         if not points:
             return pd.DataFrame(columns=['date', 'close'])
         return (
@@ -1975,6 +2027,7 @@ class MarketDataProvider:
         await asyncio.gather(
             self.brapi_client.aclose(),
             self.b3_index_client.aclose(),
+            self.msci_index_client.aclose(),
             self.bcb_api_client.aclose(),
             self.mais_retorno_client.aclose(),
             self.crypto_compare_client.aclose(),

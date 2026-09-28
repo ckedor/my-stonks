@@ -60,7 +60,7 @@ export const CURRENCY_ROUTES = {
   list: `${MARKET_DATA}/currency`,
 } as const
 
-// There is no "index": IFIX, S&P500, IBOVESPA and NASDAQ are of the
+// There is no "index": IFIX, S&P500, IBOVESPA, NASDAQ and the MSCI indexes are of the
 // market_index *type*, while CDI is an interest rate and IPCA an inflation
 // rate. All of them are market-data series, and this is the only way to them.
 export const MARKET_DATA_SERIES_ROUTES = {
@@ -68,6 +68,13 @@ export const MARKET_DATA_SERIES_ROUTES = {
   options: `${MARKET_DATA}/series/options`,
   timeSeries: `${MARKET_DATA}/series/time_series`,
   history: (seriesId: number | string) => `${MARKET_DATA}/series/${seriesId}/history`,
+} as const
+
+// Where each series stands against its own history, computed server-side so
+// the screen never downloads decades of daily closes to rank one number.
+export const MARKET_READING_ROUTES = {
+  world: `${MARKET_DATA}/readings/world`,
+  etfs: `${MARKET_DATA}/readings/etfs`,
 } as const
 
 export const USD_BRL_ROUTES = {
@@ -97,6 +104,11 @@ export const FUND_REGISTRY_ROUTES = {
   series: (classId: number | string) => `${MARKET_DATA}/fund_registry/class/${classId}/series`,
 } as const
 
+export const ETF_ROUTES = {
+  profile: (assetId: number | string) => `${MARKET_DATA}/etf/${assetId}/profile`,
+  holdings: (assetId: number | string) => `${MARKET_DATA}/etf/${assetId}/holdings`,
+} as const
+
 export const INVESTMENT_FUND_ROUTES = {
   market: `${MARKET_DATA}/investment_fund/market`,
   profile: (assetId: number | string) => `${MARKET_DATA}/investment_fund/${assetId}/profile`,
@@ -120,6 +132,17 @@ export type MarketCatalogueKind =
 
 export const MARKET_CATALOGUE_ROUTES = {
   byKind: (kind: MarketCatalogueKind) => `${MARKET_DATA}/market/${kind}`,
+} as const
+
+// ---------------------------------------------------------------------------
+// Operations: what runs, when, and how it ended
+// ---------------------------------------------------------------------------
+const OPERATIONS = '/operations'
+
+export const OPERATIONS_ROUTES = {
+  dashboard: `${OPERATIONS}/dashboard`,
+  runs: `${OPERATIONS}/runs`,
+  runRoutine: (routine: string) => `${OPERATIONS}/routines/${routine}/run`,
 } as const
 
 export const DATA_INGESTION_ROUTES = {
@@ -146,7 +169,6 @@ export const PORTFOLIO_ROUTES = {
 } as const
 
 export const WEALTH_TIER_ROUTES = {
-  list: `${PORTFOLIO}/wealth_tier`,
   status: (portfolioId: number | string) => `${PORTFOLIO}/wealth_tier/status/${portfolioId}`,
 } as const
 

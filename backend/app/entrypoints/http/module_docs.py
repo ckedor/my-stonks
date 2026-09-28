@@ -24,6 +24,7 @@ MODULE_DOCS = (
     ModuleDocs('ai', 'Inteligência artificial', ('/ai',)),
     ModuleDocs('lab', 'Laboratório', ('/lab',)),
     ModuleDocs('market-data', 'Dados de mercado', ('/market_data',)),
+    ModuleDocs('operations', 'Operações', ('/operations',)),
     ModuleDocs('portfolio', 'Portfólio', ('/portfolio',)),
     ModuleDocs('research', 'Research', ('/research',)),
     ModuleDocs('system', 'Sistema', ('/hc',)),

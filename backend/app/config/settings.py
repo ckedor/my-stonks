@@ -27,6 +27,15 @@ class Settings(BaseSettings):
     # laço que regenera o mesmo artefato gastaria até alguém perceber.
     AI_DAILY_COST_LIMIT_USD: float = 5.0
 
+    # Quem pergunta, para a SEC: nome e e-mail de contato ("my-stonks voce@x.com").
+    # A política de acesso dela recusa com 403 quem não se identifica, então
+    # sem isto o cadastro de ETFs americanos falha — e diz por quê.
+    SEC_USER_AGENT: str = ''
+
+    # Opcional. Sem ela o OpenFIGI atende 10 ISINs por pedido, 25 pedidos por
+    # minuto; com ela (gratuita), 100 por pedido — só acelera a primeira leva.
+    OPENFIGI_API_KEY: str = ''
+
     CORS_ORIGINS: list[str] = [
         'https://my-stonks-front.onrender.com',
         'http://localhost:5173',

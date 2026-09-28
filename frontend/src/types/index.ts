@@ -299,8 +299,6 @@ export interface WealthTier {
   rank: number
   name: string
   threshold: number
-  /* O cenário do degrau não vem daqui: é arquivo do repositório, escolhido
-     pela posição na escala. Ver `constants/tierScenes`. */
 }
 
 /* A posição da carteira na escala, a partir de dois números propositalmente
@@ -317,9 +315,8 @@ export interface WealthTier {
    entradas vêm junto com a data porque é delas que a data tira o crédito. */
 /** Quanto entrou por mês, em média, na história inteira da carteira.
  *
- *  Vem pronto do backend, e não somado aqui: a tela de patrimônio e a jornada
- *  do herói mostram este mesmo número, e enquanto cada uma fazia a sua conta
- *  elas discordavam sob o mesmo rótulo. */
+ *  Vem pronto do backend, e não somado aqui: enquanto cada tela fazia a sua
+ *  conta, duas delas discordavam sob o mesmo rótulo. */
 export interface ContributionAverage {
   /** Na moeda pedida na rota. Zero quando não há história para medir. */
   monthly_average: number

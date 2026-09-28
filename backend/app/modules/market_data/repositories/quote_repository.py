@@ -43,6 +43,26 @@ class QuoteRepository(SQLAlchemyRepository):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_adjusted_prices(
+        self, asset_ids: list[int]
+    ) -> list[tuple[int, date, float, int | None]]:
+        """(asset id, date, price, currency id) for every quote with a price,
+        oldest first: the adjusted close, or the close where there is none.
+
+        Columns rather than mapped quotes: a reading over decades of daily
+        history for dozens of assets is a hundred thousand rows, and building
+        an object per row was most of the time the read took.
+        """
+        if not asset_ids:
+            return []
+        price = func.coalesce(Quote.adjusted_close, Quote.close)
+        result = await self.session.execute(
+            select(Quote.asset_id, Quote.date, price, Quote.currency_id)
+            .where(Quote.asset_id.in_(asset_ids), price.is_not(None))
+            .order_by(Quote.asset_id, Quote.date)
+        )
+        return [(row[0], row[1], float(row[2]), row[3]) for row in result]
+
     async def get_latest_quote_on_or_before(self, asset_id: int, on: date) -> Quote | None:
         """The last quote dated on or before ``on``: the price in effect that day.
 

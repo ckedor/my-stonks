@@ -10,7 +10,7 @@ import {
   formatMultiple,
   formatPercent,
   formatRatio,
-} from '../format'
+} from '@/components/asset/format'
 
 interface Stat {
   label: string

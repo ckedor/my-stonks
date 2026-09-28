@@ -301,7 +301,10 @@ class CvmRegistrySyncService:
             return
         report['assets']['updated'].append({
             'ticker': (asset.ticker or '').upper(),
-            'changes': changes,
+            # O relatório leva texto, como o das pessoas jurídicas: um
+            # `institution_id` cru é inteiro e o schema da resposta o recusa.
+            # O que se grava continua sendo o valor cru, logo abaixo.
+            'changes': _displayable(changes),
         })
         if not dry_run:
             await self._apply_asset_changes(uow, asset, changes)

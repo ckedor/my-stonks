@@ -3,8 +3,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends
 
+from app.config.settings import settings
 from app.infra.db.unit_of_work import UnitOfWork, get_uow
 from app.infra.integrations.cvm_client import CvmClient
+from app.infra.integrations.esma_client import EsmaClient
+from app.infra.integrations.gleif_client import GleifClient
+from app.infra.integrations.openfigi_client import OpenFigiClient
+from app.infra.integrations.sec_client import SecClient
 from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.service.asset_catalogue_sync_service import (
@@ -19,6 +24,13 @@ from app.modules.market_data.service.data_ingestion_service import (
     DataIngestionReadService,
     DataIngestionService,
 )
+from app.modules.market_data.service.etf_holdings_ingestion_service import (
+    EtfHoldingsIngestionService,
+)
+from app.modules.market_data.service.etf_registry_ingestion_service import (
+    EtfRegistryIngestionService,
+)
+from app.modules.market_data.service.etf_service import EtfReadService
 from app.modules.market_data.service.fii_service import FIIMarketReadService, FIIProfileReadService
 from app.modules.market_data.service.fund_registry_ingestion_service import (
     FundRegistryIngestionService,
@@ -42,6 +54,7 @@ from app.modules.market_data.service.market_data_series_ingestion_service import
     MarketDataSeriesIngestionService,
 )
 from app.modules.market_data.service.market_data_service import MarketDataReadService
+from app.modules.market_data.service.market_reading_service import MarketReadingService
 from app.modules.market_data.service.quote_ingestion_service import QuoteIngestionService
 from app.modules.market_data.service.quote_service import (
     AssetQuoteHistoryService,
@@ -80,12 +93,25 @@ def get_market_data_read_service(
     )
 
 
+def get_market_reading_service(uow: UnitOfWork = Depends(get_uow)) -> MarketReadingService:
+    return MarketReadingService(uow=uow, usd_brl=build_usd_brl_read_service())
+
+
+def build_market_reading_service() -> MarketReadingService:
+    """The same service for a worker task, which has no request to open a UoW."""
+    return MarketReadingService(uow=UnitOfWork(), usd_brl=build_usd_brl_read_service())
+
+
 def get_usd_brl_read_service(uow: UnitOfWork = Depends(get_uow)) -> UsdBrlReadService:
     return build_usd_brl_read_service(uow)
 
 
 def get_asset_service(uow: UnitOfWork = Depends(get_uow)) -> AssetService:
     return AssetService(uow=uow, cache=RedisService())
+
+
+def get_etf_read_service(uow: UnitOfWork = Depends(get_uow)) -> EtfReadService:
+    return EtfReadService(uow)
 
 
 def get_fund_registry_read_service(
@@ -360,6 +386,35 @@ async def fund_registry_ingestion_runner_context() -> AsyncIterator[FundRegistry
         uow_factory=UnitOfWork,
         ingestion_service=build_data_ingestion_service(),
         client=CvmClient(),
+    )
+    try:
+        yield service
+    finally:
+        await service.aclose()
+
+
+@asynccontextmanager
+async def etf_registry_ingestion_runner_context() -> AsyncIterator[EtfRegistryIngestionService]:
+    service = EtfRegistryIngestionService(
+        uow_factory=UnitOfWork,
+        ingestion_service=build_data_ingestion_service(),
+        sec=SecClient(settings.SEC_USER_AGENT),
+        esma=EsmaClient(),
+        gleif=GleifClient(),
+    )
+    try:
+        yield service
+    finally:
+        await service.aclose()
+
+
+@asynccontextmanager
+async def etf_holdings_ingestion_runner_context() -> AsyncIterator[EtfHoldingsIngestionService]:
+    service = EtfHoldingsIngestionService(
+        uow_factory=UnitOfWork,
+        ingestion_service=build_data_ingestion_service(),
+        sec=SecClient(settings.SEC_USER_AGENT),
+        figi=OpenFigiClient(settings.OPENFIGI_API_KEY),
     )
     try:
         yield service

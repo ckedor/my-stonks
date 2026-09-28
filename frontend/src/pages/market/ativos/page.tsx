@@ -1,313 +1,157 @@
+import { useMemo } from 'react'
+import type { MarketCatalogueKind } from '@/api/market'
+import { AppPageHeader, AppStack, AppText, SectionLabel, SectionTitle } from '@/components/ui'
 import {
-  AppEmptyState,
-  AppGrid,
-  AppPageHeader,
-  AppPageHeaderSkeleton,
-  AppPagination,
-  AppSearchField,
-  AppSelect,
-  AppSkeleton,
-  AppStack,
-  AppStackItem,
-  AppText,
-  AppToggleGroup,
-} from '@/components/ui'
-import { ASSET_ROUTES } from '@/constants/routes'
-import api from '@/lib/api'
-import { useFavoritesStore } from '@/stores/favorites'
-import { useMarketStore } from '@/stores/market'
-import { useTradeFormStore } from '@/stores/trade-form'
-import ViewListIcon from '@mui/icons-material/ViewList'
-import ViewModuleIcon from '@mui/icons-material/ViewModule'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import AssetCard from './AssetCard'
-import AssetListView from './AssetListView'
-import { useMarketQuotes } from './useMarketQuotes'
+  cleanCatalogues,
+  etfAsMarketRow,
+  financialVolume,
+  fundsByTicker,
+  largestBy,
+  mostTraded,
+  onePerCompany,
+  sectorLabel,
+} from '@/components/market-catalogue/market-highlights'
+import { compactMoney, money, signedFraction } from '@/components/market-catalogue/format'
+import { useFIIMarket, useMarketCatalogues, useReferenceEtfReadings } from '@/queries/market'
+import AssetsSkeleton from './AssetsSkeleton'
+import CategoryLeaders, { type LeaderList } from './CategoryLeaders'
+import MarketScreener from './MarketScreener'
+import RecentAssets from './RecentAssets'
 
-const VIEW_OPTIONS = [
-  { value: 'card' as const, label: 'Cards', icon: <ViewModuleIcon fontSize="small" /> },
-  { value: 'list' as const, label: 'Lista', icon: <ViewListIcon fontSize="small" /> },
-]
+/** As classes da B3 e a cripto: o que a tela lê de cara. As de fora da B3
+ *  são o cadastro inteiro e quase sem preço, e só chegam quando alguém abre
+ *  a aba delas no screener. */
+const HIGHLIGHT_KINDS: MarketCatalogueKind[] = ['stock', 'fii', 'etf', 'bdr', 'crypto']
 
-/** Opção que desliga o filtro. Vazio é a ausência de recorte, e é o valor com
- *  que o estado nasce. */
-const ALL = ''
+const LEADERS = 5
 
-const ITEMS_PER_PAGE = 24
-/* A chave tem versão porque o padrão mudou: quem já visitou a tela tinha
-   'card' gravado e continuaria vendo os cartões para sempre, sem nunca ver a
-   lista que virou o padrão. Uma chave nova devolve a escolha ao padrão uma
-   vez, e a partir daí ela volta a ser de quem usa. */
-const VIEW_MODE_KEY = 'my-stonks:market:view-mode:v2'
+const thousands = (value: number) =>
+  value >= 1000
+    ? `${(value / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} mil`
+    : value.toLocaleString('pt-BR')
 
-/* A lista é o padrão, e não os cartões: o catálogo tem milhares de papéis e
-   quem chega aqui está procurando um, não passeando. Os cartões continuam a um
-   clique, para quando a navegação é de fato exploratória. */
-const DEFAULT_VIEW_MODE: ViewMode = 'list'
-
-type ViewMode = 'card' | 'list'
-
+/** Ativos: o que você mais abre primeiro, depois os principais de cada
+ *  categoria, e o mercado inteiro para procurar no screener, uma aba por
+ *  classe. A carteira não entra: ela tem a sua parte do app. */
 export default function MarketAtivosPage() {
-  const navigate = useNavigate()
-  const { openTradeForm } = useTradeFormStore()
-
-  const { assets, assetTypes, loading: marketLoading } = useMarketStore()
-  const [error, setError] = useState<string | null>(null)
-
-  const assetsLoading = marketLoading && assets.length === 0
-
-  // Filters
-  const [search, setSearch] = useState('')
-  const [selectedType, setSelectedType] = useState<number | ''>('')
-  const [selectedClass, setSelectedClass] = useState<number | ''>('')
-  const [page, setPage] = useState(1)
-
-  // Remembered so the browsing style survives a reload.
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    () => (localStorage.getItem(VIEW_MODE_KEY) as ViewMode | null) ?? DEFAULT_VIEW_MODE,
+  const { catalogues, loading } = useMarketCatalogues(HIGHLIGHT_KINDS)
+  const { funds, loading: fundsLoading } = useFIIMarket()
+  const { etfs, loading: etfsLoading } = useReferenceEtfReadings()
+  const market = useMemo(
+    () => cleanCatalogues(catalogues, new Set(funds.map((fund) => fund.ticker))),
+    [catalogues, funds]
   )
-  useEffect(() => {
-    localStorage.setItem(VIEW_MODE_KEY, viewMode)
-  }, [viewMode])
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const { assets: cachedAssets, setAssets, setAssetTypes, setLoading } =
-        useMarketStore.getState()
-      const hasCachedAssets = cachedAssets.length > 0
-      // Only show loading spinner if we have no cached data
-      if (!hasCachedAssets) setLoading(true)
-      setError(null)
-      try {
-        const [assetsRes, typesRes] = await Promise.all([
-          api.get(ASSET_ROUTES.list),
-          api.get(ASSET_ROUTES.type),
-        ])
-        setAssets(assetsRes.data)
-        setAssetTypes(typesRes.data)
-      } catch (err) {
-        console.error('Erro ao carregar ativos', err)
-        if (!hasCachedAssets) setError('Erro ao carregar ativos do mercado.')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [])
-
-  const assetClasses = useMemo(() => {
-    const classMap = new Map<number, { id: number; name: string }>()
-    assetTypes.forEach((type) => {
-      if (type.asset_class && !classMap.has(type.asset_class.id)) {
-        classMap.set(type.asset_class.id, type.asset_class)
-      }
-    })
-    return Array.from(classMap.values())
-  }, [assetTypes])
-
-  /* A espera é uma só, e vai até a última peça chegar. O cadastro responde
-     rápido e o catálogo do provedor não; mostrar a lista assim que o cadastro
-     chega fazia a tela nascer sem logo, sem preço e sem variação, e depois se
-     repintar linha a linha. Uma tela que se completa sozinha na frente de quem
-     olha lê pior do que uma reserva que espera. */
-  const { byTicker: quotes, loading: quotesLoading } = useMarketQuotes()
-  const loading = assetsLoading || quotesLoading
-  const { favorites } = useFavoritesStore()
-
-  const quoteOf = useCallback(
-    (asset: { ticker: string | null }) =>
-      asset.ticker ? quotes.get(asset.ticker.toUpperCase()) : undefined,
-    [quotes],
+  /* Tudo o que tem preço de hoje, para os acessados: a bolsa, a cripto e os
+     ETFs de fora que o app acompanha. */
+  const everything = useMemo(
+    () => [
+      ...HIGHLIGHT_KINDS.flatMap((kind) => market.get(kind) ?? []),
+      ...etfs.map(etfAsMarketRow),
+    ],
+    [market, etfs]
   )
 
-  const filteredAssets = useMemo(() => {
-    return assets.filter((asset) => {
-      if (search) {
-        const searchLower = search.toLowerCase()
-        const matchesTicker = asset.ticker?.toLowerCase().includes(searchLower)
-        const matchesName = asset.name?.toLowerCase().includes(searchLower)
-        if (!matchesTicker && !matchesName) return false
-      }
+  const leaders = useMemo<LeaderList[]>(() => {
+    const assetsOf = (kind: MarketCatalogueKind) => market.get(kind) ?? []
+    const fundOf = fundsByTicker(funds)
+    const investors = (ticker: string) => fundOf.get(ticker)?.investors
+    return [
+      {
+        label: 'ETFS MUNDIAIS',
+        caption: 'Maior crescimento anual nos últimos 10 anos, com dividendos, em dólar',
+        rows: largestBy(etfs, (etf) => etf.reading.ten_year_annualized_return, LEADERS).map(
+          (etf) => ({
+            asset: etfAsMarketRow(etf),
+            metric: `${signedFraction(etf.reading.ten_year_annualized_return)} a.a.`,
+            detail: 'em 10 anos',
+          })
+        ),
+      },
+      {
+        label: 'AÇÕES DO BRASIL',
+        caption: 'Maior valor de mercado, uma linha por empresa',
+        rows: largestBy(onePerCompany(assetsOf('stock')), (asset) => asset.market_cap, LEADERS).map(
+          (asset) => ({
+            asset,
+            metric: compactMoney(asset.market_cap),
+            detail: sectorLabel(asset.sector),
+          })
+        ),
+      },
+      {
+        label: 'AÇÕES DO BRASIL MAIS NEGOCIADAS',
+        caption: 'Maior valor negociado hoje na B3, só ações',
+        rows: mostTraded(assetsOf('stock'), { count: LEADERS }).map((asset) => ({
+          asset,
+          metric: compactMoney(financialVolume(asset)),
+          detail: 'negociados hoje',
+        })),
+      },
+      {
+        label: 'FIIS',
+        caption: 'Mais cotistas',
+        rows: largestBy(assetsOf('fii'), (asset) => investors(asset.ticker), LEADERS).map(
+          (asset) => ({
+            asset,
+            metric: `${thousands(investors(asset.ticker)!)} cotistas`,
+            detail: fundOf.get(asset.ticker)?.segment ?? undefined,
+          })
+        ),
+      },
+      {
+        label: 'ETFS DA B3',
+        caption: 'Maior valor negociado hoje',
+        rows: mostTraded(assetsOf('etf'), { count: LEADERS }).map((asset) => ({
+          asset,
+          metric: compactMoney(financialVolume(asset)),
+          detail: money(asset.price, asset.currency),
+        })),
+      },
+      {
+        label: 'CRIPTO',
+        caption: 'Maior valor negociado nas últimas 24 horas',
+        rows: mostTraded(assetsOf('crypto'), { crypto: true, count: LEADERS }).map((asset) => ({
+          asset,
+          metric: compactMoney(financialVolume(asset, true)),
+          detail: money(asset.price, asset.currency),
+        })),
+      },
+    ]
+  }, [market, funds, etfs])
 
-      if (selectedType && asset.asset_type_id !== selectedType) return false
-
-      if (selectedClass && asset.asset_type?.asset_class_id !== selectedClass) return false
-
-      return true
-    })
-  }, [assets, search, selectedType, selectedClass])
-
-  /* Quem você mais abre vem primeiro; o resto vem em ordem de nome.
-   *
-   * A ordem era a do volume negociado, e não funcionava por dois motivos. O
-   * primeiro é que ela não é sua: o papel mais líquido da B3 não é o que você
-   * veio procurar, e a tela abria numa lista de tickers desconhecidos. O
-   * segundo é que o volume vem de cinco catálogos que respondem em tempos
-   * diferentes, então a lista reordenava a cada resposta — e clicar numa linha
-   * abria a que tinha acabado de tomar o lugar dela.
-   *
-   * O contador de visitas resolve os dois. Ele já existe, é seu, e está pronto
-   * antes da tela: vem persistido do acesso anterior, não de uma requisição
-   * que ainda vai chegar. Depois dos visitados a ordem é a do nome, que é
-   * estável e não promete relevância nenhuma — é onde a busca assume. */
-  const visitRank = useMemo(() => {
-    const rank = new Map<number, number>()
-    favorites.forEach((favorite, index) => rank.set(favorite.id, index))
-    return rank
-  }, [favorites])
-
-  const sortedAssets = useMemo(() => {
-    return [...filteredAssets].sort((a, b) => {
-      const rankA = visitRank.get(a.id)
-      const rankB = visitRank.get(b.id)
-      if (rankA != null && rankB != null) return rankA - rankB
-      if (rankA != null) return -1
-      if (rankB != null) return 1
-      return a.name.localeCompare(b.name)
-    })
-  }, [filteredAssets, visitRank])
-
-  const totalPages = Math.ceil(sortedAssets.length / ITEMS_PER_PAGE)
-  const paginatedAssets = useMemo(() => {
-    const start = (page - 1) * ITEMS_PER_PAGE
-    return sortedAssets.slice(start, start + ITEMS_PER_PAGE)
-  }, [sortedAssets, page])
-
-  useEffect(() => {
-    setPage(1)
-  }, [search, selectedType, selectedClass])
-
-  const filteredTypes = useMemo(() => {
-    if (!selectedClass) return assetTypes
-    return assetTypes.filter((t) => t.asset_class_id === selectedClass)
-  }, [assetTypes, selectedClass])
-
-  if (loading) {
-    return (
-      <AppStack gap="lg">
-        <AppPageHeaderSkeleton titleWidth={120} actions={4} />
-        <AppSkeleton height={140} />
-        <AppGrid cols={{ xs: 1, sm: 2, md: 3, lg: 4 }} gap="md">
-          {Array.from({ length: 12 }).map((_, index) => (
-            <AppSkeleton key={index} height={180} />
-          ))}
-        </AppGrid>
-      </AppStack>
-    )
-  }
-
-  if (error) {
-    return <AppText tone="danger">{error}</AppText>
-  }
+  if (loading || fundsLoading || etfsLoading) return <AssetsSkeleton />
 
   return (
-    <AppStack gap="lg">
+    <AppStack gap="xl">
       <AppPageHeader
         title="Ativos"
-        breadcrumbs={[
-          { label: 'Mercado', href: '/market/overview' },
-          { label: 'Ativos' },
-        ]}
-        actions={
-          <>
-            <AppStackItem minWidth={280}>
-            <AppSearchField
-              label="Buscar ativo"
-              hideLabel
-              icon
-              placeholder="Buscar por ticker ou nome..."
-              value={search}
-              onChange={setSearch}
-            />
-          </AppStackItem>
-
-          <AppSelect
-            label="Classe"
-            options={[
-              { value: ALL, label: 'Todas' },
-              ...assetClasses.map((cls) => ({ value: String(cls.id), label: cls.name })),
-            ]}
-            value={String(selectedClass)}
-            onChange={(value) => {
-              setSelectedClass(value === ALL ? ALL : Number(value))
-              setSelectedType(ALL)
-            }}
-          />
-
-          <AppSelect
-            label="Tipo"
-            options={[
-              { value: ALL, label: 'Todos' },
-              ...filteredTypes.map((type) => ({ value: String(type.id), label: type.short_name })),
-            ]}
-            value={String(selectedType)}
-            onChange={(value) => setSelectedType(value === ALL ? ALL : Number(value))}
-          />
-
-          <AppToggleGroup
-            label="Modo de exibição"
-            options={VIEW_OPTIONS}
-            value={viewMode}
-            onChange={setViewMode}
-          />
-          </>
-        }
+        breadcrumbs={[{ label: 'Mercado', href: '/market/overview' }, { label: 'Ativos' }]}
+        description="Os ativos que você mais abre, os principais de cada categoria e todos os papéis para explorar."
       />
 
-      {viewMode === 'card' ? (
-        <AppGrid cols={{ xs: 1, sm: 2, md: 3, lg: 4 }} gap="md">
-          {paginatedAssets.map((asset) => (
-            <AssetCard
-              key={asset.id}
-              asset={asset}
-              quote={quoteOf(asset)}
-              onOpen={() => navigate(`/market/asset/${asset.id}`)}
-              onBuy={() =>
-                openTradeForm({
-                  id: asset.id,
-                  ticker: asset.ticker,
-                  name: asset.name,
-                  asset_type_id: asset.asset_type_id,
-                })
-              }
-            />
-          ))}
-        </AppGrid>
-      ) : (
-        <AssetListView
-          assets={sortedAssets}
-          pageSize={ITEMS_PER_PAGE}
-          quoteOf={quoteOf}
-          onOpen={(asset) => navigate(`/market/asset/${asset.id}`)}
-          onBuy={(asset) =>
-            openTradeForm({
-              id: asset.id,
-              // Assets without a ticker (fixed income) are still tradable.
-              ticker: asset.ticker ?? '',
-              name: asset.name,
-              asset_type_id: asset.asset_type_id,
-            })
-          }
-        />
-      )}
+      <RecentAssets market={everything} />
 
-      {viewMode === 'card' && totalPages > 1 && (
-        <AppStack direction="row" justify="center" align="center" gap="md">
-          <AppText variant="bodySmall" tone="secondary">
-            {filteredAssets.length} ativos
+      <AppStack gap="md">
+        <AppStack gap="xs">
+          <SectionLabel>OS PRINCIPAIS</SectionLabel>
+          <SectionTitle>Os maiores de cada categoria</SectionTitle>
+          <AppText variant="caption" tone="secondary">
+            Cada categoria no critério que faz sentido para ela; o card diz qual.
           </AppText>
-          <AppPagination count={totalPages} page={page} onChange={setPage} />
         </AppStack>
-      )}
+        <CategoryLeaders lists={leaders} />
+      </AppStack>
 
-      {filteredAssets.length === 0 && (
-        <AppEmptyState
-          size="section"
-          title="Nenhum ativo encontrado"
-          description="Tente ajustar os filtros de busca"
-        />
-      )}
+      <AppStack gap="md">
+        <AppStack gap="xs">
+          <SectionLabel>EXPLORAR</SectionLabel>
+          <SectionTitle>Todos os ativos, por classe</SectionTitle>
+          <AppText variant="caption" tone="secondary">
+            Qualquer coluna reordena.
+          </AppText>
+        </AppStack>
+        <MarketScreener />
+      </AppStack>
     </AppStack>
   )
 }

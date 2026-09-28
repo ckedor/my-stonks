@@ -87,11 +87,12 @@ export default function MarketAssetPage() {
 
   return (
     <AppStack gap="md">
-      <AppBreadcrumbs
-        items={[{ label: 'Mercado', href: '/market/assets' }, { label: ticker ?? '' }]}
-      />
-
       <AssetHeader
+        breadcrumbs={
+          <AppBreadcrumbs
+            items={[{ label: 'Mercado', href: '/market/assets' }, { label: ticker ?? '' }]}
+          />
+        }
         ticker={ticker ?? ''}
         name={asset?.name}
         typeShortName={asset?.asset_type?.short_name}

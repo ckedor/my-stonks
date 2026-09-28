@@ -12,7 +12,7 @@ import {
 } from '@/components/ui'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
-import { formatBRLPerShare, formatDate, formatMonth, formatMultiple } from '../format'
+import { formatBRLPerShare, formatDate, formatMonth, formatMultiple } from '@/components/asset/format'
 // A mesma regra que a faixa de decisão usa para separar JCP de dividendo: duas
 // leituras do que tem retenção na fonte divergiriam no dia em que o provedor
 // mudasse o rótulo.

@@ -69,9 +69,10 @@ class FII_SEGMENT(IntEnum):
 class SERIES(IntEnum):
     """The registered market-data series, by id.
 
-    Not `INDEX`: only IFIX, S&P500, IBOVESPA and NASDAQ are of the
-    `market_index` type. CDI is an interest rate and IPCA an inflation rate,
-    and calling either an index says something the data does not.
+    Not `INDEX`: only IFIX, S&P500, IBOVESPA, NASDAQ and the MSCI indexes are
+    of the `market_index` type. CDI is an interest rate, IPCA an inflation rate
+    and gold a commodity price, and calling any of them an index says something
+    the data does not.
 
     No USDBRL member: the exchange rate is not a market-data series, it has
     its own table. See app.modules.market_data.domain.usd_brl.
@@ -83,3 +84,21 @@ class SERIES(IntEnum):
     SP500 = 5
     IBOVESPA = 6
     NASDAQ = 7
+    MSCI_WORLD = 8
+    MSCI_ACWI = 9
+    MSCI_EM = 10
+    MSCI_USA = 11
+    MSCI_ACWI_EX_USA = 12
+    GOLD = 13
+
+
+#: The MSCI indexes, all stored as net total return in USD: dividends matter
+#: over decades, and a price-only index would lose to the CDI it is compared
+#: with by the yield alone. Their symbol is MSCI's own index code.
+MSCI_SERIES = frozenset({
+    SERIES.MSCI_WORLD,
+    SERIES.MSCI_ACWI,
+    SERIES.MSCI_EM,
+    SERIES.MSCI_USA,
+    SERIES.MSCI_ACWI_EX_USA,
+})

@@ -13,7 +13,6 @@ import {
   AppMetric,
   AppNumberField,
   AppPageHeader,
-  AppSelect,
   AppSkeleton,
   AppSnackbar,
   AppStack,
@@ -31,7 +30,7 @@ import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
 import PerformanceBarChart, { type DistributionMetric } from '@/pages/portfolio/asset/PerformanceBarChart'
 import PortfolioHeatMap from '@/pages/portfolio/asset/PortfolioHeatMap'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 /* Duas leituras, e não uma pilha: o mapa responde "como a carteira ficou" e
@@ -53,20 +52,12 @@ const METRIC_OPTIONS: AppToggleGroupOption<DistributionMetric>[] = [
   { value: 'profit', label: 'Lucro' },
 ]
 
-/* No 3D a cor é opcional: por padrão os prédios têm cor de prédio, e a
-   métrica só pinta a cidade quando alguém a pede. */
-const CITY_COLOR_OPTIONS = [
-  { value: 'building', label: 'Prédios' },
-  ...METRIC_OPTIONS.map(option => ({ value: option.value, label: option.label })),
-]
-
 /** Largura da coluna de barras ao lado do mapa. */
 const BAR_COLUMN_WIDTH = 360
 
 /** Altura do mapa. Fixa, e não a tela inteira: os alvos vêm logo abaixo, e um
  *  mapa que toma a dobra sozinho esconde a metade que responde "e daí?". */
 const MAP_HEIGHT = 620
-const CITY_HEIGHT = 'max(520px, calc(100dvh - 300px))'
 
 /** Onde o dinheiro está, e onde ele deveria estar.
  *
@@ -81,9 +72,7 @@ export default function DistributionPage() {
   const portfolioId = selectedPortfolio?.id
 
   const { format: fmt, symbol: currencySymbol, currency } = useCurrency()
-  const [mapMode, setMapMode] = useState<'2d' | '3d'>('3d')
   const [metric, setMetric] = useState<DistributionMetric>('twelve_months_return')
-  const [cityColor, setCityColor] = useState<DistributionMetric | 'building'>('building')
   const [tab, setTab] = useState<DistributionTab>('map')
 
   const { data: positions } = useQuery<any[]>({
@@ -94,26 +83,11 @@ export default function DistributionPage() {
     ),
     enabled: !!portfolioId,
   })
-  /* A cidade 3D mede patrimônio em reais, qualquer que seja a moeda exibida:
-     em dólar ela não pode encolher. Fora do real, busca-se também a posição
-     em reais, só para dar tamanho aos prédios. */
-  const { data: positionsInReais } = useQuery<any[]>({
-    queryKey: [portfolioId ? `distribution:positions:${portfolioId}:BRL` : null],
-    queryFn: useCallback(
-      () => api.get(POSITION_ROUTES.byPortfolio(portfolioId!), { params: { currency: 'BRL' } }).then(r => r.data),
-      [portfolioId],
-    ),
-    enabled: !!portfolioId && currency !== 'BRL' && mapMode === '3d',
-  })
-  const valueInReais = useMemo(
-    () => positionsInReais ? new Map(positionsInReais.map(position => [position.asset_id, position.value])) : undefined,
-    [positionsInReais],
-  )
 
   const rebalancing = useRebalancing(portfolioId)
   const { view, simulating, contribution, categoryTargetSum } = rebalancing
 
-  const loading = !!portfolioId && (!positions || (mapMode === '3d' && currency !== 'BRL' && !positionsInReais))
+  const loading = !!portfolioId && !positions
 
   const handleAssetSelect = useCallback((assetId: number) => {
     navigate(`/portfolio/asset/${assetId}`)
@@ -130,29 +104,12 @@ export default function DistributionPage() {
         actions={
           /* A métrica é do mapa: fora dele, o controle não tem o que mudar. */
           tab === 'map' ? (
-            <AppStack direction="row" gap="sm" wrap>
-              <AppToggleGroup
-                label="Visualização"
-                options={[{ value: '2d' as const, label: '2D' }, { value: '3d' as const, label: '3D' }]}
-                value={mapMode}
-                onChange={setMapMode}
-              />
-              {mapMode === '3d' ? (
-                <AppSelect
-                  label="Cor"
-                  options={CITY_COLOR_OPTIONS}
-                  value={cityColor}
-                  onChange={value => setCityColor(value as DistributionMetric | 'building')}
-                />
-              ) : (
-                <AppToggleGroup
-                  label="Métrica"
-                  options={METRIC_OPTIONS}
-                  value={metric}
-                  onChange={setMetric}
-                />
-              )}
-            </AppStack>
+            <AppToggleGroup
+              label="Métrica"
+              options={METRIC_OPTIONS}
+              value={metric}
+              onChange={setMetric}
+            />
           ) : undefined
         }
       />
@@ -162,42 +119,31 @@ export default function DistributionPage() {
       {tab === 'map' && (loading ? (
         <AppStack direction="row" gap="md" collapseBelow="md">
           <AppStackItem>
-            <AppSkeleton height={mapMode === '3d' ? CITY_HEIGHT : MAP_HEIGHT} />
+            <AppSkeleton height={MAP_HEIGHT} />
           </AppStackItem>
-          {mapMode === '3d' ? <AppStackItem width={300}>
-            <AppCard>
-              <AppStack gap="md">
-                <AppSkeleton height={32} />
-                <AppSkeleton height={56} />
-                <AppSkeleton height={32} />
-                <AppSkeleton height={180} />
-              </AppStack>
-            </AppCard>
-          </AppStackItem> : <AppStackItem width={BAR_COLUMN_WIDTH} offsetTop="xxl">
+          <AppStackItem width={BAR_COLUMN_WIDTH} offsetTop="xxl">
             <AppSkeleton height={520} />
-          </AppStackItem>}
+          </AppStackItem>
         </AppStack>
       ) : (
         <AppStack direction="row" gap="md" collapseBelow="md">
           <AppStackItem>
             <PortfolioHeatMap
-              mode={mapMode}
               positions={positions ?? []}
-              metric={mapMode === '3d' ? (cityColor === 'building' ? null : cityColor) : metric}
-              valueInReais={currency === 'BRL' ? undefined : valueInReais}
+              metric={metric}
               onAssetSelect={handleAssetSelect}
-              height={mapMode === '3d' ? CITY_HEIGHT : MAP_HEIGHT}
+              height={MAP_HEIGHT}
             />
           </AppStackItem>
           {/* Empurrada para baixo para começar na mesma linha do primeiro
               bloco do mapa, que reserva o topo para o nome da categoria. */}
-          {mapMode === '2d' && <AppStackItem width={BAR_COLUMN_WIDTH} offsetTop="xxl">
+          <AppStackItem width={BAR_COLUMN_WIDTH} offsetTop="xxl">
             <PerformanceBarChart
               positions={positions ?? []}
               metric={metric}
               onAssetSelect={handleAssetSelect}
             />
-          </AppStackItem>}
+          </AppStackItem>
         </AppStack>
       ))}
 

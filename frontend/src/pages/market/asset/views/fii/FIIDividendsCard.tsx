@@ -3,7 +3,7 @@ import AppBarChart from '@/components/charts/app-bar-chart'
 import { AppCard, AppChartArea, AppStack, AppText, SectionTitle } from '@/components/ui'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
-import { formatBRL, formatDate, formatMonth } from '../format'
+import { formatBRL, formatDate, formatMonth } from '@/components/asset/format'
 // A mesma regra que a faixa de decisão usa para achar o último rendimento:
 // duas leituras do que é renda e o que é devolução de principal divergiriam
 // no dia em que o provedor mudasse o rótulo.

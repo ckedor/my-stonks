@@ -159,6 +159,21 @@ Provider calls use adapters/integrations behind the service layer.
   reuses an existing priced unit. FIDCs require a confirmed series. Changes to
   existing series/aliases and ingestion operations remain admin-only.
 
+## Operations
+
+- A job the worker runs belongs to a routine in
+  `app/modules/operations/domain/routines.py`: a new scheduler entry or a new
+  task goes there in the same change, or
+  `tests/modules/operations/test_routines_and_schedule.py` fails. The routine
+  is what the admin's integrations dashboard lists.
+- Tasks do not record their own runs. `celery_async_task` writes
+  `operations.task_run` around every task; a task that also kept a run table
+  of its own would be two records to keep in agreement.
+- Times live in `beat_schedule` only. The dashboard derives "toda terça às
+  09:00" and the next runs from the same entry, in `WORKER_TIMEZONE`; never
+  write a schedule a second time in the frontend or in a description.
+- No module imports `app.modules.operations`; it watches the others.
+
 ## Verificação
 
 Rode o teste mais próximo do que mudou, e `ruff check` nos arquivos tocados.

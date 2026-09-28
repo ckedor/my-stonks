@@ -14,7 +14,7 @@ import {
   formatCompactBRL,
   formatPercent,
   formatRatio,
-} from '../format'
+} from '@/components/asset/format'
 
 interface Stat {
   label: string

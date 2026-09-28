@@ -148,3 +148,37 @@ forbidden_modules =
     app.modules.users.repositories
     app.modules.*.infra
 allow_indirect_imports = True
+
+[importlinter:contract:operations-module-boundary]
+name = Operations does not import repositories from other modules
+type = forbidden
+source_modules =
+    app.modules.operations.api
+    app.modules.operations.domain
+    app.modules.operations.service
+forbidden_modules =
+    app.modules.ai.repositories
+    app.modules.lab.repositories
+    app.modules.market_data.repositories
+    app.modules.portfolio.repositories
+    app.modules.research.repositories
+    app.modules.users.repositories
+    app.modules.*.infra
+allow_indirect_imports = True
+
+# Operations watches the other modules; none of them may depend on it. The run
+# record is written by the task runner, so no task, service or route has to
+# know that operations exists.
+[importlinter:contract:operations-is-a-leaf]
+name = No module depends on operations
+type = forbidden
+source_modules =
+    app.modules.ai
+    app.modules.lab
+    app.modules.market_data
+    app.modules.portfolio
+    app.modules.research
+    app.modules.users
+forbidden_modules =
+    app.modules.operations
+allow_indirect_imports = True

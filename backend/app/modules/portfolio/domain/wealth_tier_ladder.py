@@ -1,18 +1,12 @@
 """A escala de patentes: fixa, em código, e não em tabela.
 
-Ela é arte antes de ser dado. Cada degrau tem um cenário desenhado à mão em
-`frontend/src/assets/tiers`, e o cenário só existe porque o degrau existe: a
-imagem 17 é do Mercenário e de mais ninguém. Uma tabela editável fazia parecer
-que a escala era configurável, quando na prática renomear ou reordenar um
-degrau desalinharia a galeria inteira — a linha e o arquivo teriam de mudar
-juntos, e só um dos dois estava versionado.
+Os degraus são desenho do produto, e não configuração: nome, preço e ordem
+foram escolhidos juntos, como uma progressão. Uma tabela editável fazia parecer
+que a escala era configurável. Fixa em código, ela muda por commit — não há
+CRUD, nem tabela, nem migração de conteúdo: acrescentar um degrau é acrescentar
+uma linha aqui.
 
-Fixa em código, os dois andam no mesmo commit. É por isso que não há CRUD, nem
-tabela, nem migração de conteúdo: acrescentar um degrau é acrescentar uma
-linha aqui e o arquivo ao lado dela.
-
-A ordem da tupla é a escala, e a posição de cada degrau nela — contada de zero
-— é o que liga o degrau ao seu cenário no front.
+A ordem da tupla é a escala.
 """
 
 from dataclasses import dataclass
@@ -46,8 +40,7 @@ def _ladder(*rungs: tuple[str, float]) -> tuple[WealthTier, ...]:
 #: quem poupa e a escala precisa devolver esse movimento; do meio em diante os
 #: saltos crescem, porque de um milhão para o seguinte o que muda é o tempo, e
 #: não o esforço. Os títulos acompanham: ofício, aventura, nobreza, reino,
-#: mito — cada bloco de degraus é um capítulo, e a virada de bloco é onde o
-#: cenário muda de mundo.
+#: mito — cada bloco de degraus é um capítulo.
 LADDER: tuple[WealthTier, ...] = _ladder(
     # ── Miséria: sobreviver ──────────────────────────────────────
     ('Miserável', 0.0),

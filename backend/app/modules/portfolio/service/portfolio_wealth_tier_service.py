@@ -20,7 +20,7 @@ class PortfolioWealthTierService:
     """A escala é fixa, em código: ver `domain.wealth_tier_ladder`.
 
     Nada aqui edita degraus, porque não há o que editar — o título e o preço de
-    cada um andam no mesmo commit que o cenário desenhado para ele. O serviço
+    cada um mudam por commit. O serviço
     responde a uma pergunta só: onde esta carteira está na escala, e quando ela
     chega ao degrau seguinte.
     """

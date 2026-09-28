@@ -63,7 +63,7 @@ export default function AdminMarketDataSeriesPage() {
 
   return (
     <AppStack gap="lg">
-      <PageTitle>Séries</PageTitle>
+      <PageTitle>Histórico das séries</PageTitle>
 
       {loadingOptions ? (
         <AppStack gap="md">
