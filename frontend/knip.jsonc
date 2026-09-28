@@ -23,6 +23,10 @@
   ],
   "project": ["src/**/*.{ts,tsx}"],
 
+  // Ferramenta do sistema, não pacote: `scripts/cut-reel.mjs` a chama para
+  // cortar o vídeo da tela de login.
+  "ignoreBinaries": ["ffmpeg"],
+
   // Mesmo critério do pre-commit, aplicado por categoria: o que está verde
   // bloqueia, o que ainda não está reporta.
   //
