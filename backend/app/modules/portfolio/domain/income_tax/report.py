@@ -8,7 +8,7 @@ recortam este resultado — nenhuma calcula de novo.
 
 from collections import defaultdict
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 
@@ -21,6 +21,18 @@ from app.modules.portfolio.domain.income_tax.darf import (
     DarfObligation,
     DarfPayment,
     build_obligations,
+)
+from app.modules.portfolio.domain.income_tax.declaration import (
+    AssetRecord,
+    AssetsAndRightsItem,
+    BrokerRecord,
+    CapitalGainOperation,
+    DividendRecord,
+    IncomeLine,
+    assets_and_rights,
+    capital_gain_operations,
+    income_lines,
+    paid_by_regime_month,
 )
 from app.modules.portfolio.domain.income_tax.ledger import (
     RealizedSale,
@@ -75,6 +87,13 @@ class IncomeTaxReport:
     #: Os DARFs cujo mês de apuração cai no ano.
     obligations: tuple[DarfObligation, ...]
     pendencies: tuple[Pendency, ...]
+    #: As fichas da declaração, campo a campo.
+    assets_and_rights: tuple[AssetsAndRightsItem, ...] = ()
+    exempt_income: tuple[IncomeLine, ...] = ()
+    exclusive_income: tuple[IncomeLine, ...] = ()
+    capital_gains: tuple[CapitalGainOperation, ...] = ()
+    #: O imposto pago de cada mês de Renda Variável, por regime.
+    tax_paid: dict[tuple[TaxRegime, date], Decimal] = field(default_factory=dict)
 
     def year_end(self, regime: TaxRegime) -> MonthlyAssessment | None:
         months = self.months.get(regime, ())
@@ -107,10 +126,14 @@ def assess(  # noqa: PLR0913
     payments: Iterable[DarfPayment],
     today: date,
     rules: Iterable[TaxRule] = RULES,
+    assets: dict[int, AssetRecord] | None = None,
+    brokers: dict[int, BrokerRecord] | None = None,
+    dividends: Iterable[DividendRecord] = (),
 ) -> IncomeTaxReport:
     rules = tuple(rules)
     validate_catalogue(rules)
     trades = tuple(trades)
+    events = tuple(events)
     year_start = date(fiscal_year, 1, 1)
     year_end = date(fiscal_year, 12, 31)
 
@@ -136,17 +159,39 @@ def assess(  # noqa: PLR0913
         *(pendency for pendency in payment_pendencies if in_year(pendency.day)),
     ]
 
+    year_months = {
+        regime: tuple(month for month in history.months if month.month.year == fiscal_year)
+        for regime, history in histories.items()
+    }
+    year_obligations = tuple(
+        obligation for obligation in obligations if obligation.period.year == fiscal_year
+    )
+
+    items: list[AssetsAndRightsItem] = []
+    exempt: list[IncomeLine] = []
+    exclusive: list[IncomeLine] = []
+    if assets is not None and brokers is not None:
+        items, asset_pendencies = assets_and_rights(
+            fiscal_year=fiscal_year, trades=trades, events=events, assets=assets, brokers=brokers
+        )
+        exempt, exclusive, income_pendencies = income_lines(
+            fiscal_year=fiscal_year, dividends=dividends, assets=assets, months=year_months
+        )
+        pendencies += asset_pendencies + income_pendencies
+
     return IncomeTaxReport(
         fiscal_year=fiscal_year,
-        months={
-            regime: tuple(month for month in history.months if month.month.year == fiscal_year)
-            for regime, history in histories.items()
-        },
+        months=year_months,
         sales=year_sales,
-        obligations=tuple(
-            obligation for obligation in obligations if obligation.period.year == fiscal_year
-        ),
+        obligations=year_obligations,
         pendencies=tuple(pendencies),
+        assets_and_rights=tuple(items),
+        exempt_income=tuple(exempt),
+        exclusive_income=tuple(exclusive),
+        capital_gains=tuple(
+            capital_gain_operations(year_sales, year_months.get(TaxRegime.CRYPTO, ()))
+        ),
+        tax_paid=paid_by_regime_month(year_obligations),
     )
 
 

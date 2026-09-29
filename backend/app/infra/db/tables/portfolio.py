@@ -121,6 +121,10 @@ dividend_table = Table(
     Column('date', Date, nullable=False),
     Column('amount', Float, nullable=False),
     Column('amount_usd', Float, nullable=True),
+    Column('kind', String(20), nullable=False, server_default='dividend'),
+    CheckConstraint(
+        "kind IN ('dividend', 'interest_on_equity')", name='ck_dividend_kind'
+    ),
     schema='portfolio',
 )
 

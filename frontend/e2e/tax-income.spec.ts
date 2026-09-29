@@ -32,6 +32,8 @@ function months(overrides: Record<number, Record<string, string | boolean>>) {
     withheld_used: ZERO,
     withheld_carried_out: ZERO,
     tax_payable: ZERO,
+    tax_paid: ZERO,
+    net_result: ZERO,
     ...overrides[i + 1],
   }))
 }
@@ -123,6 +125,33 @@ const ASSESSMENT = {
       balance: '180.00', status: 'overdue', payments: [],
     },
   ],
+  assets_and_rights: [
+    {
+      asset_id: 10, broker_id: 1, group: '07', group_name: 'Fundos', code: '03',
+      code_name: 'Fundos de Investimento Imobiliário (FII)', country_code: '105',
+      country_name: 'Brasil', cnpj: '11.728.688/0001-47', cnpj_label: 'CNPJ do fundo',
+      ticker: 'HGLG11', traded_on_exchange: true,
+      discrimination: '25 cotas de CSHG Logística (HGLG11), em custódia na XP, CNPJ 02.332.886/0001-04.',
+      previous_value: '15002.00', current_value: '3750.50', note: null,
+    },
+    {
+      asset_id: 11, broker_id: 1, group: '03', group_name: 'Participações societárias',
+      code: '01', code_name: 'Ações (inclusive listadas em bolsa)', country_code: '105',
+      country_name: 'Brasil', cnpj: null, cnpj_label: 'CNPJ da empresa', ticker: 'PETR4',
+      traded_on_exchange: true,
+      discrimination: '300 ações de Petrobras (PETR4), negociadas na B3, em custódia na XP, CNPJ 02.332.886/0001-04.',
+      previous_value: '9720.00', current_value: '9720.00',
+      note: 'CNPJ da empresa não está no cadastro: preencha à mão.',
+    },
+  ],
+  exempt_income: [
+    {
+      code: '99', code_name: 'Outros — rendimentos de FII e Fiagro',
+      payer_cnpj: '11.728.688/0001-47', payer_name: 'CSHG Logística', amount: '880.00', note: null,
+    },
+  ],
+  exclusive_income: [],
+  capital_gains: [],
   pendencies: [
     {
       code: 'missing_fees', message: '1 venda sem taxas informadas, na própria venda ou nas compras que formam o custo. Taxa não informada foi apurada como zero, o que deixa o resultado maior; importar a nota de corretagem completa as taxas.',
@@ -131,20 +160,6 @@ const ASSESSMENT = {
   ],
 }
 
-const BENS = [
-  {
-    grupo: '07', codigo: '03', discriminacao: '90 cotas de CSHG Logística (HGLG11)',
-    position_previous_year: 12800, position_fiscal_year: 13113, exempt_dividends: 880,
-    codigo_negociacao: 'HGLG11', negociado_em_bolsa: true, locale: 'Brasil',
-    cnpj: '11.728.688/0001-47',
-  },
-  {
-    grupo: '03', codigo: '01', discriminacao: '300 ações de Petrobras PN (PETR4)',
-    position_previous_year: 9720, position_fiscal_year: 13800, exempt_dividends: 0,
-    codigo_negociacao: 'PETR4', negociado_em_bolsa: true, locale: 'Brasil',
-    cnpj: '33.000.167/0001-01',
-  },
-]
 
 async function abrirIR(page: import('@playwright/test').Page, mockApi: (path: string, body: unknown) => Promise<void>) {
   await page.clock.setFixedTime(HOJE)
@@ -153,7 +168,6 @@ async function abrirIR(page: import('@playwright/test').Page, mockApi: (path: st
   await mockApi('/portfolio/dividend', [])
   await mockApi('/portfolio/transaction', [])
   await mockApi('/portfolio/income_tax/assessment', ASSESSMENT)
-  await mockApi('/portfolio/income_tax/1/assets_and_rights', BENS)
   await page.goto('/portfolio/tax-income')
 }
 
@@ -182,7 +196,7 @@ test('portfolio/imposto de renda — apuração FIIs', async ({ page, mockApi })
   await abrirIR(page, mockApi)
 
   await page.getByRole('tab', { name: 'FII e Fiagro' }).click()
-  await expect(page.getByText('FII e Fiagro (2025)')).toBeVisible()
+  await expect(page.getByText('Renda Variável – Fundo de Investimento Imobiliário ou Fiagro')).toBeVisible()
   await expectNothingClipped(page)
 
   await expect(page).toHaveScreenshot('page-tax-fii.png')

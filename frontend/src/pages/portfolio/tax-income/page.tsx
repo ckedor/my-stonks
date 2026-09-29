@@ -1,4 +1,4 @@
-import type { IncomeTaxAssessment } from '@/api/incomeTax'
+import type { IncomeTaxAssessment, TaxRegime } from '@/api/incomeTax'
 import {
   AppEmptyState,
   AppMetric,
@@ -8,31 +8,48 @@ import {
   AppTabs,
 } from '@/components/ui'
 import { useIncomeTaxAssessment } from '@/queries/incomeTax'
-import { useSelectedPortfolio } from '@/queries/portfolio'
 import dayjs from 'dayjs'
 import { useState } from 'react'
-import AssetsAndRights from './AssetsAndRights'
+import AssetsAndRightsTab from './AssetsAndRightsTab'
+import CapitalGainsTab from './CapitalGainsTab'
 import DarfTable from './DarfTable'
-import RegimeTable from './RegimeTable'
+import IncomeTab from './IncomeTab'
 import TaxIncomeSkeleton from './TaxIncomeSkeleton'
 import TaxPendencies from './TaxPendencies'
+import TaxesPaidTab from './TaxesPaidTab'
+import VariableIncomeTab from './VariableIncomeTab'
 import { formatTaxValue, money } from './format'
 
 /* Imposto de renda sobre investimentos.
  *
+ * Cada aba depois do DARF é uma ficha do programa do IRPF, com os campos na
+ * ordem em que ele os pede e um botão de copiar em cada um: a declaração se
+ * preenche copiando daqui. O programa não importa arquivo de terceiros, então
+ * é o caminho que existe.
+ *
  * A apuração é do contribuinte: soma todas as carteiras, porque o limite de
- * isenção e o prejuízo a compensar são do CPF. DARF, operações comuns, FII e
- * cripto são recortes da mesma apuração, calculada no backend — nenhuma aba
- * refaz conta. Bens e Direitos ainda é da carteira aberta. */
+ * isenção, o custo médio e o prejuízo a compensar são do CPF. Tudo sai de uma
+ * resposta só, calculada no backend — nenhuma aba refaz conta. */
 
-type TaxTab = 'darf' | 'common' | 'real_estate_fund' | 'crypto' | 'assets'
+type TaxTab =
+  | 'darf'
+  | 'assets'
+  | 'exempt'
+  | 'exclusive'
+  | 'common'
+  | 'real_estate_fund'
+  | 'capital_gains'
+  | 'taxes_paid'
 
 const TABS = [
   { id: 'darf' as const, label: 'DARF' },
-  { id: 'common' as const, label: 'Operações comuns' },
-  { id: 'real_estate_fund' as const, label: 'FII e Fiagro' },
-  { id: 'crypto' as const, label: 'Cripto' },
   { id: 'assets' as const, label: 'Bens e Direitos' },
+  { id: 'exempt' as const, label: 'Rendimentos Isentos' },
+  { id: 'exclusive' as const, label: 'Tributação Exclusiva' },
+  { id: 'common' as const, label: 'Renda Variável' },
+  { id: 'real_estate_fund' as const, label: 'FII e Fiagro' },
+  { id: 'capital_gains' as const, label: 'Ganhos de Capital' },
+  { id: 'taxes_paid' as const, label: 'Imposto Pago/Retido' },
 ]
 
 const YEARS = 6
@@ -70,8 +87,80 @@ function metrics(assessment: IncomeTaxAssessment) {
   )
 }
 
+function TabContent({
+  tab,
+  assessment,
+  fiscalYear,
+}: {
+  tab: TaxTab
+  assessment: IncomeTaxAssessment
+  fiscalYear: number
+}) {
+  const regime = (id: TaxRegime) => assessment.regimes.find((candidate) => candidate.regime === id)
+
+  switch (tab) {
+    case 'darf':
+      return (
+        <DarfTable
+          fiscalYear={fiscalYear}
+          obligations={assessment.obligations}
+          darfMinimum={assessment.darf_minimum}
+        />
+      )
+    case 'assets':
+      return <AssetsAndRightsTab items={assessment.assets_and_rights} fiscalYear={fiscalYear} />
+    case 'exempt':
+      return (
+        <IncomeTab
+          title="Rendimentos Isentos e Não Tributáveis"
+          description="Dividendos por empresa, rendimentos de FII e Fiagro por fundo, e os ganhos isentos do ano: ações com vendas até R$ 20 mil no mês (código 20) e criptoativos até R$ 35 mil (código 05)."
+          lines={assessment.exempt_income}
+          emptyMessage="Nenhum rendimento isento no ano"
+        />
+      )
+    case 'exclusive':
+      return (
+        <IncomeTab
+          title="Rendimentos Sujeitos à Tributação Exclusiva/Definitiva"
+          description="JCP por empresa (código 10), pelo valor líquido. Marque um provento como JCP no cadastro de proventos para ele aparecer aqui."
+          lines={assessment.exclusive_income}
+          emptyMessage="Nenhum rendimento de tributação exclusiva no ano"
+        />
+      )
+    case 'common':
+    case 'real_estate_fund': {
+      const selected = regime(tab)
+      return selected ? (
+        <VariableIncomeTab
+          key={`${tab}-${fiscalYear}`}
+          regime={selected}
+          sales={assessment.sales}
+          fiscalYear={fiscalYear}
+          title={
+            tab === 'common'
+              ? 'Renda Variável – Operações Comuns'
+              : 'Renda Variável – Fundo de Investimento Imobiliário ou Fiagro'
+          }
+        />
+      ) : null
+    }
+    case 'capital_gains': {
+      const crypto = regime('crypto')
+      return crypto ? (
+        <CapitalGainsTab
+          operations={assessment.capital_gains}
+          regime={crypto}
+          sales={assessment.sales}
+          fiscalYear={fiscalYear}
+        />
+      ) : null
+    }
+    case 'taxes_paid':
+      return <TaxesPaidTab regimes={assessment.regimes} />
+  }
+}
+
 export default function TaxIncomePage() {
-  const selectedPortfolio = useSelectedPortfolio()
   const [fiscalYear, setFiscalYear] = useState(dayjs().year() - 1)
   const [tab, setTab] = useState<TaxTab>('darf')
   const { data: assessment, isPending, isError } = useIncomeTaxAssessment(fiscalYear)
@@ -95,8 +184,6 @@ export default function TaxIncomePage() {
 
   if (isPending) return <TaxIncomeSkeleton />
 
-  const regime = assessment?.regimes.find((candidate) => candidate.regime === tab)
-
   return (
     <AppStack gap="lg">
       <AppPageHeader
@@ -118,22 +205,8 @@ export default function TaxIncomePage() {
       ) : (
         <>
           <TaxPendencies pendencies={assessment.pendencies} />
-
-          <AppTabs items={TABS} value={tab} onChange={setTab} label="Seções da declaração" />
-
-          {tab === 'darf' && (
-            <DarfTable
-              fiscalYear={fiscalYear}
-              obligations={assessment.obligations}
-              darfMinimum={assessment.darf_minimum}
-            />
-          )}
-          {regime && (
-            <RegimeTable regime={regime} sales={assessment.sales} fiscalYear={fiscalYear} />
-          )}
-          {tab === 'assets' && selectedPortfolio?.id && (
-            <AssetsAndRights fiscalYear={fiscalYear} portfolioId={selectedPortfolio.id} />
-          )}
+          <AppTabs items={TABS} value={tab} onChange={setTab} label="Fichas da declaração" />
+          <TabContent tab={tab} assessment={assessment} fiscalYear={fiscalYear} />
         </>
       )}
     </AppStack>

@@ -29,6 +29,8 @@ class PendencyCode(StrEnum):
     NO_RULE = 'no_rule'
     #: Pagamento registrado para um período sem DARF a pagar.
     PAYMENT_WITHOUT_OBLIGATION = 'payment_without_obligation'
+    #: Bem ou rendimento que a declaração pede, mas que nenhuma ficha daqui cobre.
+    NOT_DECLARED_HERE = 'not_declared_here'
 
 
 @dataclass(frozen=True, kw_only=True)

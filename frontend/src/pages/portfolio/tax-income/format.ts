@@ -23,6 +23,15 @@ export const formatTaxAmount = (value: Money) => {
     : amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+/** Um valor como o programa da Receita o mostra: "1.234,56", e zero como
+ *  "0,00" — no formulário o campo existe e alguém vai digitá-lo. */
+export const formatFormAmount = (value: Money) =>
+  money(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+/** O que se cola no campo: sem separador de milhar, que o campo numérico
+ *  do programa não aceita. */
+export const pasteAmount = (value: Money) => money(value).toFixed(2).replace('.', ',')
+
 /** O sinal de um ganho lido como as outras telas leem retorno. */
 export const gainTone = (value: number | Money): 'success' | 'danger' | 'default' => {
   const amount = typeof value === 'string' ? money(value) : value

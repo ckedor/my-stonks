@@ -2,7 +2,7 @@ import datetime as dt
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from app.modules.portfolio.domain.dividend import DividendQuery
+from app.modules.portfolio.domain.dividend import DividendKind, DividendQuery
 
 
 class DividendFilters(BaseModel):
@@ -33,12 +33,15 @@ class DividendCreateRequest(BaseModel):
     asset_id: int
     date: dt.date | None = None
     amount: float
+    #: Dividendo ou JCP. Muda só a ficha da declaração em que o provento entra.
+    kind: DividendKind = DividendKind.DIVIDEND
 
 
 class DividendUpdateRequest(BaseModel):
     id: int
     date: dt.date | None = None
     amount: float | None = None
+    kind: DividendKind | None = None
 
 
 class Dividend(BaseModel):
@@ -47,5 +50,6 @@ class Dividend(BaseModel):
     asset_id: int
     ticker: str
     amount: float
+    kind: DividendKind = DividendKind.DIVIDEND
     category: str | None = None
     model_config = ConfigDict(from_attributes=True)

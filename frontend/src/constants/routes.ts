@@ -185,8 +185,6 @@ export const DIVIDEND_ROUTES = {
 } as const
 
 export const INCOME_TAX_ROUTES = {
-  assetsAndRights: (portfolioId: number | string) =>
-    `${PORTFOLIO}/income_tax/${portfolioId}/assets_and_rights`,
   assessment: `${PORTFOLIO}/income_tax/assessment`,
   darfPayments: `${PORTFOLIO}/income_tax/darf_payment`,
   darfPayment: (paymentId: number | string) => `${PORTFOLIO}/income_tax/darf_payment/${paymentId}`,

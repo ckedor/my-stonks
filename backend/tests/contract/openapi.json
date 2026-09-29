@@ -1832,6 +1832,130 @@
     "title": "AssetUpdate",
     "type": "object"
    },
+   "AssetsAndRightsItemResponse": {
+    "description": "Um bem da ficha Bens e Direitos, com os campos na ordem do programa.",
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "broker_id": {
+      "title": "Broker Id",
+      "type": "integer"
+     },
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "cnpj_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj Label"
+     },
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "code_name": {
+      "title": "Code Name",
+      "type": "string"
+     },
+     "country_code": {
+      "title": "Country Code",
+      "type": "string"
+     },
+     "country_name": {
+      "title": "Country Name",
+      "type": "string"
+     },
+     "current_value": {
+      "title": "Current Value",
+      "type": "string"
+     },
+     "discrimination": {
+      "title": "Discrimination",
+      "type": "string"
+     },
+     "group": {
+      "title": "Group",
+      "type": "string"
+     },
+     "group_name": {
+      "title": "Group Name",
+      "type": "string"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "previous_value": {
+      "title": "Previous Value",
+      "type": "string"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     },
+     "traded_on_exchange": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Traded On Exchange"
+     }
+    },
+    "required": [
+     "asset_id",
+     "broker_id",
+     "group",
+     "group_name",
+     "code",
+     "code_name",
+     "country_code",
+     "country_name",
+     "cnpj",
+     "cnpj_label",
+     "ticker",
+     "traded_on_exchange",
+     "discrimination",
+     "previous_value",
+     "current_value",
+     "note"
+    ],
+    "title": "AssetsAndRightsItemResponse",
+    "type": "object"
+   },
    "BacktestLineResponse": {
     "properties": {
      "final_value": {
@@ -2457,6 +2581,56 @@
      "transaction_count"
     ],
     "title": "BrokerageNoteResponse",
+    "type": "object"
+   },
+   "CapitalGainOperationResponse": {
+    "description": "Uma alienação de criptoativo para o GCAP.",
+    "properties": {
+     "acquisition_cost": {
+      "title": "Acquisition Cost",
+      "type": "string"
+     },
+     "capital_gain": {
+      "title": "Capital Gain",
+      "type": "string"
+     },
+     "day": {
+      "format": "date",
+      "title": "Day",
+      "type": "string"
+     },
+     "fees": {
+      "title": "Fees",
+      "type": "string"
+     },
+     "quantity": {
+      "title": "Quantity",
+      "type": "string"
+     },
+     "sale_value": {
+      "title": "Sale Value",
+      "type": "string"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     },
+     "transaction_id": {
+      "title": "Transaction Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "transaction_id",
+     "day",
+     "ticker",
+     "quantity",
+     "sale_value",
+     "acquisition_cost",
+     "fees",
+     "capital_gain"
+    ],
+    "title": "CapitalGainOperationResponse",
     "type": "object"
    },
    "CategoryAssignmentRequest": {
@@ -3530,6 +3704,10 @@
       "title": "Id",
       "type": "integer"
      },
+     "kind": {
+      "$ref": "#/components/schemas/DividendKind",
+      "default": "dividend"
+     },
      "ticker": {
       "title": "Ticker",
       "type": "string"
@@ -3567,6 +3745,10 @@
       ],
       "title": "Date"
      },
+     "kind": {
+      "$ref": "#/components/schemas/DividendKind",
+      "default": "dividend"
+     },
      "portfolio_id": {
       "title": "Portfolio Id",
       "type": "integer"
@@ -3579,6 +3761,15 @@
     ],
     "title": "DividendCreateRequest",
     "type": "object"
+   },
+   "DividendKind": {
+    "description": "O que o provento é para o imposto, e não para a rentabilidade.\n\nPara a carteira os dois são dinheiro que entrou. Para a declaração, o\ndividendo é rendimento isento e o JCP é tributado na fonte, em fichas\ndiferentes — e só o cadastro sabe qual dos dois a empresa pagou.",
+    "enum": [
+     "dividend",
+     "interest_on_equity"
+    ],
+    "title": "DividendKind",
+    "type": "string"
    },
    "DividendUpdateRequest": {
     "properties": {
@@ -3608,6 +3799,16 @@
      "id": {
       "title": "Id",
       "type": "integer"
+     },
+     "kind": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/DividendKind"
+       },
+       {
+        "type": "null"
+       }
+      ]
      }
     },
     "required": [
@@ -7810,11 +8011,99 @@
     "title": "ImportResponse",
     "type": "object"
    },
+   "IncomeLineResponse": {
+    "description": "Uma linha de Rendimentos Isentos ou de Tributação Exclusiva.",
+    "properties": {
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "code_name": {
+      "title": "Code Name",
+      "type": "string"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "payer_cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payer Cnpj"
+     },
+     "payer_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payer Name"
+     }
+    },
+    "required": [
+     "code",
+     "code_name",
+     "payer_cnpj",
+     "payer_name",
+     "amount",
+     "note"
+    ],
+    "title": "IncomeLineResponse",
+    "type": "object"
+   },
    "IncomeTaxAssessmentResponse": {
     "properties": {
+     "assets_and_rights": {
+      "items": {
+       "$ref": "#/components/schemas/AssetsAndRightsItemResponse"
+      },
+      "title": "Assets And Rights",
+      "type": "array"
+     },
+     "capital_gains": {
+      "items": {
+       "$ref": "#/components/schemas/CapitalGainOperationResponse"
+      },
+      "title": "Capital Gains",
+      "type": "array"
+     },
      "darf_minimum": {
       "title": "Darf Minimum",
       "type": "string"
+     },
+     "exclusive_income": {
+      "items": {
+       "$ref": "#/components/schemas/IncomeLineResponse"
+      },
+      "title": "Exclusive Income",
+      "type": "array"
+     },
+     "exempt_income": {
+      "items": {
+       "$ref": "#/components/schemas/IncomeLineResponse"
+      },
+      "title": "Exempt Income",
+      "type": "array"
      },
      "filing_year": {
       "title": "Filing Year",
@@ -7860,7 +8149,11 @@
      "regimes",
      "sales",
      "obligations",
-     "pendencies"
+     "pendencies",
+     "assets_and_rights",
+     "exempt_income",
+     "exclusive_income",
+     "capital_gains"
     ],
     "title": "IncomeTaxAssessmentResponse",
     "type": "object"
@@ -10079,6 +10372,10 @@
       "title": "Month",
       "type": "string"
      },
+     "net_result": {
+      "title": "Net Result",
+      "type": "string"
+     },
      "result": {
       "title": "Result",
       "type": "string"
@@ -10089,6 +10386,10 @@
      },
      "tax_due": {
       "title": "Tax Due",
+      "type": "string"
+     },
+     "tax_paid": {
+      "title": "Tax Paid",
       "type": "string"
      },
      "tax_payable": {
@@ -10137,7 +10438,9 @@
      "withheld_carried_in",
      "withheld_used",
      "withheld_carried_out",
-     "tax_payable"
+     "tax_payable",
+     "tax_paid",
+     "net_result"
     ],
     "title": "MonthlyAssessmentResponse",
     "type": "object"
@@ -10640,7 +10943,8 @@
      "foreign_crypto_sale",
      "listed_fund_sale",
      "no_rule",
-     "payment_without_obligation"
+     "payment_without_obligation",
+     "not_declared_here"
     ],
     "title": "PendencyCode",
     "type": "string"
@@ -21816,60 +22120,6 @@
      }
     ],
     "summary": "Delete Darf Payment",
-    "tags": [
-     "Income Tax"
-    ]
-   }
-  },
-  "/portfolio/income_tax/{portfolio_id}/assets_and_rights": {
-   "get": {
-    "operationId": "get_assets_and_rights_portfolio_income_tax__portfolio_id__assets_and_rights_get",
-    "parameters": [
-     {
-      "in": "path",
-      "name": "portfolio_id",
-      "required": true,
-      "schema": {
-       "title": "Portfolio Id",
-       "type": "integer"
-      }
-     },
-     {
-      "in": "query",
-      "name": "fiscal_year",
-      "required": true,
-      "schema": {
-       "title": "Fiscal Year",
-       "type": "integer"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      },
-      "description": "Successful Response"
-     },
-     "422": {
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      },
-      "description": "Validation Error"
-     }
-    },
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "summary": "Get Assets And Rights",
     "tags": [
      "Income Tax"
     ]

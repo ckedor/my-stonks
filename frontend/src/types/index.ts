@@ -165,9 +165,13 @@ export interface Dividend {
   date: string
   ticker: string
   amount: number
+  /** Dividendo (isento) ou JCP (tributação exclusiva): muda a ficha do IR. */
+  kind: DividendKind
   category: string
   portfolio_id: number
 }
+
+export type DividendKind = 'dividend' | 'interest_on_equity'
 
 export interface PatrimonyEntry {
   date: string

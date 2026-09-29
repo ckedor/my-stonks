@@ -87,6 +87,7 @@ class PortfolioDividendService:
             'date': dividend.date,
             'amount': dividend.amount,
             'amount_usd': dividend.amount_usd,
+            'kind': dividend.kind,
         }
 
     async def update_dividend(self, dividend_data):

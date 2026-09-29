@@ -57,12 +57,23 @@ class MonthlyAssessmentResponse(BaseModel):
     withheld_used: Money
     withheld_carried_out: Money
     tax_payable: Money
+    #: O que se registrou pago do DARF deste mês, na parte deste regime.
+    tax_paid: Money
+    #: Resultado sem o ganho isento: o "resultado líquido do mês" da ficha.
+    net_result: Money
 
     @classmethod
-    def from_domain(cls, month: MonthlyAssessment) -> 'MonthlyAssessmentResponse':
+    def from_domain(
+        cls, month: MonthlyAssessment, tax_paid: Decimal
+    ) -> 'MonthlyAssessmentResponse':
         return cls(
             covered=month.rule is not None,
-            **{name: getattr(month, name) for name in cls.model_fields if name not in {'covered'}},
+            tax_paid=tax_paid,
+            **{
+                name: getattr(month, name)
+                for name in cls.model_fields
+                if name not in {'covered', 'tax_paid'}
+            },
         )
 
 
@@ -166,6 +177,57 @@ class PendencyResponse(BaseModel):
     transaction_ids: list[int]
 
 
+class AssetsAndRightsItemResponse(BaseModel):
+    """Um bem da ficha Bens e Direitos, com os campos na ordem do programa."""
+
+    asset_id: int
+    broker_id: int
+    group: str
+    group_name: str
+    code: str
+    code_name: str
+    country_code: str
+    country_name: str
+    cnpj: str | None
+    cnpj_label: str | None
+    ticker: str | None
+    traded_on_exchange: bool | None
+    discrimination: str
+    previous_value: Money
+    current_value: Money
+    note: str | None
+
+    model_config = {'from_attributes': True}
+
+
+class IncomeLineResponse(BaseModel):
+    """Uma linha de Rendimentos Isentos ou de Tributação Exclusiva."""
+
+    code: str
+    code_name: str
+    payer_cnpj: str | None
+    payer_name: str | None
+    amount: Money
+    note: str | None
+
+    model_config = {'from_attributes': True}
+
+
+class CapitalGainOperationResponse(BaseModel):
+    """Uma alienação de criptoativo para o GCAP."""
+
+    transaction_id: int
+    day: date
+    ticker: str
+    quantity: Exact
+    sale_value: Money
+    acquisition_cost: Money
+    fees: Money
+    capital_gain: Money
+
+    model_config = {'from_attributes': True}
+
+
 class IncomeTaxAssessmentResponse(BaseModel):
     fiscal_year: int
     #: O exercício em que o ano-calendário é declarado.
@@ -175,6 +237,10 @@ class IncomeTaxAssessmentResponse(BaseModel):
     sales: list[RealizedSaleResponse]
     obligations: list[DarfObligationResponse]
     pendencies: list[PendencyResponse]
+    assets_and_rights: list[AssetsAndRightsItemResponse]
+    exempt_income: list[IncomeLineResponse]
+    exclusive_income: list[IncomeLineResponse]
+    capital_gains: list[CapitalGainOperationResponse]
 
     @classmethod
     def from_report(cls, report: IncomeTaxReport) -> 'IncomeTaxAssessmentResponse':
@@ -190,7 +256,12 @@ class IncomeTaxAssessmentResponse(BaseModel):
                     monthly_sales_exemption=rule.monthly_sales_exemption if rule else None,
                     carries_losses=rule.carries_losses if rule else None,
                     source=rule.source if rule else None,
-                    months=[MonthlyAssessmentResponse.from_domain(month) for month in months],
+                    months=[
+                        MonthlyAssessmentResponse.from_domain(
+                            month, report.tax_paid.get((regime, month.month), Decimal(0))
+                        )
+                        for month in months
+                    ],
                     loss_to_carry=report.losses_to_carry.get(regime, Decimal(0)),
                     withheld_to_declare=report.withheld_to_declare.get(regime, Decimal(0)),
                 )
@@ -214,6 +285,20 @@ class IncomeTaxAssessmentResponse(BaseModel):
                     transaction_ids=list(pendency.transaction_ids),
                 )
                 for pendency in report.pendencies
+            ],
+            assets_and_rights=[
+                AssetsAndRightsItemResponse.model_validate(item)
+                for item in report.assets_and_rights
+            ],
+            exempt_income=[
+                IncomeLineResponse.model_validate(line) for line in report.exempt_income
+            ],
+            exclusive_income=[
+                IncomeLineResponse.model_validate(line) for line in report.exclusive_income
+            ],
+            capital_gains=[
+                CapitalGainOperationResponse.model_validate(operation)
+                for operation in report.capital_gains
             ],
         )
 

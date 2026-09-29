@@ -668,9 +668,35 @@ last bank business day of the following month, computed in
 also computes fines and interest.
 
 Money is `Decimal` from the transaction to the response, and the API serializes
-it as a string with two decimals. The assets and rights report
-(`/portfolio/income_tax/{portfolio_id}/assets_and_rights`) is not part of the
-assessment yet: it is still per portfolio and valued at market price.
+it as a string with two decimals.
+
+### The declaration's forms
+
+The same response carries the forms of the IRPF program, field by field, in
+`income_tax/declaration.py`, because the program imports no file from a third
+party: the declaration is filled by copying from here. Each tab of the screen
+after DARF is one form, with the fields in the program's order and a copy
+button on each.
+
+- **Bens e Direitos**: one item per asset and broker held on either 31/12, valued
+  at **cost** — the broker's quantity times the taxpayer's average cost — with
+  group, code, country, the CNPJ the form asks for (issuer, fund, or custodian for
+  fixed income) and a discrimination. A missing CNPJ is left empty and said, never
+  replaced by the broker's. Pension is left out and said.
+- **Rendimentos Isentos**: code 20 (stock gains in months up to R$ 20,000), 05
+  (crypto up to R$ 35,000), 09 dividends and 99 FII/Fiagro income per payer, 12
+  for CRI/CRA/LCA coupons.
+- **Tributação Exclusiva**: code 10 JCP per company, and 06 for coupons of taxed
+  fixed income. Dividend and JCP are told apart by `portfolio.dividend.kind`,
+  which the user sets when recording the dividend.
+- **Renda Variável** (common operations, and FII/Fiagro): each month's fields,
+  with the result net of the exempt gain and the DARF payments split between the
+  two regimes a 6015 DARF joins.
+- **Ganhos de Capital**: the crypto sales of taxed months, as GCAP operations.
+- **Imposto Pago/Retido**: the withheld tax left at the end of the year.
+
+Where a code is uncertain for an asset — a Fiagro, a fund abroad, an incentivized
+debenture — the item carries a note saying what to check.
 
 ## Laboratory backtests
 

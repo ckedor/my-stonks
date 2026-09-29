@@ -1,7 +1,7 @@
 import { INCOME_TAX_ROUTES } from '@/constants/routes'
 import api from '@/lib/api'
 
-/* Imposto de renda: a apuração do ano e os DARFs pagos.
+/* Imposto de renda: a apuração do ano, as fichas da declaração e os DARFs pagos.
  *
  * A apuração é do usuário, sobre todas as carteiras dele — o limite de isenção
  * e o prejuízo a compensar são do CPF, não de uma carteira. Dinheiro chega como
@@ -45,6 +45,10 @@ export interface MonthlyAssessment {
   withheld_used: Money
   withheld_carried_out: Money
   tax_payable: Money
+  /** O que se registrou pago do DARF do mês, na parte deste regime. */
+  tax_paid: Money
+  /** Resultado sem o ganho isento: o "resultado líquido do mês" da ficha. */
+  net_result: Money
 }
 
 export interface RegimeAssessment {
@@ -112,6 +116,49 @@ export interface TaxPendency {
   transaction_ids: number[]
 }
 
+/** Um bem da ficha Bens e Direitos, com os campos na ordem do programa. */
+export interface AssetsAndRightsItem {
+  asset_id: number
+  broker_id: number
+  group: string
+  group_name: string
+  code: string
+  code_name: string
+  country_code: string
+  country_name: string
+  cnpj: string | null
+  cnpj_label: string | null
+  ticker: string | null
+  traded_on_exchange: boolean | null
+  discrimination: string
+  previous_value: Money
+  current_value: Money
+  /** O que conferir antes de digitar. */
+  note: string | null
+}
+
+/** Uma linha de Rendimentos Isentos ou de Tributação Exclusiva. */
+export interface IncomeLine {
+  code: string
+  code_name: string
+  payer_cnpj: string | null
+  payer_name: string | null
+  amount: Money
+  note: string | null
+}
+
+/** Uma alienação de criptoativo, com o que o GCAP pede dela. */
+export interface CapitalGainOperation {
+  transaction_id: number
+  day: string
+  ticker: string
+  quantity: string
+  sale_value: Money
+  acquisition_cost: Money
+  fees: Money
+  capital_gain: Money
+}
+
 export interface IncomeTaxAssessment {
   fiscal_year: number
   filing_year: number
@@ -120,6 +167,10 @@ export interface IncomeTaxAssessment {
   sales: RealizedSale[]
   obligations: DarfObligation[]
   pendencies: TaxPendency[]
+  assets_and_rights: AssetsAndRightsItem[]
+  exempt_income: IncomeLine[]
+  exclusive_income: IncomeLine[]
+  capital_gains: CapitalGainOperation[]
 }
 
 export interface DarfPaymentInput {
@@ -132,32 +183,8 @@ export interface DarfPaymentInput {
   interest: string
 }
 
-/** Uma linha do informe de bens e direitos, por carteira. */
-export interface AssetTaxInfo {
-  grupo: string
-  codigo: string
-  discriminacao: string
-  position_previous_year: number
-  position_fiscal_year: number
-  exempt_dividends: number
-  codigo_negociacao: string
-  negociado_em_bolsa: boolean
-  locale: string
-  cnpj: string
-}
-
 export async function fetchIncomeTaxAssessment(fiscalYear: number): Promise<IncomeTaxAssessment> {
   const { data } = await api.get<IncomeTaxAssessment>(INCOME_TAX_ROUTES.assessment, {
-    params: { fiscal_year: fiscalYear },
-  })
-  return data
-}
-
-export async function fetchAssetsAndRights(
-  portfolioId: number,
-  fiscalYear: number
-): Promise<AssetTaxInfo[]> {
-  const { data } = await api.get<AssetTaxInfo[]>(INCOME_TAX_ROUTES.assetsAndRights(portfolioId), {
     params: { fiscal_year: fiscalYear },
   })
   return data

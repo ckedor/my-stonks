@@ -48,12 +48,3 @@ async def delete_darf_payment(
     service: PortfolioIncomeTaxService = Depends(get_portfolio_income_tax_service),
 ):
     await service.delete_darf_payment(user.id, payment_id)
-
-
-@router.get('/{portfolio_id}/assets_and_rights')
-async def get_assets_and_rights(
-    portfolio_id: int,
-    fiscal_year: int = Query(...),
-    service: PortfolioIncomeTaxService = Depends(get_portfolio_income_tax_service),
-):
-    return await service.get_assets_and_rights(portfolio_id, fiscal_year)

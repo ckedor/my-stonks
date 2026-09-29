@@ -117,6 +117,11 @@ export default function PortfolioDividendsPage() {
       ),
     },
     {
+      label: 'Tipo',
+      hint: 'Dividendo é rendimento isento; JCP é tributado na fonte e vai para outra ficha do IR.',
+      render: (dividend) => (dividend.kind === 'interest_on_equity' ? 'JCP' : 'Dividendo'),
+    },
+    {
       label: 'Categoria',
       render: (dividend) => (
         <AppChip label={dividend.category} tint={categoryColors[dividend.category]} />

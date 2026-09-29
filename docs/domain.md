@@ -181,7 +181,8 @@ Do not use:
 | Settlement date | Data de liquidação | Day the note's cash settles, printed as "Líquido para". |
 | Withheld income tax | IRRF retido | Income tax the broker withheld at source on sales, split only across the note's sale lines. The assessment deducts it from the month's tax and carries what is left to the following months of the same year; what is left in December is deducted in the annual return. |
 | Corporate event | Evento corporativo | Asset event that changes historical quantities by a factor, such as split, reverse split, bonus, or conversion. |
-| Dividend | Provento | Cash amount attributed to an asset and portfolio on a date, stored in BRL and USD representations. |
+| Dividend | Provento | Cash amount attributed to an asset and portfolio on a date, stored in BRL and USD representations. Its kind is a dividend or interest on equity; the portfolio reads both as cash received, the tax return does not. |
+| Interest on equity | JCP (juros sobre capital próprio) | A kind of dividend a company pays taxed at source, declared under exclusive taxation rather than exempt income. Code: `interest_on_equity`. |
 | Position | Posição | Daily derived snapshot of a portfolio's holding in one asset. It includes quantity, price, average price, invested amount, and returns in BRL and USD. |
 | Current position | Posição atual | Most recent available position snapshot for an asset in a portfolio. |
 | Active position | Posição ativa | Current position whose quantity is not zero. |
@@ -252,7 +253,9 @@ Do not use:
 | DARF | DARF | What is owed for one revenue code and one month: the tax payable of the regimes with that code, plus amounts below the R$ 10 minimum carried from earlier months. Below the minimum it is not paid and passes to the next month of the same code. |
 | DARF payment | Pagamento de DARF | A DARF the user recorded as paid, with date, principal, fine and interest. It belongs to the user, not to a portfolio. Payment is never inferred from the tax being computed. |
 | Tax pendency | Pendência fiscal | Something the assessment could not decide from the data: a sale larger than the position, a bonus without cost, missing fees, a day trade, a sale abroad or of a listed fund outside the regimes. The number is still produced, with the assumption stated. |
-| Assets and rights report | Bens e direitos | Tax-report view of portfolio holdings at the end of the fiscal and previous years, grouped by asset and broker. Still per portfolio and at market price. |
+| Assets and rights report | Bens e direitos | The declaration's list of holdings on the last day of the fiscal and previous years, one item per asset and broker, across all the taxpayer's portfolios, valued at acquisition cost — never market price. |
+| Declaration form | Ficha da declaração | One page of the IRPF program — Bens e Direitos, Rendimentos Isentos, Tributação Exclusiva, Renda Variável, Ganhos de Capital, Imposto Pago/Retido — with its fields in the program's order. The app produces each for copying; the program imports nothing from third parties. |
+| Income line | Linha de rendimento | One entry of the exempt or exclusive income forms: income code, payer and amount for the year. |
 | Taxable income | Renda bruta tributável | Salary and other taxable earnings of a calendar year, before deductions. It is what the PGBL ceiling is a percentage of. Income taxed exclusively at source, such as the 13th salary and profit sharing, is not part of it. |
 | Simplified discount | Desconto simplificado | The flat 20% deduction, capped by law, that replaces every itemized deduction in a Brazilian tax return. Because it replaces them, a PGBL contribution deducts nothing under it. |
 | PGBL contribution ceiling | Teto de aporte do PGBL | 12% of a year's taxable income: the most a pension contribution may deduct from the tax base. Deducting is deferring, not exempting — withdrawal is taxed on the whole amount. |

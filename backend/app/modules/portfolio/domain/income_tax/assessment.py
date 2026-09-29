@@ -88,6 +88,15 @@ class MonthlyAssessment:
     #: Imposto devido menos IRRF — antes do mínimo de DARF.
     tax_payable: Decimal
 
+    @property
+    def net_result(self) -> Decimal:
+        """O resultado que vai para a ficha de Renda Variável: sem o ganho isento.
+
+        O ganho isento das ações vai para Rendimentos Isentos (código 20), e
+        declará-lo também aqui seria contá-lo duas vezes.
+        """
+        return self.result - self.exempt_gain
+
 
 @dataclass(frozen=True, kw_only=True)
 class RegimeHistory:

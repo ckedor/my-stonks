@@ -257,3 +257,94 @@ def find_day_trades(trades: Iterable[TaxTrade]) -> list[Pendency]:
 
 def _quantity(value: Decimal) -> str:
     return format(value.normalize(), 'f')
+
+
+@dataclass(frozen=True, kw_only=True)
+class Holding:
+    """O que o contribuinte tinha de um ativo numa corretora, numa data, a custo.
+
+    A quantidade é a da corretora; o custo é essa quantidade vezes o custo
+    médio do ativo — que é um só para o CPF, somadas todas as corretoras. É o
+    valor que a ficha de Bens e Direitos pede, e não o de mercado.
+    """
+
+    asset_id: int
+    broker_id: int
+    quantity: Decimal
+    cost: Decimal
+
+
+def holdings_on(
+    trades: Iterable[TaxTrade], events: Iterable[CorporateEvent], day: date
+) -> list[Holding]:
+    """A posição a custo de cada ativo e corretora ao fim de `day`.
+
+    Vale para qualquer ativo, e não só os da apuração mensal: renda fixa,
+    Tesouro, fundos e exterior também vão para Bens e Direitos pelo custo. No
+    exterior o custo é o do dia de cada compra em reais, que é como a
+    transação guarda o preço.
+    """
+    by_asset: dict[int, list[TaxTrade]] = defaultdict(list)
+    for trade in trades:
+        if trade.day <= day:
+            by_asset[trade.asset_id].append(trade)
+    events_by_asset: dict[int, list[CorporateEvent]] = defaultdict(list)
+    for event in events:
+        if event.day <= day:
+            events_by_asset[event.asset_id].append(event)
+
+    holdings: list[Holding] = []
+    for asset_id, asset_trades in by_asset.items():
+        quantity, cost, by_broker = _replay_position(
+            sorted(asset_trades, key=lambda trade: (trade.day, trade.transaction_id)),
+            sorted(events_by_asset.get(asset_id, ()), key=lambda event: event.day),
+        )
+        if quantity <= 0:
+            continue
+        average = cost / quantity
+        holdings.extend(
+            Holding(
+                asset_id=asset_id,
+                broker_id=broker_id,
+                quantity=broker_quantity,
+                cost=broker_quantity * average,
+            )
+            for broker_id, broker_quantity in by_broker.items()
+            if broker_quantity > QUANTITY_TOLERANCE
+        )
+    return holdings
+
+
+def _replay_position(
+    trades: list[TaxTrade], events: list[CorporateEvent]
+) -> tuple[Decimal, Decimal, dict[int, Decimal]]:
+    """Quantidade e custo do ativo, e quanto dele está em cada corretora."""
+    quantity = _ZERO
+    cost = _ZERO
+    by_broker: dict[int, Decimal] = defaultdict(lambda: _ZERO)
+    pending = list(events)
+
+    def apply(factor: Decimal) -> None:
+        nonlocal quantity
+        quantity *= factor
+        for broker_id in by_broker:
+            by_broker[broker_id] *= factor
+
+    for trade in trades:
+        while pending and pending[0].day <= trade.day:
+            apply(pending.pop(0).factor)
+        if trade.is_sale:
+            sold = min(-trade.quantity, max(quantity, _ZERO))
+            if quantity > 0:
+                cost -= cost * sold / quantity
+            quantity -= sold
+            by_broker[trade.broker_id] += trade.quantity
+        else:
+            quantity += trade.quantity
+            cost += trade.quantity * trade.price + (trade.fees or _ZERO)
+            by_broker[trade.broker_id] += trade.quantity
+        if abs(quantity) < QUANTITY_TOLERANCE:
+            quantity, cost = _ZERO, _ZERO
+    for event in pending:
+        apply(event.factor)
+    return quantity, cost, by_broker

@@ -197,3 +197,43 @@ class TestDarfPayment:
         )
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+class TestDeclaration:
+    async def test_a_jcp_registered_through_the_api_goes_to_exclusive_taxation(
+        self, client, db, factory
+    ):
+        broker = await factory.broker(name='XP')
+        asset = await _stock(db, 'ITUB4')
+        portfolio = await factory.portfolio(name='Principal')
+        await _trade(
+            db,
+            portfolio_id=portfolio,
+            asset_id=asset,
+            broker_id=broker,
+            quantity=100,
+            price=30,
+            on=date(2024, 3, 3),
+            fees=0,
+        )
+
+        created = await client.post(
+            '/portfolio/dividend',
+            json={
+                'portfolio_id': portfolio,
+                'asset_id': asset,
+                'date': '2025-05-10',
+                'amount': 42.5,
+                'kind': 'interest_on_equity',
+            },
+        )
+        body = (
+            await client.get('/portfolio/income_tax/assessment', params={'fiscal_year': 2025})
+        ).json()
+
+        assert created.status_code == HTTPStatus.OK
+        (jcp,) = body['exclusive_income']
+        assert (jcp['code'], jcp['amount']) == ('10', '42.50')
+        assert body['exempt_income'] == []
+        (item,) = body['assets_and_rights']
+        assert (item['group'], item['code'], item['current_value']) == ('03', '01', '3000.00')

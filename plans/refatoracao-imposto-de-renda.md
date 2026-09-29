@@ -1,7 +1,9 @@
 # Refatoração e robustez do imposto de renda
 
 Status: etapas 2 e 3 entregues em 29/09/2026 para operações comuns, FII/Fiagro,
-cripto em corretora brasileira e DARF (ver seção 11). Etapas 4 a 6 pendentes.
+cripto em corretora brasileira e DARF (seção 11); fichas da declaração campo a
+campo entregues no mesmo dia (seção 12), aguardando revisão das fontes.
+Pendentes: exterior, day trade, bonificação com custo, e o que a seção 12 lista.
 Revisão inicial do código e consulta a fontes oficiais: 23/09/2026.
 
 Decisões confirmadas na discussão:
@@ -232,3 +234,48 @@ Ainda não coberto: Bens e Direitos pelo custo e na visão do contribuinte
 (etapa 4); rendimentos (dividendos, JCP, FII) na ficha própria; exterior (Lei
 14.754); day trade; FI-Infra e outros fundos listados; custo de bonificação;
 exportação dos demonstrativos; mapeamento da declaração por exercício.
+
+## 12. Fichas da declaração, campo a campo (29/09/2026)
+
+O programa do IRPF não importa arquivo de terceiros — só a declaração anterior
+(`.DEC`), a pré-preenchida e arquivos dos programas da Receita (GCAP). Então a
+tela passou a espelhar as fichas: uma aba por ficha, os campos na ordem do
+programa, um botão de copiar em cada um (valor copiado sem separador de milhar).
+Desde o IRPF 2026 a pré-preenchida já traz a renda variável com IRRF e DARFs
+pagos; o uso pensado é começar por ela e conferir/completar com o app.
+
+Entregue:
+
+- **Bens e Direitos** pelo custo, na visão do contribuinte: um item por ativo e
+  corretora com posição em algum dos dois 31/12, custo médio do CPF vezes a
+  quantidade na corretora. O Bens e Direitos antigo (por carteira, a mercado) e
+  sua rota foram removidos.
+- **Rendimentos Isentos**: 20 (ações até R$ 20 mil), 05 (cripto até R$ 35 mil),
+  09 (dividendos por empresa), 99 (FII/Fiagro por fundo), 12 (cupons de
+  CRI/CRA/LCA lançados como provento).
+- **Tributação Exclusiva**: 10 (JCP por empresa, valor líquido) e 06 (cupons de
+  CDB/debênture/Tesouro lançados como provento). Para separar dividendo de JCP,
+  o provento ganhou o campo tipo (`portfolio.dividend.kind`), escolhido no
+  formulário de proventos; tudo o que existia virou dividendo.
+- **Renda Variável** (operações comuns e FII/Fiagro): mês a mês, com o
+  resultado líquido sem o ganho isento e o imposto pago repartido quando um DARF
+  6015 juntou os dois regimes.
+- **Ganhos de Capital**: as vendas de cripto dos meses tributados, no formato do
+  GCAP.
+- **Imposto Pago/Retido**: o IRRF (Lei 11.033) que sobrou no ano.
+
+Para revisar contra o texto oficial (gov.br bloqueado nesta sessão):
+
+- Códigos de Bens e Direitos usados: 03-01 ações (inclusive exterior), 04-02
+  tributados (CDB, Tesouro, debênture), 04-03 isentos (LCI, LCA, CRI, CRA),
+  04-04 BDR, 07-01 fundos com come-cotas, 07-03 FII, 07-08 ETF de renda fixa,
+  07-09 ETF de renda variável, 08-01 bitcoin, 08-02 altcoins, 08-03
+  stablecoins. Incertos e marcados na tela: Fiagro, ETF e REIT no exterior,
+  fundo sem come-cotas, debênture incentivada, VGBL/PGBL.
+- Códigos de rendimento: 20, 05, 09, 12, 99 (FII) isentos; 10 e 06 exclusivos.
+- Nomes e ordem dos campos da ficha Renda Variável, e se o IRRF da Lei 11.033 é
+  abatido no mês pelo programa ou só na ficha Imposto Pago/Retido.
+- Se bens comprados e vendidos no mesmo ano precisam aparecer com situação
+  zerada (hoje não aparecem).
+- CNPJ pedido para renda fixa e Tesouro (hoje: o da corretora custodiante).
+- Campos do GCAP para criptoativo.

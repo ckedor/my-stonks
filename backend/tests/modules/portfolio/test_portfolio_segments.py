@@ -283,10 +283,7 @@ async def test_the_current_position_carries_what_the_fund_screen_is_read_by():
     assert {'fund_classification', 'fund_anbima_classification', 'fund_manager'} <= set(
         statement.selected_columns.keys()
     )
-    assert (
-        'coalesce(nullif(asset.fund_registry_class.anbima_classification, '
-        in sql
-    )
+    assert 'coalesce(nullif(asset.fund_registry_class.anbima_classification, ' in sql
     assert '), asset.fund.anbima_category) AS fund_anbima_classification' in sql
 
 

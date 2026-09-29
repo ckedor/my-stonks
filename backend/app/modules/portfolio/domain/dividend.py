@@ -1,5 +1,18 @@
 import datetime as dt
 from dataclasses import dataclass
+from enum import StrEnum
+
+
+class DividendKind(StrEnum):
+    """O que o provento é para o imposto, e não para a rentabilidade.
+
+    Para a carteira os dois são dinheiro que entrou. Para a declaração, o
+    dividendo é rendimento isento e o JCP é tributado na fonte, em fichas
+    diferentes — e só o cadastro sabe qual dos dois a empresa pagou.
+    """
+
+    DIVIDEND = 'dividend'
+    INTEREST_ON_EQUITY = 'interest_on_equity'
 
 
 @dataclass(frozen=True, kw_only=True)
