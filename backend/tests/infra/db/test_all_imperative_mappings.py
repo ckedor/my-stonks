@@ -26,6 +26,7 @@ from app.modules.market_data.domain.quote import Quote
 from app.modules.market_data.domain.usd_brl import UsdBrlHistory
 from app.modules.operations.domain.task_run import TaskRun
 from app.modules.portfolio.domain import entities as portfolio_entities
+from app.modules.portfolio.domain.income_tax.darf import DarfPayment
 from app.modules.research.domain.entities import (
     RecommendedPortfolio,
     RecommendedPortfolioType,
@@ -79,6 +80,7 @@ PERSISTED_ENTITIES = [
     portfolio_entities.PortfolioConsolidation,
     portfolio_entities.ConfigurationName,
     portfolio_entities.BrokerageNote,
+    DarfPayment,
     User,
     MarketDataSeries,
     MarketDataSeriesHistory,
@@ -99,7 +101,7 @@ PERSISTED_ENTITIES = [
     AIRun,
     TaskRun,
 ]
-EXPECTED_PERSISTED_ENTITY_COUNT = 63
+EXPECTED_PERSISTED_ENTITY_COUNT = 64
 
 
 def test_every_persisted_entity_is_one_mapped_domain_dataclass():

@@ -5,23 +5,14 @@ import {
   SectionTitle,
   type AppSimpleTableColumn,
 } from '@/components/ui'
+import type { AssetTaxInfo } from '@/api/incomeTax'
+import { EMPTY_LIST } from '@/queries/empty'
+import { useAssetsAndRights } from '@/queries/incomeTax'
 import TaxTableSkeleton from './TaxTableSkeleton'
-import { INCOME_TAX_ROUTES } from '@/constants/routes'
-import api from '@/lib/api'
-import { useEffect, useState } from 'react'
 
-interface AssetTaxInfo {
-  grupo: string
-  codigo: string
-  discriminacao: string
-  position_previous_year: number
-  position_fiscal_year: number
-  exempt_dividends: number
-  codigo_negociacao: string
-  negociado_em_bolsa: boolean
-  locale: string
-  cnpj: string
-}
+/* Bens e Direitos ainda é da carteira aberta, e ainda lê a posição a preço de
+ * mercado. Passar a ler o custo fiscal, da mesma apuração que as outras abas,
+ * é a etapa seguinte do plano de IR. */
 
 interface AssetsAndRightsProps {
   fiscalYear: number
@@ -31,28 +22,9 @@ interface AssetsAndRightsProps {
 const amount = (value: number) => value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
 
 export default function AssetsAndRights({ fiscalYear, portfolioId }: AssetsAndRightsProps) {
-  const [data, setData] = useState<AssetTaxInfo[]>([])
-  const [loading, setLoading] = useState(false)
+  const { data = EMPTY_LIST, isPending } = useAssetsAndRights(portfolioId, fiscalYear)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        const res = await api.get(INCOME_TAX_ROUTES.assetsAndRights(portfolioId), {
-          params: { fiscal_year: fiscalYear },
-        })
-        setData(res.data)
-      } catch (err) {
-        console.error('Erro ao carregar dados:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [fiscalYear, portfolioId])
-
-  if (loading) return <TaxTableSkeleton columns={9} rows={10} />
+  if (isPending) return <TaxTableSkeleton columns={9} rows={10} />
 
   const columns: AppSimpleTableColumn<AssetTaxInfo>[] = [
     { label: 'Grupo', render: (item) => item.grupo },

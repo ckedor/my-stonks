@@ -1,6 +1,7 @@
 # Refatoração e robustez do imposto de renda
 
-Status: proposta para discussão; implementação não iniciada.
+Status: etapas 2 e 3 entregues em 29/09/2026 para operações comuns, FII/Fiagro,
+cripto em corretora brasileira e DARF (ver seção 11). Etapas 4 a 6 pendentes.
 Revisão inicial do código e consulta a fontes oficiais: 23/09/2026.
 
 Decisões confirmadas na discussão:
@@ -177,3 +178,57 @@ Ainda precisamos confirmar quais classes/operações o usuário utiliza e se exi
 Recomendação de organização: visão fiscal do usuário, com “Declaração anual” e “Apuração e DARF”, mantendo detalhamento por carteira para conferência. Catálogo de regras inicialmente em código, sem editor administrativo. Não é necessário compartilhar CPF ou documentos pessoais para decidir a arquitetura.
 
 Decisões ainda propostas: catálogo em código; foco inicial em PF residente e fichas de investimentos; lançamentos complementares manuais. Nenhuma dessas hipóteses autoriza descartar classes existentes ou declarar cobertura fiscal integral antes das validações descritas.
+
+## 11. Entrega de 29/09/2026
+
+Decisões da segunda rodada, tomadas com o mantenedor:
+
+- A apuração soma **todas** as carteiras do usuário; não há carteira de teste
+  que duplique operações.
+- O histórico de bolsa está completo no app: prejuízo e custo saem só das
+  transações, sem lançamento de saldo inicial.
+- Opera-se ações/ETF de ações/BDR, FII/Fiagro e ETF de renda fixa. Day trade
+  não: aparece como pendência se as transações mostrarem um.
+- Cripto entra já, e é custodiada em corretora brasileira: ganho de capital,
+  isenção de R$ 35 mil no mês, faixas progressivas, DARF 4600, sem compensar
+  perda. Cripto em corretora de base dólar vira pendência (regime anual da
+  Lei 14.754, não apurado).
+- Bonificação sem custo atribuído: o evento não ganhou campo novo; a ação
+  bonificada entra com custo zero e a apuração mostra a pendência.
+
+Entregue:
+
+- Motor puro em `backend/app/modules/portfolio/domain/income_tax/`: catálogo de
+  regras com vigência e fonte (`rules.py`), classificação fiscal do ativo
+  (`trades.py`), custo médio do contribuinte com taxas e eventos (`ledger.py`),
+  apuração mensal por regime com isenção, compensação e IRRF (`assessment.py`),
+  DARF com mínimo de R$ 10, vencimento e pagamentos (`darf.py`, `calendar.py`),
+  pendências (`pendency.py`), e a junção em `report.py`. Tudo em `Decimal`.
+- `GET /portfolio/income_tax/assessment?fiscal_year=` e o registro de
+  pagamentos em `/portfolio/income_tax/darf_payment` (tabela
+  `portfolio.darf_payment`). As rotas antigas de DARF, apuração de FII e de
+  operações comuns, e `app/lib/income_tax/`, foram removidas.
+- Tela com as abas DARF (situação, vencimento, pagamento), Operações comuns,
+  FII e Fiagro, Cripto e Bens e Direitos, pendências acima das abas, leituras
+  em `src/queries/incomeTax.ts`.
+- Exemplos calculados à mão em
+  `backend/tests/modules/portfolio/test_income_tax_assessment.py` (limites de
+  20 mil e 35 mil nas bordas, compensação, IRRF, mínimo, vencimentos, eventos,
+  catálogo) e as rotas em `backend/tests/e2e/test_income_tax.py`.
+
+Diferenças esperadas contra o cálculo antigo, todas intencionais: taxas passam a
+entrar no custo e na venda; ETF/BDR compensam prejuízo com ações no mesmo mês;
+ETF de renda fixa sai do DARF; cripto deixa de compensar prejuízo e ganha
+faixas; o prejuízo e o limite passam a somar todas as carteiras; o DARF abaixo
+de R$ 10 passa a acumular.
+
+Fontes: nesta sessão o acesso a gov.br e aos portais de legislação estava
+bloqueado na rede. As regras foram conferidas por fontes secundárias que citam a
+Receita (compensação de prejuízo em mês isento, isenção e faixas de cripto,
+queda da MP 1.303/2025). Conferir os artigos citados em `rules.py` contra o
+texto oficial antes de declarar.
+
+Ainda não coberto: Bens e Direitos pelo custo e na visão do contribuinte
+(etapa 4); rendimentos (dividendos, JCP, FII) na ficha própria; exterior (Lei
+14.754); day trade; FI-Infra e outros fundos listados; custo de bonificação;
+exportação dos demonstrativos; mapeamento da declaração por exercício.

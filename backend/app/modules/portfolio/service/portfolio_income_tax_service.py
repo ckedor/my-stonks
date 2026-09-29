@@ -1,26 +1,34 @@
 # app/modules/portfolio/service/portfolio_income_tax_service.py
 """
-Portfolio income tax service - handles tax calculations and reports.
+Imposto de renda: a apuração do contribuinte e o informe de bens e direitos.
+
+A apuração é do usuário — todas as carteiras dele —, e o cálculo mora em
+`domain/income_tax/`. Aqui só se leem os fatos pelo unit of work, se traduzem
+para o motor e se registram os pagamentos de DARF.
+
+O informe de bens e direitos ainda é por carteira e ainda lê a posição a preço
+de mercado; migrá-lo para a apuração, a custo, é a etapa seguinte do plano.
 """
+
+from datetime import date
+from decimal import Decimal
 
 import pandas as pd
 
+from app.core.exceptions import NotFoundError
 from app.infra.db.unit_of_work import UnitOfWork
-from app.lib.finance.trade import profits_by_month_df
-from app.lib.income_tax.constants import TaxableAssetType
-from app.lib.income_tax.tax_income_calculator import TaxIncomeCalculator
 from app.lib.utils.df import rows_to_df
 from app.lib.utils.fastapi import df_response
-from app.modules.market_data.domain.assets import Event
 from app.modules.market_data.domain.constants import ASSET_TYPE, CURRENCY
 from app.modules.market_data.domain.market_scope import is_brazilian_market
-
-_ASSET_TYPE_TO_TAXABLE: dict[ASSET_TYPE, TaxableAssetType] = {
-    ASSET_TYPE.STOCK: TaxableAssetType.STOCK,
-    ASSET_TYPE.FII: TaxableAssetType.FII,
-    ASSET_TYPE.ETF: TaxableAssetType.ETF,
-    ASSET_TYPE.CRIPTO: TaxableAssetType.CRIPTO,
-}
+from app.modules.portfolio.domain.income_tax.darf import DarfPayment
+from app.modules.portfolio.domain.income_tax.report import IncomeTaxReport, assess
+from app.modules.portfolio.domain.income_tax.trades import (
+    AssetFacts,
+    CorporateEvent,
+    TaxTrade,
+    classify,
+)
 
 #: Colunas do informe de bens e direitos, na ordem em que a Receita as lê.
 #: Declaradas aqui porque a resposta vazia precisa ter a mesma forma da cheia:
@@ -63,6 +71,75 @@ _EXEMPT_DIVIDEND_ASSET_TYPES: list[ASSET_TYPE] = [
 class PortfolioIncomeTaxService:
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
+
+    async def get_assessment(
+        self, user_id: int, fiscal_year: int, today: date | None = None
+    ) -> IncomeTaxReport:
+        """A apuração do ano-calendário, sobre todas as carteiras do usuário."""
+        async with self.uow as uow:
+            portfolios = await uow.portfolios.get_user_portfolios(user_id)
+            rows = await uow.portfolios.get_income_tax_trades([
+                portfolio.id for portfolio in portfolios
+            ])
+            events = await uow.portfolios.get_events_for_assets(
+                sorted({row['asset_id'] for row in rows})
+            )
+            payments = await uow.portfolios.get_darf_payments(user_id)
+
+        return assess(
+            fiscal_year=fiscal_year,
+            trades=[_tax_trade(row) for row in rows],
+            events=[
+                CorporateEvent(
+                    asset_id=event.asset_id,
+                    day=event.date,
+                    type=event.type,
+                    factor=_decimal(event.factor),
+                )
+                for event in events
+            ],
+            payments=payments,
+            today=today or date.today(),
+        )
+
+    async def list_darf_payments(self, user_id: int) -> list[DarfPayment]:
+        async with self.uow as uow:
+            return await uow.portfolios.get_darf_payments(user_id)
+
+    async def register_darf_payment(  # noqa: PLR0913
+        self,
+        user_id: int,
+        *,
+        revenue_code: str,
+        period: date,
+        paid_on: date,
+        principal: Decimal,
+        fine: Decimal = Decimal(0),
+        interest: Decimal = Decimal(0),
+    ) -> DarfPayment:
+        payment = DarfPayment(
+            user_id=user_id,
+            revenue_code=revenue_code,
+            period=period.replace(day=1),
+            paid_on=paid_on,
+            principal=principal,
+            fine=fine,
+            interest=interest,
+        )
+        async with self.uow as uow:
+            await uow.portfolios.create(DarfPayment, [payment])
+            await uow.commit()
+        return payment
+
+    async def delete_darf_payment(self, user_id: int, payment_id: int) -> None:
+        async with self.uow as uow:
+            payment = await uow.portfolios.get(DarfPayment, id=payment_id)
+            if payment is None or payment.user_id != user_id:
+                raise NotFoundError(
+                    'Pagamento de DARF não encontrado', context={'payment_id': payment_id}
+                )
+            await uow.portfolios.delete(DarfPayment, id=payment_id)
+            await uow.commit()
 
     async def get_assets_and_rights(self, portfolio_id: int, fiscal_year: int) -> dict:
         last_day_fiscal_year = pd.to_datetime(f'{fiscal_year}-12-31')
@@ -325,187 +402,37 @@ class PortfolioIncomeTaxService:
         else:
             return f'Ativo {row["name"]} ({row["ticker"]}) via {broker}.'
 
-    async def get_fiis_operations_tax(self, portfolio_id: int, fiscal_year: int) -> dict:
-        async with self.uow as uow:
-            rows = await uow.portfolios.get_transactions(
-                portfolio_id, asset_types_ids=[ASSET_TYPE.FII]
-            )
-            events = await uow.portfolios.get(Event, order_by='date asc')
-        df = pd.DataFrame(rows)
-        if not df.empty:
-            df['date'] = pd.to_datetime(df['date'])
 
-        df = self._apply_split_events(df, events)
+def _decimal(value) -> Decimal:
+    """Float do banco para Decimal pelo texto, sem o ruído binário (0.1 vira 0.1)."""
+    return Decimal(str(value))
 
-        response = await self._calculate_tax(df, fiscal_year, ASSET_TYPE.FII)
-        grouped = response.groupby('month', as_index=False).agg({
-            'realized_profit': 'sum',
-            'accumulated_loss': 'sum',
-            'tax_due': 'sum',
-            'gross_sales': 'sum',
-        })
-        return df_response(grouped)
 
-    async def get_common_operations_tax(self, portfolio_id: int, fiscal_year: int) -> dict:
-        async with self.uow as uow:
-            br_stocks_rows = await uow.portfolios.get_transactions(
-                portfolio_id,
-                asset_types_ids=[ASSET_TYPE.STOCK],
-                currency_id=CURRENCY.BRL,
-            )
-            br_etf_bdr_rows = await uow.portfolios.get_transactions(
-                portfolio_id,
-                asset_types_ids=[ASSET_TYPE.ETF, ASSET_TYPE.BDR],
-                currency_id=CURRENCY.BRL,
-            )
-
-        br_stocks_df = pd.DataFrame(br_stocks_rows)
-        if not br_stocks_df.empty:
-            br_stocks_df['date'] = pd.to_datetime(br_stocks_df['date'])
-        br_result = await self._calculate_tax(br_stocks_df, fiscal_year, ASSET_TYPE.STOCK)
-
-        br_etf_bdr_df = pd.DataFrame(br_etf_bdr_rows)
-        if not br_etf_bdr_df.empty:
-            br_etf_bdr_df['date'] = pd.to_datetime(br_etf_bdr_df['date'])
-        br_etf_bdr_result = await self._calculate_tax(br_etf_bdr_df, fiscal_year, ASSET_TYPE.ETF)
-
-        merged = pd.concat([br_result, br_etf_bdr_result], ignore_index=True)
-        grouped = merged.groupby('month', as_index=False).agg({
-            'realized_profit': 'sum',
-            'accumulated_loss': 'sum',
-            'tax_due': 'sum',
-            'gross_sales': 'sum',
-        })
-
-        return df_response(grouped)
-
-    async def _calculate_tax(
-        self, df: pd.DataFrame, fiscal_year: int, asset_type: ASSET_TYPE
-    ) -> dict:
-        df.loc[:, 'total_amount'] = df['quantity'] * df['price']
-        df = self._calculate_monthly_profits(df)
-
-        taxable_type = _ASSET_TYPE_TO_TAXABLE[asset_type]
-        tax_calculator = TaxIncomeCalculator(taxable_type, df)
-        taxed_df = tax_calculator.calculate_tax()
-
-        last_day_fiscal_year = pd.to_datetime(f'{fiscal_year}-12-31')
-        last_day_previous_year = pd.to_datetime(f'{fiscal_year - 1}-12-31')
-        all_months = pd.date_range(
-            start=last_day_previous_year + pd.offsets.MonthBegin(1),
-            end=last_day_fiscal_year,
-            freq='MS',
-        ).to_period('M')
-
-        full_months_df = pd.DataFrame({'month': all_months})
-        taxed_df = full_months_df.merge(taxed_df, on='month', how='left')
-        taxed_df['realized_profit'] = taxed_df['realized_profit'].fillna(0.0)
-        taxed_df['accumulated_loss'] = taxed_df['accumulated_loss'].ffill().fillna(0.0)
-        taxed_df['tax_due'] = taxed_df['tax_due'].fillna(0.0)
-        taxed_df['month'] = taxed_df['month'].astype(str)
-
-        return taxed_df
-
-    @staticmethod
-    def _calculate_monthly_profits(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.sort_values(by=['asset_id', 'date']).copy()
-
-        results = []
-        for _, group in df.groupby('asset_id'):
-            result = profits_by_month_df(group)
-            results.append(result)
-
-        result = pd.concat(results).sort_index()
-        monthly_df = (
-            result.groupby('month')
-            .agg(realized_profit=('realized_profit', 'sum'), gross_sales=('gross_sales', 'sum'))
-            .reset_index()
+def _tax_trade(row) -> TaxTrade:
+    classification = classify(
+        AssetFacts(
+            asset_type_id=row['asset_type_id'],
+            ticker=row['ticker'],
+            exchange_code=row['exchange_code'],
+            broker_currency_id=row['broker_currency_id'],
+            etf_segment_id=row['etf_segment_id'],
+            fund_kind=row['fund_kind'],
         )
-
-        return monthly_df
-
-    async def get_darf(self, portfolio_id: int, fiscal_year: int) -> dict:
-        async with self.uow as uow:
-            rows = await uow.portfolios.get_transactions(portfolio_id)
-            events = await uow.portfolios.get(Event, order_by='date asc')
-        if not rows:
-            return {
-                'cripto': pd.DataFrame(),
-                'fiis': pd.DataFrame(),
-                'br_stocks': pd.DataFrame(),
-                'etf_bdr': pd.DataFrame(),
-            }
-
-        transactions_df = pd.DataFrame(rows)
-        transactions_df['date'] = pd.to_datetime(transactions_df['date'])
-
-        transactions_df = self._apply_split_events(transactions_df, events)
-
-        is_brl = transactions_df['currency_id'] == CURRENCY.BRL
-
-        def by_types(*types, brl_only: bool = False):
-            df = transactions_df.loc[transactions_df['asset_type_id'].isin(types)].copy()
-            if brl_only:
-                df = df.loc[is_brl.reindex(df.index, fill_value=False)]
-            return df
-
-        cripto_df = by_types(ASSET_TYPE.CRIPTO)
-        fiis_df = by_types(ASSET_TYPE.FII)
-        br_stocks_df = by_types(ASSET_TYPE.STOCK, brl_only=True)
-        etf_bdr_df = by_types(ASSET_TYPE.ETF, ASSET_TYPE.BDR, brl_only=True)
-
-        cripto_taxes_df = await self._calculate_tax(cripto_df, fiscal_year, ASSET_TYPE.CRIPTO)
-        cripto_taxes_df['label'] = 'Criptomoedas (Brasil)'
-
-        fiis_taxes_df = await self._calculate_tax(fiis_df, fiscal_year, ASSET_TYPE.FII)
-        fiis_taxes_df['label'] = 'FII'
-
-        br_stocks_taxes_df = await self._calculate_tax(br_stocks_df, fiscal_year, ASSET_TYPE.STOCK)
-        br_stocks_taxes_df['label'] = 'Bolsa (Brasil)'
-
-        etf_bdr_taxes_df = await self._calculate_tax(etf_bdr_df, fiscal_year, ASSET_TYPE.ETF)
-        etf_bdr_taxes_df['label'] = 'Bolsa (Brasil)'
-
-        combined = pd.concat(
-            [
-                br_stocks_taxes_df,
-                fiis_taxes_df,
-                etf_bdr_taxes_df,
-                cripto_taxes_df,
-            ],
-            ignore_index=True,
-        )
-
-        grouped = combined.groupby(['month', 'label'], as_index=False).agg({
-            'gross_sales': 'sum',
-            'realized_profit': 'sum',
-            'tax_due': 'sum',
-        })
-
-        result = []
-        for month, group in grouped.groupby('month'):
-            entries = []
-            for _, row in group.iterrows():
-                entries.append({
-                    'label': row['label'],
-                    'base': row['realized_profit'],
-                    'gross_sales': row['gross_sales'],
-                    'tax': row['tax_due'],
-                    'darf': row['tax_due'],
-                })
-            result.append({'month': month, 'entries': entries})
-
-        return result
-
-    @staticmethod
-    def _apply_split_events(transactions_df: pd.DataFrame, events) -> pd.DataFrame:
-        if not events:
-            return transactions_df
-        df = transactions_df.copy()
-        df['date'] = pd.to_datetime(df['date'])
-        for e in events:
-            mask = (df['asset_id'] == e.asset_id) & (df['date'] < pd.to_datetime(e.date))
-            f = float(e.factor)
-            df.loc[mask, 'quantity'] = df.loc[mask, 'quantity'] * f
-            df.loc[mask, 'price'] = df.loc[mask, 'price'] / f
-        return df
+    )
+    day = row['date']
+    return TaxTrade(
+        transaction_id=row['transaction_id'],
+        portfolio_id=row['portfolio_id'],
+        asset_id=row['asset_id'],
+        ticker=row['ticker'] or f'#{row["asset_id"]}',
+        kind=classification.kind,
+        note=classification.note,
+        broker_id=row['broker_id'],
+        day=day.date() if hasattr(day, 'date') else day,
+        quantity=_decimal(row['quantity']),
+        price=_decimal(row['price']),
+        fees=None if row['fees'] is None else _decimal(row['fees']),
+        withheld_income_tax=(
+            None if row['withheld_income_tax'] is None else _decimal(row['withheld_income_tax'])
+        ),
+    )

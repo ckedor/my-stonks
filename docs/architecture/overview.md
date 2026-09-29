@@ -610,6 +610,68 @@ screen is the Trades page's "Bater posição" tab: selecting a diverging asset
 lists its transactions at that broker, flags those without a brokerage note, and
 opens the ordinary transaction form to fix them.
 
+## Income tax assessment
+
+The tax belongs to the taxpayer, and the taxpayer is the user: one CPF, every
+portfolio and every broker. The monthly exemption, the average cost and the loss
+to carry are added across all of them, so the assessment reads the user's
+portfolios together and never one portfolio alone.
+
+```text
+GET /portfolio/income_tax/assessment?fiscal_year=
+  -> every transaction of every portfolio of the user, with what classifies it
+     (asset type, exchange, ETF segment, the fund kind the regulator files)
+  -> corporate events of those assets, and the user's DARF payments
+  -> domain/income_tax (pure, Decimal):
+       classify each asset into its tax kind
+       ledger: average cost per asset, fees in the cost and out of the sale,
+               events applied once in date order
+       assess every regime month by month, from the first sale in the history
+       DARFs per revenue code and month, R$ 10 minimum, reconciled with payments
+       pendencies for what the data cannot decide
+  -> the fiscal year's months, sales, DARFs and pendencies   (nothing persisted)
+
+POST /portfolio/income_tax/darf_payment          (the only write)
+DELETE /portfolio/income_tax/darf_payment/{id}
+```
+
+The code lives in `app/modules/portfolio/domain/income_tax/`, and
+`PortfolioIncomeTaxService` only reads the facts through the unit of work and
+hands them over. Nothing of the assessment is stored: it is derived from
+transactions, events and payments and is cheap to recompute, so storing it would
+be a second truth to invalidate on every trade. The one table is
+`portfolio.darf_payment`, because whether a DARF was paid is a fact only the user
+knows, and inferring it from the tax would show an overdue tax as settled.
+
+The whole history is assessed on every read, because January's loss to carry is
+December's, and December's comes from every month before it. The history is
+taken as complete; there is no opening balance to enter.
+
+Three regimes are assessed, each with its own rule, loss and withheld tax:
+common operations (stocks, equity ETFs and BDRs traded in Brazil — only stock
+sales count toward and benefit from the R$ 20,000 exemption), real-estate funds
+(FII, and a listed fund the regulator files as Fiagro), and crypto held with a
+Brazilian broker (capital gain: R$ 35,000 exemption, progressive rates, no loss
+offset). A fixed-income ETF is taxed at source and stays out of the DARF. A sale
+abroad, of crypto at a USD broker, or of a listed fund that is neither FII nor
+Fiagro is a pendency: those regimes are not assessed yet. Buying and selling the
+same asset on the same day at the same broker is assessed as a common operation
+and flagged, since day trade is not among what is traded here.
+
+Rules are a catalogue in code (`income_tax/rules.py`): each version has the
+period it is valid for, its legal source and the date it was checked. A sale is
+assessed by the rule valid on its date; a period with no rule is a pendency, not
+an exemption; a version starts and ends on the first day of a month, and
+`validate_catalogue` refuses overlaps and mid-month changes. The due date is the
+last bank business day of the following month, computed in
+`income_tax/calendar.py` and presented as something to confirm in Sicalc, which
+also computes fines and interest.
+
+Money is `Decimal` from the transaction to the response, and the API serializes
+it as a string with two decimals. The assets and rights report
+(`/portfolio/income_tax/{portfolio_id}/assets_and_rights`) is not part of the
+assessment yet: it is still per portfolio and valued at market price.
+
 ## Laboratory backtests
 
 A theoretical portfolio is an allocation nobody bought, and the flow around it

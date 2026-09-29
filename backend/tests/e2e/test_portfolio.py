@@ -637,13 +637,3 @@ class TestIncomeTax:
         )
 
         assert response.status_code == HTTPStatus.OK
-
-    async def test_get_darf(self, client, db, factory):
-        portfolio = await _seed_portfolio(factory)
-
-        response = await client.get(
-            f'/portfolio/income_tax/{portfolio.id}/darf',
-            params={'fiscal_year': 2024},
-        )
-
-        assert response.status_code == HTTPStatus.OK
