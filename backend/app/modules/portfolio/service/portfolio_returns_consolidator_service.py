@@ -172,7 +172,7 @@ class PortfolioReturnsConsolidatorService:
     def _segment_records(self, position_df: pd.DataFrame, portfolio_id: int) -> list[dict]:
         """The specialized screens' series, persisted like any other scope.
 
-        Two of the five segments are exactly one asset type and would duplicate
+        Three of the six segments are exactly one asset type and would duplicate
         that series; they are written anyway, so that reading a segment is one
         query with one shape instead of a branch on which kind of segment it is.
         A position outside every segment resolves to None and is left out.

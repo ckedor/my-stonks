@@ -27,7 +27,7 @@ from app.modules.market_data.domain.assets import (
     TreasuryBond,
 )
 from app.modules.market_data.domain.enums import EXCHANGE
-from app.modules.market_data.domain.fund_registry import FundRegistry
+from app.modules.market_data.domain.fund_registry import FundRegistry, FundRegistryClass
 from app.modules.market_data.domain.market_data_series import MarketDataSeries
 from app.modules.market_data.domain.market_scope import B3_TICKER_PATTERN
 from app.modules.portfolio.domain.dividend import DividendQuery
@@ -1037,6 +1037,17 @@ class PortfolioRepository(SQLAlchemyRepository):
                 FixedIncome.fee.label('fee'),
                 FixedIncomeType.id.label('fixed_income_type_id'),
                 FixedIncomeType.name.label('fixed_income_type'),
+                # O que um fundo de investimento publica sobre si, pelo
+                # cadastro do regulador: as dimensões da tela de fundos. A
+                # classificação ANBIMA é a do cadastro quando ele tem uma, e a
+                # digitada no ativo quando não -- a mesma precedência de
+                # `InvestmentFund.anbima_classification`.
+                FundRegistryClass.classification.label('fund_classification'),
+                func.coalesce(
+                    func.nullif(FundRegistryClass.anbima_classification, ''),
+                    InvestmentFund.anbima_category,
+                ).label('fund_anbima_classification'),
+                FundRegistry.manager_name.label('fund_manager'),
             )
             .join(Asset, Position.asset_id == Asset.id)
             .outerjoin(cat_assignment_subq, cat_assignment_subq.c.asset_id == Position.asset_id)
@@ -1052,6 +1063,11 @@ class PortfolioRepository(SQLAlchemyRepository):
             .outerjoin(FixedIncome, FixedIncome.asset_id == Asset.id)
             .outerjoin(MarketDataSeries, FixedIncome.index_id == MarketDataSeries.id)
             .outerjoin(FixedIncomeType, FixedIncome.fixed_income_type_id == FixedIncomeType.id)
+            .outerjoin(InvestmentFund, InvestmentFund.asset_id == Asset.id)
+            .outerjoin(
+                FundRegistryClass, FundRegistryClass.id == InvestmentFund.fund_registry_class_id
+            )
+            .outerjoin(FundRegistry, FundRegistry.id == FundRegistryClass.fund_registry_id)
             .outerjoin(
                 Dividend,
                 and_(

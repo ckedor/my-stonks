@@ -96,6 +96,24 @@ export const CONCENTRATION_DIMENSIONS = {
     hint: 'CDI, IPCA ou prefixado',
     read: (position) => position.index ?? 'Prefixado',
   },
+  fundClassification: {
+    value: 'fundClassification',
+    label: 'Classificação',
+    hint: 'Renda fixa, ações, multimercado ou cambial',
+    read: (position) => position.fund_classification,
+  },
+  fundAnbimaClassification: {
+    value: 'fundAnbimaClassification',
+    label: 'ANBIMA',
+    hint: 'A classificação ANBIMA, mais fina que a do regulador',
+    read: (position) => position.fund_anbima_classification,
+  },
+  fundManager: {
+    value: 'fundManager',
+    label: 'Gestor',
+    hint: 'Quem decide o que o fundo compra',
+    read: (position) => position.fund_manager,
+  },
 } satisfies Record<string, ConcentrationDimension>
 
 /** Quanto vale cada grupo do recorte, do maior para o menor.

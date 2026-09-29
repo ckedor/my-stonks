@@ -77,6 +77,7 @@ const router = createBrowserRouter([
       { path: 'portfolio/equity-world', element: <PortfolioSegmentPage segment="equity-world" /> },
       { path: 'portfolio/fixed-income', element: <PortfolioSegmentPage segment="fixed-income" /> },
       { path: 'portfolio/crypto', element: <PortfolioSegmentPage segment="crypto" /> },
+      { path: 'portfolio/investment-fund', element: <PortfolioSegmentPage segment="investment-fund" /> },
       { path: 'portfolio/returns', element: <PortfolioReturnsPage /> },
       { path: 'portfolio/analysis', element: <PortfolioRiskPage /> },
       { path: 'portfolio/pension', element: <PensionPage /> },

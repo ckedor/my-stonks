@@ -49,9 +49,9 @@ from tests.fakes import FakeCache, FakeUnitOfWork
         (ASSET_TYPE.DEB, None, 'fixed-income'),
         (ASSET_TYPE.LCA, None, 'fixed-income'),
         (ASSET_TYPE.CRIPTO, None, 'crypto'),
+        (ASSET_TYPE.FI, None, 'investment-fund'),
         # Nem toda posição está numa tela especializada, e isso é permitido.
         (ASSET_TYPE.PREV, None, None),
-        (ASSET_TYPE.FI, None, None),
         (None, 'B3', None),
     ],
 )
@@ -155,6 +155,7 @@ async def test_empty_segment_patrimony_is_nothing_and_not_the_whole_portfolio():
         (PortfolioSegment.FII, False),
         (PortfolioSegment.FIXED_INCOME, False),
         (PortfolioSegment.CRYPTO, False),
+        (PortfolioSegment.INVESTMENT_FUND, False),
         (PortfolioSegment.EQUITY_BR, True),
         (PortfolioSegment.EQUITY_WORLD, True),
     ],
@@ -240,7 +241,8 @@ async def test_the_current_position_payload_carries_the_segment():
         _current_position_row(3, ASSET_TYPE.FII, 'B3'),
         _current_position_row(4, ASSET_TYPE.CRIPTO, None),
         _current_position_row(5, ASSET_TYPE.TREASURY, None),
-        _current_position_row(6, ASSET_TYPE.PREV, None),
+        _current_position_row(6, ASSET_TYPE.FI, None),
+        _current_position_row(7, ASSET_TYPE.PREV, None),
     ]
     service = _service(get_position_on_date=AsyncMock(return_value=rows))
 
@@ -253,9 +255,39 @@ async def test_the_current_position_payload_carries_the_segment():
         'fii',
         'crypto',
         'fixed-income',
+        'investment-fund',
         # Previdência não tem tela, e nulo é a resposta honesta.
         None,
     ]
+
+
+@pytest.mark.unit
+async def test_the_current_position_carries_what_the_fund_screen_is_read_by():
+    """As dimensões da tela de fundos vêm do cadastro do regulador.
+
+    A classificação ANBIMA tem duas fontes, e a precedência está escrita duas
+    vezes: em `InvestmentFund.anbima_classification` e aqui, em SQL. A do
+    cadastro vence; a digitada no ativo só entra quando o cadastro não tem
+    uma -- nem nula, nem vazia. Se as duas divergirem, o mesmo fundo aparece
+    com uma classificação na tela dele e outra na concentração da carteira.
+    """
+    from app.infra.db.bootstrap import start_mappers
+    from app.modules.portfolio.repositories.portfolio_repository import PortfolioRepository
+
+    start_mappers()
+    repository = PortfolioRepository.__new__(PortfolioRepository)
+
+    statement = await repository._build_portfolio_position_query(7, date='2026-03-17')
+    sql = ' '.join(str(statement.compile()).split())
+
+    assert {'fund_classification', 'fund_anbima_classification', 'fund_manager'} <= set(
+        statement.selected_columns.keys()
+    )
+    assert (
+        'coalesce(nullif(asset.fund_registry_class.anbima_classification, '
+        in sql
+    )
+    assert '), asset.fund.anbima_category) AS fund_anbima_classification' in sql
 
 
 @pytest.mark.unit

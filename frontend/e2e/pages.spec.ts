@@ -363,13 +363,14 @@ test('portfolio/fiis mostra desempenho, patrimônio e risco do segmento', async 
   await expect(page.getByRole('columnheader', { name: 'Categoria / Ativo' })).toBeVisible()
 })
 
-/* As quatro telas novas são a mesma tela do FII com outro recorte, e o que
-   prova isso é que a mesma navegação encontra cada uma delas. */
+/* As outras telas especializadas são a mesma tela do FII com outro recorte, e
+   o que prova isso é que a mesma navegação encontra cada uma delas. */
 for (const [path, title] of [
   ['/portfolio/equity-br', 'Ações/ETFs BR'],
   ['/portfolio/equity-world', 'Ações/ETFs Mundo'],
   ['/portfolio/fixed-income', 'Renda Fixa'],
   ['/portfolio/crypto', 'Cripto'],
+  ['/portfolio/investment-fund', 'Fundos'],
 ] as const) {
   test(`${path} abre o segmento`, async ({ page, mockApi }) => {
     await page.clock.setFixedTime(HOJE)

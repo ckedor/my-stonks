@@ -17,7 +17,7 @@ interface Props {
 
 /** A carteira vista por um segmento — um tipo de ativo, num mercado.
  *
- *  Os cinco segmentos mostram a mesma tela, e é a mesma que uma categoria
+ *  Os segmentos mostram todos a mesma tela, e é a mesma que uma categoria
  *  personalizada mostra: o que muda é só como o recorte é escolhido. Aqui ele
  *  vem carimbado em cada posição pelo backend, que é quem sabe separar a ação
  *  brasileira da estrangeira. */

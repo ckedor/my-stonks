@@ -24,9 +24,8 @@ types whose label happens to equal its code (`FII`, `ETF`, `CDB`) and silently
 failed for the rest, which is how the specialized screens came up empty. The id
 is the seeded primary key and the only stable identity an asset type has.
 
-Segments do not have to cover the portfolio. Pension and investment funds
-belong to none, and a position outside every segment is simply not on any
-specialized screen.
+Segments do not have to cover the portfolio. Pension belongs to none, and a
+position outside every segment is simply not on any specialized screen.
 
 A segment's return series is persisted like any other scope of
 ``portfolio.return_series``, so reading one is a select. It was not always: the
@@ -47,6 +46,7 @@ class PortfolioSegment(StrEnum):
     EQUITY_WORLD = 'equity-world'
     FIXED_INCOME = 'fixed-income'
     CRYPTO = 'crypto'
+    INVESTMENT_FUND = 'investment-fund'
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -86,11 +86,12 @@ SEGMENT_DEFINITIONS: dict[PortfolioSegment, SegmentDefinition] = {
         )
     ),
     PortfolioSegment.CRYPTO: SegmentDefinition(asset_types=(ASSET_TYPE.CRIPTO,)),
+    PortfolioSegment.INVESTMENT_FUND: SegmentDefinition(asset_types=(ASSET_TYPE.FI,)),
 }
 
 #: Asset types that belong to no specialized screen, listed on purpose so that
 #: "has no segment" is a decision and not an omission.
-UNSEGMENTED_ASSET_TYPES = (ASSET_TYPE.PREV, ASSET_TYPE.FI)
+UNSEGMENTED_ASSET_TYPES = (ASSET_TYPE.PREV,)
 
 
 def get_segment_definition(segment: PortfolioSegment) -> SegmentDefinition:
