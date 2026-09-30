@@ -1,6 +1,7 @@
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Column,
     Date,
     DateTime,
@@ -8,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Table,
     Text,
@@ -119,6 +121,10 @@ dividend_table = Table(
     Column('date', Date, nullable=False),
     Column('amount', Float, nullable=False),
     Column('amount_usd', Float, nullable=True),
+    Column('kind', String(20), nullable=False, server_default='dividend'),
+    CheckConstraint(
+        "kind IN ('dividend', 'interest_on_equity')", name='ck_dividend_kind'
+    ),
     schema='portfolio',
 )
 
@@ -230,5 +236,27 @@ portfolio_consolidation_table = Table(
     Column('consolidated_at', DateTime(timezone=True), nullable=False),
     Column('status', String, nullable=False),
     Column('error', Text, nullable=True),
+    schema='portfolio',
+)
+
+#: Um DARF pago, como a pessoa o registrou. É do usuário, e não de uma carteira,
+#: porque a apuração é do contribuinte: o DARF de um mês junta todas elas.
+darf_payment_table = Table(
+    'darf_payment',
+    Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('user_id', Integer, ForeignKey('user.id', ondelete='CASCADE'), nullable=False),
+    Column('revenue_code', String(4), nullable=False),
+    # O mês de apuração, guardado no primeiro dia.
+    Column('period', Date, nullable=False),
+    Column('paid_on', Date, nullable=False),
+    Column('principal', Numeric(14, 2), nullable=False),
+    Column('fine', Numeric(14, 2), nullable=False, server_default='0'),
+    Column('interest', Numeric(14, 2), nullable=False, server_default='0'),
+    Column('created_at', DateTime(timezone=True), nullable=False, server_default=func.now()),
+    CheckConstraint('extract(day from period) = 1', name='ck_darf_payment_period_first_day'),
+    CheckConstraint('principal > 0', name='ck_darf_payment_principal_positive'),
+    CheckConstraint('fine >= 0 AND interest >= 0', name='ck_darf_payment_charges_not_negative'),
+    Index('ix_darf_payment_user_period', 'user_id', 'period'),
     schema='portfolio',
 )

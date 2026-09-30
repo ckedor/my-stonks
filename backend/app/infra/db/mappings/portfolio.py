@@ -7,6 +7,7 @@ from app.infra.db.tables.portfolio import (
     configuration_name_table,
     custom_category_assignment_table,
     custom_category_table,
+    darf_payment_table,
     dividend_table,
     portfolio_consolidation_table,
     portfolio_table,
@@ -32,6 +33,7 @@ from app.modules.portfolio.domain.entities import (
     ReturnSeries,
     Transaction,
 )
+from app.modules.portfolio.domain.income_tax.darf import DarfPayment
 from app.modules.users.domain import User
 
 
@@ -61,6 +63,7 @@ def map_portfolio() -> None:
         },
     )
     Base.registry.map_imperatively(BrokerageNote, brokerage_note_table)
+    Base.registry.map_imperatively(DarfPayment, darf_payment_table)
     Base.registry.map_imperatively(
         Transaction,
         transaction_table,

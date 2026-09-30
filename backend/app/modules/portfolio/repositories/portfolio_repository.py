@@ -42,6 +42,7 @@ from app.modules.portfolio.domain.entities import (
     ReturnSeries,
     Transaction,
 )
+from app.modules.portfolio.domain.income_tax.darf import DarfPayment
 from app.modules.portfolio.domain.portfolio_segment import SegmentDefinition
 from app.modules.portfolio.domain.quote_ingestion import FundPurchaseHistory
 from app.modules.portfolio.domain.return_scope import WHOLE_PORTFOLIO_KEY, ReturnScope
@@ -50,6 +51,7 @@ from app.modules.portfolio.domain.return_scope import WHOLE_PORTFOLIO_KEY, Retur
 #: tabela entra duas vezes na consulta e precisa de um apelido em cada ponta.
 FIIFundRegistry = aliased(FundRegistry)
 ETFFundRegistry = aliased(FundRegistry)
+InvestmentFundRegistry = aliased(FundRegistry)
 
 
 def get_custom_category_subquery(portfolio_id):
@@ -482,6 +484,93 @@ class PortfolioRepository(SQLAlchemyRepository):
         result = await self.session.execute(stmt)
         return result.mappings().all()
 
+    async def get_income_tax_trades(self, portfolio_ids: Sequence[int]) -> list[dict]:
+        """Every transaction of these portfolios, with what the tax assessment classifies by.
+
+        The assessment is the taxpayer's, so it reads every portfolio of the user
+        at once: the average cost and the monthly exemption add across them.
+        Beyond the transaction it needs where the asset trades, the ETF segment
+        (fixed income is taxed at source) and the fund kind the regulator files,
+        which is what tells a Fiagro from any other listed fund.
+        """
+        if not portfolio_ids:
+            return []
+        stmt = (
+            select(
+                Transaction.id.label('transaction_id'),
+                Transaction.portfolio_id,
+                Transaction.asset_id,
+                Transaction.broker_id,
+                Transaction.date,
+                Transaction.quantity,
+                Transaction.price,
+                Transaction.fees,
+                Transaction.withheld_income_tax,
+                Asset.ticker,
+                Asset.name,
+                Asset.asset_type_id,
+                Broker.currency_id.label('broker_currency_id'),
+                Broker.name.label('broker_name'),
+                Broker.cnpj.label('broker_cnpj'),
+                Exchange.code.label('exchange_code'),
+                ETF.segment_id.label('etf_segment_id'),
+                Institution.cnpj.label('issuer_cnpj'),
+                func.coalesce(
+                    FIIFundRegistry.cnpj,
+                    ETFFundRegistry.cnpj,
+                    FundRegistryClass.cnpj,
+                    InvestmentFund.legal_id,
+                ).label('fund_cnpj'),
+                func.coalesce(InvestmentFundRegistry.kind, FIIFundRegistry.kind).label('fund_kind'),
+            )
+            .join(Asset, Transaction.asset_id == Asset.id)
+            .join(Broker, Transaction.broker_id == Broker.id)
+            .outerjoin(Exchange, Exchange.id == Asset.exchange_id)
+            .outerjoin(Institution, Institution.id == Asset.institution_id)
+            .outerjoin(ETF, ETF.asset_id == Asset.id)
+            .outerjoin(ETFFundRegistry, ETFFundRegistry.id == ETF.fund_registry_id)
+            .outerjoin(FII, FII.asset_id == Asset.id)
+            .outerjoin(FIIFundRegistry, FIIFundRegistry.id == FII.fund_registry_id)
+            .outerjoin(InvestmentFund, InvestmentFund.asset_id == Asset.id)
+            .outerjoin(
+                FundRegistryClass,
+                FundRegistryClass.id == InvestmentFund.fund_registry_class_id,
+            )
+            .outerjoin(
+                InvestmentFundRegistry,
+                InvestmentFundRegistry.id == FundRegistryClass.fund_registry_id,
+            )
+            .where(Transaction.portfolio_id.in_(portfolio_ids))
+            .order_by(Transaction.date, Transaction.id)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.mappings().all())
+
+    async def get_income_tax_dividends(
+        self, portfolio_ids: Sequence[int], start: date_type, end: date_type
+    ) -> list[dict]:
+        """The dividends these portfolios received in the period, in BRL, with their kind."""
+        if not portfolio_ids:
+            return []
+        stmt = (
+            select(Dividend.asset_id, Dividend.date, Dividend.amount, Dividend.kind)
+            .where(Dividend.portfolio_id.in_(portfolio_ids))
+            .where(Dividend.date >= start)
+            .where(Dividend.date <= end)
+            .order_by(Dividend.date, Dividend.id)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.mappings().all())
+
+    async def get_darf_payments(self, user_id: int) -> list[DarfPayment]:
+        stmt = (
+            select(DarfPayment)
+            .where(DarfPayment.user_id == user_id)
+            .order_by(DarfPayment.period, DarfPayment.paid_on, DarfPayment.id)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def get_broker_transactions_until(
         self, portfolio_id: int, broker_id: int, until: date_type
     ) -> list[Transaction]:
@@ -612,6 +701,7 @@ class PortfolioRepository(SQLAlchemyRepository):
                 Dividend.asset_id,
                 Asset.ticker,
                 amount_col,
+                Dividend.kind,
                 cat_assignment_subq.c.category,
             )
             .join(Asset, Dividend.asset_id == Asset.id)
@@ -627,36 +717,6 @@ class PortfolioRepository(SQLAlchemyRepository):
             stmt = stmt.where(Dividend.asset_id == filters.asset_id)
         if filters.asset_type_ids:
             stmt = stmt.where(Asset.asset_type_id.in_(filters.asset_type_ids))
-
-        result = await self.session.execute(stmt)
-        return result.mappings().all()
-
-    async def get_exempt_dividends_summary(
-        self,
-        portfolio_id: int,
-        start_date: date_type,
-        end_date: date_type,
-        asset_type_ids: Sequence[int],
-        currency: str = 'BRL',
-    ) -> list[dict]:
-        amount_col = Dividend.amount_usd if currency == 'USD' else Dividend.amount
-
-        stmt = (
-            select(
-                Asset.id.label('asset_id'),
-                Asset.ticker,
-                AssetType.short_name.label('asset_type'),
-                func.sum(amount_col).label('total_dividends'),
-            )
-            .join(Asset, Dividend.asset_id == Asset.id)
-            .join(AssetType, Asset.asset_type_id == AssetType.id)
-            .where(Dividend.portfolio_id == portfolio_id)
-            .where(Dividend.date >= start_date)
-            .where(Dividend.date <= end_date)
-            .where(Asset.asset_type_id.in_(asset_type_ids))
-            .group_by(Asset.id, Asset.ticker, AssetType.short_name)
-            .order_by(desc(func.sum(amount_col)))
-        )
 
         result = await self.session.execute(stmt)
         return result.mappings().all()

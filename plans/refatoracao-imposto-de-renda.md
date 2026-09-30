@@ -1,6 +1,9 @@
 # Refatoração e robustez do imposto de renda
 
-Status: proposta para discussão; implementação não iniciada.
+Status: etapas 2 e 3 entregues em 29/09/2026 para operações comuns, FII/Fiagro,
+cripto em corretora brasileira e DARF (seção 11); fichas da declaração campo a
+campo entregues no mesmo dia (seção 12), aguardando revisão das fontes.
+Pendentes: exterior, day trade, bonificação com custo, e o que a seção 12 lista.
 Revisão inicial do código e consulta a fontes oficiais: 23/09/2026.
 
 Decisões confirmadas na discussão:
@@ -177,3 +180,102 @@ Ainda precisamos confirmar quais classes/operações o usuário utiliza e se exi
 Recomendação de organização: visão fiscal do usuário, com “Declaração anual” e “Apuração e DARF”, mantendo detalhamento por carteira para conferência. Catálogo de regras inicialmente em código, sem editor administrativo. Não é necessário compartilhar CPF ou documentos pessoais para decidir a arquitetura.
 
 Decisões ainda propostas: catálogo em código; foco inicial em PF residente e fichas de investimentos; lançamentos complementares manuais. Nenhuma dessas hipóteses autoriza descartar classes existentes ou declarar cobertura fiscal integral antes das validações descritas.
+
+## 11. Entrega de 29/09/2026
+
+Decisões da segunda rodada, tomadas com o mantenedor:
+
+- A apuração soma **todas** as carteiras do usuário; não há carteira de teste
+  que duplique operações.
+- O histórico de bolsa está completo no app: prejuízo e custo saem só das
+  transações, sem lançamento de saldo inicial.
+- Opera-se ações/ETF de ações/BDR, FII/Fiagro e ETF de renda fixa. Day trade
+  não: aparece como pendência se as transações mostrarem um.
+- Cripto entra já, e é custodiada em corretora brasileira: ganho de capital,
+  isenção de R$ 35 mil no mês, faixas progressivas, DARF 4600, sem compensar
+  perda. Cripto em corretora de base dólar vira pendência (regime anual da
+  Lei 14.754, não apurado).
+- Bonificação sem custo atribuído: o evento não ganhou campo novo; a ação
+  bonificada entra com custo zero e a apuração mostra a pendência.
+
+Entregue:
+
+- Motor puro em `backend/app/modules/portfolio/domain/income_tax/`: catálogo de
+  regras com vigência e fonte (`rules.py`), classificação fiscal do ativo
+  (`trades.py`), custo médio do contribuinte com taxas e eventos (`ledger.py`),
+  apuração mensal por regime com isenção, compensação e IRRF (`assessment.py`),
+  DARF com mínimo de R$ 10, vencimento e pagamentos (`darf.py`, `calendar.py`),
+  pendências (`pendency.py`), e a junção em `report.py`. Tudo em `Decimal`.
+- `GET /portfolio/income_tax/assessment?fiscal_year=` e o registro de
+  pagamentos em `/portfolio/income_tax/darf_payment` (tabela
+  `portfolio.darf_payment`). As rotas antigas de DARF, apuração de FII e de
+  operações comuns, e `app/lib/income_tax/`, foram removidas.
+- Tela com as abas DARF (situação, vencimento, pagamento), Operações comuns,
+  FII e Fiagro, Cripto e Bens e Direitos, pendências acima das abas, leituras
+  em `src/queries/incomeTax.ts`.
+- Exemplos calculados à mão em
+  `backend/tests/modules/portfolio/test_income_tax_assessment.py` (limites de
+  20 mil e 35 mil nas bordas, compensação, IRRF, mínimo, vencimentos, eventos,
+  catálogo) e as rotas em `backend/tests/e2e/test_income_tax.py`.
+
+Diferenças esperadas contra o cálculo antigo, todas intencionais: taxas passam a
+entrar no custo e na venda; ETF/BDR compensam prejuízo com ações no mesmo mês;
+ETF de renda fixa sai do DARF; cripto deixa de compensar prejuízo e ganha
+faixas; o prejuízo e o limite passam a somar todas as carteiras; o DARF abaixo
+de R$ 10 passa a acumular.
+
+Fontes: nesta sessão o acesso a gov.br e aos portais de legislação estava
+bloqueado na rede. As regras foram conferidas por fontes secundárias que citam a
+Receita (compensação de prejuízo em mês isento, isenção e faixas de cripto,
+queda da MP 1.303/2025). Conferir os artigos citados em `rules.py` contra o
+texto oficial antes de declarar.
+
+Ainda não coberto: Bens e Direitos pelo custo e na visão do contribuinte
+(etapa 4); rendimentos (dividendos, JCP, FII) na ficha própria; exterior (Lei
+14.754); day trade; FI-Infra e outros fundos listados; custo de bonificação;
+exportação dos demonstrativos; mapeamento da declaração por exercício.
+
+## 12. Fichas da declaração, campo a campo (29/09/2026)
+
+O programa do IRPF não importa arquivo de terceiros — só a declaração anterior
+(`.DEC`), a pré-preenchida e arquivos dos programas da Receita (GCAP). Então a
+tela passou a espelhar as fichas: uma aba por ficha, os campos na ordem do
+programa, um botão de copiar em cada um (valor copiado sem separador de milhar).
+Desde o IRPF 2026 a pré-preenchida já traz a renda variável com IRRF e DARFs
+pagos; o uso pensado é começar por ela e conferir/completar com o app.
+
+Entregue:
+
+- **Bens e Direitos** pelo custo, na visão do contribuinte: um item por ativo e
+  corretora com posição em algum dos dois 31/12, custo médio do CPF vezes a
+  quantidade na corretora. O Bens e Direitos antigo (por carteira, a mercado) e
+  sua rota foram removidos.
+- **Rendimentos Isentos**: 20 (ações até R$ 20 mil), 05 (cripto até R$ 35 mil),
+  09 (dividendos por empresa), 99 (FII/Fiagro por fundo), 12 (cupons de
+  CRI/CRA/LCA lançados como provento).
+- **Tributação Exclusiva**: 10 (JCP por empresa, valor líquido) e 06 (cupons de
+  CDB/debênture/Tesouro lançados como provento). Para separar dividendo de JCP,
+  o provento ganhou o campo tipo (`portfolio.dividend.kind`), escolhido no
+  formulário de proventos; tudo o que existia virou dividendo.
+- **Renda Variável** (operações comuns e FII/Fiagro): mês a mês, com o
+  resultado líquido sem o ganho isento e o imposto pago repartido quando um DARF
+  6015 juntou os dois regimes.
+- **Ganhos de Capital**: as vendas de cripto dos meses tributados, no formato do
+  GCAP.
+- **Imposto Pago/Retido**: o IRRF (Lei 11.033) que sobrou no ano.
+
+Para revisar contra o texto oficial (gov.br bloqueado nesta sessão):
+
+- Códigos de Bens e Direitos usados: 03-01 ações (inclusive exterior), 04-02
+  tributados (CDB, Tesouro, debênture), 04-03 isentos (LCI, LCA, CRI, CRA),
+  04-04 BDR, 07-01 fundos com come-cotas, 07-03 FII, 07-08 ETF de renda fixa,
+  07-09 ETF de renda variável, 08-01 bitcoin, 08-02 altcoins, 08-03
+  stablecoins. Incertos e marcados na tela: Fiagro, ETF e REIT no exterior,
+  fundo sem come-cotas, debênture incentivada, VGBL/PGBL.
+- Códigos de rendimento: 20, 05, 09, 12, 99 (FII) isentos; 10 e 06 exclusivos.
+- Nomes e ordem dos campos da ficha Renda Variável, e se o IRRF da Lei 11.033 é
+  abatido no mês pelo programa ou só na ficha Imposto Pago/Retido.
+- Se bens comprados e vendidos no mesmo ano precisam aparecer com situação
+  zerada (hoje não aparecem).
+- CNPJ pedido para renda fixa e Tesouro (hoje: o da corretora custodiante).
+- Campos do GCAP para criptoativo.

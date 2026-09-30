@@ -622,28 +622,3 @@ class TestPosition:
         response = await client.get(f'/portfolio/position/{portfolio.id}/patrimony_evolution')
 
         assert response.status_code == HTTPStatus.OK
-
-
-# ============================================================================
-# INCOME TAX
-# ============================================================================
-class TestIncomeTax:
-    async def test_get_assets_and_rights(self, client, db, factory):
-        portfolio = await _seed_portfolio(factory)
-
-        response = await client.get(
-            f'/portfolio/income_tax/{portfolio.id}/assets_and_rights',
-            params={'fiscal_year': 2024},
-        )
-
-        assert response.status_code == HTTPStatus.OK
-
-    async def test_get_darf(self, client, db, factory):
-        portfolio = await _seed_portfolio(factory)
-
-        response = await client.get(
-            f'/portfolio/income_tax/{portfolio.id}/darf',
-            params={'fiscal_year': 2024},
-        )
-
-        assert response.status_code == HTTPStatus.OK

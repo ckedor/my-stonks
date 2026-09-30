@@ -1832,6 +1832,130 @@
     "title": "AssetUpdate",
     "type": "object"
    },
+   "AssetsAndRightsItemResponse": {
+    "description": "Um bem da ficha Bens e Direitos, com os campos na ordem do programa.",
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "broker_id": {
+      "title": "Broker Id",
+      "type": "integer"
+     },
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "cnpj_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj Label"
+     },
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "code_name": {
+      "title": "Code Name",
+      "type": "string"
+     },
+     "country_code": {
+      "title": "Country Code",
+      "type": "string"
+     },
+     "country_name": {
+      "title": "Country Name",
+      "type": "string"
+     },
+     "current_value": {
+      "title": "Current Value",
+      "type": "string"
+     },
+     "discrimination": {
+      "title": "Discrimination",
+      "type": "string"
+     },
+     "group": {
+      "title": "Group",
+      "type": "string"
+     },
+     "group_name": {
+      "title": "Group Name",
+      "type": "string"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "previous_value": {
+      "title": "Previous Value",
+      "type": "string"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     },
+     "traded_on_exchange": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Traded On Exchange"
+     }
+    },
+    "required": [
+     "asset_id",
+     "broker_id",
+     "group",
+     "group_name",
+     "code",
+     "code_name",
+     "country_code",
+     "country_name",
+     "cnpj",
+     "cnpj_label",
+     "ticker",
+     "traded_on_exchange",
+     "discrimination",
+     "previous_value",
+     "current_value",
+     "note"
+    ],
+    "title": "AssetsAndRightsItemResponse",
+    "type": "object"
+   },
    "BacktestLineResponse": {
     "properties": {
      "final_value": {
@@ -2459,6 +2583,56 @@
     "title": "BrokerageNoteResponse",
     "type": "object"
    },
+   "CapitalGainOperationResponse": {
+    "description": "Uma alienação de criptoativo para o GCAP.",
+    "properties": {
+     "acquisition_cost": {
+      "title": "Acquisition Cost",
+      "type": "string"
+     },
+     "capital_gain": {
+      "title": "Capital Gain",
+      "type": "string"
+     },
+     "day": {
+      "format": "date",
+      "title": "Day",
+      "type": "string"
+     },
+     "fees": {
+      "title": "Fees",
+      "type": "string"
+     },
+     "quantity": {
+      "title": "Quantity",
+      "type": "string"
+     },
+     "sale_value": {
+      "title": "Sale Value",
+      "type": "string"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     },
+     "transaction_id": {
+      "title": "Transaction Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "transaction_id",
+     "day",
+     "ticker",
+     "quantity",
+     "sale_value",
+     "acquisition_cost",
+     "fees",
+     "capital_gain"
+    ],
+    "title": "CapitalGainOperationResponse",
+    "type": "object"
+   },
    "CategoryAssignmentRequest": {
     "properties": {
      "asset_id": {
@@ -2904,6 +3078,214 @@
     "title": "CvmRegistrySyncReport",
     "type": "object"
    },
+   "DarfObligationResponse": {
+    "properties": {
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "balance": {
+      "title": "Balance",
+      "type": "string"
+     },
+     "by_regime": {
+      "items": {
+       "$ref": "#/components/schemas/DarfRegimeAmount"
+      },
+      "title": "By Regime",
+      "type": "array"
+     },
+     "carried_in": {
+      "title": "Carried In",
+      "type": "string"
+     },
+     "carried_out": {
+      "title": "Carried Out",
+      "type": "string"
+     },
+     "due_date": {
+      "format": "date",
+      "title": "Due Date",
+      "type": "string"
+     },
+     "paid_principal": {
+      "title": "Paid Principal",
+      "type": "string"
+     },
+     "payments": {
+      "items": {
+       "$ref": "#/components/schemas/DarfPaymentResponse"
+      },
+      "title": "Payments",
+      "type": "array"
+     },
+     "period": {
+      "format": "date",
+      "title": "Period",
+      "type": "string"
+     },
+     "revenue_code": {
+      "title": "Revenue Code",
+      "type": "string"
+     },
+     "status": {
+      "$ref": "#/components/schemas/DarfStatus"
+     }
+    },
+    "required": [
+     "revenue_code",
+     "period",
+     "due_date",
+     "by_regime",
+     "carried_in",
+     "amount",
+     "carried_out",
+     "paid_principal",
+     "balance",
+     "status",
+     "payments"
+    ],
+    "title": "DarfObligationResponse",
+    "type": "object"
+   },
+   "DarfPaymentRequest": {
+    "properties": {
+     "fine": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": "0",
+      "title": "Fine"
+     },
+     "interest": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": "0",
+      "title": "Interest"
+     },
+     "paid_on": {
+      "format": "date",
+      "title": "Paid On",
+      "type": "string"
+     },
+     "period": {
+      "format": "date",
+      "title": "Period",
+      "type": "string"
+     },
+     "principal": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Principal"
+     },
+     "revenue_code": {
+      "pattern": "^\\d{4}$",
+      "title": "Revenue Code",
+      "type": "string"
+     }
+    },
+    "required": [
+     "revenue_code",
+     "period",
+     "paid_on",
+     "principal"
+    ],
+    "title": "DarfPaymentRequest",
+    "type": "object"
+   },
+   "DarfPaymentResponse": {
+    "properties": {
+     "fine": {
+      "title": "Fine",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "interest": {
+      "title": "Interest",
+      "type": "string"
+     },
+     "paid_on": {
+      "format": "date",
+      "title": "Paid On",
+      "type": "string"
+     },
+     "period": {
+      "format": "date",
+      "title": "Period",
+      "type": "string"
+     },
+     "principal": {
+      "title": "Principal",
+      "type": "string"
+     },
+     "revenue_code": {
+      "title": "Revenue Code",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "revenue_code",
+     "period",
+     "paid_on",
+     "principal",
+     "fine",
+     "interest"
+    ],
+    "title": "DarfPaymentResponse",
+    "type": "object"
+   },
+   "DarfRegimeAmount": {
+    "properties": {
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "regime": {
+      "$ref": "#/components/schemas/TaxRegime"
+     }
+    },
+    "required": [
+     "regime",
+     "amount"
+    ],
+    "title": "DarfRegimeAmount",
+    "type": "object"
+   },
+   "DarfStatus": {
+    "enum": [
+     "below_minimum",
+     "paid",
+     "partially_paid",
+     "open",
+     "overdue"
+    ],
+    "title": "DarfStatus",
+    "type": "string"
+   },
    "DataIngestionAttemptResponse": {
     "properties": {
      "attempted_at": {
@@ -3322,6 +3704,10 @@
       "title": "Id",
       "type": "integer"
      },
+     "kind": {
+      "$ref": "#/components/schemas/DividendKind",
+      "default": "dividend"
+     },
      "ticker": {
       "title": "Ticker",
       "type": "string"
@@ -3359,6 +3745,10 @@
       ],
       "title": "Date"
      },
+     "kind": {
+      "$ref": "#/components/schemas/DividendKind",
+      "default": "dividend"
+     },
      "portfolio_id": {
       "title": "Portfolio Id",
       "type": "integer"
@@ -3371,6 +3761,15 @@
     ],
     "title": "DividendCreateRequest",
     "type": "object"
+   },
+   "DividendKind": {
+    "description": "O que o provento é para o imposto, e não para a rentabilidade.\n\nPara a carteira os dois são dinheiro que entrou. Para a declaração, o\ndividendo é rendimento isento e o JCP é tributado na fonte, em fichas\ndiferentes — e só o cadastro sabe qual dos dois a empresa pagou.",
+    "enum": [
+     "dividend",
+     "interest_on_equity"
+    ],
+    "title": "DividendKind",
+    "type": "string"
    },
    "DividendUpdateRequest": {
     "properties": {
@@ -3400,6 +3799,16 @@
      "id": {
       "title": "Id",
       "type": "integer"
+     },
+     "kind": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/DividendKind"
+       },
+       {
+        "type": "null"
+       }
+      ]
      }
     },
     "required": [
@@ -7602,6 +8011,153 @@
     "title": "ImportResponse",
     "type": "object"
    },
+   "IncomeLineResponse": {
+    "description": "Uma linha de Rendimentos Isentos ou de Tributação Exclusiva.",
+    "properties": {
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "code_name": {
+      "title": "Code Name",
+      "type": "string"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "payer_cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payer Cnpj"
+     },
+     "payer_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payer Name"
+     }
+    },
+    "required": [
+     "code",
+     "code_name",
+     "payer_cnpj",
+     "payer_name",
+     "amount",
+     "note"
+    ],
+    "title": "IncomeLineResponse",
+    "type": "object"
+   },
+   "IncomeTaxAssessmentResponse": {
+    "properties": {
+     "assets_and_rights": {
+      "items": {
+       "$ref": "#/components/schemas/AssetsAndRightsItemResponse"
+      },
+      "title": "Assets And Rights",
+      "type": "array"
+     },
+     "capital_gains": {
+      "items": {
+       "$ref": "#/components/schemas/CapitalGainOperationResponse"
+      },
+      "title": "Capital Gains",
+      "type": "array"
+     },
+     "darf_minimum": {
+      "title": "Darf Minimum",
+      "type": "string"
+     },
+     "exclusive_income": {
+      "items": {
+       "$ref": "#/components/schemas/IncomeLineResponse"
+      },
+      "title": "Exclusive Income",
+      "type": "array"
+     },
+     "exempt_income": {
+      "items": {
+       "$ref": "#/components/schemas/IncomeLineResponse"
+      },
+      "title": "Exempt Income",
+      "type": "array"
+     },
+     "filing_year": {
+      "title": "Filing Year",
+      "type": "integer"
+     },
+     "fiscal_year": {
+      "title": "Fiscal Year",
+      "type": "integer"
+     },
+     "obligations": {
+      "items": {
+       "$ref": "#/components/schemas/DarfObligationResponse"
+      },
+      "title": "Obligations",
+      "type": "array"
+     },
+     "pendencies": {
+      "items": {
+       "$ref": "#/components/schemas/PendencyResponse"
+      },
+      "title": "Pendencies",
+      "type": "array"
+     },
+     "regimes": {
+      "items": {
+       "$ref": "#/components/schemas/RegimeResponse"
+      },
+      "title": "Regimes",
+      "type": "array"
+     },
+     "sales": {
+      "items": {
+       "$ref": "#/components/schemas/RealizedSaleResponse"
+      },
+      "title": "Sales",
+      "type": "array"
+     }
+    },
+    "required": [
+     "fiscal_year",
+     "filing_year",
+     "darf_minimum",
+     "regimes",
+     "sales",
+     "obligations",
+     "pendencies",
+     "assets_and_rights",
+     "exempt_income",
+     "exclusive_income",
+     "capital_gains"
+    ],
+    "title": "IncomeTaxAssessmentResponse",
+    "type": "object"
+   },
    "IndexCurrencyOut": {
     "properties": {
      "code": {
@@ -9785,6 +10341,110 @@
     "title": "MarketDataSeriesTimeSeries",
     "type": "object"
    },
+   "MonthlyAssessmentResponse": {
+    "properties": {
+     "covered": {
+      "title": "Covered",
+      "type": "boolean"
+     },
+     "exempt_gain": {
+      "title": "Exempt Gain",
+      "type": "string"
+     },
+     "exemption_sales": {
+      "title": "Exemption Sales",
+      "type": "string"
+     },
+     "loss_carried_in": {
+      "title": "Loss Carried In",
+      "type": "string"
+     },
+     "loss_carried_out": {
+      "title": "Loss Carried Out",
+      "type": "string"
+     },
+     "loss_used": {
+      "title": "Loss Used",
+      "type": "string"
+     },
+     "month": {
+      "format": "date",
+      "title": "Month",
+      "type": "string"
+     },
+     "net_result": {
+      "title": "Net Result",
+      "type": "string"
+     },
+     "result": {
+      "title": "Result",
+      "type": "string"
+     },
+     "sales": {
+      "title": "Sales",
+      "type": "string"
+     },
+     "tax_due": {
+      "title": "Tax Due",
+      "type": "string"
+     },
+     "tax_paid": {
+      "title": "Tax Paid",
+      "type": "string"
+     },
+     "tax_payable": {
+      "title": "Tax Payable",
+      "type": "string"
+     },
+     "taxable_base": {
+      "title": "Taxable Base",
+      "type": "string"
+     },
+     "withheld_carried_in": {
+      "title": "Withheld Carried In",
+      "type": "string"
+     },
+     "withheld_carried_out": {
+      "title": "Withheld Carried Out",
+      "type": "string"
+     },
+     "withheld_in_month": {
+      "title": "Withheld In Month",
+      "type": "string"
+     },
+     "withheld_used": {
+      "title": "Withheld Used",
+      "type": "string"
+     },
+     "within_exemption": {
+      "title": "Within Exemption",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "month",
+     "covered",
+     "sales",
+     "exemption_sales",
+     "within_exemption",
+     "result",
+     "exempt_gain",
+     "loss_carried_in",
+     "loss_used",
+     "loss_carried_out",
+     "taxable_base",
+     "tax_due",
+     "withheld_in_month",
+     "withheld_carried_in",
+     "withheld_used",
+     "withheld_carried_out",
+     "tax_payable",
+     "tax_paid",
+     "net_result"
+    ],
+    "title": "MonthlyAssessmentResponse",
+    "type": "object"
+   },
    "NoteAmountsSchema": {
     "description": "Totais, custos e líquido como a nota os imprime; os custos, positivos.",
     "properties": {
@@ -10269,6 +10929,86 @@
      "next_run_at"
     ],
     "title": "OperationsSummaryResponse",
+    "type": "object"
+   },
+   "PendencyCode": {
+    "enum": [
+     "sale_without_position",
+     "bonus_without_cost",
+     "unknown_event",
+     "missing_fees",
+     "day_trade",
+     "etf_without_segment",
+     "foreign_sale",
+     "foreign_crypto_sale",
+     "listed_fund_sale",
+     "no_rule",
+     "payment_without_obligation",
+     "not_declared_here"
+    ],
+    "title": "PendencyCode",
+    "type": "string"
+   },
+   "PendencyResponse": {
+    "properties": {
+     "asset_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asset Id"
+     },
+     "code": {
+      "$ref": "#/components/schemas/PendencyCode"
+     },
+     "day": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Day"
+     },
+     "message": {
+      "title": "Message",
+      "type": "string"
+     },
+     "ticker": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ticker"
+     },
+     "transaction_ids": {
+      "items": {
+       "type": "integer"
+      },
+      "title": "Transaction Ids",
+      "type": "array"
+     }
+    },
+    "required": [
+     "code",
+     "message",
+     "day",
+     "asset_id",
+     "ticker",
+     "transaction_ids"
+    ],
+    "title": "PendencyResponse",
     "type": "object"
    },
    "PersistedQuotesResponse": {
@@ -10958,6 +11698,95 @@
     "title": "ReadingPointResponse",
     "type": "object"
    },
+   "RealizedSaleResponse": {
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "broker_id": {
+      "title": "Broker Id",
+      "type": "integer"
+     },
+     "cost": {
+      "title": "Cost",
+      "type": "string"
+     },
+     "day": {
+      "format": "date",
+      "title": "Day",
+      "type": "string"
+     },
+     "fees": {
+      "title": "Fees",
+      "type": "string"
+     },
+     "fees_informed": {
+      "title": "Fees Informed",
+      "type": "boolean"
+     },
+     "gross_value": {
+      "title": "Gross Value",
+      "type": "string"
+     },
+     "kind": {
+      "$ref": "#/components/schemas/TaxAssetKind"
+     },
+     "portfolio_id": {
+      "title": "Portfolio Id",
+      "type": "integer"
+     },
+     "quantity": {
+      "title": "Quantity",
+      "type": "string"
+     },
+     "regime": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TaxRegime"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "result": {
+      "title": "Result",
+      "type": "string"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     },
+     "transaction_id": {
+      "title": "Transaction Id",
+      "type": "integer"
+     },
+     "withheld_income_tax": {
+      "title": "Withheld Income Tax",
+      "type": "string"
+     }
+    },
+    "required": [
+     "transaction_id",
+     "portfolio_id",
+     "asset_id",
+     "ticker",
+     "kind",
+     "regime",
+     "broker_id",
+     "day",
+     "quantity",
+     "gross_value",
+     "fees",
+     "cost",
+     "result",
+     "withheld_income_tax",
+     "fees_informed"
+    ],
+    "title": "RealizedSaleResponse",
+    "type": "object"
+   },
    "RebalancingResponse": {
     "properties": {
      "categories": {
@@ -11645,6 +12474,96 @@
      "reading"
     ],
     "title": "ReferenceEtfReadingResponse",
+    "type": "object"
+   },
+   "RegimeResponse": {
+    "properties": {
+     "carries_losses": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Carries Losses"
+     },
+     "loss_to_carry": {
+      "title": "Loss To Carry",
+      "type": "string"
+     },
+     "monthly_sales_exemption": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Monthly Sales Exemption"
+     },
+     "months": {
+      "items": {
+       "$ref": "#/components/schemas/MonthlyAssessmentResponse"
+      },
+      "title": "Months",
+      "type": "array"
+     },
+     "rate": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rate"
+     },
+     "regime": {
+      "$ref": "#/components/schemas/TaxRegime"
+     },
+     "revenue_code": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Revenue Code"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source"
+     },
+     "withheld_to_declare": {
+      "title": "Withheld To Declare",
+      "type": "string"
+     }
+    },
+    "required": [
+     "regime",
+     "rate",
+     "revenue_code",
+     "monthly_sales_exemption",
+     "carries_losses",
+     "source",
+     "months",
+     "loss_to_carry",
+     "withheld_to_declare"
+    ],
+    "title": "RegimeResponse",
     "type": "object"
    },
    "RegisterFundRequest": {
@@ -14046,6 +14965,28 @@
      "chained"
     ],
     "title": "TaskRunTrigger",
+    "type": "string"
+   },
+   "TaxAssetKind": {
+    "enum": [
+     "stock",
+     "equity_etf",
+     "fixed_income_etf",
+     "bdr",
+     "real_estate_fund",
+     "crypto",
+     "out_of_scope"
+    ],
+    "title": "TaxAssetKind",
+    "type": "string"
+   },
+   "TaxRegime": {
+    "enum": [
+     "common",
+     "real_estate_fund",
+     "crypto"
+    ],
+    "title": "TaxRegime",
     "type": "string"
    },
    "TheoreticalPortfolioResponse": {
@@ -21019,24 +21960,18 @@
     ]
    }
   },
-  "/portfolio/income_tax/{portfolio_id}/assets_and_rights": {
+  "/portfolio/income_tax/assessment": {
    "get": {
-    "operationId": "get_assets_and_rights_portfolio_income_tax__portfolio_id__assets_and_rights_get",
+    "description": "The year's assessment over every portfolio of the user: months, DARFs, pendencies.",
+    "operationId": "get_assessment_portfolio_income_tax_assessment_get",
     "parameters": [
-     {
-      "in": "path",
-      "name": "portfolio_id",
-      "required": true,
-      "schema": {
-       "title": "Portfolio Id",
-       "type": "integer"
-      }
-     },
      {
       "in": "query",
       "name": "fiscal_year",
       "required": true,
       "schema": {
+       "maximum": 2100,
+       "minimum": 2000,
        "title": "Fiscal Year",
        "type": "integer"
       }
@@ -21046,7 +21981,9 @@
      "200": {
       "content": {
        "application/json": {
-        "schema": {}
+        "schema": {
+         "$ref": "#/components/schemas/IncomeTaxAssessmentResponse"
+        }
        }
       },
       "description": "Successful Response"
@@ -21067,40 +22004,61 @@
       "OAuth2PasswordBearer": []
      }
     ],
-    "summary": "Get Assets And Rights",
+    "summary": "Get Assessment",
     "tags": [
      "Income Tax"
     ]
    }
   },
-  "/portfolio/income_tax/{portfolio_id}/darf": {
+  "/portfolio/income_tax/darf_payment": {
    "get": {
-    "operationId": "get_darf_portfolio_income_tax__portfolio_id__darf_get",
-    "parameters": [
-     {
-      "in": "path",
-      "name": "portfolio_id",
-      "required": true,
-      "schema": {
-       "title": "Portfolio Id",
-       "type": "integer"
-      }
-     },
-     {
-      "in": "query",
-      "name": "fiscal_year",
-      "required": true,
-      "schema": {
-       "title": "Fiscal Year",
-       "type": "integer"
-      }
-     }
-    ],
+    "operationId": "list_darf_payments_portfolio_income_tax_darf_payment_get",
     "responses": {
      "200": {
       "content": {
        "application/json": {
-        "schema": {}
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/DarfPaymentResponse"
+         },
+         "title": "Response List Darf Payments Portfolio Income Tax Darf Payment Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Darf Payments",
+    "tags": [
+     "Income Tax"
+    ]
+   },
+   "post": {
+    "description": "Record a paid DARF. Paying is a fact the application never infers from the tax.",
+    "operationId": "register_darf_payment_portfolio_income_tax_darf_payment_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DarfPaymentRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DarfPaymentResponse"
+        }
        }
       },
       "description": "Successful Response"
@@ -21121,42 +22079,28 @@
       "OAuth2PasswordBearer": []
      }
     ],
-    "summary": "Get Darf",
+    "summary": "Register Darf Payment",
     "tags": [
      "Income Tax"
     ]
    }
   },
-  "/portfolio/income_tax/{portfolio_id}/variable_income/common_operation": {
-   "get": {
-    "operationId": "get_common_operations_tax_portfolio_income_tax__portfolio_id__variable_income_common_operation_get",
+  "/portfolio/income_tax/darf_payment/{payment_id}": {
+   "delete": {
+    "operationId": "delete_darf_payment_portfolio_income_tax_darf_payment__payment_id__delete",
     "parameters": [
      {
       "in": "path",
-      "name": "portfolio_id",
+      "name": "payment_id",
       "required": true,
       "schema": {
-       "title": "Portfolio Id",
-       "type": "integer"
-      }
-     },
-     {
-      "in": "query",
-      "name": "fiscal_year",
-      "required": true,
-      "schema": {
-       "title": "Fiscal Year",
+       "title": "Payment Id",
        "type": "integer"
       }
      }
     ],
     "responses": {
-     "200": {
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      },
+     "204": {
       "description": "Successful Response"
      },
      "422": {
@@ -21175,61 +22119,7 @@
       "OAuth2PasswordBearer": []
      }
     ],
-    "summary": "Get Common Operations Tax",
-    "tags": [
-     "Income Tax"
-    ]
-   }
-  },
-  "/portfolio/income_tax/{portfolio_id}/variable_income/fii_operation": {
-   "get": {
-    "operationId": "get_fiis_operations_tax_portfolio_income_tax__portfolio_id__variable_income_fii_operation_get",
-    "parameters": [
-     {
-      "in": "path",
-      "name": "portfolio_id",
-      "required": true,
-      "schema": {
-       "title": "Portfolio Id",
-       "type": "integer"
-      }
-     },
-     {
-      "in": "query",
-      "name": "fiscal_year",
-      "required": true,
-      "schema": {
-       "title": "Fiscal Year",
-       "type": "integer"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      },
-      "description": "Successful Response"
-     },
-     "422": {
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      },
-      "description": "Validation Error"
-     }
-    },
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "summary": "Get Fiis Operations Tax",
+    "summary": "Delete Darf Payment",
     "tags": [
      "Income Tax"
     ]

@@ -130,6 +130,8 @@ class Dividend:
     date: date
     amount: float
     amount_usd: float | None = None
+    #: `DividendKind`: dividendo (isento) ou JCP (tributação exclusiva).
+    kind: str = 'dividend'
     portfolio: Portfolio | None = None
     asset: Any | None = None
 

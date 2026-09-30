@@ -132,6 +132,20 @@ Provider calls use adapters/integrations behind the service layer.
   task nem tela de admin: a execução genérica e o formulário montado do JSON
   Schema do input já a atendem.
 
+## Imposto de renda
+
+- A apuração é do usuário, sobre todas as carteiras dele — nunca de uma
+  carteira. O cálculo mora em `modules/portfolio/domain/income_tax/`, puro e
+  em `Decimal`; o service só lê os fatos e entrega ao motor. Nenhuma aba ou
+  rota refaz conta por conta própria.
+- Regra fiscal é versão do catálogo em `income_tax/rules.py`, com vigência,
+  fonte e data de conferência, escolhida pela data da venda. Mudança de lei é
+  fechar uma versão e abrir outra no primeiro dia de um mês;
+  `validate_catalogue` recusa sobreposição e mudança no meio do mês, e o teste
+  do catálogo roda ela.
+- Falta de dado vira pendência com a premissa usada, nunca zero nem isenção em
+  silêncio. Pagamento de DARF é registrado pela pessoa, nunca inferido.
+
 ## Market data
 
 - Asset quotes and their scalar prices are central domain data. Brapi and other external sources are

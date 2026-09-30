@@ -1,18 +1,6 @@
 import pandas as pd
 
 
-def profits_by_month_df(trades_df: pd.DataFrame) -> pd.DataFrame:
-    df = profit_by_trade_df(trades_df)
-    df['month'] = pd.to_datetime(df['date']).dt.to_period('M')
-    df['gross_sales'] = gross_sales(df)
-
-    monthly_profits = (
-        df.groupby('month').agg({'realized_profit': 'sum', 'gross_sales': 'sum'}).reset_index()
-    )
-
-    return monthly_profits
-
-
 def profit_by_trade_df(trades_df: pd.DataFrame) -> pd.DataFrame:
     trades_df = trades_df.sort_values(by='date').reset_index(drop=True)
     df = trades_df.copy()
@@ -55,7 +43,3 @@ def profit(trades_df: pd.DataFrame) -> pd.DataFrame:
         else 0.0,
         axis=1,
     )
-
-
-def gross_sales(trades_df: pd.DataFrame) -> pd.DataFrame:
-    return trades_df.apply(lambda row: -row['total_amount'] if row['quantity'] < 0 else 0.0, axis=1)

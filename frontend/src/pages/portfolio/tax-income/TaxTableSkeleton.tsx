@@ -1,8 +1,8 @@
 import { AppCard, AppSkeleton, AppStack, AppTableSkeleton } from '@/components/ui'
 
-/* A reserva das três abas da declaração, que mostram a mesma coisa: um card
- * com o título do quadro e a tabela que a Receita quer. Muda só a largura da
- * grade, então é a única prop além do número de linhas. */
+/* A reserva de um quadro da declaração: um card com o título e a tabela que a
+ * Receita quer. Muda só a largura da grade, então é a única prop além do
+ * número de linhas. */
 
 export interface TaxTableSkeletonProps {
   columns: number

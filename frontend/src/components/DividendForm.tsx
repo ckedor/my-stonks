@@ -3,14 +3,15 @@ import { useSelectedPortfolio } from '@/queries/portfolio'
 import { DIVIDEND_ROUTES } from '@/constants/routes'
 import { useCurrency } from '@/hooks/useCurrency'
 import api from '@/lib/api'
-import { Asset } from '@/types'
+import { Asset, type DividendKind } from '@/types'
 import {
-    AppConfirmDialog,
-    AppDateField,
-    AppFormDrawer,
-    AppNumberField,
-    AppSnackbar,
-    AppTextField,
+  AppConfirmDialog,
+  AppDateField,
+  AppFormDrawer,
+  AppNumberField,
+  AppSelect,
+  AppSnackbar,
+  AppTextField,
 } from '@/components/ui'
 import dayjs, { Dayjs } from 'dayjs'
 import { useEffect, useState } from 'react'
@@ -25,19 +26,27 @@ interface DividendFormProps {
     id: number
     date: string
     amount: number
+    kind?: DividendKind
     asset_id: number
     portfolio_id: number
     ticker: string
   }
 }
 
-export default function DividendForm({ open, onClose, onSave, initialAsset, dividend }: DividendFormProps) {
+export default function DividendForm({
+  open,
+  onClose,
+  onSave,
+  initialAsset,
+  dividend,
+}: DividendFormProps) {
   const selectedPortfolio = useSelectedPortfolio()
   const { symbol } = useCurrency()
 
   const [portfolioId, setPortfolioId] = useState<number | ''>('')
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
   const [amount, setAmount] = useState<number>(0)
+  const [kind, setKind] = useState<DividendKind>('dividend')
   const [date, setDate] = useState<Dayjs | null>(dayjs())
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
@@ -51,6 +60,7 @@ export default function DividendForm({ open, onClose, onSave, initialAsset, divi
   useEffect(() => {
     if (dividend) {
       setAmount(dividend.amount)
+      setKind(dividend.kind ?? 'dividend')
       setDate(dayjs(dividend.date))
       setPortfolioId(dividend.portfolio_id)
       setSelectedAsset({
@@ -69,6 +79,7 @@ export default function DividendForm({ open, onClose, onSave, initialAsset, divi
       })
     } else {
       setAmount(0)
+      setKind('dividend')
       setDate(dayjs())
       setPortfolioId(selectedPortfolio?.id ?? '')
       setSelectedAsset(initialAsset ?? null)
@@ -84,6 +95,7 @@ export default function DividendForm({ open, onClose, onSave, initialAsset, divi
       id: isEdit ? dividend?.id : undefined,
       asset_id: selectedAsset?.id,
       amount,
+      kind,
       date: date?.format('YYYY-MM-DD'),
       portfolio_id: portfolioId,
     }
@@ -136,7 +148,12 @@ export default function DividendForm({ open, onClose, onSave, initialAsset, divi
         submitting={loading}
       >
         {isEdit ? (
-          <AppTextField label="Ativo" value={dividend?.ticker ?? ''} onChange={() => undefined} readOnly />
+          <AppTextField
+            label="Ativo"
+            value={dividend?.ticker ?? ''}
+            onChange={() => undefined}
+            readOnly
+          />
         ) : (
           <AssetSelector
             value={selectedAsset?.id ?? null}
@@ -144,11 +161,34 @@ export default function DividendForm({ open, onClose, onSave, initialAsset, divi
               setSelectedAsset(asset)
               setTouched(true)
             }}
-            initialAsset={initialAsset ? { id: initialAsset.id, ticker: initialAsset.ticker, name: initialAsset.name, asset_type_id: initialAsset.asset_type_id } : undefined}
+            initialAsset={
+              initialAsset
+                ? {
+                    id: initialAsset.id,
+                    ticker: initialAsset.ticker,
+                    name: initialAsset.name,
+                    asset_type_id: initialAsset.asset_type_id,
+                  }
+                : undefined
+            }
           />
         )}
 
         <AppDateField label="Data" value={date} onChange={setDate} />
+
+        {/* Para a carteira os dois são provento; para o IR, o dividendo é
+            isento e o JCP é tributado na fonte, em outra ficha. */}
+        <AppSelect
+          label="Tipo"
+          size="full"
+          density="comfortable"
+          options={[
+            { value: 'dividend', label: 'Dividendo' },
+            { value: 'interest_on_equity', label: 'JCP (juros sobre capital próprio)' },
+          ]}
+          value={kind}
+          onChange={(value) => setKind(value as DividendKind)}
+        />
 
         <AppNumberField
           label={`Valor do Provento (${symbol})`}
