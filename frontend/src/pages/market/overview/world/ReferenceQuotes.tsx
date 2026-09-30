@@ -94,8 +94,8 @@ export default function ReferenceQuotes({
   return (
     <AppGrid cols={{ xs: 2 }} gap="md">
       {quotes.map((quote) => (
-        <ReadingCard key={quote.key} href={quote.href} title={quote.name}>
-          <AppStack gap="sm">
+        <ReadingCard key={quote.key} href={quote.href} title={quote.name} padding="sm">
+          <AppStack gap="xs">
             <AppStack direction="row" justify="between" align="start" gap="sm">
               <AppMetric label={quote.name} value={quote.value} size="lg" />
               {quote.icon}

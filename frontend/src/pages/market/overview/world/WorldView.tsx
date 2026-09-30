@@ -237,8 +237,8 @@ function ReturnRanking({ readings }: { readings: LevelReading[] }) {
     .filter((row): row is { name: string; value: number } => row.value != null)
     .sort((a, b) => b.value - a.value)
   return (
-    <AppCard padding="lg">
-      <AppStack gap="md">
+    <AppCard padding="md">
+      <AppStack gap="sm">
         <AppStack direction="row" justify="between" align="center" gap="sm" wrap>
           <SectionLabel>RETORNO EM DÓLAR</SectionLabel>
           <AppSelect
@@ -249,12 +249,7 @@ function ReturnRanking({ readings }: { readings: LevelReading[] }) {
             onChange={(value) => setPeriod(value as ReturnPeriod)}
           />
         </AppStack>
-        {ranked.length > 0 && (
-          <AppText variant="bodySmall" tone="secondary">
-            {ranked[0].name} lidera; {ranked[ranked.length - 1].name} fica na outra ponta.
-          </AppText>
-        )}
-        <AppChartArea height={Math.max(180, ranked.length * 36)}>
+        <AppChartArea height={Math.max(150, ranked.length * 28)}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={ranked}
@@ -278,7 +273,7 @@ function ReturnRanking({ readings }: { readings: LevelReading[] }) {
               />
               <ReferenceLine x={0} stroke={theme.palette.divider} />
               <Tooltip formatter={(value) => [signedPercent(Number(value)), 'Retorno']} />
-              <Bar dataKey="value" barSize={12} radius={3} isAnimationActive={false}>
+              <Bar dataKey="value" barSize={10} radius={3} isAnimationActive={false}>
                 {ranked.map((row) => (
                   <Cell
                     key={row.name}

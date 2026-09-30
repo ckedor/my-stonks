@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
 import type { LevelReading } from '@/api/market'
-import { AppCard, AppMetric, AppStack, AppText } from '@/components/ui'
+import { AppCard, AppMetric, AppStack, AppText, type SpaceToken } from '@/components/ui'
 import ReadingChart from './ReadingChart'
 import {
   changeTone,
@@ -28,17 +28,20 @@ const WINDOW_LABEL: Record<ChartWindow, string> = {
 export function ReadingCard({
   href,
   title,
+  padding,
   children,
 }: {
   href: string | null
   title: string
+  padding?: SpaceToken
   children: ReactNode
 }) {
   const navigate = useNavigate()
-  if (href == null) return <AppCard>{children}</AppCard>
+  if (href == null) return <AppCard padding={padding}>{children}</AppCard>
   const open = () => navigate(href)
   return (
     <AppCard
+      padding={padding}
       interactive
       role="link"
       tabIndex={0}

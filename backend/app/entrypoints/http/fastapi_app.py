@@ -108,6 +108,9 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
+        # Em desenvolvimento o Vite pula de porta quando a 5173 está ocupada,
+        # e o navegador pode chegar por localhost ou 127.0.0.1.
+        allow_origin_regex=r'http://(localhost|127\.0\.0\.1):\d+',
         allow_credentials=True,
         allow_methods=['*'],
         allow_headers=['*'],

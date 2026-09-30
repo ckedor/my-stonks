@@ -1,4 +1,5 @@
-import type { LevelReading } from '@/api/market'
+import { useMemo } from 'react'
+import type { LevelReading, MarketDataSeriesHistoryPoint, ReadingPoint } from '@/api/market'
 import {
   AppCard,
   AppLink,
@@ -8,6 +9,7 @@ import {
   AppText,
   SectionTitle,
 } from '@/components/ui'
+import { useMarketDataSeriesHistory } from '@/queries/market'
 import ReadingChart from './ReadingChart'
 import {
   changeTone,
@@ -30,9 +32,43 @@ const WINDOW_LABEL: Record<ChartWindow, string> = {
   max: 'Desde o início',
 }
 
-/** O mercado em destaque, grande: a trajetória na janela com a média de 40
- *  semanas, e os três números que a resumem. Qual mercado é escolha da aba —
- *  por padrão o mundo inteiro. */
+const TICK_PERCENT = new Intl.NumberFormat('pt-BR', {
+  style: 'percent',
+  maximumFractionDigits: 1,
+  signDisplay: 'exceptZero',
+})
+
+/** A rentabilidade acumulada na janela, dia a dia: os fechamentos diários da
+ *  série entre a semana-base e o último fechamento, contra o fechamento da
+ *  semana-base. A base é a mesma dos números do card, então o fim da linha é
+ *  o "em 1 ano" escrito em cima. Sem a série diária — ainda carregando, ou
+ *  uma leitura que não é série —, a semanal faz as vezes. */
+function returnsInWindow(
+  weekly: ReadingPoint[],
+  daily: MarketDataSeriesHistoryPoint[]
+): ReadingPoint[] {
+  if (weekly.length < 2 || weekly[0].value === 0) return []
+  const base = weekly[0].value
+  const from = weekly[0].date
+  const to = weekly[weekly.length - 1].date
+  const closes = daily.filter(
+    (point): point is MarketDataSeriesHistoryPoint & { close: number } =>
+      point.close != null && point.date >= from && point.date <= to
+  )
+  const points =
+    closes.length > weekly.length
+      ? closes.map((point) => ({ date: point.date, value: point.close }))
+      : weekly
+  return points.map((point) => ({
+    date: point.date,
+    value: point.value / base - 1,
+    moving_average: null,
+  }))
+}
+
+/** O mercado em destaque, grande: a rentabilidade dia a dia na janela e os
+ *  números que a resumem. Qual mercado é escolha da aba — por padrão o mundo
+ *  inteiro. */
 export default function FeaturedMarket({
   reading,
   window,
@@ -45,8 +81,10 @@ export default function FeaturedMarket({
   chartHeight?: number
 }) {
   const { title, label } = copyOf(reading.key)
-  const points = pointsInWindow(reading.history, window)
+  const points = useMemo(() => pointsInWindow(reading.history, window), [reading.history, window])
   const change = windowChange(points)
+  const { history: daily } = useMarketDataSeriesHistory(reading.series_id ?? Number.NaN)
+  const returns = useMemo(() => returnsInWindow(points, daily), [points, daily])
   const href = readingHref(reading)
   const cagr = reading.since_start_annualized_return
   /* Com a janela de um ano, o número grande já é o dos 12 meses — medido
@@ -87,17 +125,15 @@ export default function FeaturedMarket({
           <AppMetric label="Hoje" value={formatLevel(reading)} />
         </AppMetricRow>
         <ReadingChart
-          points={points}
+          points={returns}
           height={chartHeight}
-          format={(value) => formatLevel(reading, value)}
-          valueLabel={title}
-          showMovingAverage
+          format={signedPercent}
+          tickFormat={(value) => TICK_PERCENT.format(value)}
+          valueLabel="Rentabilidade"
+          reference={0}
           axes
           label={`${title}: ${signedPercent(change)} ${WINDOW_LABEL[window].toLowerCase()}`}
         />
-        <AppText variant="caption" tone="secondary">
-          A linha tracejada é a média de 40 semanas.
-        </AppText>
       </AppStack>
     </AppCard>
   )
