@@ -124,6 +124,12 @@ export interface PortfolioPositionEntry {
   fee?: number | null
   fixed_income_type?: string | null
   fixed_income_type_id?: number | null
+  /** O que o cadastro do regulador diz de um fundo de investimento. A
+   *  classificação ANBIMA é a do cadastro, ou a digitada no ativo quando o
+   *  cadastro não tem uma — quem escolhe é o backend. */
+  fund_classification?: string | null
+  fund_anbima_classification?: string | null
+  fund_manager?: string | null
 }
 
 /** Um ativo que a carteira teve e não tem mais.

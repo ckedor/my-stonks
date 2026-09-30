@@ -45,6 +45,7 @@ const NAVIGATION_ICONS: Record<string, ReactNode> = {
   '/portfolio/equity-world': <PublicIcon />,
   '/portfolio/fixed-income': <BalanceIcon />,
   '/portfolio/crypto': <CurrencyBitcoinIcon />,
+  '/portfolio/investment-fund': <SavingsIcon />,
   '/portfolio/trades': <SwapHorizIcon />,
   '/portfolio/dividends': <PaidIcon />,
   '/portfolio/tax-income': <ReceiptLongIcon />,

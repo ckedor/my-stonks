@@ -10377,7 +10377,8 @@
      "equity-br",
      "equity-world",
      "fixed-income",
-     "crypto"
+     "crypto",
+     "investment-fund"
     ],
     "title": "PortfolioSegment",
     "type": "string"

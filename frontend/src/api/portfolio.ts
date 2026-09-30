@@ -44,7 +44,7 @@ export const fetchReturns = (portfolioId: number, currency: string = 'BRL'): Pro
 
 // Segmento: um recorte da carteira por tipo de ativo e mercado. O
 // identificador é o que o backend publica na rota — `fii`, `equity-br`,
-// `equity-world`, `fixed-income`, `crypto`.
+// `equity-world`, `fixed-income`, `crypto`, `investment-fund`.
 
 export const fetchSegmentReturns = (
   portfolioId: number,

@@ -21,6 +21,7 @@ export type PortfolioSegmentId =
   | 'equity-world'
   | 'fixed-income'
   | 'crypto'
+  | 'investment-fund'
 
 export interface PortfolioSegmentDefinition {
   id: PortfolioSegmentId
@@ -69,6 +70,13 @@ export const PORTFOLIO_SEGMENTS: Record<PortfolioSegmentId, PortfolioSegmentDefi
     path: '/portfolio/crypto',
     benchmarks: ['CDI'],
     dimensions: [D.asset, D.category],
+  },
+  'investment-fund': {
+    id: 'investment-fund',
+    label: 'Fundos',
+    path: '/portfolio/investment-fund',
+    benchmarks: ['CDI', 'IBOVESPA'],
+    dimensions: [D.asset, D.fundClassification, D.fundAnbimaClassification, D.fundManager],
   },
 }
 
