@@ -678,8 +678,8 @@ party: the declaration is filled by copying from here. Each tab of the screen
 after DARF is one form, with the fields in the program's order and a copy
 button on each.
 
-- **Bens e Direitos**: one item per asset and broker held on either 31/12, valued
-  at **cost** — the broker's quantity times the taxpayer's average cost — with
+- **Bens e Direitos**: one item per asset and broker held on either 31/12 — or
+  bought and sold within the year, with both values zero — valued at **cost** — the broker's quantity times the taxpayer's average cost — with
   group, code, country, the CNPJ the form asks for (issuer, fund, or custodian for
   fixed income) and a discrimination. A missing CNPJ is left empty and said, never
   replaced by the broker's. Pension is left out and said.

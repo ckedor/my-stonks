@@ -62,9 +62,25 @@ AAPL = asset(10, 'AAPL', ASSET_TYPE.STOCK, exchange_code='NASDAQ')
 VALE3 = asset(11, 'VALE3', ASSET_TYPE.STOCK, name='Vale')  # sem CNPJ no cadastro
 PGBL = asset(12, 'PGBL XP', ASSET_TYPE.PREV, exchange_code=None)
 ROXO34 = asset(13, 'ROXO34', ASSET_TYPE.BDR, name='Nubank')
+RZAG11 = asset(14, 'RZAG11', ASSET_TYPE.FII, fund_kind='FIAGRO', fund_cnpj='36501128000186')
 ASSETS = {
     a.asset_id: a
-    for a in (PETR4, IMAB11, BOVA11, HGLG11, CDB, LCA, BTC, ETH, USDT, AAPL, VALE3, PGBL, ROXO34)
+    for a in (
+        PETR4,
+        IMAB11,
+        BOVA11,
+        HGLG11,
+        CDB,
+        LCA,
+        BTC,
+        ETH,
+        USDT,
+        AAPL,
+        VALE3,
+        PGBL,
+        ROXO34,
+        RZAG11,
+    )
 }
 
 _ids = iter(range(1, 100_000))
@@ -150,12 +166,33 @@ def test_an_asset_sold_during_the_year_is_still_declared_with_zero():
     assert (item.previous_value, item.current_value) == (D('2000.00'), D('0'))
 
 
+def test_an_asset_bought_and_sold_within_the_year_is_declared_with_both_zero():
+    result = report([
+        trade('2025-03-03', PETR4, '100', '20'),
+        trade('2025-06-10', PETR4, '-100', '25'),
+    ])
+
+    item = item_for(result, PETR4)
+    assert (item.previous_value, item.current_value) == (D('0'), D('0'))
+    assert 'Comprado e vendido no ano' in item.note
+
+
+def test_an_asset_closed_before_the_year_is_not_declared():
+    result = report([
+        trade('2023-03-03', PETR4, '100', '20'),
+        trade('2023-06-10', PETR4, '-100', '25'),
+    ])
+
+    assert result.assets_and_rights == ()
+
+
 @pytest.mark.parametrize(
     ('record', 'group', 'code'),
     [
         (IMAB11, '07', '08'),
-        (BOVA11, '07', '09'),
+        (BOVA11, '07', '06'),
         (HGLG11, '07', '03'),
+        (RZAG11, '07', '02'),
         (CDB, '04', '02'),
         (LCA, '04', '03'),
         (ROXO34, '04', '04'),

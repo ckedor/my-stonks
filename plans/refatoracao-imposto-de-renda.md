@@ -279,3 +279,49 @@ Para revisar contra o texto oficial (gov.br bloqueado nesta sessão):
   zerada (hoje não aparecem).
 - CNPJ pedido para renda fixa e Tesouro (hoje: o da corretora custodiante).
 - Campos do GCAP para criptoativo.
+
+## 13. Conferência contra o texto oficial (30/09/2026)
+
+Fontes: Perguntas e Respostas IRPF 2026 da Receita (v1.00, 23/04/2026; 745
+perguntas), guia IRPF 2026 do Santander e do CRC-RS, e guias de corretoras
+para o que o P&R não tabela.
+
+Corrigido:
+
+- **Fiagro** tem código próprio: **07-02** (antes ia em 07-03 com nota).
+- **ETF de renda variável** no Brasil é **07-06** ("FIP, FIDC e ETF –
+  Entidade de investimento", Lei 14.754/2023), não 07-09.
+- **Fundo sem come-cotas**: a nota agora diz o código certo — fundo de ações
+  07-04, FI-Infra 07-10, multimercado do art. 25 da Lei 14.754 07-13.
+- **Bem comprado e vendido no ano** entra em Bens e Direitos com as duas
+  situações zeradas. O P&R manda relacionar "os bens e direitos adquiridos e
+  alienados no decorrer do ano-calendário".
+- Nomes dos códigos 04-02, 04-03, 04-04, 07-08, 07-99 e 08-01 alinhados à
+  tabela.
+
+Confirmado como estava:
+
+- 03-01, 04-02, 04-03, 04-04, 07-01, 07-03, 07-08, 08-01/02/03 (grupo 08 tem
+  ainda 10 NFT e 99 outros; a discriminação pede custodiante com CNPJ).
+- Rendimentos isentos: 20, 05, 09, 12 e **99 – Outros** para FII/Fiagro (o P&R
+  usa 99; guias que dizem "26 – Outros" não batem com o texto oficial).
+  Exclusivos: 10 JCP e 06 aplicações financeiras.
+- IRRF de 0,005% (Lei 11.033): compensado no imposto mensal da apuração (P&R
+  706); o que sobra no ano vai para Imposto Pago/Retido. IRRF de day trade só
+  compensa até dezembro do mesmo ano (P&R 715).
+- MP 1.303/2025 (alíquota única de 17,5%) caiu na Câmara: o catálogo de regras
+  de 2026 segue o de 2025.
+
+Em aberto (decisão do mantenedor):
+
+- **Lei 15.270/2025**: a partir de 01/2026, dividendos acima de R$ 50 mil no
+  mês, da mesma empresa para a mesma pessoa, têm IRRF de 10% sobre o total,
+  compensável no ajuste; e há o imposto mínimo para renda acima de R$ 600 mil.
+  Afeta a declaração de 2027 (ano-calendário 2026). O app hoje trata todo
+  dividendo como isento, código 09.
+- Criptoativo só é obrigatório em Bens e Direitos a partir de R$ 5.000 de
+  custo por tipo; o app lista todos.
+- CNPJ pedido para CDB/Tesouro (emissor vs. custodiante) e campos do GCAP para
+  cripto: não achei texto oficial que feche.
+- ETF e REIT no exterior: seguem com nota (Lei 14.754 — aplicação financeira
+  no exterior).

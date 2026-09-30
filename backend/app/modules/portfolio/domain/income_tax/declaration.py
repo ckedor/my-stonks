@@ -5,11 +5,11 @@ onde": cada ficha é uma lista de itens com os campos que o programa pede, na
 ordem em que ele pede, prontos para copiar. Nada aqui recalcula imposto — os
 números vêm da apuração e do livro de custo.
 
-Onde o código de uma ficha não é certo para o ativo (Fiagro, fundo no
-exterior, debênture incentivada), o item sai com `note` dizendo o que conferir.
-A tabela de códigos segue a reorganização de Bens e Direitos de 2024 (grupos
-03, 04, 07 e 08); ela foi conferida por fontes secundárias e está marcada para
-revisão no plano de IR.
+Onde o código de uma ficha não é certo para o ativo (fundo no exterior,
+fundo sem come-cotas, debênture incentivada), o item sai com `note` dizendo o
+que conferir. A tabela de códigos é a de Bens e Direitos do IRPF 2026 (grupos
+03, 04, 07 e 08); as fontes e o que ficou em aberto estão na seção 13 do plano
+de IR.
 """
 
 from collections import defaultdict
@@ -137,53 +137,60 @@ def _code(group: tuple[str, str], code: str, name: str, note: str | None = None)
     return _Code(group[0], group[1], code, name, note)
 
 
+def _is_fiagro(asset: AssetRecord) -> bool:
+    return bool(asset.fund_kind) and 'FIAGRO' in asset.fund_kind.upper()
+
+
 def _asset_code(asset: AssetRecord, brazilian: bool) -> _Code:  # noqa: PLR0912
     kind = asset.asset_type_id
+    if kind in (ASSET_TYPE.FII, ASSET_TYPE.FI) and _is_fiagro(asset):
+        return _code(_FUNDS, '02', 'Fiagro')
     if kind == ASSET_TYPE.STOCK:
         return _code(_SHARES, '01', 'Ações (inclusive listadas em bolsa)')
     if kind == ASSET_TYPE.BDR:
-        return _code(_INVESTMENTS, '04', 'Ativos negociados em bolsa no Brasil (BDR e outros)')
+        return _code(
+            _INVESTMENTS, '04', 'Ativos negociados em bolsa no Brasil (BDRs, opções e outros)'
+        )
     if kind == ASSET_TYPE.ETF:
         if not brazilian:
             return _code(
-                _FUNDS, '99', 'Outros fundos', 'ETF no exterior: confira o código do grupo 07.'
+                _FUNDS,
+                '99',
+                'Fundos de investimento no exterior',
+                'ETF no exterior: confira se não vai em Aplicação Financeira no exterior.',
             )
         if asset.etf_segment_id == FIXED_INCOME_ETF_SEGMENT_ID:
-            return _code(_FUNDS, '08', 'Fundos de índice (ETF) de renda fixa')
-        return _code(_FUNDS, '09', 'Fundos de índice (ETF) de renda variável')
+            return _code(_FUNDS, '08', 'Fundos de Índice de Renda Fixa')
+        return _code(_FUNDS, '06', 'FIP, FIDC e ETF - Entidade de investimento')
     if kind == ASSET_TYPE.REIT:
         return _code(_SHARES, '01', 'Ações', 'REIT no exterior: confira grupo e código.')
-    if kind == ASSET_TYPE.FII or (
-        kind == ASSET_TYPE.FI and asset.fund_kind and 'FIAGRO' in asset.fund_kind.upper()
-    ):
-        note = (
-            'Fiagro: confira se o programa tem código próprio.'
-            if asset.fund_kind and 'FIAGRO' in asset.fund_kind.upper()
-            else None
-        )
-        return _code(_FUNDS, '03', 'Fundos de Investimento Imobiliário (FII)', note)
+    if kind == ASSET_TYPE.FII:
+        return _code(_FUNDS, '03', 'Fundo de Investimento Imobiliário (FII)')
     if kind == ASSET_TYPE.FI:
         return _code(
             _FUNDS,
             '01',
             'Fundos sujeitos à tributação periódica (come-cotas)',
-            'Fundo de ações, FIP ou FI-Infra não têm come-cotas: confira o código.',
+            'Sem come-cotas o código é outro: fundo de ações 04, FI-Infra 10, '
+            'multimercado do art. 25 da Lei 14.754 13.',
         )
     if kind in (ASSET_TYPE.TREASURY, ASSET_TYPE.CDB):
-        return _code(_INVESTMENTS, '02', 'Títulos sujeitos à tributação (Tesouro, CDB e outros)')
+        return _code(_INVESTMENTS, '02', 'Títulos públicos e privados sujeitos à tributação')
     if kind == ASSET_TYPE.DEB:
         return _code(
             _INVESTMENTS,
             '02',
-            'Títulos sujeitos à tributação (Tesouro, CDB e outros)',
+            'Títulos públicos e privados sujeitos à tributação',
             'Debênture incentivada (de infraestrutura) é isenta: código 03.',
         )
     if kind in (ASSET_TYPE.CRI, ASSET_TYPE.CRA, ASSET_TYPE.LCA):
-        return _code(_INVESTMENTS, '03', 'Títulos isentos (LCI, LCA, CRI, CRA e outros)')
+        return _code(
+            _INVESTMENTS, '03', 'Títulos isentos de tributação (LCI, LCA, LCD, CRI, CRA, LIG)'
+        )
     if kind == ASSET_TYPE.CRIPTO:
         ticker = (asset.ticker or '').upper()
         if ticker in _BITCOIN:
-            return _code(_CRYPTO, '01', 'Bitcoin')
+            return _code(_CRYPTO, '01', 'Criptomoeda Bitcoin (BTC)')
         if ticker in _STABLECOINS:
             return _code(_CRYPTO, '03', 'Stablecoins')
         return _code(_CRYPTO, '02', 'Outras criptomoedas (altcoins)')
@@ -246,7 +253,12 @@ def assets_and_rights(  # noqa: PLR0913
     brokers: dict[int, BrokerRecord],
     excluded_types: frozenset[int] = frozenset({ASSET_TYPE.PREV}),
 ) -> tuple[list[AssetsAndRightsItem], list[Pendency]]:
-    """Um item por ativo e corretora com posição em algum dos dois 31/12, a custo."""
+    """Um item por ativo e corretora com posição em algum dos dois 31/12, a custo.
+
+    Bem comprado e vendido dentro do ano também entra, com as duas situações
+    zeradas: a declaração relaciona "os bens e direitos adquiridos e alienados
+    no decorrer do ano-calendário" (Perguntas e Respostas IRPF 2026).
+    """
     trades = tuple(trades)
     events = tuple(events)
     previous = {
@@ -257,10 +269,14 @@ def assets_and_rights(  # noqa: PLR0913
         (h.asset_id, h.broker_id): h for h in holdings_on(trades, events, date(fiscal_year, 12, 31))
     }
 
+    traded_in_year = {
+        (trade.asset_id, trade.broker_id) for trade in trades if trade.day.year == fiscal_year
+    }
+
     items: list[AssetsAndRightsItem] = []
     pendencies: list[Pendency] = []
     excluded: set[str] = set()
-    for key in sorted(previous.keys() | current.keys()):
+    for key in sorted(previous.keys() | current.keys() | traded_in_year):
         asset_id, broker_id = key
         asset = assets.get(asset_id)
         broker = brokers.get(broker_id)
@@ -287,6 +303,8 @@ def assets_and_rights(  # noqa: PLR0913
         held_now: Holding | None = current.get(key)
         held_before: Holding | None = previous.get(key)
         notes = [code.note] if code.note else []
+        if held_now is None and held_before is None:
+            notes.append('Comprado e vendido no ano: declare com as duas situações zeradas.')
         if cnpj_label and cnpj is None:
             notes.append(f'{cnpj_label} não está no cadastro: preencha à mão.')
         exchange_traded = asset.asset_type_id in (
@@ -294,7 +312,7 @@ def assets_and_rights(  # noqa: PLR0913
             ASSET_TYPE.ETF,
             ASSET_TYPE.BDR,
             ASSET_TYPE.FII,
-        ) or (asset.asset_type_id == ASSET_TYPE.FI and code.code == '03')
+        ) or (asset.asset_type_id == ASSET_TYPE.FI and _is_fiagro(asset))
         country = BRAZIL if brazilian else UNITED_STATES
         if not brazilian and asset.asset_type_id != ASSET_TYPE.CRIPTO:
             notes.append('País pela bolsa do ativo; confira se não é outro que os EUA.')
