@@ -1,5 +1,4 @@
 // src/theme/index.tsx
-import { getCustomThemeById } from "@/stores/custom-themes";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import { LocalizationProvider } from "@mui/x-date-pickers";
@@ -18,7 +17,7 @@ import {
 function readSavedTheme(mode: ThemeMode): string {
   const key = `theme-${mode}-id`;
   const saved = localStorage.getItem(key);
-  const definition = saved ? getThemeById(saved) ?? getCustomThemeById(saved) : undefined;
+  const definition = saved ? getThemeById(saved) : undefined;
   if (definition?.mode === mode) return definition.id;
   const fallback = mode === "light" ? DEFAULT_LIGHT_THEME_ID : DEFAULT_DARK_THEME_ID;
   if (saved) localStorage.setItem(key, fallback);
@@ -84,7 +83,7 @@ export function ThemeRegistry({ children }: { children: React.ReactNode }) {
 
   const theme = useMemo(() => {
     const id = mode === "light" ? lightThemeId : darkThemeId;
-    const def = getThemeById(id) ?? getCustomThemeById(id);
+    const def = getThemeById(id);
     if (def) return def.theme;
     return mode === "light" ? lightThemes[0].theme : darkThemes[0].theme;
   }, [mode, lightThemeId, darkThemeId]);

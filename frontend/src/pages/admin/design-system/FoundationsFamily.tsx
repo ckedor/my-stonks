@@ -18,7 +18,7 @@ import {
   useAppTheme,
   type SpaceToken,
 } from '@/components/ui'
-import { defaultDarkPalette } from '@/theme/themes'
+import { DEFAULT_DARK_THEME_ID, getPresetById } from '@/theme/themes'
 import DeleteIcon from '@mui/icons-material/Delete'
 import { Entry, Matrix, State, States } from './Specimen'
 
@@ -254,7 +254,7 @@ export default function FoundationsFamily() {
         name="AppThemeScope"
         role="Um pedaço de tela pintado por outro tema. Aqui, as mesmas peças sob o tema escuro padrão: é como se confere que um componente não depende do tema claro."
       >
-        <AppThemeScope palette={defaultDarkPalette} title="Tema escuro padrão">
+        <AppThemeScope palette={getPresetById(DEFAULT_DARK_THEME_ID)!.palette} title="Tema escuro padrão">
           <AppStack direction="row" gap="sm" wrap align="center">
             <AppButton>primary</AppButton>
             <AppButton emphasis="outline">outline</AppButton>

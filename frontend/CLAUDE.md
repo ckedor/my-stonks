@@ -54,6 +54,45 @@ Fonte é valor de tema, não constante global: as pilhas ficam em `fontStacks`
 `fontStacks` precisa do `@fontsource-variable/*` correspondente importado em
 `src/main.tsx` — sem o import ela cai no fallback em silêncio.
 
+### Temas
+
+Um tema é um preset: paleta (cores, barra, séries de gráfico) e forma (fonte
+do corpo, fonte dos títulos, escala de raio, superfícies quietas). Todos
+moram em `src/theme/presets.ts`, escritos por extenso, e `themes.ts` só os
+converte em temas do MUI. Não há tema fora dessa lista: o usuário escolhe um
+preset em Configurações, e criar tema não é coisa do usuário.
+
+Criar ou ajustar um tema é no estúdio do admin, `/admin/design-system/temas`
+(`src/pages/admin/theme-studio/`). Ele parte de um preset, edita os tokens e
+redesenha ao vivo o dashboard da carteira — a `PortfolioOverviewScreen` de
+verdade, com uma carteira de mentira determinística (`mockPortfolio.ts`) —, e
+não guarda nada: **"Exportar preset" gera a definição, e o commit que a cola
+em `presets.ts` é o que publica o tema.** `src/theme/preset-source.test.ts`
+prova que a definição exportada de cada preset volta a ser o mesmo preset.
+
+- **Contraste é uma régua só**, `paletteContrastChecks` em
+  `src/theme/contrast.ts`. As marcadas `enforced` são as que
+  `themes.test.ts` aplica a todo preset (texto e sinal sobre o card, aba ativa
+  sobre a barra); o estúdio mostra as mesmas enquanto se edita, mais as de
+  conselho.
+- **`warning` é a linha do benchmark**, ao lado da carteira em `primary`, no
+  gráfico de rentabilidade: matizes distintos. As séries de `chart.colors` não
+  repetem `primary` nem `secondary`.
+- **Mudar o id de um preset publicado troca, em silêncio, o tema de quem o
+  escolheu** pelo padrão: o id fica no localStorage.
+
+`e2e/theme-studio.spec.ts` fotografa o estúdio com cada preset — é a
+regressão visual dos temas, inclusive dos escuros, que o resto da suíte
+(presa ao Tinta claro) não vê.
+
+### Dashboard da carteira
+
+O desenho da visão geral é `src/components/portfolio-overview/PortfolioOverviewScreen.tsx`,
+que recebe tudo por props; a página (`pages/portfolio/overview`) só busca,
+mostra o esqueleto e decide o vazio. Painel novo entra na tela, nunca na
+página — o estúdio de temas desenha a mesma tela, e um painel escrito na
+página não apareceria lá.
+
 ### Gramática de tela
 
 Ter todo componente vindo de `@/components/ui` resolve a procedência, não a

@@ -2,7 +2,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import { render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { buildMuiTheme, defaultLightPalette } from '@/theme/themes'
+import { DEFAULT_LIGHT_THEME_ID, getThemeById } from '@/theme/themes'
 import AppMenu, { type AppMenuOption } from './AppMenu'
 
 /* O `MenuList` decide quem recebe o foco ao abrir lendo `selected` e
@@ -10,7 +10,7 @@ import AppMenu, { type AppMenuOption } from './AppMenu'
    (para a régua de `separatorBefore`), ele só via o embrulho: o foco caía no
    painel, e o console acusava o `Fragment` em toda tela com menu. */
 
-const theme = buildMuiTheme(defaultLightPalette)
+const theme = getThemeById(DEFAULT_LIGHT_THEME_ID)!.theme
 
 const renderMenu = (options: AppMenuOption[]) =>
   render(

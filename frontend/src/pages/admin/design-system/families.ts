@@ -7,6 +7,9 @@
 
 export const DESIGN_SYSTEM_PATH = '/admin/design-system'
 
+/** O estúdio de temas mora na mesma seção do menu, fora das famílias. */
+export const THEME_STUDIO_PATH = `${DESIGN_SYSTEM_PATH}/temas`
+
 export const DESIGN_SYSTEM_FAMILIES = [
   {
     slug: 'fundamentos',

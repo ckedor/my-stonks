@@ -52,9 +52,6 @@ export interface AppCardProps extends Omit<BoxProps, 'padding'> {
   /** Fundo tingido de leve pela cor do assunto, para o bloco que se lê como
    *  um destaque dentro de um card maior. */
   tint?: string
-  /** Borda tracejada: o card que ainda não é nada — o "novo tema" no fim da
-   *  grade. Ele convida a criar, e a linha cheia o faria parecer um item. */
-  dashed?: boolean
 }
 
 export default function AppCard({
@@ -69,7 +66,6 @@ export default function AppCard({
   interactive = false,
   accentColor,
   selected = false,
-  dashed = false,
   accentEdge,
   accentSide = 'top',
   tint,
@@ -81,8 +77,7 @@ export default function AppCard({
   return (
     <Box
       sx={{
-        border: selected || dashed ? '2px solid' : '1px solid',
-        borderStyle: dashed ? 'dashed' : 'solid',
+        border: selected ? '2px solid' : '1px solid',
         borderColor: selected ? 'primary.main' : 'divider',
         borderRadius: `${theme.radius.md}px`,
         p: space[resolvedPadding],

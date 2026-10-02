@@ -65,7 +65,7 @@ export interface PortfolioOverviewData {
   cdiCagr: number | null
 }
 
-export interface PortfolioOverviewScreenProps extends PortfolioOverviewData {
+interface PortfolioOverviewScreenProps extends PortfolioOverviewData {
   onAssetSelect: (assetId: number) => void
 }
 

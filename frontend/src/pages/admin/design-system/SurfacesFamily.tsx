@@ -86,7 +86,6 @@ export default function SurfacesFamily() {
           <CardSample label="interactive · leva a algum lugar" interactive onClick={() => undefined} />
           <CardSample label="interactive · accentColor no hover" interactive accentColor={accent} onClick={() => undefined} />
           <CardSample label="selected · o escolhido entre vários" selected />
-          <CardSample label="dashed · o que ainda não é nada" dashed />
           <CardSample label="accentEdge · top" accentEdge={accent} />
           <CardSample label="accentEdge · left" accentEdge={accent} accentSide="left" />
           <CardSample label="tint · destaque dentro de um card maior" tint={accent} />

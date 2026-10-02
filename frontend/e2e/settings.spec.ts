@@ -1,6 +1,7 @@
 import { expect, expectNothingClipped, test } from './fixtures/app'
 
-/* Configurações: a grade de temas, as integrações e o editor de tema. */
+/* Configurações: a grade de temas e as integrações. Criar tema é do admin,
+   no estúdio do design system. */
 
 const PORTFOLIOS = [
   { id: 1, name: 'Principal', user_id: 1, custom_categories: [] },
@@ -40,15 +41,4 @@ test('configurações — integrações', async ({ page, mockApi }) => {
   await expectNothingClipped(page)
 
   await expect(page).toHaveScreenshot('page-settings-integrations.png')
-})
-
-test('configurações — editor de tema', async ({ page, mockApi }) => {
-  await abrirConfiguracoes(page, mockApi)
-  await page.goto('/portfolio/user-configurations/theme-editor')
-
-  await expect(page.getByRole('heading', { name: 'Novo tema personalizado' })).toBeVisible()
-  await expect(page.getByText('Preview do Tema')).toBeVisible()
-  await expectNothingClipped(page)
-
-  await expect(page).toHaveScreenshot('page-theme-editor.png')
 })

@@ -5,6 +5,7 @@ import MainLayout from './layouts/MainLayout'
 import AdminAssetsPage from './pages/admin/assets/page'
 import AdminBrokersPage from './pages/admin/brokers/page'
 import DesignSystemPage from './pages/admin/design-system/page'
+import ThemeStudioPage from './pages/admin/theme-studio/page'
 import AdminEventsPage from './pages/admin/events/page'
 import AdminAiFeaturesPage from './pages/admin/ai-features/page'
 import AdminAiFeatureDetailPage from './pages/admin/ai-features/[key]/page'
@@ -54,7 +55,6 @@ import PortfolioRiskPage from './pages/portfolio/risk/page'
 import TaxIncomePage from './pages/portfolio/tax-income/page'
 import PortfolioTransactionsPage from './pages/portfolio/trades/page'
 import UserConfigurationPage from './pages/portfolio/user-configurations/page'
-import ThemeEditorPage from './pages/portfolio/user-configurations/theme-editor/page'
 import PortfolioPatrimonyEvolution from './pages/portfolio/wealth/page'
 import { ThemeRegistry } from './theme'
 
@@ -92,8 +92,6 @@ const router = createBrowserRouter([
       // A Jornada do Herói virou a patente da visão geral.
       { path: 'portfolio/tiers', element: <Navigate to="/portfolio/overview" replace /> },
       { path: 'portfolio/user-configurations', element: <UserConfigurationPage /> },
-      { path: 'portfolio/user-configurations/theme-editor', element: <ThemeEditorPage /> },
-      { path: 'portfolio/user-configurations/theme-editor/:id', element: <ThemeEditorPage /> },
       { path: 'market/assets', element: <MarketAtivosPage /> },
       { path: 'market/overview', element: <MarketOverviewPage /> },
       { path: 'market/series/:id', element: <MarketSeriesPage /> },
@@ -130,6 +128,7 @@ const router = createBrowserRouter([
       { path: 'brokers', element: <AdminBrokersPage /> },
       { path: 'events', element: <AdminEventsPage /> },
       { path: 'users', element: <AdminUsersPage /> },
+      { path: 'design-system/temas', element: <ThemeStudioPage /> },
       { path: 'design-system/:family?', element: <DesignSystemPage /> },
       { path: 'game/sandbox', element: <GameSandboxPage /> },
       { path: 'market-data/usd-brl', element: <AdminMarketDataUsdBrlPage /> },

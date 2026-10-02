@@ -5,6 +5,7 @@ import { AppSidebar } from '@/components/ui'
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import BarChartIcon from '@mui/icons-material/BarChart'
+import BrushIcon from '@mui/icons-material/Brush'
 import BusinessIcon from '@mui/icons-material/Business'
 import CalculateIcon from '@mui/icons-material/Calculate'
 import CandlestickChartIcon from '@mui/icons-material/CandlestickChart'
@@ -35,6 +36,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import {
   DESIGN_SYSTEM_FAMILIES,
   designSystemFamilyPath,
+  THEME_STUDIO_PATH,
   type DesignSystemFamilySlug,
 } from './design-system/families'
 import { getAdminNavigationSection, INTEGRATIONS_PATH } from './navigation'
@@ -85,6 +87,7 @@ const menuIcons: Record<string, React.ReactNode> = {
       designSystemIcons[family.slug],
     ]),
   ),
+  [THEME_STUDIO_PATH]: <BrushIcon fontSize="small" />,
 }
 
 export default function AdminSidebar({
