@@ -627,6 +627,8 @@ class NoteHeader:
     trade_date: date
     settlement_date: date | None
     amounts: NoteAmounts
+    #: O documento guardado de onde a nota foi lida, quando há um.
+    document_id: int | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -674,10 +676,15 @@ class DraftNote:
 
 @dataclass(frozen=True, kw_only=True)
 class BrokerageNoteDraft:
-    """O que o PDF virou, antes de alguém concordar com isso. Não é gravado."""
+    """O que o PDF virou, antes de alguém concordar com isso. Não é gravado.
+
+    O PDF em si é: `document_id` aponta para ele, ou é nulo quando não há
+    storage configurado.
+    """
 
     notes: tuple[DraftNote, ...]
     model: str | None
+    document_id: int | None = None
 
 
 @dataclass(frozen=True, kw_only=True)

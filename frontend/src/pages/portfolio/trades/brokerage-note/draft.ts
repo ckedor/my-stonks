@@ -59,8 +59,9 @@ export interface NoteRow {
   withheld_income_tax: number | null
 }
 
-export function initialHeader(note: DraftNote): NoteHeader {
+export function initialHeader(note: DraftNote, documentId: number | null): NoteHeader {
   return {
+    document_id: documentId,
     broker_id: note.broker_id,
     currency: note.currency,
     note_number: note.note_number,

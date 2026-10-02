@@ -59,6 +59,23 @@ position_table = Table(
     schema='portfolio',
 )
 
+document_table = Table(
+    'document',
+    Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('portfolio_id', Integer, ForeignKey('portfolio.portfolio.id'), nullable=False),
+    Column('kind', String(30), nullable=False),
+    Column('filename', String(255), nullable=False),
+    Column('content_type', String(100), nullable=False),
+    Column('size_bytes', Integer, nullable=False),
+    Column('sha256', String(64), nullable=False),
+    Column('storage_key', String(255), nullable=False),
+    Column('uploaded_at', DateTime(timezone=True), nullable=False, server_default=func.now()),
+    CheckConstraint("kind IN ('brokerage_note', 'position_statement')", name='ck_document_kind'),
+    UniqueConstraint('portfolio_id', 'kind', 'sha256', name='uq_document_by_content'),
+    schema='portfolio',
+)
+
 brokerage_note_table = Table(
     'brokerage_note',
     Base.metadata,
@@ -81,6 +98,13 @@ brokerage_note_table = Table(
     Column('other_costs', Float, nullable=True),
     Column('withheld_income_tax', Float, nullable=True),
     Column('net_amount', Float, nullable=True),
+    Column(
+        'document_id',
+        Integer,
+        ForeignKey('portfolio.document.id', ondelete='SET NULL'),
+        nullable=True,
+        index=True,
+    ),
     Column('imported_at', DateTime(timezone=True), nullable=False, server_default=func.now()),
     UniqueConstraint(
         'portfolio_id', 'broker_id', 'note_number', name='uq_brokerage_note_by_broker_number'

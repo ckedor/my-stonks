@@ -9,6 +9,7 @@ from app.infra.db.tables.portfolio import (
     custom_category_table,
     darf_payment_table,
     dividend_table,
+    document_table,
     portfolio_consolidation_table,
     portfolio_table,
     portfolio_user_configuration_table,
@@ -27,6 +28,7 @@ from app.modules.portfolio.domain.entities import (
     Dividend,
     Portfolio,
     PortfolioConsolidation,
+    PortfolioDocument,
     PortfolioUserConfiguration,
     Position,
     Return12M,
@@ -62,6 +64,7 @@ def map_portfolio() -> None:
             'asset': relationship(Asset),
         },
     )
+    Base.registry.map_imperatively(PortfolioDocument, document_table)
     Base.registry.map_imperatively(BrokerageNote, brokerage_note_table)
     Base.registry.map_imperatively(DarfPayment, darf_payment_table)
     Base.registry.map_imperatively(

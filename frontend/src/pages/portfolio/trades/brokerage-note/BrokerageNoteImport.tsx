@@ -1,5 +1,6 @@
 import type { BrokerageNoteDraft } from '@/api/brokerageNote'
 import {
+  AppAlert,
   AppButton,
   AppCard,
   AppFileField,
@@ -13,17 +14,21 @@ import { useAssets } from '@/queries/assets'
 import { useBrokers, useExtractBrokerageNote } from '@/queries/brokerageNote'
 import { EMPTY_LIST } from '@/queries/empty'
 import { useBrokerageNotes, useSelectedPortfolioId, useTrades } from '@/queries/portfolio'
+import { useRefreshPortfolioDocuments } from '@/queries/portfolioDocument'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import { useState } from 'react'
 import ImportedNotesTable from './ImportedNotesTable'
 import NoteImport, { type Notice } from './NoteImport'
+import { DOCUMENT_NOT_KEPT } from '../documents/copy'
+import { useOpenPortfolioDocument } from '../documents/useOpenPortfolioDocument'
 
 /* Aba "Importar nota" de Trades.
  *
  * O PDF vai ao modelo, que devolve as notas; a aplicação confere os totais de
  * cada uma, rateia os custos e cruza as linhas com o que a carteira já tem.
- * Nada é gravado antes de confirmar, e cada nota se confirma sozinha: a tela é
- * o dry-run. Confirmar guarda a nota no histórico e liga a ela as operações.
+ * Só o PDF é guardado ao ler; o resto espera a confirmação, e cada nota se
+ * confirma sozinha: a tela é o dry-run. Confirmar guarda a nota no histórico e
+ * liga a ela as operações e o PDF de onde saiu.
  * Reimportar uma nota já lançada não duplica — o cruzamento propõe completar
  * ou substituir. */
 
@@ -42,6 +47,10 @@ export default function BrokerageNoteImport() {
   const imported = importedData ?? EMPTY_LIST
 
   const extraction = useExtractBrokerageNote()
+  const refreshDocuments = useRefreshPortfolioDocuments()
+  const openDocument = useOpenPortfolioDocument((message) =>
+    setNotice({ message, severity: 'error' })
+  )
   const [file, setFile] = useState<File | null>(null)
   const [draft, setDraft] = useState<BrokerageNoteDraft | null>(null)
   const [notice, setNotice] = useState<Notice | null>(null)
@@ -51,12 +60,19 @@ export default function BrokerageNoteImport() {
     extraction.mutate(
       { portfolioId, file },
       {
-        onSuccess: setDraft,
-        onError: (error) =>
+        onSuccess: (read) => {
+          setDraft(read)
+          void refreshDocuments()
+        },
+        // O PDF é guardado antes da leitura: ele está no histórico mesmo
+        // quando o modelo falhou.
+        onError: (error) => {
+          void refreshDocuments()
           setNotice({
             message: errorMessage(error, 'Não foi possível ler a nota'),
             severity: 'error',
-          }),
+          })
+        },
       }
     )
   }
@@ -68,7 +84,8 @@ export default function BrokerageNoteImport() {
           <AppText variant="bodySmall" tone="secondary">
             Nota de corretagem em PDF. O arquivo vai inteiro para o modelo, que transcreve as notas;
             a aplicação confere os totais de cada nota, rateia os custos entre as linhas e cruza
-            cada operação com a carteira. Nada é gravado antes de confirmar cada nota.
+            cada operação com a carteira. O PDF fica guardado na aba Documentos; operação nenhuma é
+            gravada antes de confirmar cada nota.
           </AppText>
           <AppStack direction="row" gap="sm" align="center" wrap>
             <AppFileField
@@ -99,11 +116,13 @@ export default function BrokerageNoteImport() {
           <SectionTitle>
             {draft.notes.length === 1 ? 'Nota lida' : `${draft.notes.length} notas lidas`}
           </SectionTitle>
+          {draft.document_id === null && <AppAlert severity="info">{DOCUMENT_NOT_KEPT}</AppAlert>}
           {draft.notes.map((note) => (
             <NoteImport
               // A leitura nova troca as notas inteiras, com o estado de cada uma.
               key={`${draft.model}-${note.index}-${note.note_number}`}
               note={note}
+              documentId={draft.document_id}
               portfolioId={portfolioId}
               brokers={brokers}
               assets={assets}
@@ -121,7 +140,7 @@ export default function BrokerageNoteImport() {
             <AppTableSkeleton columns={9} rows={4} />
           </AppCard>
         ) : (
-          <ImportedNotesTable notes={imported} />
+          <ImportedNotesTable notes={imported} onOpenDocument={openDocument.open} />
         )}
       </AppStack>
 

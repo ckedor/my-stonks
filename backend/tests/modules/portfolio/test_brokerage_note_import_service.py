@@ -1,5 +1,6 @@
 """O import lê sem escrever, e só escreve sobre o cruzamento que a pessoa viu."""
 
+from dataclasses import replace
 from datetime import date, datetime
 from decimal import Decimal
 from types import SimpleNamespace
@@ -18,6 +19,7 @@ from app.modules.portfolio.domain.brokerage_note import (
     NoteHeader,
     NoteLine,
 )
+from app.modules.portfolio.domain.document import DocumentKind
 from app.modules.portfolio.domain.entities import BrokerageNote, Transaction
 from app.modules.portfolio.domain.outputs import (
     BrokerageNoteLineReading,
@@ -116,6 +118,8 @@ def _transaction(id, quantity=10.0, price=30.0) -> Transaction:
     )
 
 
+DOCUMENT = 55
+
 NOTE = NoteHeader(
     broker_id=BROKER,
     currency='BRL',
@@ -126,7 +130,7 @@ NOTE = NoteHeader(
 )
 
 
-def _service(*, existing=(), reading=None, imported=None):
+def _service(*, existing=(), reading=None, imported=None, document=None):
     portfolios = SimpleNamespace(
         list_brokers=AsyncMock(
             return_value=[
@@ -143,6 +147,7 @@ def _service(*, existing=(), reading=None, imported=None):
         ),
         get_asset_transactions_until=AsyncMock(return_value=list(existing)),
         find_brokerage_note=AsyncMock(return_value=imported),
+        get_document=AsyncMock(return_value=document),
         create=AsyncMock(return_value=[900]),
         update=AsyncMock(),
         delete=AsyncMock(),
@@ -164,7 +169,10 @@ def _service(*, existing=(), reading=None, imported=None):
             return_value=SimpleNamespace(usd_brl=Decimal('5'), brl_usd=Decimal('0.2'))
         )
     )
-    service = BrokerageNoteImportService(uow=uow, extractor=extractor, usd_brl_service=usd_brl)
+    documents = SimpleNamespace(store=AsyncMock(return_value=DOCUMENT))
+    service = BrokerageNoteImportService(
+        uow=uow, extractor=extractor, usd_brl_service=usd_brl, documents=documents
+    )
     return service, uow
 
 
@@ -185,6 +193,26 @@ async def test_extraction_resolves_broker_and_asset_and_writes_nothing():
     uow.commit.assert_not_awaited()
 
 
+async def test_extraction_keeps_the_pdf_even_when_the_reading_fails():
+    service, _ = _service()
+    service.extractor.extract.side_effect = RuntimeError('provider down')
+
+    with pytest.raises(RuntimeError):
+        await service.extract(portfolio_id=PORTFOLIO, filename='nota.pdf', content=PDF)
+
+    service.documents.store.assert_awaited_once_with(
+        portfolio_id=PORTFOLIO, kind=DocumentKind.BROKERAGE_NOTE, filename='nota.pdf', content=PDF
+    )
+
+
+async def test_the_draft_carries_the_document_the_pdf_was_kept_as():
+    service, _ = _service()
+
+    draft = await service.extract(portfolio_id=PORTFOLIO, filename='nota.pdf', content=PDF)
+
+    assert draft.document_id == DOCUMENT
+
+
 async def test_an_unknown_broker_is_left_for_the_person_to_choose():
     service, uow = _service()
     uow.portfolios.list_brokers.return_value = []
@@ -202,6 +230,8 @@ async def test_a_file_that_is_not_a_pdf_never_reaches_the_model():
 
     with pytest.raises(ValidationError, match='não é um PDF'):
         await service.extract(portfolio_id=PORTFOLIO, filename='nota.pdf', content=b'oi')
+
+    service.documents.store.assert_not_awaited()
 
 
 async def test_creating_writes_the_note_fields_and_the_dollar_price():
@@ -468,6 +498,53 @@ async def test_a_note_in_another_currency_than_its_broker_is_refused():
             note=NoteHeader(**{**NOTE.__dict__, 'currency': 'USD'}),
             lines=[],
             decisions=[],
+        )
+
+    uow.commit.assert_not_awaited()
+
+
+async def test_confirming_links_the_note_to_the_document_it_was_read_from():
+    service, uow = _service(document=SimpleNamespace(id=DOCUMENT))
+    key = f'{BROKER}:{PETR4}:{PREGAO.isoformat()}:C'
+
+    await service.apply(
+        portfolio_id=PORTFOLIO,
+        note=replace(NOTE, document_id=DOCUMENT),
+        lines=[_line()],
+        decisions=[GroupDecision(key=key, action=GroupAction.CREATE, existing_ids=())],
+    )
+
+    uow.portfolios.get_document.assert_awaited_once_with(PORTFOLIO, DOCUMENT)
+    _, saved_note = uow.portfolios.create.await_args_list[0].args
+    assert saved_note['document_id'] == DOCUMENT
+
+
+async def test_a_note_confirmed_without_a_document_keeps_the_link_it_had():
+    service, uow = _service(imported=SimpleNamespace(id=900, imported_at=None))
+    key = f'{BROKER}:{PETR4}:{PREGAO.isoformat()}:C'
+
+    await service.apply(
+        portfolio_id=PORTFOLIO,
+        note=NOTE,
+        lines=[_line()],
+        decisions=[GroupDecision(key=key, action=GroupAction.CREATE, existing_ids=())],
+    )
+
+    model, fields = uow.portfolios.update.await_args.args
+    assert model is BrokerageNote
+    assert 'document_id' not in fields
+
+
+async def test_a_document_of_another_portfolio_is_refused():
+    service, uow = _service(document=None)
+    key = f'{BROKER}:{PETR4}:{PREGAO.isoformat()}:C'
+
+    with pytest.raises(ValidationError, match='não é desta carteira'):
+        await service.apply(
+            portfolio_id=PORTFOLIO,
+            note=replace(NOTE, document_id=DOCUMENT),
+            lines=[_line()],
+            decisions=[GroupDecision(key=key, action=GroupAction.CREATE, existing_ids=())],
         )
 
     uow.commit.assert_not_awaited()

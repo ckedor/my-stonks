@@ -36,6 +36,17 @@ class Settings(BaseSettings):
     # minuto; com ela (gratuita), 100 por pedido — só acelera a primeira leva.
     OPENFIGI_API_KEY: str = ''
 
+    # Storage dos documentos enviados à carteira (notas, extratos): qualquer
+    # bucket que fale S3 — R2, B2, S3, MinIO no docker-compose. Sem bucket e
+    # sem as duas chaves o app roda e lê o PDF como antes, só não o guarda: a
+    # leitura devolve `document_id` nulo, e é isso que a tela mostra.
+    STORAGE_BUCKET: str = ''
+    STORAGE_ACCESS_KEY_ID: str = ''
+    STORAGE_SECRET_ACCESS_KEY: str = ''
+    # Vazio é a AWS. R2, B2 e MinIO têm endpoint próprio.
+    STORAGE_ENDPOINT_URL: str = ''
+    STORAGE_REGION: str = 'auto'
+
     CORS_ORIGINS: list[str] = [
         'https://my-stonks-front.onrender.com',
         'http://localhost:5173',

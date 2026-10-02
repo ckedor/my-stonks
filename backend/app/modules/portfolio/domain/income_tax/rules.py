@@ -187,3 +187,65 @@ def rule_for(regime: TaxRegime, day: date, rules: Iterable[TaxRule] = RULES) -> 
         if rule.regime == regime and rule.applies_on(day):
             return rule
     return None
+
+
+# --- Exterior ---------------------------------------------------------------
+#
+# Aplicações financeiras no exterior não têm apuração mensal nem DARF: o
+# rendimento do ano vai para a declaração de ajuste, que aplica a alíquota.
+# Por isso a regra é anual — uma versão começa e termina em 1º de janeiro — e
+# não cabe em `TaxRule`, que é a do mês.
+
+
+@dataclass(frozen=True, kw_only=True)
+class ForeignRule:
+    valid_from: date
+    valid_until: date | None
+    rate: Decimal
+    #: Retenção nos EUA sobre dividendo pago a quem não é residente lá. Brasil
+    #: e EUA não têm tratado, então é a alíquota cheia; a reciprocidade é o que
+    #: permite compensá-la aqui, até o imposto brasileiro sobre o rendimento.
+    us_dividend_withholding: Decimal
+    source: str
+    checked_on: date
+
+    def applies_to(self, year: int) -> bool:
+        start = date(year, 1, 1)
+        return self.valid_from <= start and (self.valid_until is None or start < self.valid_until)
+
+
+FOREIGN_RULES: tuple[ForeignRule, ...] = (
+    ForeignRule(
+        # Antes de 2024 a venda no exterior era ganho de capital (GCAP) e o
+        # dividendo ia ao carnê-leão; o catálogo não tem esse regime.
+        valid_from=date(2024, 1, 1),
+        valid_until=None,
+        rate=Decimal('0.15'),
+        us_dividend_withholding=Decimal('0.30'),
+        source=(
+            'Lei 14.754/2023, arts. 2º a 4º; IN RFB 2.180/2024, arts. 8º a 12; '
+            'P&R IRPF 2026, pergunta 474'
+        ),
+        checked_on=date(2026, 10, 1),
+    ),
+)
+
+
+def validate_foreign_catalogue(rules: Iterable[ForeignRule]) -> None:
+    ordered = sorted(rules, key=lambda rule: rule.valid_from)
+    for rule in ordered:
+        for bound in (rule.valid_from, rule.valid_until):
+            if bound is not None and (bound.month, bound.day) != (1, 1):
+                raise CatalogueError(f'exterior: a vigência muda em {bound}, no meio de um ano')
+        if rule.valid_until is not None and rule.valid_until <= rule.valid_from:
+            raise CatalogueError(f'exterior: vigência vazia a partir de {rule.valid_from}')
+    for earlier, later in pairwise(ordered):
+        if earlier.valid_until is None or earlier.valid_until > later.valid_from:
+            raise CatalogueError(
+                f'exterior: a versão de {earlier.valid_from} e a de {later.valid_from} '
+                'valem ao mesmo tempo'
+            )
+
+
+def foreign_rule_for(year: int, rules: Iterable[ForeignRule] = FOREIGN_RULES) -> ForeignRule | None:
+    return next((rule for rule in rules if rule.applies_to(year)), None)

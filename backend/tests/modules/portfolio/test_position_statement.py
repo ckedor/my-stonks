@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 from app.modules.market_data.domain.constants import CURRENCY
+from app.modules.portfolio.domain.document import DocumentKind
 from app.modules.portfolio.domain.outputs import (
     PositionStatementHoldingReading,
     PositionStatementReading,
@@ -110,9 +111,18 @@ async def test_reading_a_statement_writes_nothing_and_compares_at_the_broker():
     )
     uow = FakeUnitOfWork(portfolios=portfolios, assets=assets)
     extractor = SimpleNamespace(extract=AsyncMock(return_value=(reading, 'gpt-4o')))
-    service = PositionStatementService(uow=uow, extractor=extractor)
+    documents = SimpleNamespace(store=AsyncMock(return_value=55))
+    service = PositionStatementService(uow=uow, extractor=extractor, documents=documents)
 
     draft = await service.extract(portfolio_id=1, filename='avenue.pdf', content=b'%PDF-1.7 x')
+
+    assert draft.document_id == 55
+    documents.store.assert_awaited_once_with(
+        portfolio_id=1,
+        kind=DocumentKind.POSITION_STATEMENT,
+        filename='avenue.pdf',
+        content=b'%PDF-1.7 x',
+    )
 
     assert (draft.broker_id, draft.currency, draft.warnings) == (2, 'USD', ())
     portfolios.get_broker_transactions_until.assert_awaited_once_with(1, 2, AS_OF)

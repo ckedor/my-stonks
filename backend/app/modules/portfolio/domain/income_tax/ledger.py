@@ -15,7 +15,7 @@ resultado de venda nenhuma.
 """
 
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
@@ -92,11 +92,20 @@ class _Position:
 
 
 def realize_sales(
-    trades: Iterable[TaxTrade], events: Iterable[CorporateEvent]
+    trades: Iterable[TaxTrade],
+    events: Iterable[CorporateEvent],
+    *,
+    include: Callable[[TaxTrade], bool] | None = None,
 ) -> tuple[list[RealizedSale], list[Pendency]]:
+    """As vendas realizadas das operações que `include` aceita.
+
+    Sem `include`, as naturezas da apuração mensal. A apuração do exterior
+    passa o seu próprio filtro: o custo médio se forma do mesmo jeito.
+    """
+    accepts = include or (lambda trade: trade.kind in LEDGER_KINDS)
     by_asset: dict[int, list[TaxTrade]] = defaultdict(list)
     for trade in trades:
-        if trade.kind in LEDGER_KINDS:
+        if accepts(trade):
             by_asset[trade.asset_id].append(trade)
 
     events_by_asset: dict[int, list[CorporateEvent]] = defaultdict(list)
@@ -272,6 +281,9 @@ class Holding:
     broker_id: int
     quantity: Decimal
     cost: Decimal
+    #: O mesmo custo em dólar, quando toda compra que o forma tem preço em
+    #: dólar. A discriminação de um bem no exterior pede o valor na moeda.
+    cost_usd: Decimal | None = None
 
 
 def holdings_on(
@@ -295,19 +307,21 @@ def holdings_on(
 
     holdings: list[Holding] = []
     for asset_id, asset_trades in by_asset.items():
-        quantity, cost, by_broker = _replay_position(
+        quantity, cost, cost_usd, by_broker = _replay_position(
             sorted(asset_trades, key=lambda trade: (trade.day, trade.transaction_id)),
             sorted(events_by_asset.get(asset_id, ()), key=lambda event: event.day),
         )
         if quantity <= 0:
             continue
         average = cost / quantity
+        average_usd = None if cost_usd is None else cost_usd / quantity
         holdings.extend(
             Holding(
                 asset_id=asset_id,
                 broker_id=broker_id,
                 quantity=broker_quantity,
                 cost=broker_quantity * average,
+                cost_usd=None if average_usd is None else broker_quantity * average_usd,
             )
             for broker_id, broker_quantity in by_broker.items()
             if broker_quantity > QUANTITY_TOLERANCE
@@ -317,10 +331,15 @@ def holdings_on(
 
 def _replay_position(
     trades: list[TaxTrade], events: list[CorporateEvent]
-) -> tuple[Decimal, Decimal, dict[int, Decimal]]:
-    """Quantidade e custo do ativo, e quanto dele está em cada corretora."""
+) -> tuple[Decimal, Decimal, Decimal | None, dict[int, Decimal]]:
+    """Quantidade e custo do ativo (em reais e em dólar), e quanto há em cada corretora.
+
+    O custo em dólar só segue enquanto toda compra tem preço em dólar; a
+    primeira sem ele o deixa nulo, em vez de um número que soma só parte.
+    """
     quantity = _ZERO
     cost = _ZERO
+    cost_usd: Decimal | None = _ZERO
     by_broker: dict[int, Decimal] = defaultdict(lambda: _ZERO)
     pending = list(events)
 
@@ -337,14 +356,21 @@ def _replay_position(
             sold = min(-trade.quantity, max(quantity, _ZERO))
             if quantity > 0:
                 cost -= cost * sold / quantity
+                if cost_usd is not None:
+                    cost_usd -= cost_usd * sold / quantity
             quantity -= sold
             by_broker[trade.broker_id] += trade.quantity
         else:
             quantity += trade.quantity
             cost += trade.quantity * trade.price + (trade.fees or _ZERO)
+            if cost_usd is not None:
+                cost_usd = (
+                    None if trade.price_usd is None else cost_usd + trade.quantity * trade.price_usd
+                )
             by_broker[trade.broker_id] += trade.quantity
         if abs(quantity) < QUANTITY_TOLERANCE:
             quantity, cost = _ZERO, _ZERO
+            cost_usd = _ZERO
     for event in pending:
         apply(event.factor)
-    return quantity, cost, by_broker
+    return quantity, cost, cost_usd, by_broker

@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field, PlainSerializer
 
 from app.modules.portfolio.domain.income_tax.assessment import REGIME_OF_KIND, MonthlyAssessment
 from app.modules.portfolio.domain.income_tax.darf import DarfObligation, DarfStatus
+from app.modules.portfolio.domain.income_tax.foreign import ForeignItem, ForeignYear
 from app.modules.portfolio.domain.income_tax.ledger import RealizedSale
 from app.modules.portfolio.domain.income_tax.pendency import PendencyCode
 from app.modules.portfolio.domain.income_tax.report import IncomeTaxReport
@@ -196,8 +197,77 @@ class AssetsAndRightsItemResponse(BaseModel):
     previous_value: Money
     current_value: Money
     note: str | None
+    #: Quadro "Aplicação Financeira (R$)": só nos bens no exterior desde 2024.
+    foreign_income: Money | None
+    foreign_tax_paid: Money | None
 
     model_config = {'from_attributes': True}
+
+
+class ForeignItemResponse(BaseModel):
+    """O rendimento de um bem no exterior no ano, com de onde ele vem."""
+
+    asset_id: int
+    broker_id: int
+    ticker: str
+    sales_value: Money
+    sales_result: Money
+    dividends_received: Money
+    dividends_gross: Money
+    tax_withheld_abroad: Money
+    #: O campo "Imposto pago no exterior" do quadro.
+    tax_paid_abroad: Money
+    #: O campo "Rendimento ou Perda" do quadro.
+    income: Money
+
+    @classmethod
+    def from_domain(cls, item: ForeignItem) -> 'ForeignItemResponse':
+        return cls(**{name: getattr(item, name) for name in cls.model_fields})
+
+
+class ForeignYearResponse(BaseModel):
+    """A apuração anual do exterior: a conta que o programa refaz, para conferir."""
+
+    #: Se o ano tem a regra anual da Lei 14.754 (de 2024 em diante).
+    covered: bool
+    rate: Exact | None
+    us_dividend_withholding: Exact | None
+    source: str | None
+    items: list[ForeignItemResponse]
+    gains: Money
+    losses: Money
+    loss_carried_in: Money
+    loss_used: Money
+    loss_carried_out: Money
+    taxable_base: Money
+    tax_due: Money
+    tax_credit: Money
+    tax_payable: Money
+
+    @classmethod
+    def from_domain(cls, year: ForeignYear) -> 'ForeignYearResponse':
+        rule = year.rule
+        return cls(
+            covered=rule is not None,
+            rate=rule.rate if rule else None,
+            us_dividend_withholding=rule.us_dividend_withholding if rule else None,
+            source=rule.source if rule else None,
+            items=[ForeignItemResponse.from_domain(item) for item in year.items],
+            **{
+                name: getattr(year, name)
+                for name in (
+                    'gains',
+                    'losses',
+                    'loss_carried_in',
+                    'loss_used',
+                    'loss_carried_out',
+                    'taxable_base',
+                    'tax_due',
+                    'tax_credit',
+                    'tax_payable',
+                )
+            },
+        )
 
 
 class IncomeLineResponse(BaseModel):
@@ -241,6 +311,7 @@ class IncomeTaxAssessmentResponse(BaseModel):
     exempt_income: list[IncomeLineResponse]
     exclusive_income: list[IncomeLineResponse]
     capital_gains: list[CapitalGainOperationResponse]
+    foreign: ForeignYearResponse | None
 
     @classmethod
     def from_report(cls, report: IncomeTaxReport) -> 'IncomeTaxAssessmentResponse':
@@ -300,6 +371,7 @@ class IncomeTaxAssessmentResponse(BaseModel):
                 CapitalGainOperationResponse.model_validate(operation)
                 for operation in report.capital_gains
             ],
+            foreign=ForeignYearResponse.from_domain(report.foreign) if report.foreign else None,
         )
 
 

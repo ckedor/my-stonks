@@ -71,3 +71,21 @@ class FakeCache:
         for key in doomed:
             del self.store[key]
         return len(doomed)
+
+
+class InMemoryDocumentStorage:
+    """Stands in for the bucket: same surface as ``DocumentStorage``, a dict behind it."""
+
+    def __init__(self):
+        self.objects: dict[str, bytes] = {}
+        self.puts = 0
+
+    async def put(self, key: str, content: bytes, *, content_type: str) -> None:
+        self.objects[key] = content
+        self.puts += 1
+
+    async def get(self, key: str) -> bytes:
+        return self.objects[key]
+
+    async def delete(self, key: str) -> None:
+        self.objects.pop(key, None)

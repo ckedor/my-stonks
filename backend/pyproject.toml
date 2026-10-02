@@ -119,6 +119,7 @@ scipy = "^1.17.1"
 openai = "^2.32.0"
 anthropic = "^1.4.0"
 langfuse = "^4.15.1"
+boto3 = "^1.43.106"
 
 [tool.poetry.group.dev.dependencies]
 isort = "6.0.1"

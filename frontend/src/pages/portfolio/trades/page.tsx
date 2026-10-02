@@ -17,15 +17,17 @@ import type { Trade } from '@/types'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
 import BrokerageNoteImport from './brokerage-note/BrokerageNoteImport'
+import PortfolioDocuments from './documents/PortfolioDocuments'
 import PositionCheck from './position-statement/PositionCheck'
 
 type TradeType = 'Compra' | 'Venda' | 'Todos'
-type TradesTab = 'trades' | 'import' | 'position'
+type TradesTab = 'trades' | 'import' | 'position' | 'documents'
 
 const TABS: { id: TradesTab; label: string }[] = [
   { id: 'trades', label: 'Operações' },
   { id: 'import', label: 'Importar nota' },
   { id: 'position', label: 'Bater posição' },
+  { id: 'documents', label: 'Documentos' },
 ]
 
 const TYPE_OPTIONS = [
@@ -105,6 +107,7 @@ export default function PortfolioTransactionsPage() {
 
       {tab === 'import' && <BrokerageNoteImport />}
       {tab === 'position' && <PositionCheck />}
+      {tab === 'documents' && <PortfolioDocuments />}
 
       {tab === 'trades' && (
         <>

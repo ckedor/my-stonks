@@ -525,7 +525,9 @@ Nothing computes performance today — the data it would need is in place.
 ## Brokerage note import
 
 A brokerage note enters the portfolio the way a recommendation enters research:
-the reading writes nothing, and a person confirms before anything is stored.
+the reading writes no transaction, and a person confirms before any is stored.
+The PDF itself is the exception — it is kept as a portfolio document the moment
+it is uploaded (see **Portfolio documents**).
 It lives in `portfolio`, which owns transactions, and calls the AI provider
 through an adapter (`modules/portfolio/adapters/brokerage_note_extractor.py`),
 as research does — not through the `ai` feature module, whose artifacts are
@@ -534,12 +536,14 @@ prompt-versioned and cached by input.
 ```text
 upload (PDF) + portfolio
   -> POST /portfolio/brokerage_note/extraction
+  -> keep the PDF as a portfolio document                    (the one write)
   -> AI provider, document attached, answer constrained to a schema
   -> app checks each note's own totals and splits fees across its lines
   -> broker by CNPJ, else by registered name; asset by ticker — the B3 code in
      the ticker or the specification (BRL), the symbol column (USD)
   -> per note: reconcile against the portfolio's transactions,
-     and flag a note already imported (same broker and number)   (nothing persisted)
+     and flag a note already imported (same broker and number)
+  -> draft, with the document's id                     (no transaction persisted)
 
 asset or broker chosen on screen
   -> POST /portfolio/brokerage_note/reconciliation     (no model call)
@@ -547,7 +551,7 @@ asset or broker chosen on screen
 one note confirmed
   -> POST /portfolio/brokerage_note
   -> reconcile again; refuse with 409 if it changed
-  -> save the note (update it if already imported), then
+  -> save the note (update it if already imported), linked to its document, then
      create / update / replace its transactions, linked to it, in one unit of work
   -> recalculate_asset_position per affected asset
 
@@ -591,11 +595,12 @@ delete a transaction nobody reviewed.
 
 A broker statement is read the same way as a brokerage note — the PDF goes to
 the provider as a document, through an adapter inside `portfolio` — but nothing
-is ever written:
+other than the PDF itself is ever written:
 
 ```text
 upload (PDF) + portfolio
   -> POST /portfolio/position_statement/extraction
+  -> keep the PDF as a portfolio document
   -> AI provider, answer constrained to a schema
   -> broker by CNPJ or name, asset by ticker
   -> compare: statement quantity per asset vs. the portfolio's transactions at
@@ -609,6 +614,46 @@ The comparison lives in `modules/portfolio/domain/position_statement.py`. The
 screen is the Trades page's "Bater posição" tab: selecting a diverging asset
 lists its transactions at that broker, flags those without a brokerage note, and
 opens the ordinary transaction form to fix them.
+
+## Portfolio documents
+
+Every PDF uploaded to a portfolio — a brokerage note, a position statement — is
+kept, so the history of what was sent survives the reading. The bytes live in a
+bucket and the database keeps the rest:
+
+```text
+upload (PDF, already checked to be one)
+  -> PortfolioDocumentService.store                 (before the model is called)
+  -> sha256 of the content -> key portfolio/{id}/{kind}/{sha256}.pdf
+  -> DocumentStorage.put  (app/infra/storage/, S3 protocol: R2, B2, AWS, local S3Mock)
+  -> portfolio.document: find by (portfolio, kind, sha256), else insert
+
+GET /portfolio/document?portfolio_id=                 the history, newest first,
+                                                       with the notes confirmed from each
+GET /portfolio/document/{id}/content?portfolio_id=    the file, through the API
+DELETE /portfolio/{id}                                 objects, then rows, then the portfolio
+```
+
+A document is kept before the model is asked, because it was uploaded whether or
+not the reading works or anybody confirms what it says. Keeping it is not
+agreeing with it: the transactions still wait for a confirmation. The same
+content uploaded again for the same purpose is the same document, which is why
+the key comes from the content rather than from a row id — an upload that
+reached the bucket and failed before the database leaves an object the next
+upload of that file lands on, not an orphan.
+
+A confirmed brokerage note points at the document it was read from
+(`portfolio.brokerage_note.document_id`, `SET NULL`); a note confirmed with no
+document keeps whatever link it had. The file is served through the API rather
+than by a signed link to the bucket, so the bucket never has to be reachable
+from a browser.
+
+The storage is optional infrastructure on the cache's terms, with one
+difference. With no bucket configured (`STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`,
+`STORAGE_SECRET_ACCESS_KEY`, and `STORAGE_ENDPOINT_URL` outside AWS) a PDF is
+read and not kept, and the reading says so with a null `document_id` that the
+screen shows. With a bucket configured, failing to keep the file fails the
+upload: a history with holes nobody sees is worse than an error.
 
 ## Income tax assessment
 
@@ -627,6 +672,7 @@ GET /portfolio/income_tax/assessment?fiscal_year=
        ledger: average cost per asset, fees in the cost and out of the sale,
                events applied once in date order
        assess every regime month by month, from the first sale in the history
+       assess investments abroad year by year, from 2024 (Lei 14.754/2023)
        DARFs per revenue code and month, R$ 10 minimum, reconciled with payments
        pendencies for what the data cannot decide
   -> the fiscal year's months, sales, DARFs and pendencies   (nothing persisted)
@@ -652,9 +698,22 @@ common operations (stocks, equity ETFs and BDRs traded in Brazil — only stock
 sales count toward and benefit from the R$ 20,000 exemption), real-estate funds
 (FII, and a listed fund the regulator files as Fiagro), and crypto held with a
 Brazilian broker (capital gain: R$ 35,000 exemption, progressive rates, no loss
-offset). A fixed-income ETF is taxed at source and stays out of the DARF. A sale
-abroad, of crypto at a USD broker, or of a listed fund that is neither FII nor
-Fiagro is a pendency: those regimes are not assessed yet. Buying and selling the
+offset). A fixed-income ETF is taxed at source and stays out of the DARF; a
+Brazilian ETF without a segment is an equity ETF, with no pendency. A sale of a
+listed fund that is neither FII nor Fiagro is a pendency: that regime is not
+assessed yet.
+
+Assets abroad — stocks, ETFs and REITs at a foreign exchange, and crypto at a
+USD broker — are a fourth, annual assessment (`income_tax/foreign.py`): no DARF,
+15% in the yearly return. Each asset and broker's "Rendimento ou Perda" is its
+sales result in reais (average cost and sale both at the day's rate, as the
+transaction stores them) plus its dividends grossed up from the net amount the
+user records, with the 30% US withholding as foreign tax paid, credited up to
+15% of the dividend. A loss offsets other items in the year and carries to the
+next ones, so every year since 2024 is assessed; dividends are read from 2024
+for that. Before 2024 a sale abroad was a capital gain (GCAP), which is a
+pendency. The yearly rule is `FOREIGN_RULES` in `rules.py`, versions starting
+on 1 January. Buying and selling the
 same asset on the same day at the same broker is assessed as a common operation
 and flagged, since day trade is not among what is traded here.
 
@@ -682,7 +741,10 @@ button on each.
   bought and sold within the year, with both values zero — valued at **cost** — the broker's quantity times the taxpayer's average cost — with
   group, code, country, the CNPJ the form asks for (issuer, fund, or custodian for
   fixed income) and a discrimination. A missing CNPJ is left empty and said, never
-  replaced by the broker's. Pension is left out and said.
+  replaced by the broker's. Pension is left out and said. An item abroad, from
+  2024, also carries the "Aplicação Financeira (R$)" box — "Rendimento ou
+  Perda" and "Imposto pago no exterior" — zeroed when the year had no income,
+  and its discrimination states the cost in dollars and the average rate.
 - **Rendimentos Isentos**: code 20 (stock gains in months up to R$ 20,000), 05
   (crypto up to R$ 35,000), 09 dividends and 99 FII/Fiagro income per payer, 12
   for CRI/CRA/LCA coupons.
@@ -693,10 +755,15 @@ button on each.
   with the result net of the exempt gain and the DARF payments split between the
   two regimes a 6015 DARF joins.
 - **Ganhos de Capital**: the crypto sales of taxed months, as GCAP operations.
+- **Aplicações no Exterior**: where each item's box comes from (sales,
+  dividends received and grossed up, US withholding) and the year's summary —
+  base, loss carried, 15%, credit — which the program recomputes and is shown to
+  check, not to type.
 - **Imposto Pago/Retido**: the withheld tax left at the end of the year.
 
-Where a code is uncertain for an asset — a Fiagro, a fund abroad, an incentivized
-debenture — the item carries a note saying what to check.
+Where a code is uncertain for an asset — a fund abroad, a fund without
+come-cotas, an incentivized debenture — the item carries a note saying what to
+check.
 
 ## Laboratory backtests
 

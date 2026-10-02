@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends
 
-from app.composition.portfolio import get_portfolio_position_service, get_portfolio_service
+from app.composition.portfolio import (
+    get_portfolio_document_service,
+    get_portfolio_position_service,
+    get_portfolio_service,
+)
 from app.modules.portfolio.api.portfolio.schemas import (
     CreatePortfolioRequest,
     Portfolio,
@@ -8,6 +12,7 @@ from app.modules.portfolio.api.portfolio.schemas import (
     UpdatePortfolioRequest,
 )
 from app.modules.portfolio.service.portfolio_base_service import PortfolioBaseService
+from app.modules.portfolio.service.portfolio_document_service import PortfolioDocumentService
 from app.modules.portfolio.service.portfolio_position_service import (
     PortfolioPositionService,
 )
@@ -17,6 +22,7 @@ from app.modules.users.views import current_active_user, current_superuser
 from .brokerage_note.router import router as brokerage_note_router
 from .category.router import router as category_router
 from .dividend.router import router as dividend_router
+from .document.router import router as document_router
 from .income_tax.router import router as income_tax_router
 from .position.router import router as position_router
 from .position_consolidator.router import router as position_consolidator_router
@@ -82,7 +88,11 @@ async def delete_portfolio(
     portfolio_id: int,
     service: PortfolioBaseService = Depends(get_portfolio_service),
     position_service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    document_service: PortfolioDocumentService = Depends(get_portfolio_document_service),
 ):
+    # Os documentos saem antes: os arquivos moram no storage, fora do alcance
+    # da transação que apaga a carteira, e as linhas deles a referenciam.
+    await document_service.delete_portfolio_documents(portfolio_id)
     await service.delete_portfolio(portfolio_id)
     # Deleção é o único caminho de escrita sem consolidação depois, então é aqui
     # que as séries derivadas saem do cache -- ninguém mais vai derrubá-las.
@@ -95,6 +105,7 @@ router.include_router(category_router)
 router.include_router(transaction_router)
 router.include_router(brokerage_note_router)
 router.include_router(position_statement_router)
+router.include_router(document_router)
 router.include_router(position_router)
 router.include_router(position_consolidator_router)
 router.include_router(income_tax_router)

@@ -68,6 +68,26 @@ class Position:
 
 
 @dataclass(eq=False, kw_only=True)
+class PortfolioDocument:
+    """Um arquivo enviado à carteira e guardado: o PDF de uma nota ou de um extrato.
+
+    Só os metadados moram aqui; os bytes ficam no storage, sob `storage_key`.
+    O mesmo conteúdo enviado de novo, para o mesmo fim, é o mesmo documento.
+    """
+
+    id: int | None = None
+    portfolio_id: int
+    #: `DocumentKind`: para que o arquivo foi enviado.
+    kind: str
+    filename: str
+    content_type: str
+    size_bytes: int
+    sha256: str
+    storage_key: str
+    uploaded_at: datetime | None = None
+
+
+@dataclass(eq=False, kw_only=True)
 class BrokerageNote:
     """Uma nota de corretagem importada: o pregão, os totais e os custos como impressos.
 
@@ -96,6 +116,8 @@ class BrokerageNote:
     other_costs: float | None = None
     withheld_income_tax: float | None = None
     net_amount: float | None = None
+    #: O documento de onde a nota foi lida, quando ele foi guardado.
+    document_id: int | None = None
     imported_at: datetime | None = None
 
 

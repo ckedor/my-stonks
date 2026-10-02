@@ -101,6 +101,8 @@ class DraftNoteResponse(_FromAttributes):
 class BrokerageNoteDraftResponse(_FromAttributes):
     notes: list[DraftNoteResponse]
     model: str | None
+    #: O PDF enviado, guardado. Nulo quando não há storage configurado.
+    document_id: int | None
 
 
 class NoteLineRequest(BaseModel):
@@ -148,6 +150,8 @@ class NoteHeaderRequest(BaseModel):
     trade_date: date
     settlement_date: date | None
     amounts: NoteAmountsSchema
+    #: O documento de onde a nota foi lida, como a leitura o devolveu.
+    document_id: int | None = None
 
     def to_domain(self) -> NoteHeader:
         return NoteHeader(
@@ -157,6 +161,7 @@ class NoteHeaderRequest(BaseModel):
             trade_date=self.trade_date,
             settlement_date=self.settlement_date,
             amounts=self.amounts.to_domain(),
+            document_id=self.document_id,
         )
 
 
@@ -189,5 +194,6 @@ class BrokerageNoteResponse(BaseModel):
     fees: float
     withheld_income_tax: float | None
     net_amount: float | None
+    document_id: int | None
     imported_at: datetime
     transaction_count: int

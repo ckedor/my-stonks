@@ -38,6 +38,7 @@ from app.modules.portfolio.domain.entities import (
     Dividend,
     Portfolio,
     PortfolioConsolidation,
+    PortfolioDocument,
     Position,
     ReturnSeries,
     Transaction,
@@ -504,6 +505,7 @@ class PortfolioRepository(SQLAlchemyRepository):
                 Transaction.date,
                 Transaction.quantity,
                 Transaction.price,
+                Transaction.price_usd,
                 Transaction.fees,
                 Transaction.withheld_income_tax,
                 Asset.ticker,
@@ -658,6 +660,7 @@ class PortfolioRepository(SQLAlchemyRepository):
                 BrokerageNote.operations_total,
                 BrokerageNote.net_amount,
                 BrokerageNote.withheld_income_tax,
+                BrokerageNote.document_id,
                 BrokerageNote.imported_at,
                 (
                     func.coalesce(BrokerageNote.settlement_fee, 0)
@@ -677,6 +680,57 @@ class PortfolioRepository(SQLAlchemyRepository):
             .where(BrokerageNote.portfolio_id == portfolio_id)
             .group_by(BrokerageNote.id, Broker.id)
             .order_by(desc(BrokerageNote.trade_date), desc(BrokerageNote.id))
+        )
+        result = await self.session.execute(stmt)
+        return [dict(row) for row in result.mappings().all()]
+
+    async def find_document(
+        self, portfolio_id: int, kind: str, sha256: str
+    ) -> PortfolioDocument | None:
+        """The document already kept for this content and purpose, if any."""
+        stmt = select(PortfolioDocument).where(
+            PortfolioDocument.portfolio_id == portfolio_id,
+            PortfolioDocument.kind == kind,
+            PortfolioDocument.sha256 == sha256,
+        )
+        result = await self.session.execute(stmt.limit(1))
+        return result.scalars().first()
+
+    async def get_document(self, portfolio_id: int, document_id: int) -> PortfolioDocument | None:
+        """A document by id, only when it belongs to this portfolio."""
+        stmt = select(PortfolioDocument).where(
+            PortfolioDocument.id == document_id,
+            PortfolioDocument.portfolio_id == portfolio_id,
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
+    async def list_documents(self, portfolio_id: int) -> list[PortfolioDocument]:
+        """Kept documents of the portfolio, newest upload first."""
+        stmt = (
+            select(PortfolioDocument)
+            .where(PortfolioDocument.portfolio_id == portfolio_id)
+            .order_by(desc(PortfolioDocument.uploaded_at), desc(PortfolioDocument.id))
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_document_notes(self, portfolio_id: int) -> list[dict]:
+        """The brokerage notes confirmed from a kept document, oldest trading day first."""
+        stmt = (
+            select(
+                BrokerageNote.id,
+                BrokerageNote.document_id,
+                BrokerageNote.note_number,
+                BrokerageNote.trade_date,
+                Broker.name.label('broker_name'),
+            )
+            .join(Broker, Broker.id == BrokerageNote.broker_id)
+            .where(
+                BrokerageNote.portfolio_id == portfolio_id,
+                BrokerageNote.document_id.is_not(None),
+            )
+            .order_by(BrokerageNote.trade_date, BrokerageNote.id)
         )
         result = await self.session.execute(stmt)
         return [dict(row) for row in result.mappings().all()]

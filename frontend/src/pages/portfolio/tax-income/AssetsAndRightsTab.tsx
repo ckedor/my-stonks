@@ -56,6 +56,15 @@ function AssetCard({ item, fiscalYear }: { item: AssetsAndRightsItem; fiscalYear
           />
           <FormAmount label={`Situação em 31/12/${fiscalYear} (R$)`} value={item.current_value} />
         </AppGrid>
+        {item.foreign_income !== null && item.foreign_tax_paid !== null && (
+          <AppStack gap="sm">
+            <SectionLabel>Aplicação Financeira (R$)</SectionLabel>
+            <AppGrid cols={{ xs: 1, sm: 2, md: 4 }} gap="md">
+              <FormAmount label="Rendimento ou Perda" value={item.foreign_income} />
+              <FormAmount label="Imposto pago no Exterior" value={item.foreign_tax_paid} />
+            </AppGrid>
+          </AppStack>
+        )}
       </AppStack>
     </AppCard>
   )

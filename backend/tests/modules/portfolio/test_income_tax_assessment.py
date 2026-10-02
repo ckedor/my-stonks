@@ -576,33 +576,6 @@ def test_sales_without_fees_are_counted_once():
     assert pendency.message.startswith('2 vendas')
 
 
-def test_a_foreign_sale_is_reported_and_left_out():
-    report = run(
-        2025,
-        [
-            trade(
-                '2025-02-03',
-                'AAPL',
-                '10',
-                '1000',
-                kind=TaxAssetKind.OUT_OF_SCOPE,
-                note=ClassificationNote.FOREIGN,
-            ),
-            trade(
-                '2025-03-03',
-                'AAPL',
-                '-10',
-                '1100',
-                kind=TaxAssetKind.OUT_OF_SCOPE,
-                note=ClassificationNote.FOREIGN,
-            ),
-        ],
-    )
-
-    assert report.sales == ()
-    assert [p.code for p in report.pendencies] == [PendencyCode.FOREIGN_SALE]
-
-
 def test_a_year_without_sales_still_has_twelve_months():
     report = run(2025, [])
 
@@ -669,11 +642,8 @@ def test_crypto_gains_above_5_million_pay_the_next_bracket():
             None,
         ),
         ({'asset_type_id': ASSET_TYPE.ETF, 'ticker': 'BOVA11', 'etf_segment_id': 1}, ETF, None),
-        (
-            {'asset_type_id': ASSET_TYPE.ETF, 'ticker': 'BOVA11'},
-            ETF,
-            ClassificationNote.ETF_WITHOUT_SEGMENT,
-        ),
+        # Sem segmento, ETF brasileiro é de ações — sem pendência.
+        ({'asset_type_id': ASSET_TYPE.ETF, 'ticker': 'BOVA11'}, ETF, None),
         (
             {'asset_type_id': ASSET_TYPE.ETF, 'ticker': 'VOO', 'exchange_code': 'NYSE'},
             TaxAssetKind.OUT_OF_SCOPE,

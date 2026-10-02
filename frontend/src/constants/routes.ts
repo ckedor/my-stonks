@@ -262,6 +262,11 @@ export const BROKERAGE_NOTE_ROUTES = {
   reconciliation: `${PORTFOLIO}/brokerage_note/reconciliation`,
 } as const
 
+export const PORTFOLIO_DOCUMENT_ROUTES = {
+  list: `${PORTFOLIO}/document`,
+  content: (documentId: number) => `${PORTFOLIO}/document/${documentId}/content`,
+} as const
+
 export const POSITION_STATEMENT_ROUTES = {
   extraction: `${PORTFOLIO}/position_statement/extraction`,
   comparison: `${PORTFOLIO}/position_statement/comparison`,

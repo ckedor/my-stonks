@@ -93,6 +93,8 @@ export interface ReconciliationGroup {
 export interface BrokerageNoteDraft {
   notes: DraftNote[]
   model: string | null
+  /** O PDF enviado, guardado. Nulo quando o storage não está configurado. */
+  document_id: number | null
 }
 
 /** Uma linha como a pessoa a conferiu: o que vai para o cruzamento e o import. */
@@ -125,6 +127,8 @@ export interface NoteHeader {
   trade_date: string
   settlement_date: string | null
   amounts: NoteAmounts
+  /** O documento de onde a nota foi lida. */
+  document_id: number | null
 }
 
 export interface ImportResult {
@@ -190,6 +194,7 @@ export interface ImportedBrokerageNote {
   fees: number
   withheld_income_tax: number | null
   net_amount: number | null
+  document_id: number | null
   imported_at: string
   transaction_count: number
 }

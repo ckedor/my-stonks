@@ -4,7 +4,7 @@ import api from '@/lib/api'
 
 /* Bater posição: o extrato de uma corretora contra as transações da carteira.
  *
- * Nada é gravado. A leitura manda o PDF ao modelo e devolve o diagnóstico; a
+ * Só o PDF é guardado. A leitura manda o PDF ao modelo e devolve o diagnóstico; a
  * comparação refaz o diagnóstico quando a pessoa corrige o extrato ou o
  * histórico, sem ler o PDF de novo. */
 
@@ -45,6 +45,8 @@ export interface PositionStatementDraft {
   positions: PositionDiff[]
   warnings: { code: string; message: string }[]
   model: string | null
+  /** O PDF enviado, guardado. Nulo quando o storage não está configurado. */
+  document_id: number | null
 }
 
 export const extractPositionStatement = (

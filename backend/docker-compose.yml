@@ -38,6 +38,22 @@ services:
       timeout: 5s
       retries: 5
 
+  # Storage dos documentos da carteira em desenvolvimento: fala S3, como o
+  # bucket de produção, e aceita qualquer credencial. O bucket nasce com o
+  # container — o adapter não cria bucket, só grava num que existe.
+  document_storage:
+    image: adobe/s3mock:latest
+    # A imagem roda sem root e não consegue escrever num volume nomeado.
+    user: "0:0"
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: my-stonks-documents
+      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /data
+      COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: "true"
+    ports:
+      - "9090:9090"
+    volumes:
+      - document_storage_data:/data
+
   redisinsight:
     image: redis/redisinsight:latest
     container_name: redisinsight
@@ -50,3 +66,4 @@ volumes:
   stonks_data:
   redis_data:
   stonks_test_data:
+  document_storage_data:

@@ -29,6 +29,8 @@ export type Notice = { message: string; severity: 'success' | 'error' | 'info' }
 
 interface NoteImportProps {
   note: DraftNote
+  /** O PDF de onde a nota foi lida, guardado; a nota confirmada aponta para ele. */
+  documentId: number | null
   portfolioId: number
   brokers: Broker[]
   assets: Asset[]
@@ -55,6 +57,7 @@ const isConflict = (error: unknown) =>
  * velho é decidir sobre outra nota. Cada nota se confirma sozinha. */
 export default function NoteImport({
   note,
+  documentId,
   portfolioId,
   brokers,
   assets,
@@ -64,7 +67,7 @@ export default function NoteImport({
   const reconciliation = useReconcileBrokerageNote()
   const importing = useImportBrokerageNote()
 
-  const [header, setHeader] = useState<NoteHeader>(() => initialHeader(note))
+  const [header, setHeader] = useState<NoteHeader>(() => initialHeader(note, documentId))
   const [rows, setRows] = useState<NoteRow[]>(() => initialRows(note))
   const [groups, setGroups] = useState<ReconciliationGroup[]>(note.groups)
   const [actions, setActions] = useState<Record<string, GroupAction>>(() =>

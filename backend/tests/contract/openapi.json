@@ -1889,6 +1889,28 @@
       "title": "Discrimination",
       "type": "string"
      },
+     "foreign_income": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Foreign Income"
+     },
+     "foreign_tax_paid": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Foreign Tax Paid"
+     },
      "group": {
       "title": "Group",
       "type": "string"
@@ -1951,7 +1973,9 @@
      "discrimination",
      "previous_value",
      "current_value",
-     "note"
+     "note",
+     "foreign_income",
+     "foreign_tax_paid"
     ],
     "title": "AssetsAndRightsItemResponse",
     "type": "object"
@@ -2441,6 +2465,17 @@
    },
    "BrokerageNoteDraftResponse": {
     "properties": {
+     "document_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Document Id"
+     },
      "model": {
       "anyOf": [
        {
@@ -2462,7 +2497,8 @@
     },
     "required": [
      "notes",
-     "model"
+     "model",
+     "document_id"
     ],
     "title": "BrokerageNoteDraftResponse",
     "type": "object"
@@ -2485,6 +2521,17 @@
       ],
       "title": "Currency",
       "type": "string"
+     },
+     "document_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Document Id"
      },
      "fees": {
       "title": "Fees",
@@ -2577,6 +2624,7 @@
      "fees",
      "withheld_income_tax",
      "net_amount",
+     "document_id",
      "imported_at",
      "transaction_count"
     ],
@@ -3815,6 +3863,51 @@
      "id"
     ],
     "title": "DividendUpdateRequest",
+    "type": "object"
+   },
+   "DocumentKind": {
+    "description": "Para que o arquivo foi enviado. O mesmo PDF pode servir aos dois fins.",
+    "enum": [
+     "brokerage_note",
+     "position_statement"
+    ],
+    "title": "DocumentKind",
+    "type": "string"
+   },
+   "DocumentNoteResponse": {
+    "properties": {
+     "broker_name": {
+      "title": "Broker Name",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "note_number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note Number"
+     },
+     "trade_date": {
+      "format": "date",
+      "title": "Trade Date",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "broker_name",
+     "note_number",
+     "trade_date"
+    ],
+    "title": "DocumentNoteResponse",
     "type": "object"
    },
    "DraftHoldingResponse": {
@@ -6958,6 +7051,168 @@
     "title": "FixedIncomeTypeOut",
     "type": "object"
    },
+   "ForeignItemResponse": {
+    "description": "O rendimento de um bem no exterior no ano, com de onde ele vem.",
+    "properties": {
+     "asset_id": {
+      "title": "Asset Id",
+      "type": "integer"
+     },
+     "broker_id": {
+      "title": "Broker Id",
+      "type": "integer"
+     },
+     "dividends_gross": {
+      "title": "Dividends Gross",
+      "type": "string"
+     },
+     "dividends_received": {
+      "title": "Dividends Received",
+      "type": "string"
+     },
+     "income": {
+      "title": "Income",
+      "type": "string"
+     },
+     "sales_result": {
+      "title": "Sales Result",
+      "type": "string"
+     },
+     "sales_value": {
+      "title": "Sales Value",
+      "type": "string"
+     },
+     "tax_paid_abroad": {
+      "title": "Tax Paid Abroad",
+      "type": "string"
+     },
+     "tax_withheld_abroad": {
+      "title": "Tax Withheld Abroad",
+      "type": "string"
+     },
+     "ticker": {
+      "title": "Ticker",
+      "type": "string"
+     }
+    },
+    "required": [
+     "asset_id",
+     "broker_id",
+     "ticker",
+     "sales_value",
+     "sales_result",
+     "dividends_received",
+     "dividends_gross",
+     "tax_withheld_abroad",
+     "tax_paid_abroad",
+     "income"
+    ],
+    "title": "ForeignItemResponse",
+    "type": "object"
+   },
+   "ForeignYearResponse": {
+    "description": "A apuração anual do exterior: a conta que o programa refaz, para conferir.",
+    "properties": {
+     "covered": {
+      "title": "Covered",
+      "type": "boolean"
+     },
+     "gains": {
+      "title": "Gains",
+      "type": "string"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/ForeignItemResponse"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "loss_carried_in": {
+      "title": "Loss Carried In",
+      "type": "string"
+     },
+     "loss_carried_out": {
+      "title": "Loss Carried Out",
+      "type": "string"
+     },
+     "loss_used": {
+      "title": "Loss Used",
+      "type": "string"
+     },
+     "losses": {
+      "title": "Losses",
+      "type": "string"
+     },
+     "rate": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rate"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source"
+     },
+     "tax_credit": {
+      "title": "Tax Credit",
+      "type": "string"
+     },
+     "tax_due": {
+      "title": "Tax Due",
+      "type": "string"
+     },
+     "tax_payable": {
+      "title": "Tax Payable",
+      "type": "string"
+     },
+     "taxable_base": {
+      "title": "Taxable Base",
+      "type": "string"
+     },
+     "us_dividend_withholding": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Us Dividend Withholding"
+     }
+    },
+    "required": [
+     "covered",
+     "rate",
+     "us_dividend_withholding",
+     "source",
+     "items",
+     "gains",
+     "losses",
+     "loss_carried_in",
+     "loss_used",
+     "loss_carried_out",
+     "taxable_base",
+     "tax_due",
+     "tax_credit",
+     "tax_payable"
+    ],
+    "title": "ForeignYearResponse",
+    "type": "object"
+   },
    "Frequency-Input": {
     "description": "Com que passo uma coisa se repete ao longo da simulação.\n\nAporte e rebalanceamento andam no mesmo calendário — de mês em mês, de\ntrimestre em trimestre —, então são a mesma enumeração e não duas iguais.\n`NONE` é a ausência do regime, e significa coisas diferentes em cada um:\nsem aporte, só o valor inicial trabalha; sem rebalanceamento, quem corrige\na carteira são os aportes.",
     "enum": [
@@ -8113,6 +8368,16 @@
       "title": "Fiscal Year",
       "type": "integer"
      },
+     "foreign": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ForeignYearResponse"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
      "obligations": {
       "items": {
        "$ref": "#/components/schemas/DarfObligationResponse"
@@ -8153,7 +8418,8 @@
      "assets_and_rights",
      "exempt_income",
      "exclusive_income",
-     "capital_gains"
+     "capital_gains",
+     "foreign"
     ],
     "title": "IncomeTaxAssessmentResponse",
     "type": "object"
@@ -10609,6 +10875,17 @@
       "title": "Currency",
       "type": "string"
      },
+     "document_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Document Id"
+     },
      "note_number": {
       "anyOf": [
        {
@@ -10938,7 +11215,6 @@
      "unknown_event",
      "missing_fees",
      "day_trade",
-     "etf_without_segment",
      "foreign_sale",
      "foreign_crypto_sale",
      "listed_fund_sale",
@@ -11109,6 +11385,48 @@
      "status"
     ],
     "title": "PortfolioConsolidation",
+    "type": "object"
+   },
+   "PortfolioDocumentResponse": {
+    "description": "Um arquivo enviado à carteira, para o histórico.",
+    "properties": {
+     "filename": {
+      "title": "Filename",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "kind": {
+      "$ref": "#/components/schemas/DocumentKind"
+     },
+     "notes": {
+      "items": {
+       "$ref": "#/components/schemas/DocumentNoteResponse"
+      },
+      "title": "Notes",
+      "type": "array"
+     },
+     "size_bytes": {
+      "title": "Size Bytes",
+      "type": "integer"
+     },
+     "uploaded_at": {
+      "format": "date-time",
+      "title": "Uploaded At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "kind",
+     "filename",
+     "size_bytes",
+     "uploaded_at",
+     "notes"
+    ],
+    "title": "PortfolioDocumentResponse",
     "type": "object"
    },
    "PortfolioSegment": {
@@ -11358,6 +11676,17 @@
       "title": "Currency",
       "type": "string"
      },
+     "document_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Document Id"
+     },
      "holdings": {
       "items": {
        "$ref": "#/components/schemas/DraftHoldingResponse"
@@ -11400,7 +11729,8 @@
      "holdings",
      "positions",
      "warnings",
-     "model"
+     "model",
+     "document_id"
     ],
     "title": "PositionStatementDraftResponse",
     "type": "object"
@@ -21957,6 +22287,108 @@
     "summary": "Update Dividend",
     "tags": [
      "Portfolio Dividend"
+    ]
+   }
+  },
+  "/portfolio/document": {
+   "get": {
+    "description": "Files uploaded to the portfolio and kept, newest first.",
+    "operationId": "list_documents_portfolio_document_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/PortfolioDocumentResponse"
+         },
+         "title": "Response List Documents Portfolio Document Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "List Documents",
+    "tags": [
+     "Portfolio Document"
+    ]
+   }
+  },
+  "/portfolio/document/{document_id}/content": {
+   "get": {
+    "description": "The file itself, as it was uploaded.",
+    "operationId": "read_document_content_portfolio_document__document_id__content_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "document_id",
+      "required": true,
+      "schema": {
+       "title": "Document Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Read Document Content",
+    "tags": [
+     "Portfolio Document"
     ]
    }
   },

@@ -34,6 +34,12 @@ from app.modules.portfolio.domain.income_tax.declaration import (
     income_lines,
     paid_by_regime_month,
 )
+from app.modules.portfolio.domain.income_tax.foreign import (
+    ForeignDividend,
+    ForeignYear,
+    assess_foreign,
+    is_foreign,
+)
 from app.modules.portfolio.domain.income_tax.ledger import (
     RealizedSale,
     find_day_trades,
@@ -41,9 +47,12 @@ from app.modules.portfolio.domain.income_tax.ledger import (
 )
 from app.modules.portfolio.domain.income_tax.pendency import Pendency, PendencyCode
 from app.modules.portfolio.domain.income_tax.rules import (
+    FOREIGN_RULES,
     RULES,
+    ForeignRule,
     TaxRegime,
     TaxRule,
+    foreign_rule_for,
     validate_catalogue,
 )
 from app.modules.portfolio.domain.income_tax.trades import (
@@ -52,26 +61,23 @@ from app.modules.portfolio.domain.income_tax.trades import (
     TaxTrade,
 )
 
+#: Vendas no exterior só viram pendência num ano sem a regra anual: antes de
+#: 2024 eram ganho de capital, que o catálogo não tem.
 _NOTE_PENDENCY = {
     ClassificationNote.FOREIGN: (
         PendencyCode.FOREIGN_SALE,
-        'Venda de {ticker} no exterior ({count}): aplicações no exterior têm apuração '
-        'anual (Lei 14.754/2023), que esta apuração ainda não faz.',
+        'Venda de {ticker} no exterior ({count}): antes da Lei 14.754/2023 era ganho de '
+        'capital apurado no GCAP, regime que esta apuração não tem.',
     ),
     ClassificationNote.FOREIGN_CRYPTO: (
         PendencyCode.FOREIGN_CRYPTO_SALE,
-        'Venda de {ticker} em corretora de base dólar ({count}): cripto custodiada no '
-        'exterior tem apuração anual (Lei 14.754/2023), que esta apuração ainda não faz.',
+        'Venda de {ticker} em corretora de base dólar ({count}): antes da Lei 14.754/2023 '
+        'era ganho de capital apurado no GCAP, regime que esta apuração não tem.',
     ),
     ClassificationNote.LISTED_FUND: (
         PendencyCode.LISTED_FUND_SALE,
         'Venda de {ticker} ({count}): fundo listado que não é FII nem Fiagro no cadastro '
         'do regulador. FI-Infra, FIP e outros têm regime próprio, não apurado aqui.',
-    ),
-    ClassificationNote.ETF_WITHOUT_SEGMENT: (
-        PendencyCode.ETF_WITHOUT_SEGMENT,
-        'Venda de {ticker} ({count}): o ETF não tem segmento no cadastro e foi apurado como '
-        'ETF de ações. Se for de renda fixa, o imposto é retido na fonte — classifique-o.',
     ),
 }
 
@@ -94,6 +100,8 @@ class IncomeTaxReport:
     capital_gains: tuple[CapitalGainOperation, ...] = ()
     #: O imposto pago de cada mês de Renda Variável, por regime.
     tax_paid: dict[tuple[TaxRegime, date], Decimal] = field(default_factory=dict)
+    #: A apuração anual das aplicações no exterior.
+    foreign: ForeignYear | None = None
 
     def year_end(self, regime: TaxRegime) -> MonthlyAssessment | None:
         months = self.months.get(regime, ())
@@ -129,11 +137,20 @@ def assess(  # noqa: PLR0913
     assets: dict[int, AssetRecord] | None = None,
     brokers: dict[int, BrokerRecord] | None = None,
     dividends: Iterable[DividendRecord] = (),
+    foreign_rules: Iterable[ForeignRule] = FOREIGN_RULES,
 ) -> IncomeTaxReport:
+    """A apuração do ano.
+
+    `dividends` traz os proventos do ano e, para o exterior, os dos anos
+    anteriores desde a lei: a perda que um ano passa ao seguinte depende deles.
+    """
     rules = tuple(rules)
+    foreign_rules = tuple(foreign_rules)
     validate_catalogue(rules)
     trades = tuple(trades)
     events = tuple(events)
+    dividends = tuple(dividends)
+    foreign_assets = {trade.asset_id for trade in trades if is_foreign(trade)}
     year_start = date(fiscal_year, 1, 1)
     year_end = date(fiscal_year, 12, 31)
 
@@ -153,7 +170,12 @@ def assess(  # noqa: PLR0913
     pendencies = [
         *(pendency for pendency in ledger_pendencies if in_year(pendency.day)),
         *(pendency for pendency in find_day_trades(trades) if in_year(pendency.day)),
-        *_classification_pendencies(trade for trade in trades if in_year(trade.day)),
+        *_classification_pendencies(
+            trade
+            for trade in trades
+            if in_year(trade.day)
+            and not (is_foreign(trade) and foreign_rule_for(fiscal_year, foreign_rules))
+        ),
         *_missing_fees_pendency(sale for sale in year_sales if sale.kind in REGIME_OF_KIND),
         *(pendency for pendency in rule_pendencies if in_year(pendency.day)),
         *(pendency for pendency in payment_pendencies if in_year(pendency.day)),
@@ -167,15 +189,36 @@ def assess(  # noqa: PLR0913
         obligation for obligation in obligations if obligation.period.year == fiscal_year
     )
 
+    foreign, foreign_pendencies = assess_foreign(
+        fiscal_year=fiscal_year,
+        trades=trades,
+        events=events,
+        dividends=[
+            ForeignDividend(asset_id=d.asset_id, day=d.day, amount=d.amount)
+            for d in dividends
+            if d.asset_id in foreign_assets
+        ],
+        rules=foreign_rules,
+    )
+    pendencies += foreign_pendencies
+
     items: list[AssetsAndRightsItem] = []
     exempt: list[IncomeLine] = []
     exclusive: list[IncomeLine] = []
     if assets is not None and brokers is not None:
         items, asset_pendencies = assets_and_rights(
-            fiscal_year=fiscal_year, trades=trades, events=events, assets=assets, brokers=brokers
+            fiscal_year=fiscal_year,
+            trades=trades,
+            events=events,
+            assets=assets,
+            brokers=brokers,
+            foreign=foreign,
         )
         exempt, exclusive, income_pendencies = income_lines(
-            fiscal_year=fiscal_year, dividends=dividends, assets=assets, months=year_months
+            fiscal_year=fiscal_year,
+            dividends=[d for d in dividends if d.asset_id not in foreign_assets],
+            assets=assets,
+            months=year_months,
         )
         pendencies += asset_pendencies + income_pendencies
 
@@ -192,6 +235,7 @@ def assess(  # noqa: PLR0913
             capital_gain_operations(year_sales, year_months.get(TaxRegime.CRYPTO, ()))
         ),
         tax_paid=paid_by_regime_month(year_obligations),
+        foreign=foreign,
     )
 
 

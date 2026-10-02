@@ -156,7 +156,11 @@ class DraftHolding:
 
 @dataclass(frozen=True, kw_only=True)
 class PositionStatementDraft:
-    """O extrato lido e o diagnóstico contra a carteira. Não é gravado."""
+    """O extrato lido e o diagnóstico contra a carteira. Não é gravado.
+
+    O PDF em si é: `document_id` aponta para ele, ou é nulo quando não há
+    storage configurado.
+    """
 
     broker_name: str
     broker_cnpj: str | None
@@ -167,3 +171,4 @@ class PositionStatementDraft:
     positions: tuple[PositionDiff, ...]
     warnings: tuple[NoteWarning, ...]
     model: str | None
+    document_id: int | None = None

@@ -133,6 +133,7 @@ const ASSESSMENT = {
       ticker: 'HGLG11', traded_on_exchange: true,
       discrimination: '25 cotas de CSHG Logística (HGLG11), em custódia na XP, CNPJ 02.332.886/0001-04.',
       previous_value: '15002.00', current_value: '3750.50', note: null,
+      foreign_income: null, foreign_tax_paid: null,
     },
     {
       asset_id: 11, broker_id: 1, group: '03', group_name: 'Participações societárias',
@@ -142,6 +143,7 @@ const ASSESSMENT = {
       discrimination: '300 ações de Petrobras (PETR4), negociadas na B3, em custódia na XP, CNPJ 02.332.886/0001-04.',
       previous_value: '9720.00', current_value: '9720.00',
       note: 'CNPJ da empresa não está no cadastro: preencha à mão.',
+      foreign_income: null, foreign_tax_paid: null,
     },
   ],
   exempt_income: [
@@ -152,6 +154,7 @@ const ASSESSMENT = {
   ],
   exclusive_income: [],
   capital_gains: [],
+  foreign: null,
   pendencies: [
     {
       code: 'missing_fees', message: '1 venda sem taxas informadas, na própria venda ou nas compras que formam o custo. Taxa não informada foi apurada como zero, o que deixa o resultado maior; importar a nota de corretagem completa as taxas.',

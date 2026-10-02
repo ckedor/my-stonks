@@ -325,3 +325,29 @@ Em aberto (decisão do mantenedor):
   cripto: não achei texto oficial que feche.
 - ETF e REIT no exterior: seguem com nota (Lei 14.754 — aplicação financeira
   no exterior).
+
+## 14. Exterior (Lei 14.754/2023) — entregue em 01/10/2026
+
+O objetivo da tela é servir de referência para preencher o programa da Receita,
+e isso inclui o exterior; a pendência "apuração anual que esta apuração ainda
+não faz" saiu.
+
+- Apuração anual em `income_tax/foreign.py`, regra em `FOREIGN_RULES`
+  (`rules.py`), de 2024 em diante: 15% na declaração, sem DARF.
+- Rendimento ou Perda de cada bem: resultado das vendas em reais pelo custo
+  médio, mais os dividendos brutos.
+- Dividendo do exterior: o lançado é o líquido (decisão do mantenedor); o bruto
+  é o líquido ÷ 0,7, e os 30% retidos nos EUA viram imposto pago no exterior,
+  compensável até 15% do próprio dividendo (P&R Lei 14.754, pergunta 23).
+- Perda compensa ganho de outro bem no ano e passa aos anos seguintes (P&R Lei
+  14.754, pergunta 45); por isso o histórico é apurado desde 2024.
+- Bens e Direitos: quadro "Aplicação Financeira (R$)" em todo bem no exterior,
+  zerado quando não há rendimento; discriminação com custo em US$ e cotação
+  média (P&R IRPF 2026, pergunta 474).
+- Venda no exterior antes de 2024 continua pendência (era GCAP).
+- ETF brasileiro sem segmento: apurado como de ações, sem pendência (decisão do
+  mantenedor; o usuário não edita o ativo).
+
+Em aberto: dividendo de BDR (carnê-leão, Rendimentos Tributáveis Recebidos de
+PF/Exterior); a P&R manda converter o custo pela cotação de compra e a venda
+pela de venda do BCB — o app usa o preço em reais que a negociação guardou.

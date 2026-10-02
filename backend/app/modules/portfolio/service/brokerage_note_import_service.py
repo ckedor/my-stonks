@@ -31,8 +31,10 @@ from app.modules.portfolio.domain.brokerage_note import (
     only_digits,
     reconcile,
 )
+from app.modules.portfolio.domain.document import DocumentKind
 from app.modules.portfolio.domain.entities import BrokerageNote, Transaction
 from app.modules.portfolio.domain.outputs import BrokerageNoteReading
+from app.modules.portfolio.service.portfolio_document_service import PortfolioDocumentService
 
 STALE_MESSAGE = 'As transações da carteira mudaram desde que a nota foi lida. Leia a nota de novo.'
 
@@ -40,12 +42,13 @@ STALE_MESSAGE = 'As transações da carteira mudaram desde que a nota foi lida. 
 class BrokerageNoteImportService:
     """Lê notas de corretagem, mostra o que cada uma faria na carteira, e só então faz.
 
-    A leitura e o cruzamento não escrevem nada. Cada nota se confirma sozinha:
+    A leitura guarda o PDF enviado e mais nada; o cruzamento não escreve. Cada
+    nota se confirma sozinha:
     a escrita recebe a nota, as linhas e as decisões da pessoa, refaz o
     cruzamento contra a carteira de agora e recusa se ele não for o mesmo que
     ela viu — decidir sobre uma tela velha apagaria transação que ninguém
-    conferiu. Confirmar grava a nota e liga a ela as transações que criou ou
-    completou.
+    conferiu. Confirmar grava a nota, liga a ela as transações que criou ou
+    completou, e a liga ao documento de onde foi lida.
     """
 
     def __init__(
@@ -53,16 +56,26 @@ class BrokerageNoteImportService:
         uow: UnitOfWork,
         extractor: BrokerageNoteExtractor,
         usd_brl_service: UsdBrlReadService,
+        documents: PortfolioDocumentService,
     ):
         self.uow = uow
         self.extractor = extractor
         self.usd_brl_service = usd_brl_service
+        self.documents = documents
 
     async def extract(
         self, *, portfolio_id: int, filename: str, content: bytes
     ) -> BrokerageNoteDraft:
         if reason := unreadable_pdf_reason(filename=filename, content=content):
             raise ValidationError(reason)
+        # Antes do modelo: o arquivo foi enviado, e fica guardado mesmo que a
+        # leitura falhe ou que nenhuma nota dele venha a ser confirmada.
+        document_id = await self.documents.store(
+            portfolio_id=portfolio_id,
+            kind=DocumentKind.BROKERAGE_NOTE,
+            filename=filename,
+            content=content,
+        )
         reading, model = await self.extractor.extract(filename=filename, content=content)
         if not reading.notes:
             raise ValidationError(f'Nenhuma nota de corretagem encontrada em {filename}.')
@@ -110,6 +123,7 @@ class BrokerageNoteImportService:
                 for note, previous in zip(notes, imported, strict=True)
             ),
             model=model,
+            document_id=document_id,
         )
 
     async def reconcile(
@@ -148,6 +162,10 @@ class BrokerageNoteImportService:
                 raise ValidationError(
                     f'{broker.name} opera em outra moeda; a nota é em {note.currency}.'
                 )
+            if note.document_id is not None and (
+                await uow.portfolios.get_document(portfolio_id, note.document_id) is None
+            ):
+                raise ValidationError('O documento da nota não é desta carteira.')
             existing = await self._existing(uow, portfolio_id, lines)
             groups = {group.key: group for group in reconcile(lines, existing)}
             chosen = [self._checked(decision, groups) for decision in decisions]
@@ -210,6 +228,9 @@ class BrokerageNoteImportService:
             'settlement_date': note.settlement_date,
             **asdict(note.amounts),
         }
+        # Uma nota conferida sem documento não apaga o vínculo que já tinha.
+        if note.document_id is not None:
+            fields['document_id'] = note.document_id
         previous = await uow.portfolios.find_brokerage_note(
             portfolio_id, note.broker_id, note.note_number, note.trade_date
         )

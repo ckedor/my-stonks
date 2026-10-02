@@ -142,7 +142,9 @@ Provider calls use adapters/integrations behind the service layer.
   fonte e data de conferência, escolhida pela data da venda. Mudança de lei é
   fechar uma versão e abrir outra no primeiro dia de um mês;
   `validate_catalogue` recusa sobreposição e mudança no meio do mês, e o teste
-  do catálogo roda ela.
+  do catálogo roda ela. O exterior (Lei 14.754/2023) é anual e tem o próprio
+  catálogo no mesmo arquivo, `FOREIGN_RULES`, com versões que mudam só em 1º de
+  janeiro; `validate_foreign_catalogue` é o equivalente.
 - Falta de dado vira pendência com a premissa usada, nunca zero nem isenção em
   silêncio. Pagamento de DARF é registrado pela pessoa, nunca inferido.
 
@@ -172,6 +174,17 @@ Provider calls use adapters/integrations behind the service layer.
 - Registering a fund is available to authenticated users from a purchase and
   reuses an existing priced unit. FIDCs require a confirmed series. Changes to
   existing series/aliases and ingestion operations remain admin-only.
+
+## Documentos da carteira
+
+- Todo PDF enviado à carteira passa por `PortfolioDocumentService.store`
+  antes do modelo. Um upload novo da carteira entra pelo mesmo caminho, com o
+  seu `DocumentKind` — e a check constraint `ck_document_kind` muda junto.
+- Os bytes vão para o storage (`app/infra/storage/`), nunca para o banco. A
+  chave sai do conteúdo; não troque por id, ou um envio que falhou entre o
+  bucket e o banco passa a deixar objeto órfão.
+- Sem bucket configurado, guardar devolve `None` e a leitura segue. Com
+  bucket, falhar em guardar falha o envio — não engula o erro.
 
 ## Operations
 

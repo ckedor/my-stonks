@@ -23,6 +23,7 @@ from app.modules.market_data.domain.market_scope import is_brazilian_market
 from app.modules.portfolio.domain.dividend import DividendKind
 from app.modules.portfolio.domain.income_tax.assessment import MonthlyAssessment, money
 from app.modules.portfolio.domain.income_tax.darf import DarfObligation
+from app.modules.portfolio.domain.income_tax.foreign import ForeignItem, ForeignYear
 from app.modules.portfolio.domain.income_tax.ledger import (
     Holding,
     RealizedSale,
@@ -116,6 +117,10 @@ class AssetsAndRightsItem:
     current_value: Decimal
     #: O que conferir antes de digitar: código incerto, CNPJ faltando.
     note: str | None = None
+    #: Quadro "Aplicação Financeira (R$)", só nos bens no exterior a partir de
+    #: 2024: o campo "Rendimento ou Perda" e o "Imposto pago no exterior".
+    foreign_income: Decimal | None = None
+    foreign_tax_paid: Decimal | None = None
 
 
 @dataclass(frozen=True)
@@ -223,13 +228,29 @@ def _quantity(value: Decimal) -> str:
     return f'{grouped},{fraction}' if fraction else grouped
 
 
+def _pt_br(value: Decimal, places: int) -> str:
+    """1234.5 → "1.234,50": o número como se escreve na discriminação."""
+    text = f'{value:,.{places}f}'
+    return text.replace(',', ' ').replace('.', ',').replace(' ', '.')
+
+
 def _discrimination(
-    asset: AssetRecord, broker: BrokerRecord, quantity: Decimal, brazilian: bool
+    asset: AssetRecord,
+    broker: BrokerRecord,
+    quantity: Decimal,
+    brazilian: bool,
+    held: Holding | None = None,
 ) -> str:
     ticker = f' ({asset.ticker})' if asset.ticker else ''
     where = f'em custódia na {broker.name}'
     if broker.cnpj:
         where += f', CNPJ {format_cnpj(broker.cnpj)}'
+    if not brazilian and held is not None and held.cost_usd:
+        # A ficha pede, no exterior, o valor na moeda e a cotação usada.
+        where += (
+            f'; custo de US$ {_pt_br(held.cost_usd, 2)}, à cotação média de '
+            f'R$ {_pt_br(held.cost / held.cost_usd, 4)} por dólar'
+        )
     held = f'{_quantity(quantity)} ' if quantity > 0 else ''
     kind = asset.asset_type_id
     if kind == ASSET_TYPE.STOCK:
@@ -252,6 +273,7 @@ def assets_and_rights(  # noqa: PLR0913
     assets: dict[int, AssetRecord],
     brokers: dict[int, BrokerRecord],
     excluded_types: frozenset[int] = frozenset({ASSET_TYPE.PREV}),
+    foreign: ForeignYear | None = None,
 ) -> tuple[list[AssetsAndRightsItem], list[Pendency]]:
     """Um item por ativo e corretora com posição em algum dos dois 31/12, a custo.
 
@@ -272,11 +294,16 @@ def assets_and_rights(  # noqa: PLR0913
     traded_in_year = {
         (trade.asset_id, trade.broker_id) for trade in trades if trade.day.year == fiscal_year
     }
+    foreign_items: dict[tuple[int, int], ForeignItem] = {
+        (item.asset_id, item.broker_id): item for item in (foreign.items if foreign else ())
+    }
+    # Sob a Lei 14.754, todo bem no exterior leva o quadro, mesmo zerado.
+    annual_foreign = foreign is not None and foreign.rule is not None
 
     items: list[AssetsAndRightsItem] = []
     pendencies: list[Pendency] = []
     excluded: set[str] = set()
-    for key in sorted(previous.keys() | current.keys() | traded_in_year):
+    for key in sorted(previous.keys() | current.keys() | traded_in_year | foreign_items.keys()):
         asset_id, broker_id = key
         asset = assets.get(asset_id)
         broker = brokers.get(broker_id)
@@ -303,7 +330,7 @@ def assets_and_rights(  # noqa: PLR0913
         held_now: Holding | None = current.get(key)
         held_before: Holding | None = previous.get(key)
         notes = [code.note] if code.note else []
-        if held_now is None and held_before is None:
+        if held_now is None and held_before is None and key in traded_in_year:
             notes.append('Comprado e vendido no ano: declare com as duas situações zeradas.')
         if cnpj_label and cnpj is None:
             notes.append(f'{cnpj_label} não está no cadastro: preencha à mão.')
@@ -331,11 +358,12 @@ def assets_and_rights(  # noqa: PLR0913
                 ticker=asset.ticker if exchange_traded and brazilian else None,
                 traded_on_exchange=True if exchange_traded and brazilian else None,
                 discrimination=_discrimination(
-                    asset, broker, held_now.quantity if held_now else _ZERO, brazilian
+                    asset, broker, held_now.quantity if held_now else _ZERO, brazilian, held_now
                 ),
                 previous_value=money(held_before.cost) if held_before else _ZERO,
                 current_value=money(held_now.cost) if held_now else _ZERO,
                 note=' '.join(notes) or None,
+                **_foreign_fields(foreign_items.get(key), annual_foreign and not brazilian),
             )
         )
 
@@ -351,6 +379,14 @@ def assets_and_rights(  # noqa: PLR0913
         )
     items.sort(key=lambda item: (item.group, item.code, item.discrimination))
     return items, pendencies
+
+
+def _foreign_fields(item: ForeignItem | None, annual_foreign: bool) -> dict:
+    if not annual_foreign:
+        return {}
+    if item is None:
+        return {'foreign_income': _ZERO, 'foreign_tax_paid': _ZERO}
+    return {'foreign_income': item.income, 'foreign_tax_paid': item.tax_paid_abroad}
 
 
 # --- Rendimentos -------------------------------------------------------------
@@ -411,7 +447,21 @@ def _grouped_income(
     ]
 
 
-def income_lines(  # noqa: PLR0912
+_UNPLACED_DESTINATION = {
+    ASSET_TYPE.BDR: (
+        'Dividendo de BDR é rendimento tributável do exterior, recolhido por carnê-leão e '
+        'declarado em Rendimentos Tributáveis Recebidos de PF/Exterior — conta que esta '
+        'apuração ainda não faz.'
+    ),
+    ASSET_TYPE.FI: (
+        'Fundo listado que não é FII nem Fiagro: rendimento de FI-Infra é isento (Rendimentos '
+        'Isentos, código 99), o de FIP ou FIDC tem regime próprio. O cadastro não diz qual.'
+    ),
+}
+_UNPLACED_OTHER = 'O tipo do ativo não tem destino nas fichas desta tela.'
+
+
+def income_lines(
     *,
     fiscal_year: int,
     dividends: Iterable[DividendRecord],
@@ -424,7 +474,8 @@ def income_lines(  # noqa: PLR0912
     exempt_fixed_income: list[tuple[AssetRecord, Decimal]] = []
     jcp: list[tuple[AssetRecord, Decimal]] = []
     taxed_fixed_income: list[tuple[AssetRecord, Decimal]] = []
-    unplaced: dict[str, Decimal] = defaultdict(lambda: _ZERO)
+    #: Proventos sem ficha aqui, por tipo de ativo: cada tipo tem o seu destino.
+    unplaced: dict[int, set[str]] = defaultdict(set)
 
     for dividend in dividends:
         if dividend.day.year != fiscal_year:
@@ -449,7 +500,7 @@ def income_lines(  # noqa: PLR0912
         elif kind in (ASSET_TYPE.CDB, ASSET_TYPE.DEB, ASSET_TYPE.TREASURY):
             taxed_fixed_income.append((asset, dividend.amount))
         else:
-            unplaced[asset.ticker or asset.name] += dividend.amount
+            unplaced[kind].add(asset.ticker or asset.name)
 
     def year_sum(regime: TaxRegime, field: str) -> Decimal:
         return sum((getattr(month, field) for month in months.get(regime, ())), _ZERO)
@@ -495,17 +546,14 @@ def income_lines(  # noqa: PLR0912
     )
 
     pendencies = []
-    if unplaced:
-        listed = ', '.join(sorted(unplaced))
-        pendencies.append(
-            Pendency(
-                code=PendencyCode.NOT_DECLARED_HERE,
-                message=(
-                    f'Proventos de {listed} não entraram em nenhuma ficha: BDR e ativos no '
-                    'exterior são rendimentos do exterior (Lei 14.754/2023), ainda não apurados.'
-                ),
-            )
+    pendencies = [
+        Pendency(
+            code=PendencyCode.NOT_DECLARED_HERE,
+            message=f'Proventos de {", ".join(sorted(tickers))} não entraram em nenhuma ficha. '
+            + _UNPLACED_DESTINATION.get(kind, _UNPLACED_OTHER),
         )
+        for kind, tickers in sorted(unplaced.items())
+    ]
     return exempt, exclusive, pendencies
 
 

@@ -91,7 +91,7 @@ const group = (key: string, overrides: Partial<ReconciliationGroup> = {}): Recon
 
 describe('brokerage note draft', () => {
   it('builds each line from the row and the note header', () => {
-    const header = { ...initialHeader(note), broker_id: 9, trade_date: '2026-09-20' }
+    const header = { ...initialHeader(note, 55), broker_id: 9, trade_date: '2026-09-20' }
 
     const lines = toLineInputs(note.index, header, initialRows(note))
 

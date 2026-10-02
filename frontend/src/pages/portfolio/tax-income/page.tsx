@@ -13,6 +13,7 @@ import { useState } from 'react'
 import AssetsAndRightsTab from './AssetsAndRightsTab'
 import CapitalGainsTab from './CapitalGainsTab'
 import DarfTable from './DarfTable'
+import ForeignTab from './ForeignTab'
 import IncomeTab from './IncomeTab'
 import TaxIncomeSkeleton from './TaxIncomeSkeleton'
 import TaxPendencies from './TaxPendencies'
@@ -39,6 +40,7 @@ type TaxTab =
   | 'common'
   | 'real_estate_fund'
   | 'capital_gains'
+  | 'foreign'
   | 'taxes_paid'
 
 const TABS = [
@@ -49,6 +51,7 @@ const TABS = [
   { id: 'common' as const, label: 'Renda Variável' },
   { id: 'real_estate_fund' as const, label: 'FII e Fiagro' },
   { id: 'capital_gains' as const, label: 'Ganhos de Capital' },
+  { id: 'foreign' as const, label: 'Aplicações no Exterior' },
   { id: 'taxes_paid' as const, label: 'Imposto Pago/Retido' },
 ]
 
@@ -83,6 +86,13 @@ function metrics(assessment: IncomeTaxAssessment) {
         hint="Retido nas vendas e não compensado no ano."
         value={formatTaxValue(withheld)}
       />
+      {assessment.foreign?.covered && (
+        <AppMetric
+          label="Exterior a pagar no ajuste"
+          hint="15% sobre o rendimento das aplicações no exterior (Lei 14.754/2023), já descontado o imposto pago lá fora. Não tem DARF mensal: entra no saldo da declaração."
+          value={formatTaxValue(assessment.foreign.tax_payable)}
+        />
+      )}
     </AppStack>
   )
 }
@@ -155,6 +165,8 @@ function TabContent({
         />
       ) : null
     }
+    case 'foreign':
+      return <ForeignTab year={assessment.foreign} fiscalYear={fiscalYear} />
     case 'taxes_paid':
       return <TaxesPaidTab regimes={assessment.regimes} />
   }

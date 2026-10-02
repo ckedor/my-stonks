@@ -8,6 +8,7 @@ from app.infra.ai.factory import get_ai_provider
 from app.infra.ai.provider import AIProvider
 from app.infra.db.unit_of_work import UnitOfWork, get_uow
 from app.infra.redis.redis_service import RedisService
+from app.infra.storage.factory import get_document_storage
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.service.market_data_service import MarketDataReadService
 from app.modules.portfolio.adapters.brokerage_note_extractor import BrokerageNoteExtractor
@@ -25,6 +26,7 @@ from app.modules.portfolio.service.portfolio_consolidator_service import (
 from app.modules.portfolio.service.portfolio_dividend_service import (
     PortfolioDividendService,
 )
+from app.modules.portfolio.service.portfolio_document_service import PortfolioDocumentService
 from app.modules.portfolio.service.portfolio_income_tax_service import (
     PortfolioIncomeTaxService,
 )
@@ -119,6 +121,18 @@ def get_portfolio_transaction_service(
     return PortfolioTransactionService(uow, usd_brl_service=build_usd_brl_read_service())
 
 
+def build_portfolio_document_service(uow: UnitOfWork) -> PortfolioDocumentService:
+    # O storage é lido aqui, a cada montagem, e não como default de parâmetro:
+    # é o único ponto que um teste precisa trocar para pôr um storage em memória.
+    return PortfolioDocumentService(uow=uow, storage=get_document_storage())
+
+
+def get_portfolio_document_service(
+    uow: UnitOfWork = Depends(get_uow),
+) -> PortfolioDocumentService:
+    return build_portfolio_document_service(uow)
+
+
 def get_brokerage_note_import_service(
     uow: UnitOfWork = Depends(get_uow),
     provider: AIProvider = Depends(get_ai_provider),
@@ -127,6 +141,8 @@ def get_brokerage_note_import_service(
         uow=uow,
         extractor=BrokerageNoteExtractor(provider),
         usd_brl_service=build_usd_brl_read_service(),
+        # UnitOfWork próprio: uma instância não entra em dois serviços.
+        documents=build_portfolio_document_service(UnitOfWork()),
     )
 
 
@@ -134,7 +150,11 @@ def get_position_statement_service(
     uow: UnitOfWork = Depends(get_uow),
     provider: AIProvider = Depends(get_ai_provider),
 ) -> PositionStatementService:
-    return PositionStatementService(uow=uow, extractor=PositionStatementExtractor(provider))
+    return PositionStatementService(
+        uow=uow,
+        extractor=PositionStatementExtractor(provider),
+        documents=build_portfolio_document_service(UnitOfWork()),
+    )
 
 
 def get_portfolio_income_tax_service(

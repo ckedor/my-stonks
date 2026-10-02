@@ -14,6 +14,7 @@ from app.modules.portfolio.domain.brokerage_note import (
     line_ticker,
     match_broker,
 )
+from app.modules.portfolio.domain.document import DocumentKind
 from app.modules.portfolio.domain.position_statement import (
     DraftHolding,
     PositionDiff,
@@ -22,25 +23,41 @@ from app.modules.portfolio.domain.position_statement import (
     compare_positions,
     held_quantities,
 )
+from app.modules.portfolio.service.portfolio_document_service import PortfolioDocumentService
 
 
 class PositionStatementService:
     """Bate a posição de um extrato de corretora com as transações da carteira.
 
-    Não escreve nada. O extrato é lido, a corretora e os ativos são
-    procurados no cadastro, e cada ativo recebe um diagnóstico: igual,
-    divergente, só no extrato ou só no app. Corrigir é editar as transações.
+    Guarda o PDF enviado e não escreve mais nada. O extrato é lido, a
+    corretora e os ativos são procurados no cadastro, e cada ativo recebe um
+    diagnóstico: igual, divergente, só no extrato ou só no app. Corrigir é
+    editar as transações.
     """
 
-    def __init__(self, uow: UnitOfWork, extractor: PositionStatementExtractor):
+    def __init__(
+        self,
+        uow: UnitOfWork,
+        extractor: PositionStatementExtractor,
+        documents: PortfolioDocumentService,
+    ):
         self.uow = uow
         self.extractor = extractor
+        self.documents = documents
 
     async def extract(
         self, *, portfolio_id: int, filename: str, content: bytes
     ) -> PositionStatementDraft:
         if reason := unreadable_pdf_reason(filename=filename, content=content):
             raise ValidationError(reason)
+        # Antes do modelo: o arquivo foi enviado, e fica guardado mesmo que a
+        # leitura falhe.
+        document_id = await self.documents.store(
+            portfolio_id=portfolio_id,
+            kind=DocumentKind.POSITION_STATEMENT,
+            filename=filename,
+            content=content,
+        )
         reading, model = await self.extractor.extract(filename=filename, content=content)
 
         tickers = [
@@ -103,6 +120,7 @@ class PositionStatementService:
             positions=tuple(positions),
             warnings=tuple(warnings),
             model=model,
+            document_id=document_id,
         )
 
     async def compare(

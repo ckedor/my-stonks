@@ -24,6 +24,7 @@ import { useAssets } from '@/queries/assets'
 import { useBrokers } from '@/queries/brokerageNote'
 import { EMPTY_LIST } from '@/queries/empty'
 import { useRefreshPortfolio, useSelectedPortfolioId, useTrades } from '@/queries/portfolio'
+import { useRefreshPortfolioDocuments } from '@/queries/portfolioDocument'
 import { useComparePositions, useExtractPositionStatement } from '@/queries/positionStatement'
 import type { Trade } from '@/types'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
@@ -32,6 +33,7 @@ import AssetTrades from './AssetTrades'
 import DiffTable from './DiffTable'
 import HoldingsTable from './HoldingsTable'
 import { initialHoldings, tradesOf, updateHolding } from './check'
+import { DOCUMENT_NOT_KEPT } from '../documents/copy'
 
 /** Espera depois da última edição antes de comparar de novo. */
 const RECOMPARE_DELAY_MS = 500
@@ -46,7 +48,7 @@ type Notice = { message: string; severity: 'success' | 'error' | 'info' }
 /* Aba "Bater posição" de Trades.
  *
  * O extrato de uma corretora — Nubank, BTG, Avenue — contra as operações da
- * carteira naquela corretora. Nada é gravado: o que sai daqui é um
+ * carteira naquela corretora. Só o PDF é guardado: o que sai daqui é um
  * diagnóstico, e a correção é editar as operações do ativo que diverge. Cada
  * correção, no extrato ou no histórico, refaz a conferência. */
 export default function PositionCheck() {
@@ -58,6 +60,7 @@ export default function PositionCheck() {
   const refreshPortfolio = useRefreshPortfolio()
 
   const extraction = useExtractPositionStatement()
+  const refreshDocuments = useRefreshPortfolioDocuments()
   const comparison = useComparePositions()
 
   const [file, setFile] = useState<File | null>(null)
@@ -105,6 +108,7 @@ export default function PositionCheck() {
       { portfolioId, file },
       {
         onSuccess: (read) => {
+          void refreshDocuments()
           const nextHoldings = initialHoldings(read)
           setDraft(read)
           setBrokerId(read.broker_id)
@@ -122,11 +126,15 @@ export default function PositionCheck() {
             })
           )
         },
-        onError: (error) =>
+        // O PDF é guardado antes da leitura: ele está no histórico mesmo
+        // quando o modelo falhou.
+        onError: (error) => {
+          void refreshDocuments()
           setNotice({
             message: errorMessage(error, 'Não foi possível ler o extrato'),
             severity: 'error',
-          }),
+          })
+        },
       }
     )
   }
@@ -169,7 +177,8 @@ export default function PositionCheck() {
           <AppText variant="bodySmall" tone="secondary">
             Extrato de posição em PDF, de qualquer corretora. O modelo lê o que está em custódia; a
             aplicação compara, ativo por ativo, com a soma das operações da carteira naquela
-            corretora até a data do extrato. Nada é gravado.
+            corretora até a data do extrato. O PDF fica guardado na aba Documentos; nada mais é
+            gravado.
           </AppText>
           <AppStack direction="row" gap="sm" align="center" wrap>
             <AppFileField
@@ -194,6 +203,7 @@ export default function PositionCheck() {
         <>
           <AppStack gap="md">
             <SectionTitle>Extrato</SectionTitle>
+            {draft.document_id === null && <AppAlert severity="info">{DOCUMENT_NOT_KEPT}</AppAlert>}
             <AppCard>
               <AppStack gap="md">
                 <AppText variant="bodySmall" tone="secondary">

@@ -3,7 +3,7 @@
 O tipo de ativo da tela não é a natureza fiscal. Um ETF de renda fixa e um de
 ações dividem o tipo `ETF` e têm regimes diferentes; um Fiagro está cadastrado
 como fundo de investimento e se apura com os FIIs; uma ação americana é ação e
-não entra na apuração mensal da bolsa. `classify` é o único lugar que faz essa
+não entra na apuração mensal da bolsa — vai para a apuração anual do exterior. `classify` é o único lugar que faz essa
 tradução, e o que ela não sabe decidir sai como nota, para virar pendência.
 """
 
@@ -38,8 +38,6 @@ class TaxAssetKind(StrEnum):
 
 
 class ClassificationNote(StrEnum):
-    #: ETF brasileiro sem segmento no cadastro: apurado como de ações.
-    ETF_WITHOUT_SEGMENT = 'etf_without_segment'
     #: Ativo negociado fora do Brasil: regime anual de aplicações no exterior.
     FOREIGN = 'foreign'
     #: Criptoativo em corretora de base dólar: custódia no exterior.
@@ -83,10 +81,8 @@ def _etf(facts: AssetFacts) -> Classification:
         return _FOREIGN
     if facts.etf_segment_id == FIXED_INCOME_ETF_SEGMENT_ID:
         return Classification(kind=TaxAssetKind.FIXED_INCOME_ETF)
-    if facts.etf_segment_id is None:
-        return Classification(
-            kind=TaxAssetKind.EQUITY_ETF, note=ClassificationNote.ETF_WITHOUT_SEGMENT
-        )
+    # Sem segmento no cadastro, o ETF brasileiro é de ações: é o caso comum, e
+    # o usuário não tem como classificar o ativo (decisão de 01/10/2026).
     return Classification(kind=TaxAssetKind.EQUITY_ETF)
 
 
@@ -140,6 +136,9 @@ class TaxTrade:
     quantity: Decimal
     #: Preço unitário em reais, como a transação o guarda.
     price: Decimal
+    #: Preço unitário em dólar, quando a transação o guarda. Só o exterior usa:
+    #: a discriminação do bem pede o valor na moeda estrangeira.
+    price_usd: Decimal | None = None
     #: Custos da operação. Nulo é "não informado", e é apurado como zero com
     #: pendência — não como custo zero conferido.
     fees: Decimal | None = None

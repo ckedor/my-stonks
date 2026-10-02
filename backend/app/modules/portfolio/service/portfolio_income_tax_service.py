@@ -19,6 +19,7 @@ from app.modules.portfolio.domain.income_tax.declaration import (
     DividendRecord,
 )
 from app.modules.portfolio.domain.income_tax.report import IncomeTaxReport, assess
+from app.modules.portfolio.domain.income_tax.rules import FOREIGN_RULES
 from app.modules.portfolio.domain.income_tax.trades import (
     AssetFacts,
     CorporateEvent,
@@ -43,8 +44,11 @@ class PortfolioIncomeTaxService:
                 sorted({row['asset_id'] for row in rows})
             )
             payments = await uow.portfolios.get_darf_payments(user_id)
+            # O exterior leva perda de um ano ao seguinte desde a lei, e os
+            # dividendos de cada ano entram nessa conta.
+            first_year = min([fiscal_year, *(rule.valid_from.year for rule in FOREIGN_RULES)])
             dividend_rows = await uow.portfolios.get_income_tax_dividends(
-                portfolio_ids, date(fiscal_year, 1, 1), date(fiscal_year, 12, 31)
+                portfolio_ids, date(first_year, 1, 1), date(fiscal_year, 12, 31)
             )
 
         return assess(
@@ -142,6 +146,7 @@ def _tax_trade(row) -> TaxTrade:
         day=day.date() if hasattr(day, 'date') else day,
         quantity=_decimal(row['quantity']),
         price=_decimal(row['price']),
+        price_usd=None if row['price_usd'] is None else _decimal(row['price_usd']),
         fees=None if row['fees'] is None else _decimal(row['fees']),
         withheld_income_tax=(
             None if row['withheld_income_tax'] is None else _decimal(row['withheld_income_tax'])

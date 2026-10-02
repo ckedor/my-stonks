@@ -21,7 +21,7 @@ class PendencyCode(StrEnum):
     MISSING_FEES = 'missing_fees'
     #: Compra e venda do mesmo ativo, no mesmo dia e corretora.
     DAY_TRADE = 'day_trade'
-    ETF_WITHOUT_SEGMENT = 'etf_without_segment'
+    #: Venda no exterior num ano sem regra anual (antes da Lei 14.754/2023).
     FOREIGN_SALE = 'foreign_sale'
     FOREIGN_CRYPTO_SALE = 'foreign_crypto_sale'
     LISTED_FUND_SALE = 'listed_fund_sale'

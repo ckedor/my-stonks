@@ -46,6 +46,8 @@ class PositionStatementDraftResponse(_FromAttributes):
     positions: list[PositionDiffResponse]
     warnings: list[StatementWarningResponse]
     model: str | None
+    #: O PDF enviado, guardado. Nulo quando não há storage configurado.
+    document_id: int | None
 
 
 class StatementHoldingRequest(BaseModel):

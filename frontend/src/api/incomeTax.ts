@@ -135,6 +135,44 @@ export interface AssetsAndRightsItem {
   current_value: Money
   /** O que conferir antes de digitar. */
   note: string | null
+  /** Quadro "Aplicação Financeira (R$)": só nos bens no exterior desde 2024. */
+  foreign_income: Money | null
+  foreign_tax_paid: Money | null
+}
+
+/** O rendimento de um bem no exterior no ano, e de onde ele vem. */
+export interface ForeignItem {
+  asset_id: number
+  broker_id: number
+  ticker: string
+  sales_value: Money
+  sales_result: Money
+  /** Como lançado: o que caiu na conta, já sem a retenção dos EUA. */
+  dividends_received: Money
+  dividends_gross: Money
+  tax_withheld_abroad: Money
+  /** O campo "Imposto pago no exterior". */
+  tax_paid_abroad: Money
+  /** O campo "Rendimento ou Perda". */
+  income: Money
+}
+
+/** A apuração anual do exterior (Lei 14.754/2023): a conta que o programa refaz. */
+export interface ForeignYear {
+  covered: boolean
+  rate: string | null
+  us_dividend_withholding: string | null
+  source: string | null
+  items: ForeignItem[]
+  gains: Money
+  losses: Money
+  loss_carried_in: Money
+  loss_used: Money
+  loss_carried_out: Money
+  taxable_base: Money
+  tax_due: Money
+  tax_credit: Money
+  tax_payable: Money
 }
 
 /** Uma linha de Rendimentos Isentos ou de Tributação Exclusiva. */
@@ -171,6 +209,7 @@ export interface IncomeTaxAssessment {
   exempt_income: IncomeLine[]
   exclusive_income: IncomeLine[]
   capital_gains: CapitalGainOperation[]
+  foreign: ForeignYear | null
 }
 
 export interface DarfPaymentInput {
