@@ -28,10 +28,10 @@ import PositionTable from './PositionTable'
 /* O dashboard da carteira, sem saber de onde vem o dado.
  *
  * A página (`pages/portfolio/overview`) busca, espera e decide o estado vazio;
- * esta tela só desenha o que recebe. O estúdio de temas do admin desenha a
- * mesma tela com uma carteira de mentira para testar um tema — e por ser a
- * mesma, o que se vê lá é o dashboard de verdade, e não uma imitação que
- * envelhece sozinha. Painel novo entra aqui, nunca na página. */
+ * esta tela só desenha o que recebe. O estúdio de temas (ferramenta de dev)
+ * desenha a mesma tela com uma carteira de mentira para testar um tema — e
+ * por ser a mesma, o que se vê lá é o dashboard de verdade, e não uma
+ * imitação que envelhece sozinha. Painel novo entra aqui, nunca na página. */
 
 const OVERVIEW_PANEL_HEIGHT = 360
 

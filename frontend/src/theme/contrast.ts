@@ -4,7 +4,7 @@ import type { ThemePaletteConfig } from './themes'
  *
  * Mora aqui, e não dentro dos testes, porque são duas as pessoas que
  * precisam da mesma régua: os testes de tema, que reprovam um preset
- * ilegível no catálogo, e o estúdio de temas do admin, que mostra a mesma
+ * ilegível no catálogo, e o estúdio de temas, que mostra a mesma
  * reprovação enquanto se edita. Duas cópias da fórmula divergem no dia em
  * que alguém conserta só uma. */
 

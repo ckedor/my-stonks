@@ -147,7 +147,7 @@ export default function ActionsFamily() {
       </Entry>
 
       <Entry name="AppIconLink" role="O ícone que leva a uma rota — um AppIconButton que navega.">
-        <AppIconLink to="/admin/design-system/texto" label="Abrir a família de texto">
+        <AppIconLink to="/dev/design-system/texto" label="Abrir a família de texto">
           <OpenInNewIcon />
         </AppIconLink>
       </Entry>

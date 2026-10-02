@@ -3,7 +3,7 @@
    Guarda do catálogo do design system
    ──────────────────────────────────────────────
 
-   O catálogo (`/admin/design-system`) só serve para reduzir a superfície se
+   O catálogo (`/dev/design-system`, com `npm run dev`) só serve para reduzir a superfície se
    estiver completo: um componente que não aparece lá não é comparado com
    os vizinhos, e a duplicação volta por ele. E um componente que só o
    catálogo usa é código morto com vitrine — o knip não o acusa, porque o
@@ -11,7 +11,7 @@
 
    Três verificações, sobre cada componente exportado por `@/components/ui`:
 
-     1. CATÁLOGO   — é renderizado em `src/pages/admin/design-system/`, ou
+     1. CATÁLOGO   — é renderizado em `src/pages/dev/design-system/`, ou
                      está em EXCEPTIONS com o motivo.
      2. CONSUMIDOR — algum arquivo fora do design system, do catálogo e dos
                      testes o importa. Sem consumidor, ele sai.

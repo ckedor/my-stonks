@@ -2,7 +2,7 @@ import {
   DESIGN_SYSTEM_FAMILIES,
   designSystemFamilyPath,
   type DesignSystemFamilySlug,
-} from '../src/pages/admin/design-system/families'
+} from '../src/pages/dev/design-system/families'
 import { expect, expectNothingClipped, test } from './fixtures/app'
 
 /* O catálogo do design system renderiza todo componente, em todos os
@@ -14,7 +14,7 @@ import { expect, expectNothingClipped, test } from './fixtures/app'
    menu, então família nova entra aqui sozinha — e o `Record` abaixo não
    compila sem a altura dela. */
 
-/* O layout do admin rola por dentro, então a viewport precisa comportar a
+/* A casca de `/dev` rola por dentro, então a viewport precisa comportar a
    família inteira. As alturas foram medidas com folga de ~300px;
    `expectNothingClipped` avisa quando uma deixar de bastar. */
 const VIEWPORT_HEIGHT: Record<DesignSystemFamilySlug, number> = {
@@ -44,7 +44,7 @@ for (const family of DESIGN_SYSTEM_FAMILIES) {
 }
 
 test('design system — a raiz abre a primeira família', async ({ page }) => {
-  await page.goto('/admin/design-system')
+  await page.goto('/dev/design-system')
 
   await expect(page).toHaveURL(designSystemFamilyPath(DESIGN_SYSTEM_FAMILIES[0].slug))
 })

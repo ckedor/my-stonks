@@ -62,9 +62,10 @@ moram em `src/theme/presets.ts`, escritos por extenso, e `themes.ts` só os
 converte em temas do MUI. Não há tema fora dessa lista: o usuário escolhe um
 preset em Configurações, e criar tema não é coisa do usuário.
 
-Criar ou ajustar um tema é no estúdio do admin, `/admin/design-system/temas`
-(`src/pages/admin/theme-studio/`). Ele parte de um preset, edita os tokens e
-redesenha ao vivo o dashboard da carteira — a `PortfolioOverviewScreen` de
+Criar ou ajustar um tema é no estúdio de temas, ferramenta de dev em
+`/dev/design-system/temas` (`src/pages/dev/theme-studio/`; ver **Ferramentas
+de desenvolvimento**). Ele parte de um preset, edita os tokens e redesenha ao
+vivo o dashboard da carteira — a `PortfolioOverviewScreen` de
 verdade, com uma carteira de mentira determinística (`mockPortfolio.ts`) —, e
 não guarda nada: **"Exportar preset" gera a definição, e o commit que a cola
 em `presets.ts` é o que publica o tema.** `src/theme/preset-source.test.ts`
@@ -193,10 +194,24 @@ dispara — e que continua convivendo com a regra do cabeçalho, que divide com
 ela o mesmo `no-restricted-syntax`: um bloco de config substitui a lista
 inteira do anterior, então os seletores são compostos a partir de constantes.
 
+### Ferramentas de desenvolvimento
+
+`src/pages/dev/` guarda as telas que só servem a quem desenvolve: o catálogo
+do design system e o estúdio de temas, em `/dev/...`, com casca própria
+(`src/pages/dev/layout.tsx`). Elas só existem com `npm run dev`: `App.tsx`
+registra essas rotas atrás de `import.meta.env.DEV`, que o build de produção
+troca por `false`, e as carrega sob demanda — nada daqui entra no bundle
+publicado. Não pedem login nem backend, porque nenhuma lê dado do servidor; a
+regressão visual as alcança porque roda contra o dev server.
+
+Tela que só desenvolvedor usa vai para cá, e não para o admin: o admin é
+para operar o app de verdade, e o que mora lá vai para todo usuário no
+bundle.
+
 ### Catálogo e superfície
 
-O catálogo do design system mora em `/admin/design-system/<família>`, uma
-tela por família (`src/pages/admin/design-system/families.ts`). A família
+O catálogo do design system mora em `/dev/design-system/<família>`, uma
+tela por família (`src/pages/dev/design-system/families.ts`). A família
 junta os componentes pelo trabalho que fazem, não pelo nome: os jeitos de
 escolher uma opção ficam na mesma tela, e é ali que se vê quando dois fazem a
 mesma coisa. Cada componente é um `Entry` com o papel dele e os estados

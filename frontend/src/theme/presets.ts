@@ -7,9 +7,10 @@ import type { ThemePaletteConfig, ThemeShapeConfig } from './themes'
 
    Um preset é paleta mais forma: as cores, as duas fontes, a escala de raio
    e se as superfícies são quietas (borda em vez de sombra). Todos estão
-   aqui, no mesmo formato literal que o estúdio de temas do admin
-   (`/admin/design-system/temas`) exporta. Criar um tema é montá-lo lá,
-   copiar a definição e colá-la nesta lista; o commit é o que o publica.
+   aqui, no mesmo formato literal que o estúdio de temas exporta — uma
+   ferramenta de dev, em `/dev/design-system/temas` com `npm run dev`. Criar
+   um tema é montá-lo lá, copiar a definição e colá-la nesta lista; o commit
+   é o que o publica.
 
    `themes.test.ts` e `topbar-contrast.test.ts` rodam sobre esta lista
    inteira: texto e sinal legíveis sobre o card, e a aba da barra legível

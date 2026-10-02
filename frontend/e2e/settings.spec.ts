@@ -1,7 +1,7 @@
 import { expect, expectNothingClipped, test } from './fixtures/app'
 
-/* Configurações: a grade de temas e as integrações. Criar tema é do admin,
-   no estúdio do design system. */
+/* Configurações: a grade de temas e as integrações. Criar tema não é daqui:
+   é o estúdio de temas, ferramenta de dev em `/dev/design-system/temas`. */
 
 const PORTFOLIOS = [
   { id: 1, name: 'Principal', user_id: 1, custom_categories: [] },

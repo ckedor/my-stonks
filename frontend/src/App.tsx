@@ -1,11 +1,9 @@
-import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider, type RouteObject } from 'react-router-dom'
 import './App.css'
 import { initAuth } from './actions/auth'
 import MainLayout from './layouts/MainLayout'
 import AdminAssetsPage from './pages/admin/assets/page'
 import AdminBrokersPage from './pages/admin/brokers/page'
-import DesignSystemPage from './pages/admin/design-system/page'
-import ThemeStudioPage from './pages/admin/theme-studio/page'
 import AdminEventsPage from './pages/admin/events/page'
 import AdminAiFeaturesPage from './pages/admin/ai-features/page'
 import AdminAiFeatureDetailPage from './pages/admin/ai-features/[key]/page'
@@ -57,6 +55,31 @@ import PortfolioTransactionsPage from './pages/portfolio/trades/page'
 import UserConfigurationPage from './pages/portfolio/user-configurations/page'
 import PortfolioPatrimonyEvolution from './pages/portfolio/wealth/page'
 import { ThemeRegistry } from './theme'
+
+/* Ferramentas de desenvolvimento: o catálogo do design system e o estúdio de
+   temas. Só existem com `npm run dev` — o build de produção troca
+   `import.meta.env.DEV` por `false`, descarta este ramo e, com ele, os
+   imports sob demanda, de modo que nenhum chunk daqui é gerado. A regressão
+   visual roda contra o dev server e as alcança. */
+const devRoutes: RouteObject[] = import.meta.env.DEV
+  ? [
+      {
+        path: '/dev',
+        lazy: async () => ({ Component: (await import('./pages/dev/layout')).default }),
+        children: [
+          { index: true, element: <Navigate to="/dev/design-system" replace /> },
+          {
+            path: 'design-system/temas',
+            lazy: async () => ({ Component: (await import('./pages/dev/theme-studio/page')).default }),
+          },
+          {
+            path: 'design-system/:family?',
+            lazy: async () => ({ Component: (await import('./pages/dev/design-system/page')).default }),
+          },
+        ],
+      },
+    ]
+  : []
 
 const router = createBrowserRouter([
   {
@@ -128,8 +151,6 @@ const router = createBrowserRouter([
       { path: 'brokers', element: <AdminBrokersPage /> },
       { path: 'events', element: <AdminEventsPage /> },
       { path: 'users', element: <AdminUsersPage /> },
-      { path: 'design-system/temas', element: <ThemeStudioPage /> },
-      { path: 'design-system/:family?', element: <DesignSystemPage /> },
       { path: 'game/sandbox', element: <GameSandboxPage /> },
       { path: 'market-data/usd-brl', element: <AdminMarketDataUsdBrlPage /> },
       { path: 'market-data/series', element: <AdminMarketDataSeriesPage /> },
@@ -157,6 +178,7 @@ const router = createBrowserRouter([
     path: '/login',
     element: <LoginPage />,
   },
+  ...devRoutes,
   {
     path: '/*',
     element: <div>404 Not Found</div>,

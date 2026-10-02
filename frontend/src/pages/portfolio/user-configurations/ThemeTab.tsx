@@ -97,9 +97,9 @@ function ThemeSection({
 /* ── Tab principal ─────────────────────────── */
 
 /* Só escolha: os temas são os presets de `src/theme/presets.ts`. Criar um tema
- * é trabalho do estúdio do admin, que exporta o preset para o código — um
- * editor aqui guardava o tema só no navegador de quem o fez, sem fonte nem
- * borda, e era o segundo editor de tema do app. */
+ * é trabalho do estúdio de temas, ferramenta de dev que exporta o preset para
+ * o código — um editor aqui guardava o tema só no navegador de quem o fez,
+ * sem fonte nem borda, e era o segundo editor de tema do app. */
 export default function ThemeTab() {
   const { lightThemeId, darkThemeId, setLightTheme, setDarkTheme } = useThemeMode()
 
