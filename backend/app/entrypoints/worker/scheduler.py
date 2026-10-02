@@ -38,7 +38,8 @@ beat_schedule = {
         'schedule': crontab(hour='9', minute=30, day_of_week='3'),
     },
     # An ETF's N-PORT is public for the last month of each fiscal quarter,
-    # about two months later; a weekly look finds each one within days.
+    # about two months later; a weekly look finds each one within days. A
+    # manager's file is daily, and a weekly picture of it is enough.
     'ingest-etf-holdings-for-held-etfs': {
         'task': 'ingest_etf_holdings_for_held_etfs',
         'schedule': crontab(hour='10', minute=0, day_of_week='4'),

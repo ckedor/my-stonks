@@ -54,4 +54,5 @@ export const DISTRIBUTION_LABEL: Record<
 
 export const HOLDINGS_SOURCE_LABEL: Record<string, string> = {
   sec_nport: 'N-PORT da SEC',
+  dws: 'arquivo da gestora (DWS)',
 }

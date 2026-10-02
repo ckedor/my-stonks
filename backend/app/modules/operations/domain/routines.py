@@ -128,8 +128,9 @@ ROUTINES: tuple[Routine, ...] = (
         name='Carteira dos ETFs',
         group=RoutineGroup.MARKET_DATA,
         description=(
-            'O que cada ETF americano em carteira possui, posição por posição, '
-            'do último N-PORT publicado na SEC.'
+            'O que cada ETF em carteira possui, posição por posição: o americano '
+            'do último N-PORT publicado na SEC, o UCITS do arquivo da gestora, '
+            'quando ele é lido.'
         ),
         manual=ManualStart.INGESTION,
         tasks=('ingest_etf_holdings_for_held_etfs', 'ingest_etf_holdings'),

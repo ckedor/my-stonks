@@ -6,6 +6,7 @@ from fastapi import Depends
 from app.config.settings import settings
 from app.infra.db.unit_of_work import UnitOfWork, get_uow
 from app.infra.integrations.cvm_client import CvmClient
+from app.infra.integrations.dws_client import DwsClient
 from app.infra.integrations.esma_client import EsmaClient
 from app.infra.integrations.gleif_client import GleifClient
 from app.infra.integrations.openfigi_client import OpenFigiClient
@@ -415,6 +416,7 @@ async def etf_holdings_ingestion_runner_context() -> AsyncIterator[EtfHoldingsIn
         ingestion_service=build_data_ingestion_service(),
         sec=SecClient(settings.SEC_USER_AGENT),
         figi=OpenFigiClient(settings.OPENFIGI_API_KEY),
+        dws=DwsClient(),
     )
     try:
         yield service

@@ -6,7 +6,7 @@ export default function AdminEtfHoldingsIngestionPage() {
       ingestionType="etf_holdings"
       title="Carteira dos ETFs"
       routineKey="etf_holdings"
-      description="O que cada ETF americano em carteira possui, posição por posição, do último N-PORT publicado na SEC. Um ETF UCITS não tem fonte: nenhum regulador publica a carteira dele."
+      description="O que cada ETF em carteira possui, posição por posição. O americano vem do último N-PORT publicado na SEC; o UCITS, que nenhum regulador publica, do arquivo da gestora, para as classes cujo arquivo é lido."
       itemName="ETF"
       supportsFullHistory={false}
     />

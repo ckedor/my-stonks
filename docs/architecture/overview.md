@@ -360,15 +360,25 @@ weekly (Wed 09:30) + manual  "Cadastro de ETFs estrangeiros"
               by the SEC's current ticker for an American listing
 ```
 
-What each held American ETF owns is a routine of its own. The portfolio task
+What each held ETF owns is a routine of its own. The portfolio task
 `ingest_etf_holdings_for_held_etfs` picks the ETFs recently held, as the quotes
 do, and chains into `ingest_etf_holdings`, one attempt per ETF: the series'
 latest N-PORT is found through EDGAR's full-text search — the only index that
 tells one series' filing apart among the hundreds a trust files each quarter —
 skipped when that accession is the one stored, and otherwise read and written
 in one transaction to `asset.etf_holding_report` and `asset.etf_holding`.
-The same run ends with one more attempt that ties holdings to assets. A
-filing gives each holding's ISIN and no ticker, and American stocks are
+A UCITS ETF files no holdings with any regulator, so for a class listed in
+`MANAGER_HOLDINGS_FILES` (`market_data/domain/etf_registry.py`) the attempt
+reads its manager's file instead — today DWS's constituents spreadsheet, by
+ISIN, through `infra/integrations/dws_client.py` and
+`market_data/adapters/etf_manager_files.py` — and writes it to the same
+tables with its own `source`, skipped when that date is already stored from
+it. The reader fails a file whose header, date or weights do not add up to the
+fund rather than guess, since nothing promises the layout of a page made for
+people. Every other UCITS class is listed in the run as having no source.
+The same run ends with one more attempt that ties American holdings to
+assets; a UCITS fund's holdings are tied only to assets already carrying
+their ISIN, as they are written. A filing gives each holding's ISIN and no ticker, and American stocks are
 registered by ticker, so the ISINs no asset carries are asked of OpenFIGI
 (`OPENFIGI_API_KEY` is optional and only raises its rate limit); a ticker that
 names exactly one American asset gives that asset its ISIN, never replacing

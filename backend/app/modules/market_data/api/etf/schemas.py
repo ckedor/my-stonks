@@ -60,7 +60,8 @@ class EtfProfileResponse(BaseModel):
     share_class: EtfShareClass | None
     cvm_fund: EtfCvmFund | None
     holdings: EtfHoldingReportSummary | None
-    #: Whether a regulator publishes what this ETF holds.
+    #: Whether what this ETF holds is read: from a regulator filing or from
+    #: its manager's file.
     holdings_available: bool
 
 
