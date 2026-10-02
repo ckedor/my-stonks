@@ -9,7 +9,8 @@ import {
   AppProgressBar,
   AppSimpleTable,
   AppStack,
-  AppStatCard,
+  AppMetric,
+  AppMetricRow,
   AppText,
   AppTooltip,
   SectionTitle,
@@ -149,13 +150,13 @@ export default function GeneralTab() {
 
           <AppStack gap="sm">
             <AppText variant="bodySmall" tone="secondary">
-              AppStatCard — uma fileira de tiles de um número só
+              AppMetricRow — uma fileira de AppMetric, rótulos numa linha e números noutra
             </AppText>
-            <AppStack direction="row" gap="md" wrap collapseBelow="sm">
-              <AppStatCard label="Processados" value="120/120" helper="Histórico completo" />
-              <AppStatCard label="Sucessos" value={117} helper="4.310 linhas persistidas" />
-              <AppStatCard label="Falhas" value={3} helper="Consulte as tentativas" />
-            </AppStack>
+            <AppMetricRow>
+              <AppMetric size="lg" label="Processados" value="120/120" />
+              <AppMetric label="Sucessos" value="117" />
+              <AppMetric label="Falhas" value="3" />
+            </AppMetricRow>
           </AppStack>
 
           <AppStack gap="sm">

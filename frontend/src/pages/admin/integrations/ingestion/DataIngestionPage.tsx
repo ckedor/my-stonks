@@ -16,11 +16,12 @@ import {
   AppCard,
   AppChip,
   AppConfirmDialog,
+  AppMetric,
+  AppMetricRow,
   AppProgressBar,
   AppSimpleTable,
   AppSnackbar,
   AppStack,
-  AppStatCard,
   AppText,
   AppTooltip,
   PageTitle,
@@ -29,13 +30,10 @@ import {
 import type { RoutineKey } from '@/api/operations'
 import RoutineScheduleNote from '../RoutineScheduleNote'
 import DataIngestionSkeleton from './DataIngestionSkeleton'
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import HistoryIcon from '@mui/icons-material/History'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import StopCircleIcon from '@mui/icons-material/StopCircle'
-import StorageIcon from '@mui/icons-material/Storage'
-import TaskAltIcon from '@mui/icons-material/TaskAlt'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const TERMINAL_STATUSES = new Set<IngestionStatus>([
@@ -364,33 +362,42 @@ export function DataIngestionPage({
 
       {detail ? (
         <>
-          <AppStack direction="row" gap="md" wrap collapseBelow="sm">
-            <AppStatCard
-              label="Processados"
-              value={`${detail.processed_items}/${detail.total_items}`}
-              helper={detail.force_full_history ? 'Histórico completo' : 'Incremental com overlap'}
-              icon={<StorageIcon />}
-            />
-            <AppStatCard
-              label="Sucessos"
-              value={detail.succeeded_items}
-              helper={`${detail.upserted_rows.toLocaleString('pt-BR')} linhas persistidas`}
-              icon={<TaskAltIcon />}
-            />
-            <AppStatCard
-              label="Falhas"
-              value={detail.failed_items}
-              helper="Consulte as tentativas abaixo"
-              icon={<ErrorOutlineIcon />}
-            />
-          </AppStack>
-
           <AppCard>
             <AppStack gap="sm">
               <AppStack direction="row" justify="between" align="center">
                 <SectionTitle>Execução #{detail.id}</SectionTitle>
                 <StatusChip status={detail.status} />
               </AppStack>
+              <AppMetricRow>
+                <AppMetric
+                  size="lg"
+                  label="Processados"
+                  value={`${detail.processed_items}/${detail.total_items}`}
+                  suffix={
+                    <AppText variant="caption" tone="secondary">
+                      {detail.force_full_history ? 'Histórico completo' : 'Incremental com overlap'}
+                    </AppText>
+                  }
+                />
+                <AppMetric
+                  label="Sucessos"
+                  value={detail.succeeded_items.toLocaleString('pt-BR')}
+                  suffix={
+                    <AppText variant="caption" tone="secondary">
+                      {detail.upserted_rows.toLocaleString('pt-BR')} linhas persistidas
+                    </AppText>
+                  }
+                />
+                <AppMetric
+                  label="Falhas"
+                  value={detail.failed_items.toLocaleString('pt-BR')}
+                  suffix={
+                    <AppText variant="caption" tone="secondary">
+                      Consulte as tentativas abaixo
+                    </AppText>
+                  }
+                />
+              </AppMetricRow>
               <AppProgressBar
                 value={detail.status === 'queued' ? undefined : progress}
                 tone={detail.status === 'failure' ? 'danger' : 'primary'}
