@@ -8,11 +8,10 @@
  * Toda linha já está carregada, então a ordem e a busca rodam em memória em
  * vez de custar outra ida ao servidor. */
 
-import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
 import AppAlert from './AppAlert'
 import AppButton from './AppButton'
-import AppDateField from './AppDateField'
+import AppDayField from './AppDayField'
 import AppSimpleTable, { type AppSimpleTableColumn } from './AppSimpleTable'
 import AppStack from './AppStack'
 import { formatDate } from '@/lib/utils/format'
@@ -75,12 +74,7 @@ export default function AppDataTable<Row>({
   return (
     <AppStack gap="md">
       <AppStack direction="row" gap="sm" align="center">
-        <AppDateField
-          label="Buscar data"
-          density="compact"
-          value={dayFilter ? dayjs(dayFilter) : null}
-          onChange={(value) => setDayFilter(value?.isValid() ? value.format('YYYY-MM-DD') : '')}
-        />
+        <AppDayField label="Buscar data" size="md" value={dayFilter} onChange={setDayFilter} />
         {dayFilter && (
           <AppButton emphasis="ghost" size="sm" onClick={() => setDayFilter('')}>
             Limpar
