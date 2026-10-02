@@ -26,8 +26,18 @@ const GROUP_BY_OPTIONS = [
 ]
 
 const VIEW_OPTIONS = [
-  { value: 'list' as const, label: 'Lista', icon: <ViewListIcon fontSize="small" /> },
-  { value: 'card' as const, label: 'Cards', icon: <GridViewIcon fontSize="small" /> },
+  {
+    value: 'list' as const,
+    label: 'Lista',
+    hint: 'Ativos em lista',
+    icon: <ViewListIcon fontSize="small" />,
+  },
+  {
+    value: 'card' as const,
+    label: 'Cards',
+    hint: 'Ativos em cards',
+    icon: <GridViewIcon fontSize="small" />,
+  },
 ]
 
 export interface AssetListToolbarProps {
@@ -72,7 +82,6 @@ export default function AssetListToolbar({
       <AppDateField density="compact" label="Data" value={date} onChange={onDateChange} />
       <AppToggleGroup
         label="Modo de exibição"
-        presentation="view"
         options={VIEW_OPTIONS}
         value={view}
         onChange={onViewChange}

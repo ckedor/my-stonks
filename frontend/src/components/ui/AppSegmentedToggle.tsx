@@ -9,7 +9,12 @@ import { Box, Typography } from '@mui/material'
  * que se saiba qual está valendo sem abrir nada.
  *
  * Duas opções, não N: a pílula desliza entre duas posições fixas, e com
- * três ela precisaria medir os filhos. Nenhuma tela pediu a terceira. */
+ * três ela precisaria medir os filhos. Nenhuma tela pediu a terceira.
+ *
+ * Mora na barra do topo, que tem superfície própria — escura no tema claro.
+ * O `AppToggleGroup` foi tentado ali e some: os botões dele escrevem na cor
+ * de texto da página, e a opção escolhida fica invisível contra a barra. A
+ * pílula na cor primária é o que se lê nas duas superfícies. */
 
 const TRACK_WIDTH = 64
 const TRACK_HEIGHT = 28
