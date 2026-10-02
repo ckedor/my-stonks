@@ -40,7 +40,7 @@ export default function PortfolioDocuments() {
       <AppSnackbar
         open={error !== null}
         message={error ?? ''}
-        severity="error"
+        tone="danger"
         onClose={() => setError(null)}
       />
     </AppStack>

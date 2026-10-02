@@ -2,16 +2,16 @@
 
 Read from storage, never from a provider: the registry is written weekly and
 the holdings by their own routine, so a page read costs two selects and no
-network. What the storage does not have — a UCITS fund's holdings, which no
-regulator publishes — is said so, not fetched on the fly.
+network. What the storage cannot have — the holdings of a UCITS fund whose
+manager's file is not read, since no regulator publishes them — is said so,
+not fetched on the fly.
 """
 
 from app.core.exceptions import NotFoundError
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.market_data.domain.assets import Asset
 from app.modules.market_data.domain.constants import ASSET_TYPE
-from app.modules.market_data.domain.etf_registry import EtfRegistrySource
-from app.modules.market_data.service.etf_holdings_ingestion_service import NPORT_SOURCE
+from app.modules.market_data.domain.etf_registry import EtfHoldingSource, holdings_source
 
 
 def _entity(institution) -> dict | None:
@@ -98,7 +98,7 @@ class EtfReadService:
             'cfi_code': share_class.cfi_code,
             'status': share_class.status,
         }
-        profile['holdings_available'] = fund.source == EtfRegistrySource.SEC
+        profile['holdings_available'] = holdings_source(fund, share_class.isin) is not None
         if report is not None:
             profile['holdings'] = {
                 'report_date': report.report_date,
@@ -135,7 +135,7 @@ class EtfReadService:
             )
         return {
             'report_date': report.report_date,
-            'source': report.source or NPORT_SOURCE,
+            'source': report.source or EtfHoldingSource.SEC_NPORT,
             'total': report.holdings_count,
             'page': page,
             'page_size': page_size,

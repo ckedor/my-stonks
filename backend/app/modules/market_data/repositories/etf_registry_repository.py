@@ -146,19 +146,22 @@ class EtfRegistryRepository(SQLAlchemyRepository):
 
     async def get_linked_funds(
         self, asset_ids: Sequence[int]
-    ) -> list[tuple[int, str, EtfRegistry]]:
-        """(asset id, ticker, fund) for each asset linked to a registered class."""
+    ) -> list[tuple[int, str, EtfRegistry, str | None]]:
+        """(asset id, ticker, fund, class ISIN) for each asset linked to a
+        registered class."""
         if not asset_ids:
             return []
         result = await self.session.execute(
-            select(Asset.id, Asset.ticker, EtfRegistry)
+            select(Asset.id, Asset.ticker, EtfRegistry, EtfRegistryClass.isin)
             .join(ETF, ETF.asset_id == Asset.id)
             .join(EtfRegistryClass, EtfRegistryClass.id == ETF.etf_registry_class_id)
             .join(EtfRegistry, EtfRegistry.id == EtfRegistryClass.etf_registry_id)
             .where(Asset.id.in_(asset_ids))
             .order_by(Asset.ticker)
         )
-        return [(asset_id, ticker or '', fund) for asset_id, ticker, fund in result.all()]
+        return [
+            (asset_id, ticker or '', fund, isin) for asset_id, ticker, fund, isin in result.all()
+        ]
 
     async def get_holding_report(self, fund_id: int, report_date) -> EtfHoldingReport | None:
         result = await self.session.execute(

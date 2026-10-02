@@ -1,5 +1,5 @@
 import { Box, Divider, Menu, MenuItem, Typography } from '@mui/material'
-import { Fragment, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 /* Menu suspenso ancorado a um gatilho.
  *
@@ -9,7 +9,14 @@ import { Fragment, type ReactNode } from 'react'
  * Um item, um jeito de desenhar: ícone colado ao rótulo, com o mesmo
  * respiro em qualquer menu do app. Antes disso havia três recuos de ícone
  * diferentes em três menus da mesma barra — o tipo de divergência que só
- * aparece quando alguém abre os dois seguidos. */
+ * aparece quando alguém abre os dois seguidos.
+ *
+ * Os itens chegam ao `Menu` numa lista plana, régua e item lado a lado, e
+ * nunca dentro de um `Fragment`. O `MenuList` lê `disabled` e `selected` nos
+ * próprios filhos para decidir quem recebe o foco ao abrir; com um
+ * `Fragment` no meio ele só via o embrulho, e o foco caía no painel, nem no
+ * item escolhido nem no primeiro que se pode clicar. Mesmo motivo do
+ * comentário no `AppSelect`. */
 
 const ICON_GAP = 1
 
@@ -79,36 +86,37 @@ export default function AppMenu({
       onClose={onClose}
       slotProps={minWidth ? { paper: { sx: { minWidth } } } : undefined}
     >
-      {options.map((option) => {
+      {options.flatMap((option) => {
         const color = option.tone === 'accent' ? 'primary.main' : undefined
-
-        return (
-          <Fragment key={option.label}>
-            {option.separatorBefore && <Divider />}
-            <MenuItem
-              disabled={option.disabled}
-              selected={option.selected}
-              onClick={option.onSelect}
-              sx={{ gap: option.icon ? ICON_GAP : 0, color }}
-            >
-              {option.icon && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    color: option.iconTone === 'golden' ? 'golden' : undefined,
-                  }}
-                >
-                  {option.icon}
-                </Box>
-              )}
-              {option.disabled ? (
-                <Typography variant="body2">{option.label}</Typography>
-              ) : (
-                option.label
-              )}
-            </MenuItem>
-          </Fragment>
+        const item = (
+          <MenuItem
+            key={option.label}
+            disabled={option.disabled}
+            selected={option.selected}
+            onClick={option.onSelect}
+            sx={{ gap: option.icon ? ICON_GAP : 0, color }}
+          >
+            {option.icon && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  color: option.iconTone === 'golden' ? 'golden' : undefined,
+                }}
+              >
+                {option.icon}
+              </Box>
+            )}
+            {option.disabled ? (
+              <Typography variant="body2">{option.label}</Typography>
+            ) : (
+              option.label
+            )}
+          </MenuItem>
         )
+
+        return option.separatorBefore
+          ? [<Divider key={`${option.label}-separador`} />, item]
+          : [item]
       })}
     </Menu>
   )

@@ -1,45 +1,37 @@
-/* Tabela paginada, ordenável e filtrável por data.
+/* Histórico paginado, do mais recente para o mais antigo, com busca por dia.
  *
- * Morava em `pages/admin/market-data/`, mas não sabe nada de market data:
- * recebe linhas, colunas e uma função que diz a data de cada linha. Pela
- * regra da camada 1 é design system, e é o que tira o MUI das três telas
- * que a usam.
+ * Desenha com o `AppSimpleTable`: o que mora aqui é a ordem pela data, a
+ * busca de um dia e o aviso de quando ela não acha nada. Antes tinha
+ * superfície, cabeçalho e paginação próprios, e as três telas de histórico
+ * não pareciam do mesmo app que o resto.
  *
- * Terceira tabela do design system, ao lado de `AppTable` (dados
- * financeiros com moeda e total) e `AppCrudTable` (ações por linha).
- * Unificá-las é decisão para quando o portfolio migrar e os casos de uso
- * estiverem todos à vista. */
+ * Toda linha já está carregada, então a ordem e a busca rodam em memória em
+ * vez de custar outra ida ao servidor. */
 
-import {
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  TextField,
-} from '@mui/material'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import AppAlert from './AppAlert'
 import AppButton from './AppButton'
+import AppDayField from './AppDayField'
+import AppSimpleTable, { type AppSimpleTableColumn } from './AppSimpleTable'
 import AppStack from './AppStack'
 import { formatDate } from '@/lib/utils/format'
 
-const ROWS_PER_PAGE_OPTIONS = [25, 50, 100]
+const PAGE_SIZE = 25
+const PAGE_SIZE_OPTIONS = [25, 50, 100]
 
 export interface AppDataTableColumn<Row> {
   label: string
-  align?: 'left' | 'right' | 'center'
+  align?: 'left' | 'right'
   render: (row: Row) => React.ReactNode
 }
 
-/** Read-only paginated table sorted and filterable by its date column.
- *
- * Every row set here is already fully loaded, so sorting and the day lookup
- * run in memory instead of costing another round trip. */
+/* A tabela pede uma chave por linha, e o histórico não tem id: a posição na
+   lista recebida é a identidade, e ela não muda com a ordem nem com a busca. */
+interface Indexed<Row> {
+  row: Row
+  index: number
+}
+
 export default function AppDataTable<Row>({
   rows,
   columns,
@@ -47,49 +39,42 @@ export default function AppDataTable<Row>({
   getDate,
 }: {
   rows: Row[]
+  /** A primeira coluna é a da data: é ela que ordena. */
   columns: AppDataTableColumn<Row>[]
   emptyMessage: string
-  /** ISO date the row belongs to, used for sorting and the day filter. */
+  /** Data ISO da linha, para a ordem e para a busca por dia. */
   getDate: (row: Row) => string
 }) {
-  const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(ROWS_PER_PAGE_OPTIONS[0])
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [dayFilter, setDayFilter] = useState('')
 
-  useEffect(() => {
-    setPage(0)
-  }, [rows, sortDirection, dayFilter])
-
-  const visibleRows = useMemo(() => {
-    const isoDate = (row: Row) => getDate(row).slice(0, 10)
-    const filtered = dayFilter ? rows.filter((row) => isoDate(row) === dayFilter) : rows
-    // ISO dates sort correctly as plain strings.
-    return [...filtered].sort((a, b) =>
-      sortDirection === 'asc'
-        ? isoDate(a).localeCompare(isoDate(b))
-        : isoDate(b).localeCompare(isoDate(a)),
-    )
-  }, [rows, dayFilter, sortDirection, getDate])
-
-  const paginated = visibleRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+  /* Sem busca, a lista é a mesma referência a cada render: o `getDate` chega
+     escrito inline, e uma lista nova a cada render da tela voltaria a tabela
+     para a primeira página. */
+  const indexed = useMemo(() => rows.map((row, index) => ({ row, index })), [rows])
+  const visibleRows = useMemo(
+    () =>
+      dayFilter
+        ? indexed.filter(({ row }) => getDate(row).slice(0, 10) === dayFilter)
+        : indexed,
+    [indexed, dayFilter, getDate],
+  )
 
   if (rows.length === 0) {
-    return <AppAlert severity="info">{emptyMessage}</AppAlert>
+    return <AppAlert tone="info">{emptyMessage}</AppAlert>
   }
+
+  const tableColumns: AppSimpleTableColumn<Indexed<Row>>[] = columns.map((column, index) => ({
+    label: column.label,
+    align: column.align,
+    render: ({ row }) => column.render(row),
+    // Data ISO ordena certo como texto.
+    ...(index === 0 ? { sortValue: ({ row }: Indexed<Row>) => getDate(row).slice(0, 10) } : null),
+  }))
 
   return (
     <AppStack gap="md">
       <AppStack direction="row" gap="sm" align="center">
-        <TextField
-          type="date"
-          size="small"
-          label="Buscar data"
-          value={dayFilter}
-          onChange={(event) => setDayFilter(event.target.value)}
-          InputLabelProps={{ shrink: true }}
-          sx={{ width: 200 }}
-        />
+        <AppDayField label="Buscar data" size="md" value={dayFilter} onChange={setDayFilter} />
         {dayFilter && (
           <AppButton emphasis="ghost" size="sm" onClick={() => setDayFilter('')}>
             Limpar
@@ -98,65 +83,17 @@ export default function AppDataTable<Row>({
       </AppStack>
 
       {visibleRows.length === 0 ? (
-        <AppAlert severity="info">Nenhum registro em {formatDate(dayFilter)}.</AppAlert>
+        <AppAlert tone="info">Nenhum registro em {formatDate(dayFilter)}.</AppAlert>
       ) : (
-        <Paper>
-          <TableContainer sx={{ overflowX: 'auto' }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  {columns.map((column, index) => (
-                    <TableCell
-                      key={column.label}
-                      align={column.align ?? 'left'}
-                      sortDirection={index === 0 ? sortDirection : false}
-                      sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}
-                    >
-                      {index === 0 ? (
-                        <TableSortLabel
-                          active
-                          direction={sortDirection}
-                          onClick={() =>
-                            setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))
-                          }
-                        >
-                          {column.label}
-                        </TableSortLabel>
-                      ) : (
-                        column.label
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginated.map((row, index) => (
-                  <TableRow key={index} hover>
-                    {columns.map((column) => (
-                      <TableCell key={column.label} align={column.align ?? 'left'}>
-                        {column.render(row)}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
-            component="div"
-            count={visibleRows.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={(_, newPage) => setPage(newPage)}
-            onRowsPerPageChange={(event) => {
-              setRowsPerPage(parseInt(event.target.value, 10))
-              setPage(0)
-            }}
-            labelRowsPerPage="Linhas por página:"
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-          />
-        </Paper>
+        <AppSimpleTable
+          rows={visibleRows}
+          columns={tableColumns}
+          getRowKey={({ index }) => index}
+          surface="outlined"
+          defaultSort={{ column: columns[0].label, direction: 'desc' }}
+          pageSize={PAGE_SIZE}
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
+        />
       )}
     </AppStack>
   )

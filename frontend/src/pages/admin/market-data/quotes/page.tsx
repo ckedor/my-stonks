@@ -110,10 +110,10 @@ export default function AdminMarketDataQuotesPage() {
             size="lg"
           />
 
-          {error && <AppAlert severity="error">{error}</AppAlert>}
+          {error && <AppAlert tone="danger">{error}</AppAlert>}
 
           {!selected ? (
-            <AppAlert severity="info">Selecione um ativo para ver as cotações persistidas.</AppAlert>
+            <AppAlert tone="info">Selecione um ativo para ver as cotações persistidas.</AppAlert>
           ) : loadingQuotes ? (
             <AppStack gap="md">
               <AppSkeleton shape="text" width={200} height={16} />

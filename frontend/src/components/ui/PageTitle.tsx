@@ -12,13 +12,13 @@ import type { ReactNode } from 'react'
 
 export interface PageTitleProps {
   children: ReactNode
-  /** `error` para telas de bloqueio. Padrão: `default`. */
-  tone?: 'default' | 'error'
+  /** `danger` para telas de bloqueio. Padrão: `default`. */
+  tone?: 'default' | 'danger'
 }
 
 export default function PageTitle({ children, tone = 'default' }: PageTitleProps) {
   return (
-    <Typography variant="h5" component="h1" color={tone === 'error' ? 'error' : undefined}>
+    <Typography variant="h5" component="h1" color={tone === 'danger' ? 'error' : undefined}>
       {children}
     </Typography>
   )

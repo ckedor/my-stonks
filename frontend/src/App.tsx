@@ -130,7 +130,7 @@ const router = createBrowserRouter([
       { path: 'brokers', element: <AdminBrokersPage /> },
       { path: 'events', element: <AdminEventsPage /> },
       { path: 'users', element: <AdminUsersPage /> },
-      { path: 'design-system', element: <DesignSystemPage /> },
+      { path: 'design-system/:family?', element: <DesignSystemPage /> },
       { path: 'game/sandbox', element: <GameSandboxPage /> },
       { path: 'market-data/usd-brl', element: <AdminMarketDataUsdBrlPage /> },
       { path: 'market-data/series', element: <AdminMarketDataSeriesPage /> },

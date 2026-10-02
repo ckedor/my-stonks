@@ -140,21 +140,55 @@ class EtfRegistryClass:
     fund: EtfRegistry | None = None
 
 
+class EtfHoldingSource(StrEnum):
+    """Where a holding report was read from."""
+
+    #: The American fund's N-PORT filing with the SEC.
+    SEC_NPORT = 'sec_nport'
+    #: The constituents file DWS publishes for each Xtrackers class, by ISIN.
+    DWS = 'dws'
+    #: The holdings file each iShares product page exports.
+    ISHARES = 'ishares'
+
+
+#: The UCITS classes whose manager publishes a holdings file this app reads,
+#: by the class's ISIN. No regulator publishes a UCITS fund's holdings, so
+#: each class is added by hand, once someone has seen its manager's file —
+#: the registry names the manager but says nothing about where its files are.
+MANAGER_HOLDINGS_FILES: dict[str, EtfHoldingSource] = {
+    # EXUS: Xtrackers MSCI World ex USA UCITS ETF 1C.
+    'IE0006WW1TQ4': EtfHoldingSource.DWS,
+    # CSPX: iShares Core S&P 500 UCITS ETF USD (Acc).
+    'IE00B5BMR087': EtfHoldingSource.ISHARES,
+    # EIMI: iShares Core MSCI EM IMI UCITS ETF USD (Acc).
+    'IE00BKM4GZ66': EtfHoldingSource.ISHARES,
+}
+
+
+def holdings_source(fund: EtfRegistry, class_isin: str | None) -> EtfHoldingSource | None:
+    """Where this ETF's holdings are read from, or None when nowhere is."""
+    if fund.source == EtfRegistrySource.SEC:
+        return EtfHoldingSource.SEC_NPORT
+    return MANAGER_HOLDINGS_FILES.get(class_isin or '')
+
+
 @dataclass(eq=False, kw_only=True)
 class EtfHoldingReport:
-    """What a registered ETF held on one date, as its regulator filing states it.
+    """What a registered ETF held on one date, as its source states it.
 
     An American ETF files it with the SEC as N-PORT: every month, made public
-    only for the last month of each fiscal quarter, about two months later. So
-    a report always carries the date it describes, and the newest is the most
-    recent picture there is, not the current one.
+    only for the last month of each fiscal quarter, about two months later. A
+    UCITS ETF files it with no regulator; for some, the manager publishes a
+    file of its own, daily. Either way a report carries the date it describes,
+    and the newest is the most recent picture there is, not the current one.
     """
 
     id: int | None = None
     etf_registry_id: int
     report_date: date
     source: str
-    #: The filing it was read from; the same accession is not read twice.
+    #: What it was read from: the N-PORT accession, or the date of a
+    #: manager's file. The same one is not written twice.
     accession: str
     net_assets: Decimal | None = None
     total_assets: Decimal | None = None
@@ -175,7 +209,7 @@ class EtfHolding:
     lei: str | None = None
     ticker: str | None = None
     #: N-PORT's asset category: `EC` equity, `DBT` debt, `STIV` short-term
-    #: investment vehicle, `DE` derivative.
+    #: investment vehicle, `DE` derivative. None from a manager's file.
     asset_category: str | None = None
     country: str | None = None
     currency: str | None = None

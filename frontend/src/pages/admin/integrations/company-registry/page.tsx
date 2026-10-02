@@ -12,7 +12,7 @@ export default function AdminCompanyRegistryPage() {
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
-    severity: 'success' as 'success' | 'error',
+    tone: 'success' as 'success' | 'danger',
   })
 
   return (
@@ -28,16 +28,16 @@ export default function AdminCompanyRegistryPage() {
             setSnackbar({
               open: true,
               message: `Regulador aplicado: ${report.institutions.created.length} pessoas jurídicas, ${report.assets.updated.length} ações ligadas`,
-              severity: 'success',
+              tone: 'success',
             })
           }
-          onError={(message) => setSnackbar({ open: true, message, severity: 'error' })}
+          onError={(message) => setSnackbar({ open: true, message, tone: 'danger' })}
         />
       </AppStack>
       <AppSnackbar
         open={snackbar.open}
         message={snackbar.message}
-        severity={snackbar.severity}
+        tone={snackbar.tone}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       />
     </>

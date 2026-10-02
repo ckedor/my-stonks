@@ -217,7 +217,7 @@ export default function DividendForm({
       <AppSnackbar
         open={snackbarOpen}
         message={error ?? ''}
-        severity="error"
+        tone="danger"
         onClose={() => setSnackbarOpen(false)}
       />
     </>

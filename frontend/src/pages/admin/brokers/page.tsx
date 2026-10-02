@@ -45,7 +45,7 @@ export default function AdminBrokersPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedBroker, setSelectedBroker] = useState<Broker | null>(null)
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' })
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', tone: 'success' as 'success' | 'danger' })
 
   useEffect(() => {
     fetchData()
@@ -79,7 +79,7 @@ export default function AdminBrokersPage() {
       setCurrencies(currenciesRes.data)
     } catch (error) {
       console.error('Erro ao buscar dados:', error)
-      setSnackbar({ open: true, message: 'Erro ao carregar dados', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao carregar dados', tone: 'danger' })
     } finally {
       setLoading(false)
     }
@@ -104,11 +104,11 @@ export default function AdminBrokersPage() {
     if (!selectedBroker) return
     try {
       await api.delete(BROKER_ROUTES.byId(selectedBroker.id))
-      setSnackbar({ open: true, message: 'Corretora excluída com sucesso', severity: 'success' })
+      setSnackbar({ open: true, message: 'Corretora excluída com sucesso', tone: 'success' })
       fetchData()
     } catch (error) {
       console.error('Erro ao excluir:', error)
-      setSnackbar({ open: true, message: 'Erro ao excluir corretora', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao excluir corretora', tone: 'danger' })
     } finally {
       setDeleteDialogOpen(false)
       setSelectedBroker(null)
@@ -119,10 +119,10 @@ export default function AdminBrokersPage() {
     try {
       if (selectedBroker) {
         await api.put(BROKER_ROUTES.byId(selectedBroker.id), data)
-        setSnackbar({ open: true, message: 'Corretora atualizada com sucesso', severity: 'success' })
+        setSnackbar({ open: true, message: 'Corretora atualizada com sucesso', tone: 'success' })
       } else {
         await api.post(BROKER_ROUTES.create, data)
-        setSnackbar({ open: true, message: 'Corretora criada com sucesso', severity: 'success' })
+        setSnackbar({ open: true, message: 'Corretora criada com sucesso', tone: 'success' })
       }
       fetchData()
     } catch (error) {
@@ -132,7 +132,7 @@ export default function AdminBrokersPage() {
   }
 
   const columns: ColumnConfig[] = [
-    { field: 'id', label: 'ID', align: 'center' },
+    { field: 'id', label: 'ID' },
     { field: 'name', label: 'Nome' },
     { field: 'cnpj', label: 'CNPJ', format: (value) => value || '—' },
     {
@@ -208,7 +208,7 @@ export default function AdminBrokersPage() {
       <AppSnackbar
         open={snackbar.open}
         message={snackbar.message}
-        severity={snackbar.severity}
+        tone={snackbar.tone}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       />
     </>

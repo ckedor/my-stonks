@@ -16,11 +16,12 @@ import {
   AppCard,
   AppChip,
   AppConfirmDialog,
+  AppMetric,
+  AppMetricRow,
   AppProgressBar,
   AppSimpleTable,
   AppSnackbar,
   AppStack,
-  AppStatCard,
   AppText,
   AppTooltip,
   PageTitle,
@@ -29,13 +30,10 @@ import {
 import type { RoutineKey } from '@/api/operations'
 import RoutineScheduleNote from '../RoutineScheduleNote'
 import DataIngestionSkeleton from './DataIngestionSkeleton'
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import HistoryIcon from '@mui/icons-material/History'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import StopCircleIcon from '@mui/icons-material/StopCircle'
-import StorageIcon from '@mui/icons-material/Storage'
-import TaskAltIcon from '@mui/icons-material/TaskAlt'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const TERMINAL_STATUSES = new Set<IngestionStatus>([
@@ -151,7 +149,7 @@ export function DataIngestionPage({
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
-    severity: 'success' as 'success' | 'error',
+    tone: 'success' as 'success' | 'danger',
   })
 
   const fetchDetail = useCallback(async (executionId: number) => {
@@ -185,7 +183,7 @@ export function DataIngestionPage({
         await refreshExecutions()
       } catch (error) {
         console.error(error)
-        setSnackbar({ open: true, message: 'Erro ao carregar execuções', severity: 'error' })
+        setSnackbar({ open: true, message: 'Erro ao carregar execuções', tone: 'danger' })
       } finally {
         setLoading(false)
       }
@@ -264,11 +262,11 @@ export function DataIngestionPage({
         message: forceFullHistory
           ? 'Importação completa adicionada à fila'
           : 'Importação incremental adicionada à fila',
-        severity: 'success',
+        tone: 'success',
       })
     } catch (error) {
       console.error(error)
-      setSnackbar({ open: true, message: 'Erro ao iniciar importação', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao iniciar importação', tone: 'danger' })
     } finally {
       setRunningRequest(false)
       setForceDialogOpen(false)
@@ -286,11 +284,11 @@ export function DataIngestionPage({
       setSnackbar({
         open: true,
         message: `Execução #${execution.id} abortada`,
-        severity: 'success',
+        tone: 'success',
       })
     } catch (error) {
       console.error(error)
-      setSnackbar({ open: true, message: 'Erro ao abortar a execução', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao abortar a execução', tone: 'danger' })
     } finally {
       setRunningRequest(false)
       setAbortDialogOpen(false)
@@ -364,33 +362,42 @@ export function DataIngestionPage({
 
       {detail ? (
         <>
-          <AppStack direction="row" gap="md" wrap collapseBelow="sm">
-            <AppStatCard
-              label="Processados"
-              value={`${detail.processed_items}/${detail.total_items}`}
-              helper={detail.force_full_history ? 'Histórico completo' : 'Incremental com overlap'}
-              icon={<StorageIcon />}
-            />
-            <AppStatCard
-              label="Sucessos"
-              value={detail.succeeded_items}
-              helper={`${detail.upserted_rows.toLocaleString('pt-BR')} linhas persistidas`}
-              icon={<TaskAltIcon />}
-            />
-            <AppStatCard
-              label="Falhas"
-              value={detail.failed_items}
-              helper="Consulte as tentativas abaixo"
-              icon={<ErrorOutlineIcon />}
-            />
-          </AppStack>
-
           <AppCard>
             <AppStack gap="sm">
               <AppStack direction="row" justify="between" align="center">
                 <SectionTitle>Execução #{detail.id}</SectionTitle>
                 <StatusChip status={detail.status} />
               </AppStack>
+              <AppMetricRow>
+                <AppMetric
+                  size="lg"
+                  label="Processados"
+                  value={`${detail.processed_items}/${detail.total_items}`}
+                  suffix={
+                    <AppText variant="caption" tone="secondary">
+                      {detail.force_full_history ? 'Histórico completo' : 'Incremental com overlap'}
+                    </AppText>
+                  }
+                />
+                <AppMetric
+                  label="Sucessos"
+                  value={detail.succeeded_items.toLocaleString('pt-BR')}
+                  suffix={
+                    <AppText variant="caption" tone="secondary">
+                      {detail.upserted_rows.toLocaleString('pt-BR')} linhas persistidas
+                    </AppText>
+                  }
+                />
+                <AppMetric
+                  label="Falhas"
+                  value={detail.failed_items.toLocaleString('pt-BR')}
+                  suffix={
+                    <AppText variant="caption" tone="secondary">
+                      Consulte as tentativas abaixo
+                    </AppText>
+                  }
+                />
+              </AppMetricRow>
               <AppProgressBar
                 value={detail.status === 'queued' ? undefined : progress}
                 tone={detail.status === 'failure' ? 'danger' : 'primary'}
@@ -399,12 +406,12 @@ export function DataIngestionPage({
                 Solicitada em {formatDateTime(detail.requested_at)} · início{' '}
                 {formatDateTime(detail.started_at)} · fim {formatDateTime(detail.finished_at)}
               </AppText>
-              {detail.error && <AppAlert severity="error">{detail.error}</AppAlert>}
+              {detail.error && <AppAlert tone="danger">{detail.error}</AppAlert>}
             </AppStack>
           </AppCard>
         </>
       ) : (
-        <AppAlert severity="info">Nenhuma importação executada até agora.</AppAlert>
+        <AppAlert tone="info">Nenhuma importação executada até agora.</AppAlert>
       )}
 
       <AppStack gap="sm">
@@ -588,7 +595,7 @@ export function DataIngestionPage({
       <AppSnackbar
         open={snackbar.open}
         message={snackbar.message}
-        severity={snackbar.severity}
+        tone={snackbar.tone}
         onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
       />
     </AppStack>

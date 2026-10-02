@@ -1,7 +1,7 @@
 import { AppCard, AppSkeleton, AppStack, AppTableSkeleton } from '@/components/ui'
 
-/** Reserva o espaço da tela de ingestão: o cabeçalho com os botões, os três
- *  cards de números, o card da execução em curso e a tabela do histórico. */
+/** Reserva o espaço da tela de ingestão: o cabeçalho com os botões, o card da
+ *  execução em curso com os três números e a tabela do histórico. */
 export default function DataIngestionSkeleton() {
   return (
     <AppStack gap="lg">
@@ -19,17 +19,19 @@ export default function DataIngestionSkeleton() {
 
       <AppSkeleton height={64} />
 
-      <AppStack direction="row" gap="md" wrap collapseBelow="sm">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <AppSkeleton key={index} width={240} height={96} />
-        ))}
-      </AppStack>
-
       <AppCard>
         <AppStack gap="sm">
           <AppStack direction="row" justify="between" align="center">
             <AppSkeleton shape="text" width={160} height={24} />
             <AppSkeleton shape="pill" width={90} height={24} />
+          </AppStack>
+          <AppStack direction="row" gap="lg" wrap>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <AppStack key={index} gap="xs">
+                <AppSkeleton shape="text" width={80} height={14} />
+                <AppSkeleton shape="text" width={140} height={28} />
+              </AppStack>
+            ))}
           </AppStack>
           <AppSkeleton height={8} />
           <AppSkeleton shape="text" width={420} height={16} />

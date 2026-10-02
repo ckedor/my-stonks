@@ -82,10 +82,11 @@ const COLUMNS: AppSimpleTableColumn<EtfHolding>[] = [
 
 /** O que o ETF possui, da maior posição para a menor.
  *
- *  É o retrato do último informe ao regulador, e não o de hoje: um fundo
- *  americano publica a carteira do fim de cada trimestre fiscal uns dois meses
- *  depois. Por isso a data fica ao lado do título. Uma posição que também é um
- *  ativo cadastrado aqui abre a página dele.
+ *  É o retrato da última leitura, e não o de hoje: um fundo americano publica
+ *  a carteira do fim de cada trimestre fiscal uns dois meses depois, e o
+ *  arquivo de uma gestora UCITS é lido uma vez por semana. Por isso a data e a
+ *  fonte ficam ao lado do título. Uma posição que também é um ativo cadastrado
+ *  aqui abre a página dele.
  */
 export default function EtfHoldingsCard({
   assetId,
@@ -116,9 +117,9 @@ export default function EtfHoldingsCard({
         {!report ? (
           <AppText variant="bodySmall" tone="secondary">
             {profile.holdings_available
-              ? 'A carteira deste ETF ainda não foi lida. A rotina "Carteira dos ETFs" lê, toda quinta, a dos ETFs americanos que estão em alguma carteira.'
+              ? 'A carteira deste ETF ainda não foi lida. A rotina "Carteira dos ETFs" lê, toda quinta, a dos ETFs que estão em alguma carteira.'
               : profile.registry === 'esma'
-                ? 'Nenhum regulador publica a carteira de um ETF UCITS; ela só existe no site de cada gestora.'
+                ? 'Nenhum regulador publica a carteira de um ETF UCITS, e o arquivo que a gestora deste publica ainda não é lido.'
                 : 'Não há fonte para a carteira deste ETF.'}
           </AppText>
         ) : loading ? (

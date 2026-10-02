@@ -79,7 +79,7 @@ export default function LoginPage() {
       <AppSnackbar
         open={errorOpen}
         message="Usuário ou senha inválidos"
-        severity="error"
+        tone="danger"
         onClose={() => setErrorOpen(false)}
       />
     </>

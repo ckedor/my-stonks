@@ -42,7 +42,7 @@ export function CategoryAssignmentPrompt({ assignment }: { assignment: CategoryA
       <AppSnackbar
         open={assignment.failed}
         message="Erro ao atualizar categoria."
-        severity="error"
+        tone="danger"
         onClose={assignment.dismissFailure}
       />
     </>

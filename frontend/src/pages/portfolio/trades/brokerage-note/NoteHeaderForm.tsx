@@ -95,7 +95,7 @@ export default function NoteHeaderForm({ note, header, brokers, onChange }: Note
       </AppStack>
 
       {warnings.map((warning) => (
-        <AppAlert key={`${warning.code}-${warning.message}`} severity="error">
+        <AppAlert key={`${warning.code}-${warning.message}`} tone="danger">
           {warning.message}
         </AppAlert>
       ))}

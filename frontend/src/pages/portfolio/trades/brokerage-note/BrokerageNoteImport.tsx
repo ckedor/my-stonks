@@ -49,7 +49,7 @@ export default function BrokerageNoteImport() {
   const extraction = useExtractBrokerageNote()
   const refreshDocuments = useRefreshPortfolioDocuments()
   const openDocument = useOpenPortfolioDocument((message) =>
-    setNotice({ message, severity: 'error' })
+    setNotice({ message, tone: 'danger' })
   )
   const [file, setFile] = useState<File | null>(null)
   const [draft, setDraft] = useState<BrokerageNoteDraft | null>(null)
@@ -70,7 +70,7 @@ export default function BrokerageNoteImport() {
           void refreshDocuments()
           setNotice({
             message: errorMessage(error, 'Não foi possível ler a nota'),
-            severity: 'error',
+            tone: 'danger',
           })
         },
       }
@@ -116,7 +116,7 @@ export default function BrokerageNoteImport() {
           <SectionTitle>
             {draft.notes.length === 1 ? 'Nota lida' : `${draft.notes.length} notas lidas`}
           </SectionTitle>
-          {draft.document_id === null && <AppAlert severity="info">{DOCUMENT_NOT_KEPT}</AppAlert>}
+          {draft.document_id === null && <AppAlert tone="info">{DOCUMENT_NOT_KEPT}</AppAlert>}
           {draft.notes.map((note) => (
             <NoteImport
               // A leitura nova troca as notas inteiras, com o estado de cada uma.
@@ -147,7 +147,7 @@ export default function BrokerageNoteImport() {
       <AppSnackbar
         open={notice !== null}
         message={notice?.message ?? ''}
-        severity={notice?.severity ?? 'info'}
+        tone={notice?.tone ?? 'info'}
         onClose={() => setNotice(null)}
       />
     </AppStack>

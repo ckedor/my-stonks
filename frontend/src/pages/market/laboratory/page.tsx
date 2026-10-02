@@ -107,7 +107,7 @@ export default function MarketLaboratoryPage() {
   const [toolsOpen, setToolsOpen] = useState(false)
   const [tab, setTab] = useState<'carteira' | ResultTab | 'variations'>('carteira')
   const { id: routeId } = useParams()
-  const [notice, setNotice] = useState<{ message: string; severity: 'success' | 'error' | 'info' } | null>(null)
+  const [notice, setNotice] = useState<{ message: string; tone: 'success' | 'danger' | 'info' } | null>(null)
 
   const assetById = useMemo(
     () => new Map(assetList.map((item) => [item.id, item])),
@@ -184,8 +184,8 @@ export default function MarketLaboratoryPage() {
     }
   }, [routeId, portfolios, draft.id, setDraft])
 
-  const notify = (message: string, severity: 'success' | 'error' | 'info' = 'success') =>
-    setNotice({ message, severity })
+  const notify = (message: string, tone: 'success' | 'danger' | 'info' = 'success') =>
+    setNotice({ message, tone })
 
   const errorMessage = (error: unknown) => {
     const detail = (error as { response?: { data?: { message?: string } } })?.response
@@ -199,7 +199,7 @@ export default function MarketLaboratoryPage() {
         setResult(answer)
         setTab('performance')
       },
-      onError: (error) => notify(errorMessage(error), 'error'),
+      onError: (error) => notify(errorMessage(error), 'danger'),
     })
   }
 
@@ -215,7 +215,7 @@ export default function MarketLaboratoryPage() {
           setDraft(draftFromPortfolio(saved))
           notify('Carteira teórica salva.')
         },
-        onError: (error) => notify(errorMessage(error), 'error'),
+        onError: (error) => notify(errorMessage(error), 'danger'),
       },
     )
   }
@@ -526,7 +526,7 @@ export default function MarketLaboratoryPage() {
       <AppSnackbar
         open={notice !== null}
         message={notice?.message ?? ''}
-        severity={notice?.severity ?? 'success'}
+        tone={notice?.tone ?? 'success'}
         onClose={() => setNotice(null)}
       />
     </AppStack>

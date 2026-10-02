@@ -193,14 +193,14 @@ export default function CategoryForm({ open, onClose, onSave }: CategoryFormProp
       <AppSnackbar
         open={snackbarOpen}
         message={error ?? ''}
-        severity="error"
+        tone="danger"
         onClose={() => setSnackbarOpen(false)}
       />
 
       <AppSnackbar
         open={successOpen}
         message="Categorias salvas com sucesso!"
-        severity="success"
+        tone="success"
         onClose={() => setSuccessOpen(false)}
       />
     </>

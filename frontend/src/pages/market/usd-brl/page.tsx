@@ -35,7 +35,7 @@ export default function MarketUsdBrlPage() {
     <AppStack gap="lg">
       <AppPageHeader title="Dólar" breadcrumbs={breadcrumbs} />
       {failed ? (
-        <AppAlert severity="error">Não foi possível carregar o histórico do câmbio.</AppAlert>
+        <AppAlert tone="danger">Não foi possível carregar o histórico do câmbio.</AppAlert>
       ) : (
         <SeriesHistoryCard
           data={candleData}

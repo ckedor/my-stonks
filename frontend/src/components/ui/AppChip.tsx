@@ -1,19 +1,11 @@
 import { Chip } from '@mui/material'
+import { INTENT_COLOR, type Intent } from './intent'
 
 /* Etiqueta curta de estado. */
 
-type Tone = 'neutral' | 'primary' | 'success' | 'info' | 'caution' | 'danger'
-
-const TONE: Record<Tone, 'default' | 'primary' | 'success' | 'info' | 'warning' | 'error'> = {
-  neutral: 'default',
-  primary: 'primary',
-  success: 'success',
-  info: 'info',
-  /* O meio-termo que não é erro: um valuation esticado, um impacto que pede
-     atenção. Mesmo eixo do `caution` do AppButton. */
-  caution: 'warning',
-  danger: 'error',
-}
+/* `caution` é o meio-termo que não é erro: um valuation esticado, um impacto
+ * que pede atenção. Mesmo eixo do `caution` do AppButton. */
+type Tone = 'neutral' | Intent
 
 export interface AppChipProps {
   label: string
@@ -40,7 +32,7 @@ export default function AppChip({
   return (
     <Chip
       label={label}
-      color={tint ? undefined : TONE[tone]}
+      color={tint ? undefined : tone === 'neutral' ? 'default' : INTENT_COLOR[tone]}
       size="small"
       variant={emphasis === 'outline' ? 'outlined' : 'filled'}
       sx={

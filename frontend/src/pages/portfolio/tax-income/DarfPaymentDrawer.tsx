@@ -81,7 +81,7 @@ export default function DarfPaymentDrawer({ obligation, onClose }: Props) {
               </AppText>
               <AppIconButton
                 label="Remover pagamento"
-                tone="error"
+                tone="danger"
                 size="sm"
                 disabled={remove.isPending}
                 onClick={() => remove.mutate(payment.id, { onSuccess: onClose })}

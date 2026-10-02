@@ -1,3 +1,5 @@
+import { DESIGN_SYSTEM_FAMILIES, designSystemFamilyPath } from './design-system/families'
+
 export interface AdminNavigationItem {
   label: string
   path: string
@@ -126,8 +128,11 @@ export const adminNavigationSections: AdminNavigationSection[] = [
   {
     id: 'design-system',
     label: 'Design System',
-    defaultPath: '/admin/design-system',
-    items: [{ label: 'Design System', path: '/admin/design-system' }],
+    defaultPath: designSystemFamilyPath(DESIGN_SYSTEM_FAMILIES[0].slug),
+    items: DESIGN_SYSTEM_FAMILIES.map((family) => ({
+      label: family.label,
+      path: designSystemFamilyPath(family.slug),
+    })),
   },
 ]
 

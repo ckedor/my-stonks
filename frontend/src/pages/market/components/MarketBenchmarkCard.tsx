@@ -93,7 +93,7 @@ export default memo(function MarketBenchmarkCard({
             persistKey={persistKey}
           />
         ) : error ? (
-          <AppAlert severity="error">Não foi possível carregar {title}.</AppAlert>
+          <AppAlert tone="danger">Não foi possível carregar {title}.</AppAlert>
         ) : (
           <AppChartSkeleton height={420} toolbar />
         )}

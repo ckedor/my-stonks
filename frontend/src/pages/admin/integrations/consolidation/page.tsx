@@ -84,7 +84,7 @@ export default function AdminConsolidationPage() {
   const [selectedAsset, setSelectedAsset] = useState<AssetOption | null>(null)
   const [assetRunning, setAssetRunning] = useState(false)
   const [assetResult, setAssetResult] = useState<
-    { severity: 'error' | 'success'; message: string } | null
+    { tone: 'danger' | 'success'; message: string } | null
   >(null)
 
   useEffect(() => {
@@ -183,18 +183,18 @@ export default function AdminConsolidationPage() {
         { params: { asset_id: selectedAsset.id } },
       )
       setAssetResult({
-        severity: 'success',
+        tone: 'success',
         message: `${assetLabel(selectedAsset)} consolidado em ${portfolioLabel(selectedPortfolio)}.`,
       })
     } catch (error) {
-      setAssetResult({ severity: 'error', message: errorMessage(error) })
+      setAssetResult({ tone: 'danger', message: errorMessage(error) })
     } finally {
       setAssetRunning(false)
     }
   }
 
   if (loading) return <ConsolidationSkeleton />
-  if (loadError) return <AppAlert severity="error">{loadError}</AppAlert>
+  if (loadError) return <AppAlert tone="danger">{loadError}</AppAlert>
 
   const finished = runs.filter((run) => run.state === 'success' || run.state === 'failure').length
 
@@ -294,7 +294,7 @@ export default function AdminConsolidationPage() {
             </AppButton>
           </AppStack>
 
-          {assetResult && <AppAlert severity={assetResult.severity}>{assetResult.message}</AppAlert>}
+          {assetResult && <AppAlert tone={assetResult.tone}>{assetResult.message}</AppAlert>}
 
           <AppDivider />
 

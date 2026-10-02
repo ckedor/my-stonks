@@ -1,5 +1,6 @@
 import { Button, CircularProgress } from '@mui/material'
 import type { ReactNode } from 'react'
+import { INTENT_COLOR, type Intent } from './intent'
 
 /* Botão do app.
  *
@@ -15,14 +16,8 @@ import type { ReactNode } from 'react'
  * `secondary` = primary + outline, `ghost` = primary + ghost,
  * `danger` = danger + solid. */
 
-type Tone = 'primary' | 'danger' | 'caution'
+type Tone = Extract<Intent, 'primary' | 'danger' | 'caution'>
 type Emphasis = 'solid' | 'outline' | 'ghost'
-
-const COLOR: Record<Tone, 'primary' | 'error' | 'warning'> = {
-  primary: 'primary',
-  danger: 'error',
-  caution: 'warning',
-}
 
 const VARIANT: Record<Emphasis, 'contained' | 'outlined' | 'text'> = {
   solid: 'contained',
@@ -72,7 +67,7 @@ export default function AppButton({
   return (
     <Button
       variant={VARIANT[emphasis]}
-      color={COLOR[tone]}
+      color={INTENT_COLOR[tone]}
       size={size === 'sm' ? 'small' : size === 'lg' ? 'large' : 'medium'}
       sx={size === 'lg' ? { py: 1.5, fontWeight: 600, fontSize: '1.05rem' } : undefined}
       startIcon={loading ? <CircularProgress size={18} color="inherit" /> : icon}

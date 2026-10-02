@@ -264,11 +264,11 @@ export function FundRegistrationDrawer({
               )}
 
               {alreadyRegistered && (
-                <AppAlert severity="info">
+                <AppAlert tone="info">
                   Este fundo já está cadastrado e será reutilizado.
                 </AppAlert>
               )}
-              {error && <AppAlert severity="error">{error}</AppAlert>}
+              {error && <AppAlert tone="danger">{error}</AppAlert>}
             </>
           )}
         </AppStack>

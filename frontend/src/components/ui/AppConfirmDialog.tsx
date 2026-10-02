@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from '@mui/material'
 import type { ReactNode } from 'react'
-import AppButton from './AppButton'
+import AppButton, { type AppButtonProps } from './AppButton'
 
 /* Diálogo de confirmação para ação destrutiva.
  *
@@ -25,7 +25,7 @@ export interface AppConfirmDialogProps {
   cancelLabel?: string
   /** `danger` para exclusões, `caution` para o que é caro mas reversível,
    *  `primary` para o resto. Padrão: `danger`. */
-  tone?: 'danger' | 'caution' | 'primary'
+  tone?: AppButtonProps['tone']
   /** Bloqueia o confirmar enquanto a ação anterior ainda está no ar — sem
    *  isso um duplo clique dispara a mesma requisição duas vezes. */
   confirmDisabled?: boolean

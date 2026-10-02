@@ -25,7 +25,7 @@ import {
   type NoteRow,
 } from './draft'
 
-export type Notice = { message: string; severity: 'success' | 'error' | 'info' }
+export type Notice = { message: string; tone: 'success' | 'danger' | 'info' }
 
 interface NoteImportProps {
   note: DraftNote
@@ -98,7 +98,7 @@ export default function NoteImport({
           onError: (error) =>
             onNotice({
               message: errorMessage(error, 'Não foi possível cruzar a nota'),
-              severity: 'error',
+              tone: 'danger',
             }),
         }
       )
@@ -112,12 +112,12 @@ export default function NoteImport({
       {
         onSuccess: (imported) => {
           setResult(imported)
-          onNotice({ message: 'Nota importada.', severity: 'success' })
+          onNotice({ message: 'Nota importada.', tone: 'success' })
         },
         onError: (error) => {
           onNotice({
             message: errorMessage(error, 'Não foi possível importar a nota'),
-            severity: 'error',
+            tone: 'danger',
           })
           // A carteira mudou desde o cruzamento: força cruzar de novo.
           if (isConflict(error)) setCrossedKey('')

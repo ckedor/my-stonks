@@ -76,7 +76,7 @@ export function FundRegistryPanel({ assetId, classId, seriesId }: FundRegistryPa
 
       {!series && detail.registry_class.fund?.kind === 'FIDC' && (
         <>
-          <AppAlert severity="info">Confirme a série deste fundo para importar suas cotas.</AppAlert>
+          <AppAlert tone="info">Confirme a série deste fundo para importar suas cotas.</AppAlert>
           <AppButton onClick={() => setSeriesOpen(true)}>Escolher série</AppButton>
           {seriesOpen && <FundRegistrationDrawer
             open
@@ -120,9 +120,9 @@ export function FundRegistryPanel({ assetId, classId, seriesId }: FundRegistryPa
           >
             Confirmar rótulo desta série
           </AppButton>
-          {error && <AppAlert severity="error">{error}</AppAlert>}
+          {error && <AppAlert tone="danger">{error}</AppAlert>}
           {confirmed && (
-            <AppAlert severity="success">
+            <AppAlert tone="success">
               Rótulo confirmado. A próxima importação de valores de cota relê o histórico deste fundo.
             </AppAlert>
           )}

@@ -43,7 +43,7 @@ function errorMessage(error: unknown, fallback: string): string {
   return response?.data?.message ?? fallback
 }
 
-type Notice = { message: string; severity: 'success' | 'error' | 'info' }
+type Notice = { message: string; tone: 'success' | 'danger' | 'info' }
 
 /* Aba "Bater posição" de Trades.
  *
@@ -94,7 +94,7 @@ export default function PositionCheck() {
           onError: (error) =>
             setNotice({
               message: errorMessage(error, 'Não foi possível comparar a posição'),
-              severity: 'error',
+              tone: 'danger',
             }),
         }
       )
@@ -132,7 +132,7 @@ export default function PositionCheck() {
           void refreshDocuments()
           setNotice({
             message: errorMessage(error, 'Não foi possível ler o extrato'),
-            severity: 'error',
+            tone: 'danger',
           })
         },
       }
@@ -203,7 +203,7 @@ export default function PositionCheck() {
         <>
           <AppStack gap="md">
             <SectionTitle>Extrato</SectionTitle>
-            {draft.document_id === null && <AppAlert severity="info">{DOCUMENT_NOT_KEPT}</AppAlert>}
+            {draft.document_id === null && <AppAlert tone="info">{DOCUMENT_NOT_KEPT}</AppAlert>}
             <AppCard>
               <AppStack gap="md">
                 <AppText variant="bodySmall" tone="secondary">
@@ -211,7 +211,7 @@ export default function PositionCheck() {
                   {draft.broker_cnpj ? ` · CNPJ ${draft.broker_cnpj}` : ''} · {draft.currency}
                 </AppText>
                 {warnings.map((warning) => (
-                  <AppAlert key={warning.code} severity="error">
+                  <AppAlert key={warning.code} tone="danger">
                     {warning.message}
                   </AppAlert>
                 ))}
@@ -327,7 +327,7 @@ export default function PositionCheck() {
       <AppSnackbar
         open={notice !== null}
         message={notice?.message ?? ''}
-        severity={notice?.severity ?? 'info'}
+        tone={notice?.tone ?? 'info'}
         onClose={() => setNotice(null)}
       />
     </AppStack>

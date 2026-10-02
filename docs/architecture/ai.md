@@ -169,5 +169,7 @@ modelo melhor primeiro é mais barato que manter um treino.
   bloquear é mais simples, e o job agendado deixa o caso comum sendo um select.
 - Aviso de "a IA pode cometer erros" nas telas. Quem lê este app é quem o
   escreveu e já sabe o que gerou aquilo; a frase repetida em toda tela ensina a
-  ignorar a moldura junto com ela. A distinção é feita pelo desenho —
-  `AiSurface` — e não por um disclaimer.
+  ignorar a moldura junto com ela. A distinção é feita pelo desenho — uma
+  moldura própria do design system — e não por um disclaimer. O `AiSurface`,
+  que era essa moldura, saiu por não ter consumidor; volta quando a primeira
+  tela mostrar texto gerado.

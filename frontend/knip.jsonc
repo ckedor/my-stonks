@@ -7,8 +7,10 @@
   // positivos e vira ruído que se aprende a ignorar.
   //
   // O preço é real: componente do design system que morrer não é detectado
-  // aqui. Vale revisitar quando o baseline chegar a zero e as exportações
-  // tiverem consumidor de verdade.
+  // aqui — e o catálogo em `/admin/design-system`, que renderiza todos, o
+  // esconderia de qualquer jeito. Quem cobre isso é
+  // `scripts/check-ds-catalog.mjs`, no pre-commit: export sem consumidor fora
+  // do catálogo reprova.
   "entry": [
     "src/main.tsx",
     "src/components/ui/index.ts",
