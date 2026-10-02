@@ -65,28 +65,3 @@ export const MOCK_PIE_DATA = [
   { label: 'Cripto', value: 9000 },
   { label: 'Previdência', value: 6000 },
 ]
-
-export const MOCK_TABLE_COLUMNS = [
-  { key: 'ticker', label: 'Ativo', type: 'text' as const },
-  { key: 'quantity', label: 'Qtd', type: 'number' as const },
-  { key: 'price', label: 'Preço', type: 'currency' as const, decimals: true },
-  { key: 'value', label: 'Total', type: 'currency' as const, decimals: true },
-  { key: 'return', label: 'Retorno', type: 'percentage' as const, decimals: true, gainLossColors: true },
-]
-
-export const MOCK_TABLE_ROWS = [
-  { id: 1, ticker: 'PETR4', quantity: 200, price: 38.50, value: 7700, return: 12.4 },
-  { id: 2, ticker: 'VALE3', quantity: 100, price: 62.80, value: 6280, return: -3.2 },
-  { id: 3, ticker: 'ITUB4', quantity: 300, price: 28.15, value: 8445, return: 8.7 },
-  { id: 4, ticker: 'BBDC4', quantity: 400, price: 12.90, value: 5160, return: -1.5 },
-  { id: 5, ticker: 'WEGE3', quantity: 50, price: 42.30, value: 2115, return: 22.1 },
-]
-
-export const MOCK_TABLE_TOTAL = {
-  id: 'total',
-  ticker: 'Total',
-  quantity: 1050,
-  price: 0,
-  value: 29700,
-  return: 7.7,
-}

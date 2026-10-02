@@ -93,7 +93,7 @@ function contrastRatio(a: string, b: string): number {
 }
 
 /* Positivo e negativo são número escrito com `success.main` e `error.main` em
-   cima do card — `AppTable` pinta a célula, `AppMetric` o valor. São texto
+   cima do card — a tabela pinta a célula, `AppMetric` o valor. São texto
    normal, então valem os mesmos 4.5:1 do `text.primary`, e não os 3:1 de
    elemento de interface: um verde bonito e claro demais some na linha da
    tabela, que é justamente onde ele mais é lido. */

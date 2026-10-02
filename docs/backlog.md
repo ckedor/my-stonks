@@ -387,7 +387,8 @@ isso, e as que foram recusadas, estão em `docs/architecture/ai.md`.
 - [x] Rota genérica de execução com formulário montado do JSON Schema do input,
       e task genérica `run_ai_feature` para o beat e para o disparo manual.
 - [x] Tracing opcional no Langfuse, isolado em `app/infra/ai/tracing.py`.
-- [x] `AiSurface` no design system, sem aviso de "a IA pode errar".
+- [x] `AiSurface` no design system, sem aviso de "a IA pode errar". Apagado
+      depois, sem consumidor: volta com a primeira tela que mostrar texto gerado.
 
 ### Próximas features
 
