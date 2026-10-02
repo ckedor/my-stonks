@@ -369,9 +369,10 @@ skipped when that accession is the one stored, and otherwise read and written
 in one transaction to `asset.etf_holding_report` and `asset.etf_holding`.
 A UCITS ETF files no holdings with any regulator, so for a class listed in
 `MANAGER_HOLDINGS_FILES` (`market_data/domain/etf_registry.py`) the attempt
-reads its manager's file instead — today DWS's constituents spreadsheet, by
-ISIN, through `infra/integrations/dws_client.py` and
-`market_data/adapters/etf_manager_files.py` — and writes it to the same
+reads its manager's file instead — DWS's constituents spreadsheet, by ISIN,
+through `infra/integrations/dws_client.py`, or the holdings CSV of an iShares
+product page, by product id, through `infra/integrations/ishares_client.py`;
+both read in `market_data/adapters/etf_manager_files.py` — and writes it to the same
 tables with its own `source`, skipped when that date is already stored from
 it. The reader fails a file whose header, date or weights do not add up to the
 fund rather than guess, since nothing promises the layout of a page made for

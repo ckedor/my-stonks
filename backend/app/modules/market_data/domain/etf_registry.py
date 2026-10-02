@@ -147,6 +147,8 @@ class EtfHoldingSource(StrEnum):
     SEC_NPORT = 'sec_nport'
     #: The constituents file DWS publishes for each Xtrackers class, by ISIN.
     DWS = 'dws'
+    #: The holdings file each iShares product page exports.
+    ISHARES = 'ishares'
 
 
 #: The UCITS classes whose manager publishes a holdings file this app reads,
@@ -156,6 +158,10 @@ class EtfHoldingSource(StrEnum):
 MANAGER_HOLDINGS_FILES: dict[str, EtfHoldingSource] = {
     # EXUS: Xtrackers MSCI World ex USA UCITS ETF 1C.
     'IE0006WW1TQ4': EtfHoldingSource.DWS,
+    # CSPX: iShares Core S&P 500 UCITS ETF USD (Acc).
+    'IE00B5BMR087': EtfHoldingSource.ISHARES,
+    # EIMI: iShares Core MSCI EM IMI UCITS ETF USD (Acc).
+    'IE00BKM4GZ66': EtfHoldingSource.ISHARES,
 }
 
 

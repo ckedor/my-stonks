@@ -17,13 +17,16 @@ from datetime import UTC, datetime
 
 from app.config.logger import logger
 from app.infra.db.unit_of_work import UnitOfWork
-from app.infra.integrations.dws_client import PROVIDER as DWS_PROVIDER
 from app.infra.integrations.dws_client import DwsClient
+from app.infra.integrations.ishares_client import IsharesClient
 from app.infra.integrations.openfigi_client import PROVIDER as FIGI_PROVIDER
 from app.infra.integrations.openfigi_client import OpenFigiClient
 from app.infra.integrations.sec_client import PROVIDER, SecClient
 from app.modules.market_data.adapters.etf_filings import read_nport_document
-from app.modules.market_data.adapters.etf_manager_files import read_dws_constituents
+from app.modules.market_data.adapters.etf_manager_files import (
+    read_dws_constituents,
+    read_ishares_holdings,
+)
 from app.modules.market_data.domain.etf_registry import EtfHoldingSource, holdings_source
 from app.modules.market_data.domain.ingestion import DataIngestionType
 from app.modules.market_data.domain.market_scope import is_brazilian_market
@@ -34,7 +37,7 @@ REPORT_SAMPLE = 200
 
 
 class EtfHoldingsIngestionService:
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         *,
         uow_factory: Callable[[], UnitOfWork],
@@ -42,12 +45,14 @@ class EtfHoldingsIngestionService:
         sec: SecClient,
         figi: OpenFigiClient,
         dws: DwsClient,
+        ishares: IsharesClient,
     ):
         self.uow_factory = uow_factory
         self.ingestion_service = ingestion_service
         self.sec = sec
         self.figi = figi
         self.dws = dws
+        self.ishares = ishares
 
     async def run(
         self,
@@ -93,11 +98,10 @@ class EtfHoldingsIngestionService:
                     return current_execution_id
                 if source == EtfHoldingSource.SEC_NPORT:
                     await self._ingest_nport(current_execution_id, asset_id, ticker, fund)
-                elif source == EtfHoldingSource.DWS:
-                    await self._ingest_dws_file(current_execution_id, asset_id, ticker, fund, isin)
                 else:
-                    # A source named in the domain with no reader here.
-                    raise NotImplementedError(f'No reader for ETF holdings source {source}')
+                    await self._ingest_manager_file(
+                        current_execution_id, asset_id, ticker, fund, isin, source
+                    )
             # Only American holdings are asked of OpenFIGI: the question is
             # which American ticker an ISIN trades under, and a UCITS fund's
             # holdings are mostly not American. Those are still tied, when
@@ -181,33 +185,43 @@ class EtfHoldingsIngestionService:
                 error=str(exc) or exc.__class__.__name__,
             )
 
-    async def _ingest_dws_file(
-        self, execution_id: int, asset_id: int, ticker: str, fund, isin: str
+    async def _ingest_manager_file(  # noqa: PLR0913
+        self,
+        execution_id: int,
+        asset_id: int,
+        ticker: str,
+        fund,
+        isin: str,
+        source: EtfHoldingSource,
     ) -> None:
-        """Today's DWS constituents file for the class, skipped when its date
-        is already stored from the same source."""
+        """Today's file from the class's manager, skipped when its date is
+        already stored from the same source."""
+        download, read = {
+            EtfHoldingSource.DWS: (self.dws.constituents, read_dws_constituents),
+            EtfHoldingSource.ISHARES: (self.ishares.holdings, read_ishares_holdings),
+        }[source]
         parameters: dict = {'isin': isin, 'fund': fund.name}
         attempt_id = await self.ingestion_service.start_attempt(
             execution_id,
             item_id=asset_id,
             item_label=ticker,
-            source=DWS_PROVIDER,
+            source=str(source),
             parameters=parameters,
         )
         try:
-            content = await self.dws.constituents(isin)
-            report = await asyncio.to_thread(read_dws_constituents, content)
+            content = await download(isin)
+            report = await asyncio.to_thread(read, content)
             parameters['report_date'] = report.report_date.isoformat()
             async with self.uow_factory() as uow:
                 stored = await uow.etf_registry.get_holding_report(fund.id, report.report_date)
-                if stored is not None and stored.source == EtfHoldingSource.DWS:
+                if stored is not None and stored.source == source:
                     parameters['status'] = 'not_modified'
                 else:
                     await uow.etf_registry.replace_holding_report(
                         {
                             'etf_registry_id': fund.id,
                             'report_date': report.report_date,
-                            'source': EtfHoldingSource.DWS,
+                            'source': source,
                             # A manager's file has no accession: its date is
                             # what tells one apart from the next.
                             'accession': report.report_date.isoformat(),
@@ -317,3 +331,4 @@ class EtfHoldingsIngestionService:
         await self.sec.close()
         await self.figi.close()
         await self.dws.close()
+        await self.ishares.close()

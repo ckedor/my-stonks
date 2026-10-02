@@ -12,6 +12,7 @@ Synchronous and file-bound: run it off the event loop.
 
 from __future__ import annotations
 
+import csv
 import io
 import re
 import zipfile
@@ -25,7 +26,8 @@ from openpyxl.utils.exceptions import InvalidFileException
 from app.infra.exceptions import IntegrationBadResponse
 from app.modules.market_data.domain.etf_registry import is_isin
 
-PROVIDER = 'dws'
+DWS = 'dws'
+ISHARES = 'ishares'
 
 #: Rows searched for the header: the file opens with a title block.
 HEADER_SEARCH_ROWS = 30
@@ -103,25 +105,39 @@ def _safe_date(year: int, month: int, day: int) -> date:
         return date.min
 
 
-def _header(rows: list[tuple]) -> tuple[int, dict[str, int]] | None:
+#: The header labels read, by role, compared the way `_label` writes them.
+#: The first column carrying a role wins.
+_ROLES = {
+    'name': 'name',
+    'isin': 'isin',
+    'ticker': 'ticker',
+    'issuerticker': 'ticker',
+    'country': 'country',
+    'currency': 'currency',
+    'marketcurrency': 'currency',
+}
+
+
+def _header(rows: list[tuple], required: set[str]) -> tuple[int, dict[str, int]] | None:
     """The header row's index and the columns read, by role."""
     for index, row in enumerate(rows[:HEADER_SEARCH_ROWS]):
-        labels = [_label(cell) for cell in row]
         columns: dict[str, int] = {}
-        for position, label in enumerate(labels):
-            if label == 'name':
-                columns.setdefault('name', position)
-            elif label == 'isin':
-                columns.setdefault('isin', position)
-            elif label.startswith('weight'):
-                columns.setdefault('weight', position)
-            elif label == 'country':
-                columns.setdefault('country', position)
-            elif label == 'currency':
-                columns.setdefault('currency', position)
-        if {'name', 'isin', 'weight'} <= columns.keys():
+        for position, cell in enumerate(row):
+            label = _label(cell)
+            role = 'weight' if label.startswith('weight') else _ROLES.get(label)
+            if role is not None:
+                columns.setdefault(role, position)
+        if required <= columns.keys():
             return index, columns
     return None
+
+
+def _no_header(provider: str, rows: list[tuple], expected: str) -> IntegrationBadResponse:
+    seen = [[cell for cell in row if cell not in (None, '')] for row in rows[:10]]
+    return IntegrationBadResponse(
+        f'{provider} holdings file has no {expected} header; first rows: {seen}'[:500],
+        provider=provider,
+    )
 
 
 def _cell(row: tuple, position: int | None):
@@ -130,7 +146,31 @@ def _cell(row: tuple, position: int | None):
     return row[position]
 
 
-def _weight_scale(weights: list[Decimal], *, percent_signs: bool) -> Decimal:
+def _table(rows: list[tuple], header_index: int, columns: dict[str, int], provider: str):
+    """The lines under the header, each with its weight as written, and
+    whether any weight carried a percent sign.
+
+    The table ends at the first line without a name or a weight: what follows
+    is the footnotes. A table cut there by a line that is not a footnote is
+    caught by the weights, which then fall short of the fund.
+    """
+    lines: list[tuple[tuple, Decimal]] = []
+    percent_signs = False
+    for row in rows[header_index + 1 :]:
+        name = _text(_cell(row, columns['name']))
+        weight = _number(_cell(row, columns['weight']))
+        if name is None or weight is None:
+            break
+        lines.append((row, weight[0]))
+        percent_signs = percent_signs or weight[1]
+    if not lines:
+        raise IntegrationBadResponse(
+            f'{provider} holdings file lists no holdings', provider=provider
+        )
+    return lines, percent_signs
+
+
+def _weight_scale(weights: list[Decimal], *, percent_signs: bool, provider: str) -> Decimal:
     """100 when the weights are percentages, 1 when they are ratios.
 
     Either way they must add up to the whole fund: a file cut short, or a
@@ -143,25 +183,28 @@ def _weight_scale(weights: list[Decimal], *, percent_signs: bool) -> Decimal:
         scale = Decimal(1)
     else:
         raise IntegrationBadResponse(
-            f'DWS constituents weights add up to {total} over {len(weights)} lines, '
+            f'{provider} holdings weights add up to {total} over {len(weights)} lines, '
             'neither the whole fund in percent nor as a ratio',
-            provider=PROVIDER,
+            provider=provider,
         )
     if abs(total / scale - 1) > WEIGHT_SUM_TOLERANCE:
         raise IntegrationBadResponse(
-            f'DWS constituents weights add up to {total}% over {len(weights)} lines',
-            provider=PROVIDER,
+            f'{provider} holdings weights add up to {total}% over {len(weights)} lines',
+            provider=provider,
         )
     return scale
 
 
 def _holding(row: tuple, columns: dict[str, int], weight: Decimal) -> dict:
-    isin = (_text(_cell(row, columns['isin'])) or '').upper()
+    isin = (_text(_cell(row, columns.get('isin'))) or '').upper()
+    ticker = _text(_cell(row, columns.get('ticker')))
     country = (_text(_cell(row, columns.get('country'))) or '').upper()
     currency = (_text(_cell(row, columns.get('currency'))) or '').upper()
     return {
         'name': (_text(_cell(row, columns['name'])) or '')[:300],
         'isin': isin if is_isin(isin) else None,
+        # A dash is how a cash line says it has no ticker.
+        'ticker': ticker[:30] if ticker and ticker != '-' else None,
         # The table keeps a code; a country written out is left out rather
         # than translated by guess.
         'country': country if len(country) == 2 and country.isalpha() else None,
@@ -182,7 +225,7 @@ def read_dws_constituents(content: bytes) -> ManagerHoldingsFile:
     except (InvalidFileException, zipfile.BadZipFile, KeyError, OSError, ValueError) as exc:
         raise IntegrationBadResponse(
             f'DWS constituents file is not an xlsx workbook (starts with {content[:16]!r})',
-            provider=PROVIDER,
+            provider=DWS,
         ) from exc
     try:
         sheets = [list(sheet.iter_rows(values_only=True)) for sheet in workbook.worksheets]
@@ -190,17 +233,11 @@ def read_dws_constituents(content: bytes) -> ManagerHoldingsFile:
         workbook.close()
 
     for rows in sheets:
-        found = _header(rows)
+        found = _header(rows, {'name', 'isin', 'weight'})
         if found is not None:
             break
     else:
-        seen = (
-            [[cell for cell in row if cell is not None] for row in sheets[0][:10]] if sheets else []
-        )
-        raise IntegrationBadResponse(
-            f'DWS constituents file has no Name/ISIN/Weighting header; first rows: {seen}'[:500],
-            provider=PROVIDER,
-        )
+        raise _no_header(DWS, sheets[0] if sheets else [], 'Name/ISIN/Weighting')
     header_index, columns = found
 
     dates = {day for row in rows[:header_index] for cell in row for day in _dates_in(cell)}
@@ -208,24 +245,73 @@ def read_dws_constituents(content: bytes) -> ManagerHoldingsFile:
         raise IntegrationBadResponse(
             f'DWS constituents file states {len(dates)} dates above its header, not one: '
             f'{sorted(dates)}',
-            provider=PROVIDER,
+            provider=DWS,
         )
-    report_date = dates.pop()
+    lines, percent_signs = _table(rows, header_index, columns, DWS)
+    scale = _weight_scale(
+        [weight for _, weight in lines], percent_signs=percent_signs, provider=DWS
+    )
+    return ManagerHoldingsFile(
+        report_date=dates.pop(),
+        holdings=[_holding(row, columns, weight / scale) for row, weight in lines],
+    )
 
-    lines: list[tuple[tuple, Decimal]] = []
-    percent_signs = False
-    for row in rows[header_index + 1 :]:
-        name = _text(_cell(row, columns['name']))
-        weight = _number(_cell(row, columns['weight']))
-        # The table ends at the first line without a name or a weight: what
-        # follows is the footnotes.
-        if name is None or weight is None:
-            break
-        lines.append((row, weight[0]))
-        percent_signs = percent_signs or weight[1]
-    if not lines:
-        raise IntegrationBadResponse('DWS constituents file lists no holdings', provider=PROVIDER)
 
-    scale = _weight_scale([weight for _, weight in lines], percent_signs=percent_signs)
-    holdings = [_holding(row, columns, weight / scale) for row, weight in lines]
-    return ManagerHoldingsFile(report_date=report_date, holdings=holdings)
+# --- iShares ------------------------------------------------------------------
+
+#: The line above the header that dates the file: `Fund Holdings as of,"30/Sep/2026"`.
+ISHARES_DATE_LABEL = 'fundholdingsasof'
+
+#: How iShares has written that date: the UK site day first with the month
+#: named, the US site month first.
+_ISHARES_DATE_FORMATS = ('%d/%b/%Y', '%d-%b-%Y', '%d %b %Y', '%b %d, %Y', '%d/%m/%Y', '%Y-%m-%d')
+
+
+def _ishares_date(value: str | None) -> date | None:
+    text = (value or '').strip()
+    for pattern in _ISHARES_DATE_FORMATS:
+        try:
+            return datetime.strptime(text, pattern).date()
+        except ValueError:
+            continue
+    return None
+
+
+def read_ishares_holdings(content: bytes) -> ManagerHoldingsFile:
+    """The holdings CSV an iShares product page exports: a block of fund
+    facts, a blank line, the table, then the legal text.
+
+    The ISIN is read when the file has the column and is not required: the
+    lines are named and weighed without it.
+    """
+    text = content.decode('utf-8-sig', errors='replace')
+    if text.lstrip()[:1] == '<':
+        raise IntegrationBadResponse(
+            f'iShares answered a page, not the holdings CSV: {text.strip()[:80]!r}',
+            provider=ISHARES,
+        )
+    rows = [tuple(row) for row in csv.reader(io.StringIO(text))]
+
+    found = _header(rows, {'name', 'weight'})
+    if found is None:
+        raise _no_header(ISHARES, rows, 'Name/Weight (%)')
+    header_index, columns = found
+
+    dates = {
+        _ishares_date(row[1] if len(row) > 1 else None)
+        for row in rows[:header_index]
+        if row and _label(row[0]) == ISHARES_DATE_LABEL
+    }
+    if len(dates) != 1 or None in dates:
+        raise IntegrationBadResponse(
+            'iShares holdings file has no readable "Fund Holdings as of" line above its header',
+            provider=ISHARES,
+        )
+    lines, percent_signs = _table(rows, header_index, columns, ISHARES)
+    scale = _weight_scale(
+        [weight for _, weight in lines], percent_signs=percent_signs, provider=ISHARES
+    )
+    return ManagerHoldingsFile(
+        report_date=dates.pop(),
+        holdings=[_holding(row, columns, weight / scale) for row, weight in lines],
+    )
