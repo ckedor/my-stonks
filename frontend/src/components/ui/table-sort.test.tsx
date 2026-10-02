@@ -105,6 +105,25 @@ describe('AppSimpleTable — ordenação', () => {
     expect(screen.getByRole('table').parentElement).toHaveStyle({ height: '620px' })
   })
 
+  /* O histórico do admin (`AppDataTable`) e o CRUD (`AppCrudTable`) deixavam
+     escolher quantas linhas ver; desenhar com esta tabela não pode tirar isso. */
+  it('deixa trocar a quantidade de linhas por página quando há opções', () => {
+    const rows = Array.from({ length: 30 }, (_, index) => ({
+      id: index + 1,
+      ticker: `FII${String(index + 1).padStart(2, '0')}`,
+      lucro: index,
+      acumulado: index,
+    }))
+    renderTable({ rows, pageSize: 10, pageSizeOptions: [10, 25] })
+
+    expect(tickers()).toHaveLength(10)
+    fireEvent.mouseDown(screen.getByRole('combobox'))
+    fireEvent.click(screen.getByRole('option', { name: '25' }))
+
+    expect(tickers()).toHaveLength(25)
+    expect(screen.getByText('1-25 de 30')).toBeInTheDocument()
+  })
+
   it('não transforma o clique num controle da célula em clique da linha', () => {
     const onRowClick = vi.fn()
     const columns: AppSimpleTableColumn<Row>[] = [

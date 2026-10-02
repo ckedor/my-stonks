@@ -143,7 +143,7 @@ export default function AdminEventsPage() {
   const assetTickerMap = Object.fromEntries(assets.map((a) => [a.id, a.ticker]))
 
   const columns: ColumnConfig[] = [
-    { field: 'id', label: 'ID', align: 'center' },
+    { field: 'id', label: 'ID' },
     {
       field: 'asset_id',
       label: 'Ativo',
@@ -166,7 +166,7 @@ export default function AdminEventsPage() {
     {
       field: 'factor',
       label: 'Fator',
-      align: 'center',
+      align: 'right',
       format: (value) => (value != null ? String(value) : '—'),
     },
   ]

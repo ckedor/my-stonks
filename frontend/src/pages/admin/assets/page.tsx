@@ -291,7 +291,7 @@ export default function AdminAssetsPage() {
   }
 
   const columns: ColumnConfig[] = [
-    { field: 'id', label: 'ID', align: 'center' },
+    { field: 'id', label: 'ID' },
     { field: 'ticker', label: 'Ticker', format: (v) => v || '—' },
     { field: 'name', label: 'Nome' },
     {

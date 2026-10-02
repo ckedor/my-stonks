@@ -12,15 +12,15 @@ import {
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import AppTooltip from './AppTooltip'
 
-/* Tabela estática: cabeçalho e linhas, sem paginação.
+/* A tabela do design system: cabeçalho e linhas, com ordenação e paginação
+ * quando pedidas.
  *
- * Quarta tabela do design system, e a mais crua das quatro — as outras três
- * são esta mais alguma coisa: `AppTable` soma formatação de moeda e linha de
- * total, `AppCrudTable` soma ações por linha, `AppDataTable` soma filtro por
- * data e paginação. Elas não foram reescritas em cima desta agora
- * porque cada uma desenha a própria superfície, e trocar isso mexeria no
- * visual de telas já migradas. Quando o portfolio migrar e os casos de uso
- * estiverem todos à vista, a unificação vira uma mudança só.
+ * É a única que desenha linha de dado. `AppCrudTable` (ações por linha) e
+ * `AppDataTable` (filtro por dia) são composições desta: cada uma desenhava
+ * a própria superfície, com cabeçalho, alinhamento e paginação próprios, e
+ * as telas de admin não pareciam do mesmo app que o resto. A outra tabela do
+ * design system, `AppHeatmapTable`, é outra coisa — lá a cor da célula é o
+ * dado.
  *
  * A célula recebe `render` em vez de um valor porque a tabela não sabe
  * formatar nada: quem chama devolve o nó pronto, inclusive um `AppChip` ou
@@ -107,6 +107,10 @@ export interface AppSimpleTableProps<Row> {
   defaultSort?: AppSimpleTableSort
   /** Ativa paginação local com uma quantidade fixa de linhas. */
   pageSize?: number
+  /** Deixa a pessoa trocar a quantidade de linhas por página entre estas. É
+   *  para o histórico longo que se percorre de olho, onde 25 linhas por vez
+   *  é pouco. Sem isto a paginação mostra só as setas. */
+  pageSizeOptions?: number[]
   /** Reserva a altura do corpo mesmo quando filtro ou página têm poucas linhas. */
   fixedHeight?: number
 }
@@ -124,11 +128,13 @@ export default function AppSimpleTable<Row>({
   getRowSurface,
   defaultSort,
   pageSize,
+  pageSizeOptions,
   fixedHeight,
 }: AppSimpleTableProps<Row>) {
   const height = maxHeight === 'viewport' ? VIEWPORT_MAX_HEIGHT : maxHeight
   const [sort, setSort] = useState<AppSimpleTableSort | undefined>(defaultSort)
   const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(pageSize)
 
   const sortColumn = sort && columns.find((column) => column.label === sort.column)
 
@@ -144,8 +150,8 @@ export default function AppSimpleTable<Row>({
 
   useEffect(() => setPage(0), [rows, sort])
 
-  const renderedRows = pageSize
-    ? sortedRows.slice(page * pageSize, page * pageSize + pageSize)
+  const renderedRows = rowsPerPage
+    ? sortedRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
     : sortedRows
 
   const toggleSort = (label: string) =>
@@ -257,14 +263,19 @@ export default function AppSimpleTable<Row>({
           </TableBody>
         </Table>
       </TableContainer>
-      {pageSize && sortedRows.length > 0 && (
+      {rowsPerPage && sortedRows.length > 0 && (
         <TablePagination
           component="div"
           count={sortedRows.length}
           page={page}
-          rowsPerPage={pageSize}
-          rowsPerPageOptions={[]}
+          rowsPerPage={rowsPerPage}
+          rowsPerPageOptions={pageSizeOptions ?? []}
           onPageChange={(_, nextPage) => setPage(nextPage)}
+          onRowsPerPageChange={(event) => {
+            setRowsPerPage(Number(event.target.value))
+            setPage(0)
+          }}
+          labelRowsPerPage="Linhas por página:"
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
         />
       )}

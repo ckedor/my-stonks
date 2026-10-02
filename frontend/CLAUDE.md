@@ -138,8 +138,8 @@ nem uma coisa nem outra.
   tela, muda a reserva no mesmo commit — senão a tela volta a saltar.
 - **Três reservas são do design system**, porque a forma é a mesma em toda
   tela: `AppPageHeaderSkeleton` (o cabeçalho), `AppTableSkeleton` (a grade
-  de qualquer uma das quatro tabelas) e `AppChartSkeleton` (barra de
-  controles + área do gráfico).
+  de qualquer tabela — todas desenham com o `AppSimpleTable`) e
+  `AppChartSkeleton` (barra de controles + área do gráfico).
 - **`LoadingSpinner` é espera em linha de uma ação disparada por alguém** —
   a carteira trocando na barra do topo, o item de menu que recalcula enquanto
   recalcula. Ele não tem mais variante de tela cheia, e a falta é a regra.

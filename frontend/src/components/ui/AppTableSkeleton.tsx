@@ -4,9 +4,9 @@ import AppStack, { AppStackItem } from './AppStack'
 
 /* A reserva de uma tabela: o cabeçalho e as linhas.
  *
- * Serve as quatro tabelas do design system, porque todas desenham a mesma
- * grade — o que muda entre elas (ordenação, ações, paginação) não ocupa
- * espaço próprio numa linha. Quem chama diz quantas colunas e quantas
+ * Serve a qualquer tabela do design system, porque todas desenham com o
+ * `AppSimpleTable` — o que muda entre elas (ordenação, ações, paginação) não
+ * ocupa espaço próprio numa linha. Quem chama diz quantas colunas e quantas
  * linhas a tela costuma mostrar, para a reserva ter a altura do conteúdo
  * que vai chegar. */
 

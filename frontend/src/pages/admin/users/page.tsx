@@ -130,25 +130,22 @@ export default function AdminUsersPage() {
   ]
 
   const columns: ColumnConfig[] = [
-    { field: 'id', label: 'ID', align: 'center' },
+    { field: 'id', label: 'ID' },
     { field: 'username', label: 'Username' },
     { field: 'email', label: 'Email' },
     {
       field: 'is_active',
       label: 'Ativo',
-      align: 'center',
       format: (v) => <AppChip label={v ? 'Sim' : 'Não'} tone={v ? 'success' : 'neutral'} />,
     },
     {
       field: 'is_superuser',
       label: 'Admin',
-      align: 'center',
       format: (v) => <AppChip label={v ? 'Sim' : 'Não'} tone={v ? 'primary' : 'neutral'} />,
     },
     {
       field: 'is_verified',
       label: 'Verificado',
-      align: 'center',
       format: (v) => <AppChip label={v ? 'Sim' : 'Não'} tone={v ? 'info' : 'neutral'} />,
     },
   ]

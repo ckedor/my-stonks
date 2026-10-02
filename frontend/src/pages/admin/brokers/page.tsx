@@ -132,7 +132,7 @@ export default function AdminBrokersPage() {
   }
 
   const columns: ColumnConfig[] = [
-    { field: 'id', label: 'ID', align: 'center' },
+    { field: 'id', label: 'ID' },
     { field: 'name', label: 'Nome' },
     { field: 'cnpj', label: 'CNPJ', format: (value) => value || '—' },
     {
