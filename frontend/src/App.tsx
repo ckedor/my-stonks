@@ -1,10 +1,9 @@
-import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider, type RouteObject } from 'react-router-dom'
 import './App.css'
 import { initAuth } from './actions/auth'
 import MainLayout from './layouts/MainLayout'
 import AdminAssetsPage from './pages/admin/assets/page'
 import AdminBrokersPage from './pages/admin/brokers/page'
-import DesignSystemPage from './pages/admin/design-system/page'
 import AdminEventsPage from './pages/admin/events/page'
 import AdminAiFeaturesPage from './pages/admin/ai-features/page'
 import AdminAiFeatureDetailPage from './pages/admin/ai-features/[key]/page'
@@ -54,9 +53,33 @@ import PortfolioRiskPage from './pages/portfolio/risk/page'
 import TaxIncomePage from './pages/portfolio/tax-income/page'
 import PortfolioTransactionsPage from './pages/portfolio/trades/page'
 import UserConfigurationPage from './pages/portfolio/user-configurations/page'
-import ThemeEditorPage from './pages/portfolio/user-configurations/theme-editor/page'
 import PortfolioPatrimonyEvolution from './pages/portfolio/wealth/page'
 import { ThemeRegistry } from './theme'
+
+/* Ferramentas de desenvolvimento: o catálogo do design system e o estúdio de
+   temas. Só existem com `npm run dev` — o build de produção troca
+   `import.meta.env.DEV` por `false`, descarta este ramo e, com ele, os
+   imports sob demanda, de modo que nenhum chunk daqui é gerado. A regressão
+   visual roda contra o dev server e as alcança. */
+const devRoutes: RouteObject[] = import.meta.env.DEV
+  ? [
+      {
+        path: '/dev',
+        lazy: async () => ({ Component: (await import('./pages/dev/layout')).default }),
+        children: [
+          { index: true, element: <Navigate to="/dev/design-system" replace /> },
+          {
+            path: 'design-system/temas',
+            lazy: async () => ({ Component: (await import('./pages/dev/theme-studio/page')).default }),
+          },
+          {
+            path: 'design-system/:family?',
+            lazy: async () => ({ Component: (await import('./pages/dev/design-system/page')).default }),
+          },
+        ],
+      },
+    ]
+  : []
 
 const router = createBrowserRouter([
   {
@@ -92,8 +115,6 @@ const router = createBrowserRouter([
       // A Jornada do Herói virou a patente da visão geral.
       { path: 'portfolio/tiers', element: <Navigate to="/portfolio/overview" replace /> },
       { path: 'portfolio/user-configurations', element: <UserConfigurationPage /> },
-      { path: 'portfolio/user-configurations/theme-editor', element: <ThemeEditorPage /> },
-      { path: 'portfolio/user-configurations/theme-editor/:id', element: <ThemeEditorPage /> },
       { path: 'market/assets', element: <MarketAtivosPage /> },
       { path: 'market/overview', element: <MarketOverviewPage /> },
       { path: 'market/series/:id', element: <MarketSeriesPage /> },
@@ -130,7 +151,6 @@ const router = createBrowserRouter([
       { path: 'brokers', element: <AdminBrokersPage /> },
       { path: 'events', element: <AdminEventsPage /> },
       { path: 'users', element: <AdminUsersPage /> },
-      { path: 'design-system/:family?', element: <DesignSystemPage /> },
       { path: 'game/sandbox', element: <GameSandboxPage /> },
       { path: 'market-data/usd-brl', element: <AdminMarketDataUsdBrlPage /> },
       { path: 'market-data/series', element: <AdminMarketDataSeriesPage /> },
@@ -158,6 +178,7 @@ const router = createBrowserRouter([
     path: '/login',
     element: <LoginPage />,
   },
+  ...devRoutes,
   {
     path: '/*',
     element: <div>404 Not Found</div>,

@@ -1,8 +1,6 @@
-import { useSelectedPortfolio } from '@/queries/portfolio'
-
-import { PortfolioPositionEntry } from '@/types'
+import { AppPieChart } from '@/components/ui'
+import type { PortfolioPositionEntry, UserCategory } from '@/types'
 import { useMemo } from 'react'
-import AppPieChart from '../../../components/ui/app-pie-chart'
 
 /** Como a carteira inteira é fatiada: por categoria ou ativo a ativo. Com uma
  *  categoria selecionada, a pizza é sempre dos ativos dela. */
@@ -10,6 +8,9 @@ export type CompositionGrouping = 'category' | 'asset'
 
 interface PositionPieChartProps {
   positions: PortfolioPositionEntry[]
+  /** As categorias da carteira: a cor de cada fatia é a que o usuário deu a
+   *  ela. */
+  categories: Pick<UserCategory, 'name' | 'color'>[]
   height?: number
   selectedCategory: string
   grouping?: CompositionGrouping
@@ -17,13 +18,8 @@ interface PositionPieChartProps {
   onAssetSelect?: (assetId: number) => void
 }
 
-export default function PositionPieChart({ positions, height = 350, selectedCategory, grouping = 'category', onCategorySelect, onAssetSelect }: PositionPieChartProps) {
+export default function PositionPieChart({ positions, categories: userCategories, height = 350, selectedCategory, grouping = 'category', onCategorySelect, onAssetSelect }: PositionPieChartProps) {
   const byCategory = selectedCategory === 'portfolio' && grouping === 'category'
-  const selectedPortfolio = useSelectedPortfolio()
-  const userCategories = useMemo(
-    () => selectedPortfolio?.custom_categories ?? [],
-    [selectedPortfolio?.custom_categories],
-  )
 
   const { data, colors, assetIdMap } = useMemo((): { data: Array<{ label: string; value: number }>; colors: string[]; assetIdMap: Record<string, number> } => {
     if (!positions) return { data: [], colors: [], assetIdMap: {} }

@@ -1,5 +1,3 @@
-import { EMPTY_MAP } from '@/queries/empty'
-import { useBenchmarks, useReturnCurves } from '@/queries/portfolio'
 import {
     AppChartArea,
     AppColorSwatch,
@@ -9,6 +7,7 @@ import {
     AppText,
     useAppTheme,
 } from '@/components/ui'
+import type { ReturnsEntry } from '@/types'
 import dayjs from 'dayjs'
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
 import { useEffect, useMemo, useState } from 'react'
@@ -25,21 +24,28 @@ import {
 dayjs.extend(isSameOrAfter)
 
 interface Props {
+  /** O retorno acumulado da carteira (`portfolio`) e de cada categoria. */
+  categoryReturns: Record<string, ReturnsEntry[]>
+  benchmarks: Record<string, ReturnsEntry[]>
+  /** As curvas ainda a caminho. */
+  pending?: boolean
   size?: number
   defaultRange?: string
   selectedCategory?: string
 }
 
-export default function OverviewReturnsChart({ size = 320, defaultRange = '1y', selectedCategory = 'portfolio' }: Props) {
-  /* Fatiado, e não `useReturnsStore()` inteiro: sem seletor, o zustand
-     reavalia esta tela a cada escrita em qualquer parte do store — inclusive
-     em `assetReturns`, que este gráfico não lê. */
-  const categoryReturns = useReturnCurves().series
-  const benchmarks = useBenchmarks().data ?? EMPTY_MAP
+export default function OverviewReturnsChart({
+  categoryReturns,
+  benchmarks,
+  pending = false,
+  size = 320,
+  defaultRange = '1y',
+  selectedCategory = 'portfolio',
+}: Props) {
   /* Esqueleto só quando não há o que desenhar. Com a cache quente a série já
      está aqui na primeira pintura, e trocá-la por um esqueleto enquanto a
      revalidação corre é piscar sobre um dado que continua bom. */
-  const loading = useReturnCurves().isPending && !categoryReturns[selectedCategory || 'portfolio']?.length
+  const loading = pending && !categoryReturns[selectedCategory || 'portfolio']?.length
   const theme = useAppTheme()
 
   const portfolioColor = theme.palette.primary.main

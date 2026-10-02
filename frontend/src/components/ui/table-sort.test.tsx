@@ -2,14 +2,14 @@ import { ThemeProvider } from '@mui/material/styles'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { buildMuiTheme, defaultLightPalette } from '@/theme/themes'
+import { DEFAULT_LIGHT_THEME_ID, getThemeById } from '@/theme/themes'
 import AppSimpleTable, { type AppSimpleTableColumn } from './AppSimpleTable'
 
 /* A ordenação da `AppSimpleTable` é o que sustenta a tabela de trades: a
    coluna que ordena, a que não ordena de propósito, e o valor ausente que vai
    para o fim em vez de disputar o topo. */
 
-const theme = buildMuiTheme(defaultLightPalette)
+const theme = getThemeById(DEFAULT_LIGHT_THEME_ID)!.theme
 
 interface Row {
   id: number

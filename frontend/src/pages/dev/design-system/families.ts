@@ -3,9 +3,13 @@
  * Cada família junta os componentes pelo trabalho que fazem, e não pelo nome:
  * os seis jeitos de escolher uma opção ficam na mesma tela, lado a lado, e é
  * aí que se vê quando dois deles fazem a mesma coisa. Esta lista é a única
- * fonte: as rotas, o menu do admin e a regressão visual leem daqui. */
+ * fonte: as rotas, o menu das ferramentas de dev e a regressão visual leem
+ * daqui. */
 
-export const DESIGN_SYSTEM_PATH = '/admin/design-system'
+export const DESIGN_SYSTEM_PATH = '/dev/design-system'
+
+/** O estúdio de temas mora na mesma seção do menu, fora das famílias. */
+export const THEME_STUDIO_PATH = `${DESIGN_SYSTEM_PATH}/temas`
 
 export const DESIGN_SYSTEM_FAMILIES = [
   {

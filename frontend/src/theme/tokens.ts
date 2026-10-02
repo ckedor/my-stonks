@@ -42,6 +42,9 @@ export const fontStacks = {
   /** Bitmap de corpo — desenho pixelado com formas de letra ainda largas o
    *  bastante para uma tabela de números. É a do corpo no tema Pixel Art. */
   pixelifySans: `'Pixelify Sans Variable', 'Pixelify Sans', 'Courier New', monospace`,
+  /** Mono de código: corpo e títulos do Terminal, onde toda coluna de
+   *  número se alinha pelo próprio desenho da fonte. */
+  jetbrainsMono: `'JetBrains Mono Variable', 'JetBrains Mono', Menlo, Consolas, monospace`,
 } as const
 
 /* A escala é um *valor de tema*, não uma constante global: o tema Pixel Art

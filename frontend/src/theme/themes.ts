@@ -1,6 +1,6 @@
 import { createTheme, getContrastRatio, type Theme } from '@mui/material/styles';
-import { fontFamily, fontStacks, radius, space, type RadiusScale } from './tokens';
-import { earthStudies } from './earth-studies';
+import { fontFamily, radius, space, type RadiusScale } from './tokens';
+import { THEME_PRESETS, type ThemePreset } from './presets';
 
 /* ──────────────────────────────────────────────
    Module augmentation (single source of truth)
@@ -70,7 +70,7 @@ export const defaultShape: ThemeShapeConfig = {
   headingFontFamily: fontFamily,
 }
 
-/** Raw palette values used to create/edit custom themes */
+/** As cores de um tema, como um preset as escreve (`presets.ts`). */
 export interface ThemePaletteConfig {
   mode: 'light' | 'dark'
   background: { default: string; paper: string }
@@ -198,8 +198,8 @@ const baseTypography = (shape: ThemeShapeConfig) => ({
    Theme factory — builds a MUI Theme from config
    ──────────────────────────────────────────────
 
-   Todo tema do app passa por aqui, inclusive os customizados do usuário.
-   É o único lugar que injeta `radius` e `space`, então nenhum tema pode
+   Todo tema do app passa por aqui, inclusive o que o estúdio de temas está
+   montando. É o único lugar que injeta `radius` e `space`, então nenhum tema pode
    existir sem os tokens do design system. */
 export function buildMuiTheme(
   config: ThemePaletteConfig,
@@ -255,145 +255,21 @@ export function buildPreview(config: ThemePaletteConfig): ThemePreview {
 }
 
 /* ══════════════════════════════════════════════
-   Default palette configs (base for custom themes)
+   O catálogo — cada preset vira um tema do MUI
    ══════════════════════════════════════════════ */
 
-/* O claro nasceu com `background.default` branco, igual ao `paper`: card e
-   página encostavam sem nenhuma borda entre eles e a tela virava uma folha
-   só. O fundo aqui é off-white — é o que separa o card da página — e quente
-   de propósito, porque o cinza de interface puxa para o azul por padrão
-   (#F3F4F6) e o azul já é a régua do `Grafite Neutro`, ao lado.
-   O resto dos neutros é quente pelo mesmo motivo: fundo quente com header
-   azulado brigam, e a identidade se perde na emenda. */
-export const defaultLightPalette: ThemePaletteConfig = {
-  mode: 'light',
-  background: { default: '#FAF8F4', paper: '#FFFFFF' },
-  text: { primary: '#1C1917', secondary: '#78716C' },
-  primary: '#44403C',
-  secondary: '#B45309',
-  error: '#DC2626',
-  warning: '#D97706',
-  success: '#10B981',
-  info: '#3B82F6',
-  golden: '#F59E0B',
-  dark: '#1C1917',
-  sidebar: '#403B36',
-  topbar: { background: '#403B36', text: '#EFEBE7', activeText: '#FFFFFF', activeBg: '#5A534D' },
-  divider: 'rgba(28,25,23,0.10)',
-  chart: {
-    grid: 'rgba(28,25,23,0.10)',
-    label: '#1C1917',
-    /* Série herdada de um tema de fundo escuro, então duas cores tiveram de
-       trocar de lado ao vir para o papel branco: a terceira era #FFF5E1
-       (creme, 1.08:1 — invisível) e a última era #FFD700 (ouro, 1.4:1). Cada
-       uma virou o oposto do papel que cumpria lá: o neutro claro sobre fundo
-       escuro vira o neutro escuro sobre fundo claro, e o ouro claro vira
-       ouro velho (3.9:1). */
-    colors: ['#D2A679', '#D15F57', '#7A5C43', '#A3C1AD', '#AB4E52', '#a3c1bd', '#9CAFB7', '#B8860B'],
-  },
-}
-
-/* Escuro no estilo do VS Code Dark: `#1E1E1E` do editor como fundo,
-   `#252526` das laterais como card e `#333333` da activity bar no header.
-   As cores de série saem da sintaxe do mesmo tema, o que já garante que
-   foram desenhadas para conviver sobre `#1E1E1E`. */
-export const defaultDarkPalette: ThemePaletteConfig = {
-  mode: 'dark',
-  background: { default: '#1E1E1E', paper: '#252526' },
-  text: { primary: '#CCCCCC', secondary: '#9D9D9D' },
-  primary: '#3794FF',
-  secondary: '#4EC9B0',
-  error: '#F14C4C',
-  warning: '#CCA700',
-  success: '#89D185',
-  info: '#75BEFF',
-  golden: '#DCDCAA',
-  dark: '#1E1E1E',
-  sidebar: '#252526',
-  topbar: { background: '#333333', text: '#CCCCCC', activeText: '#FFFFFF', activeBg: '#37373D' },
-  divider: '#3C3C3C',
-  chart: {
-    grid: 'rgba(255,255,255,0.08)',
-    label: '#CCCCCC',
-    /* Nenhuma repete `primary` nem `secondary`: no gráfico de rentabilidade
-       essas duas já estão em uso fixo (Carteira e CDI) e o resto das séries
-       vem daqui por índice. */
-    colors: ['#CE9178', '#DCDCAA', '#C586C0', '#9CDCFE', '#B5CEA8', '#D16969', '#4FC1FF', '#569CD6'],
-  },
-}
-
-/* ══════════════════════════════════════════════
-   Petróleo — o escuro que não é preto
-   ══════════════════════════════════════════════
-
-   O Tinta escuro é um quase-preto. Este é um azul-petróleo profundo, na linha de painéis de dado de mercado: fundo que
-   se lê como cor e não como apagão, e texto quase branco em vez do branco
-   puro, que ofusca sobre fundo escuro.
-
-   O acento é o coral do Tinta claro. Na tinta exata (#BB5630) ele dá 2,5:1
-   sobre o card — ilegível em aba e link —, então entra clareado no mesmo
-   matiz (#EA9670, 4,6:1), como o próprio Tinta escuro faz; na barra, a aba
-   ativa usa o pêssego que o Tinta claro já usa ali (#EDA37C). A tipografia
-   também é a do Tinta: trocar entre o claro e o escuro troca a luz, não a
-   voz da tela. */
-const petroleoPalette: ThemePaletteConfig = {
-  mode: 'dark',
-  /* Azul-petróleo, e não verde-petróleo: a primeira versão (#16323D) puxava
-     para o verde. Mesma claridade no fundo; o card sobe um degrau para se
-     destacar dele (1,28:1). */
-  background: { default: '#182F42', paper: '#24405A' },
-  text: { primary: '#E3EAEE', secondary: '#A6B7C4' },
-  primary: '#EA9670',
-  secondary: '#7CC0D1',
-  error: '#F59488',
-  warning: '#E2B25C',
-  success: '#66CE9B',
-  info: '#7CC0D1',
-  golden: '#D2A85F',
-  dark: '#10253A',
-  sidebar: '#10253A',
-  topbar: { background: '#10253A', text: '#C3D1DC', activeText: '#EDA37C', activeBg: '#223F58' },
-  divider: 'rgba(227,234,238,0.12)',
-  chart: {
-    grid: 'rgba(227,234,238,0.08)',
-    label: '#C3D1DC',
-    /* Nenhuma repete o coral nem o azul-claro de `secondary`, que o gráfico de
-       rentabilidade usa fixos para Carteira e CDI. */
-    colors: ['#9FD3DF', '#A896D8', '#86B87A', '#D2A85F', '#D98098', '#93A9BA', '#B4BE73', '#C88FB4'],
-  },
-}
-
-const petroleoShape: ThemeShapeConfig = {
-  radius: { sm: 2, md: 3, lg: 3, pill: 9999 },
-  fontFamily: fontStacks.figtree,
-  headingFontFamily: fontStacks.sourceSerif,
-  quiet: true,
-}
-
-const earthThemeDefinitions: ThemeDefinition[] = earthStudies.map((study) => ({
-  id: study.id,
-  name: study.name,
-  description: study.description,
-  mode: study.palette.mode,
-  preview: buildPreview(study.palette),
-  theme: buildMuiTheme(study.palette, study.shape),
+const presetThemes: ThemeDefinition[] = THEME_PRESETS.map((preset) => ({
+  id: preset.id,
+  name: preset.name,
+  description: preset.description,
+  mode: preset.palette.mode,
+  preview: buildPreview(preset.palette),
+  theme: buildMuiTheme(preset.palette, preset.shape),
 }))
 
-export const lightThemes: ThemeDefinition[] = [
-  ...earthThemeDefinitions.filter((theme) => theme.mode === 'light'),
-]
+export const lightThemes: ThemeDefinition[] = presetThemes.filter((theme) => theme.mode === 'light')
 
-export const darkThemes: ThemeDefinition[] = [
-  ...earthThemeDefinitions.filter((theme) => theme.mode === 'dark'),
-  {
-    id: 'petroleo',
-    name: 'Petróleo',
-    mode: 'dark',
-    description: 'Azul-petróleo profundo, texto marfim e o coral do Tinta.',
-    preview: buildPreview(petroleoPalette),
-    theme: buildMuiTheme(petroleoPalette, petroleoShape),
-  },
-]
+export const darkThemes: ThemeDefinition[] = presetThemes.filter((theme) => theme.mode === 'dark')
 
 /* ══════════════════════════════════════════════
    Helpers
@@ -403,6 +279,11 @@ export const allThemes = [...lightThemes, ...darkThemes]
 
 export function getThemeById(id: string): ThemeDefinition | undefined {
   return allThemes.find((t) => t.id === id)
+}
+
+/** O preset por trás de um tema: paleta e forma, como estão escritas. */
+export function getPresetById(id: string): ThemePreset | undefined {
+  return THEME_PRESETS.find((preset) => preset.id === id)
 }
 
 export const DEFAULT_LIGHT_THEME_ID = 'earth-tinta-light'

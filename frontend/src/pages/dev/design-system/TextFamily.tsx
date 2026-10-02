@@ -172,7 +172,7 @@ export default function TextFamily() {
 
       <Entry name="AppBreadcrumbs" role="O rastro solto, fora do AppPageHeader — que já traz o dele.">
         <AppBreadcrumbs
-          items={[{ label: 'Admin', href: '/admin' }, { label: 'Design System', href: '/admin/design-system' }, { label: 'Texto' }]}
+          items={[{ label: 'Dev', href: '/dev' }, { label: 'Design System', href: '/dev/design-system' }, { label: 'Texto' }]}
         />
       </Entry>
 
@@ -190,7 +190,7 @@ export default function TextFamily() {
       <Entry name="AppLink" role="Link de texto, para rota interna ou endereço externo.">
         <States>
           <State label="to · rota interna">
-            <AppLink to="/admin/design-system/acoes">Ver ações</AppLink>
+            <AppLink to="/dev/design-system/acoes">Ver ações</AppLink>
           </State>
           <State label="href · externo">
             <AppLink href="https://example.com">example.com</AppLink>

@@ -16,7 +16,7 @@
                                           contagem de cada valor
 
    Conta só os consumidores: ficam de fora a própria pasta do design system,
-   o catálogo (`src/pages/admin/design-system/`) e os testes. O catálogo
+   o catálogo (`src/pages/dev/design-system/`) e os testes. O catálogo
    renderiza tudo de propósito, e contado ele faria de todo componente um
    componente usado.
 
@@ -30,7 +30,7 @@ import ts from 'typescript'
 const frontendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const DS_MODULE = '@/components/ui'
 export const DS_DIR = 'src/components/ui/'
-export const CATALOG_DIR = 'src/pages/admin/design-system/'
+export const CATALOG_DIR = 'src/pages/dev/design-system/'
 
 function parse(fileName, source) {
   return ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)

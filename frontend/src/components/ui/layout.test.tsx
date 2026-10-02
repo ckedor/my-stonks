@@ -2,11 +2,11 @@ import { ThemeProvider } from '@mui/material/styles'
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { buildMuiTheme, defaultLightPalette } from '@/theme/themes'
+import { DEFAULT_LIGHT_THEME_ID, getThemeById } from '@/theme/themes'
 import AppGrid, { AppGridItem } from './AppGrid'
 import AppStack from './AppStack'
 
-const theme = buildMuiTheme(defaultLightPalette)
+const theme = getThemeById(DEFAULT_LIGHT_THEME_ID)!.theme
 
 const renderWithTheme = (ui: React.ReactNode) =>
   render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>)

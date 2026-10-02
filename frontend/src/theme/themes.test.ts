@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { contrastRatio, paletteContrastChecks } from './contrast'
+import { THEME_PRESETS } from './presets'
 import { fontStacks } from './tokens'
 import {
   allThemes,
@@ -6,10 +8,11 @@ import {
   darkThemes,
   DEFAULT_DARK_THEME_ID,
   DEFAULT_LIGHT_THEME_ID,
-  defaultLightPalette,
   defaultShape,
+  getPresetById,
   getThemeById,
   lightThemes,
+  type ThemePaletteConfig,
 } from './themes'
 
 /* Os três primeiros casos são sobre a lista de temas; o último é sobre o
@@ -39,7 +42,7 @@ describe('catálogo de temas', () => {
 
 describe('buildMuiTheme', () => {
   it('aplica headingFontFamily em h1–h6 e mantém o corpo em fontFamily', () => {
-    const theme = buildMuiTheme(defaultLightPalette, {
+    const theme = buildMuiTheme(getPresetById(DEFAULT_LIGHT_THEME_ID)!.palette, {
       ...defaultShape,
       fontFamily: fontStacks.figtree,
       headingFontFamily: fontStacks.sourceSerif,
@@ -70,44 +73,11 @@ describe('temas padrão', () => {
   })
 })
 
-/* Contraste do texto sobre o card. A régua é a do WCAG para texto normal
-   (4.5:1) no `text.primary` e a de texto grande / elemento de interface (3:1)
-   no `text.secondary`, que aqui só aparece em rótulo e legenda.
-
-   `topbar-contrast.test.ts` faz o mesmo pela barra. Faltava a página: um tema
-   novo com secundário bonito e ilegível entrava calado no catálogo. */
-function relativeLuminance(color: string): number {
-  const hex = color.replace('#', '')
-  const full = hex.length === 3 ? hex.split('').map((c) => c + c).join('') : hex
-  const channels = [0, 2, 4].map((i) => {
-    const value = parseInt(full.slice(i, i + 2), 16) / 255
-    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
-  })
-  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
-}
-
-function contrastRatio(a: string, b: string): number {
-  const [x, y] = [relativeLuminance(a), relativeLuminance(b)]
-  const [lighter, darker] = x > y ? [x, y] : [y, x]
-  return (lighter + 0.05) / (darker + 0.05)
-}
-
-/* Positivo e negativo são número escrito com `success.main` e `error.main` em
-   cima do card — a tabela pinta a célula, `AppMetric` o valor. São texto
-   normal, então valem os mesmos 4.5:1 do `text.primary`, e não os 3:1 de
-   elemento de interface: um verde bonito e claro demais some na linha da
-   tabela, que é justamente onde ele mais é lido. */
-describe('legibilidade do sinal sobre o card', () => {
-  for (const { id, theme } of allThemes) {
-    it(id, () => {
-      const paper = theme.palette.background.paper
-      expect(contrastRatio(theme.palette.success.main, paper)).toBeGreaterThanOrEqual(4.5)
-      expect(contrastRatio(theme.palette.error.main, paper)).toBeGreaterThanOrEqual(4.5)
-    })
-  }
-})
-
-describe('legibilidade do texto sobre o card', () => {
+/* Contraste de cada preset: texto e sinal sobre o card, e a aba ativa sobre a
+   barra. As réguas são as de `paletteContrastChecks` marcadas como
+   `enforced` — as mesmas que o estúdio de temas mostra enquanto se edita, de
+   modo que o que ele aprova o catálogo aceita. */
+describe('contraste de cada preset', () => {
   /* Prova que a régua reprova de verdade: sem este caso, um erro no cálculo
      aprovaria todo tema e o teste viraria enfeite. */
   it('reprova cinza claro sobre papel branco', () => {
@@ -115,11 +85,24 @@ describe('legibilidade do texto sobre o card', () => {
     expect(contrastRatio('#000000', '#FFFFFF')).toBeCloseTo(21, 0)
   })
 
-  for (const { id, theme } of allThemes) {
-    it(id, () => {
-      const paper = theme.palette.background.paper
-      expect(contrastRatio(theme.palette.text.primary, paper)).toBeGreaterThanOrEqual(4.5)
-      expect(contrastRatio(theme.palette.text.secondary, paper)).toBeGreaterThanOrEqual(3)
+  it('reprova a paleta com a aba ativa da mesma cor da barra', () => {
+    const preset = getPresetById(DEFAULT_LIGHT_THEME_ID)!
+    const muted = {
+      ...preset.palette,
+      topbar: { ...preset.palette.topbar, activeText: preset.palette.topbar.background, activeBg: preset.palette.topbar.background },
+    }
+    expect(failingChecks(muted)).toContain('Aba ativa sobre a barra: 1.00')
+  })
+
+  for (const preset of THEME_PRESETS) {
+    it(preset.id, () => {
+      expect(failingChecks(preset.palette)).toEqual([])
     })
   }
 })
+
+function failingChecks(palette: ThemePaletteConfig): string[] {
+  return paletteContrastChecks(palette)
+    .filter((check) => check.enforced && !(check.ratio != null && check.ratio >= check.min))
+    .map((check) => `${check.label}: ${check.ratio?.toFixed(2) ?? 'não medido'}`)
+}

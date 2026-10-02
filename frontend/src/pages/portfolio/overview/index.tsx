@@ -1,49 +1,26 @@
-import { EMPTY_LIST } from '@/queries/empty'
-import { useAnalysis, useBenchmarks, useDividends, usePatrimony, usePositions, useReturnCurves } from '@/queries/portfolio'
-import { useCurrency } from '@/hooks/useCurrency'
-import { useTradeFormStore } from '@/stores/trade-form'
+import PortfolioOverviewScreen from '@/components/portfolio-overview/PortfolioOverviewScreen'
+import { AppButton, AppEmptyState } from '@/components/ui'
+import { EMPTY_LIST, EMPTY_MAP } from '@/queries/empty'
 import {
-  AppButton,
-  AppCard,
-  AppChartArea,
-  AppEmptyState,
-  AppGrid,
-  AppGridItem,
-  AppStack,
-  AppToggleGroup,
-  AppTabs,
-  SectionTitle,
-} from '@/components/ui'
-import { useLayoutEffect, useRef, useState } from 'react'
+  useAnalysis,
+  useBenchmarks,
+  useDividends,
+  usePatrimony,
+  usePositions,
+  useReturnCurves,
+  useSelectedPortfolio,
+} from '@/queries/portfolio'
+import { useTradeFormStore } from '@/stores/trade-form'
 import { useNavigate } from 'react-router-dom'
-import OverviewAportsChart from './OverviewAportsChart'
-import OverviewDividendsChart from './OverviewDividendsChart'
-import OverviewPatrimonyChart from './OverviewPatrimonyChart'
-import OverviewReturnsChart from './OverviewReturnsChart'
 import OverviewSkeleton from './OverviewSkeleton'
-import PositionPieChart, { type CompositionGrouping } from './PositionPieChart'
-import PositionTable from './PositionTable'
-import PortfolioStandingCard from './PortfolioStandingCard'
 
-const OVERVIEW_PANEL_HEIGHT = 360
-
-const COMPOSITION_GROUPINGS: { value: CompositionGrouping; label: string }[] = [
-  { value: 'category', label: 'Categoria' },
-  { value: 'asset', label: 'Ativo' },
-]
-
-type BottomTab = 'dividends' | 'patrimony' | 'aports'
-
-const BOTTOM_TABS = [
-  { id: 'dividends' as const, label: 'Proventos' },
-  { id: 'patrimony' as const, label: 'Patrimônio' },
-  { id: 'aports' as const, label: 'Aportes' },
-]
-
+/* A página busca, espera e decide o vazio; o desenho é da
+ * `PortfolioOverviewScreen`, que o estúdio de temas também usa. */
 export default function PortfolioOverviewPage() {
   const navigate = useNavigate()
   const { openTradeForm } = useTradeFormStore()
 
+  const portfolio = useSelectedPortfolio()
   const positionsQuery = usePositions()
   const patrimonyQuery = usePatrimony()
   const dividendsQuery = useDividends()
@@ -52,20 +29,6 @@ export default function PortfolioOverviewPage() {
   const returnCurves = useReturnCurves()
 
   const positions = positionsQuery.data ?? EMPTY_LIST
-  const patrimonyEvolution = patrimonyQuery.data ?? EMPTY_LIST
-  const dividends = dividendsQuery.data ?? EMPTY_LIST
-  const categoryCagr = returnCurves.cagr
-  const analysis = analysisQuery.data
-  const { format: formatCurrency } = useCurrency()
-
-  const totalValue = positions.reduce((s, p) => s + p.value, 0)
-  const cagrRaw = categoryCagr['portfolio'] ?? null
-  const cagr = cagrRaw != null ? cagrRaw * 100 : null
-  const cdiMetrics = analysis?.performance_metrics?.benchmarks_metrics?.['CDI']
-  const cdiCagr = cdiMetrics?.cagr
-  const cdiPct = cagr != null && cdiCagr != null && cdiCagr !== 0
-    ? ((cagr / cdiCagr) * 100)
-    : null
 
   /* A tela inteira aparece de uma vez.
    *
@@ -83,33 +46,11 @@ export default function PortfolioOverviewPage() {
     analysisQuery.isPending ||
     returnCurves.isPending
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('portfolio')
-  const [bottomTab, setBottomTab] = useState<BottomTab>('dividends')
-  const [grouping, setGrouping] = useState<CompositionGrouping>('category')
-
-  // The chart matches the height the category list has with its drawers closed.
-  // Measured from the data, never from interaction, so expanding a category
-  // grows the list without dragging the chart along with it.
-  //
-  // `loading` is a dependency because of the early return below: while it is
-  // true the page renders the skeleton and the ref points at nothing. The list
-  // arriving is not what puts it on screen — leaving the loading state is, and
-  // with the query cache warm the positions are already there by then, so
-  // `positions.length` alone never changes again and the measure never runs.
-  const positionListRef = useRef<HTMLDivElement>(null)
-  const [chartHeight, setChartHeight] = useState(OVERVIEW_PANEL_HEIGHT)
-
-  useLayoutEffect(() => {
-    const node = positionListRef.current
-    if (!node) return
-    setChartHeight(Math.max(node.offsetHeight, OVERVIEW_PANEL_HEIGHT))
-  }, [positions.length, loading])
-
   if (loading) {
     return <OverviewSkeleton />
   }
 
-  if (!loading && positions.length === 0) {
+  if (positions.length === 0) {
     return (
       <AppEmptyState
         title="Sua carteira ainda está vazia"
@@ -120,102 +61,15 @@ export default function PortfolioOverviewPage() {
   }
 
   return (
-    <AppStack gap="lg">
-      {/* O cabeçalho da carteira é o patrimônio, sem caixa em volta. */}
-      <PortfolioStandingCard
-        patrimony={totalValue}
-        cagr={cagr}
-        cdiPct={cdiPct}
-        formatCurrency={formatCurrency}
-      />
-
-      {/* ── Linha 1: rentabilidade + composição ── */}
-      <AppGrid cols={{ xs: 1, lg: 12 }} gap="md">
-        <AppGridItem span={{ xs: 1, lg: 8 }}>
-          <AppCard>
-            <AppStack gap="sm">
-              <SectionTitle>Rentabilidade</SectionTitle>
-              <OverviewReturnsChart size={OVERVIEW_PANEL_HEIGHT} selectedCategory={selectedCategory} />
-            </AppStack>
-          </AppCard>
-        </AppGridItem>
-        <AppGridItem span={{ xs: 1, lg: 4 }}>
-          <AppCard>
-            <AppStack gap="sm">
-              <AppStack direction="row" justify="between" align="center" gap="sm" wrap>
-                <SectionTitle>Composição</SectionTitle>
-                <AppToggleGroup
-                  label="Fatiar a composição por"
-                  options={COMPOSITION_GROUPINGS}
-                  value={grouping}
-                  onChange={setGrouping}
-                />
-              </AppStack>
-              <PositionPieChart
-                positions={positions}
-                height={OVERVIEW_PANEL_HEIGHT}
-                selectedCategory={selectedCategory}
-                grouping={grouping}
-                onCategorySelect={setSelectedCategory}
-                onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
-              />
-            </AppStack>
-          </AppCard>
-        </AppGridItem>
-      </AppGrid>
-
-      {/* ── Linha 2: categorias + proventos/patrimônio/aportes ── */}
-      <AppGrid cols={{ xs: 1, lg: 12 }} gap="md" align="start">
-        <AppGridItem span={{ xs: 1, lg: 5 }} ref={positionListRef}>
-          <AppCard>
-            <AppStack gap="sm">
-              <SectionTitle>Categorias</SectionTitle>
-              <PositionTable
-                positions={positions}
-                selectedCategory={selectedCategory}
-                onCategorySelect={setSelectedCategory}
-                onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
-              />
-            </AppStack>
-          </AppCard>
-        </AppGridItem>
-        <AppGridItem span={{ xs: 1, lg: 7 }}>
-          {/* A altura do card é a da lista ao lado, medida fechada; o gráfico
-              ocupa o que sobra dentro dele. */}
-          <AppCard height={chartHeight}>
-            <AppChartArea
-              height="100%"
-              sizing="frame"
-              toolbar={
-                <AppTabs
-                  items={BOTTOM_TABS}
-                  value={bottomTab}
-                  onChange={setBottomTab}
-                  label="Séries da carteira"
-                />
-              }
-            >
-              {bottomTab === 'dividends' && (
-                <OverviewDividendsChart
-                  dividends={dividends}
-                  selected={selectedCategory}
-                  size="100%"
-                />
-              )}
-              {bottomTab === 'patrimony' && (
-                <OverviewPatrimonyChart
-                  patrimonyEvolution={patrimonyEvolution}
-                  selected={selectedCategory}
-                  size="100%"
-                />
-              )}
-              {bottomTab === 'aports' && (
-                <OverviewAportsChart patrimonyEvolution={patrimonyEvolution} size="100%" />
-              )}
-            </AppChartArea>
-          </AppCard>
-        </AppGridItem>
-      </AppGrid>
-    </AppStack>
+    <PortfolioOverviewScreen
+      positions={positions}
+      categories={portfolio?.custom_categories ?? EMPTY_LIST}
+      patrimonyEvolution={patrimonyQuery.data ?? EMPTY_LIST}
+      dividends={dividendsQuery.data ?? EMPTY_LIST}
+      returnCurves={returnCurves}
+      benchmarks={benchmarksQuery.data ?? EMPTY_MAP}
+      cdiCagr={analysisQuery.data?.performance_metrics?.benchmarks_metrics?.['CDI']?.cagr ?? null}
+      onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
+    />
   )
 }

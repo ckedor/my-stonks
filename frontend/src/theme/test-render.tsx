@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render } from '@testing-library/react'
 import type { ReactElement } from 'react'
 
-import { buildMuiTheme, defaultLightPalette } from './themes'
+import { DEFAULT_LIGHT_THEME_ID, getThemeById } from './themes'
 
 /* O tema de teste tem que sair de `buildMuiTheme`: `createTheme()` puro não
    carrega `radius` nem `space`, que são valores de tema, e qualquer primitivo
@@ -19,7 +19,7 @@ export const renderWithTheme = (ui: ReactElement) => {
   })
   return render(
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={buildMuiTheme(defaultLightPalette)}>{ui}</ThemeProvider>
+      <ThemeProvider theme={getThemeById(DEFAULT_LIGHT_THEME_ID)!.theme}>{ui}</ThemeProvider>
     </QueryClientProvider>,
   )
 }

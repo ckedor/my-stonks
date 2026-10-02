@@ -1,4 +1,3 @@
-import { useReturnCurves, useSelectedPortfolio } from '@/queries/portfolio'
 import {
   AppCollapse,
   AppDivider,
@@ -11,6 +10,7 @@ import {
   useAppTheme,
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
+import type { UserCategory } from '@/types'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { useMemo, useState } from 'react'
@@ -27,6 +27,10 @@ interface Position {
 
 interface PositionTableProps {
   positions: Position[]
+  /** As categorias da carteira, pela cor de cada uma. */
+  categories: Pick<UserCategory, 'name' | 'color'>[]
+  /** CAGR de cada categoria, pelo nome dela. */
+  categoryCagr: Record<string, number | null>
   selectedCategory?: string
   onCategorySelect?: (category: string) => void
   onAssetSelect?: (assetId: number) => void
@@ -51,6 +55,8 @@ function RowFigures({ value, changePct }: { value: string; changePct: number | n
 
 export default function PositionTable({
   positions,
+  categories: userCategories,
+  categoryCagr,
   selectedCategory: controlledCategory,
   onCategorySelect,
   onAssetSelect,
@@ -58,9 +64,6 @@ export default function PositionTable({
   const [internalCategory, setInternalCategory] = useState<string>('portfolio')
   const selectedCategory = controlledCategory ?? internalCategory
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
-  const selectedPortfolio = useSelectedPortfolio()
-  const userCategories = selectedPortfolio?.custom_categories ?? []
-  const categoryCagr = useReturnCurves().cagr
 
   const theme = useAppTheme()
 

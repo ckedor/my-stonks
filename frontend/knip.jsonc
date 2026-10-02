@@ -7,7 +7,7 @@
   // positivos e vira ruído que se aprende a ignorar.
   //
   // O preço é real: componente do design system que morrer não é detectado
-  // aqui — e o catálogo em `/admin/design-system`, que renderiza todos, o
+  // aqui — e o catálogo em `/dev/design-system`, que renderiza todos, o
   // esconderia de qualquer jeito. Quem cobre isso é
   // `scripts/check-ds-catalog.mjs`, no pre-commit: export sem consumidor fora
   // do catálogo reprova.
