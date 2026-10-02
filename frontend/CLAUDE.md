@@ -154,6 +154,38 @@ dispara — e que continua convivendo com a regra do cabeçalho, que divide com
 ela o mesmo `no-restricted-syntax`: um bloco de config substitui a lista
 inteira do anterior, então os seletores são compostos a partir de constantes.
 
+### Catálogo e superfície
+
+O catálogo do design system mora em `/admin/design-system/<família>`, uma
+tela por família (`src/pages/admin/design-system/families.ts`). A família
+junta os componentes pelo trabalho que fazem, não pelo nome: os jeitos de
+escolher uma opção ficam na mesma tela, e é ali que se vê quando dois fazem a
+mesma coisa. Cada componente é um `Entry` com o papel dele e os estados
+(`States`, `Matrix`), escritos só com primitivos — a página é também o
+exemplo de como uma tela se escreve.
+
+- **Componente novo entra no catálogo no mesmo commit**, com os estados que
+  as telas usam. Prop nova que muda o desenho ganha um estado ali.
+- **Todo componente exportado tem consumidor.** O que só o catálogo usa é
+  código morto com vitrine, e sai.
+- **Tom é intenção, e o nome é um só**: `primary`, `info`, `success`,
+  `caution`, `danger` (`src/components/ui/intent.ts`). Cada componente aceita
+  um recorte da lista e traduz para a paleta do MUI por `INTENT_COLOR`. A
+  falha é `danger` no botão, no aviso e no texto — nunca `error` ou
+  `severity`.
+
+`npm run lint:catalog` (`scripts/check-ds-catalog.mjs`) é o que segura as
+duas primeiras regras, no pre-commit: reprova componente exportado que não
+aparece no catálogo nem na lista de exceções com motivo, componente sem
+consumidor fora do catálogo, e exceção que deixou de valer. Antes de olhar o
+código ela roda contra um caso inventado em que tem de falhar, e falha alto
+se não falhar — é o teste da guarda, e ele roda junto com ela.
+
+`npm run ds:usage` conta pela AST quantos arquivos usam cada componente;
+com nomes (`npm run ds:usage -- AppButton`), conta cada valor de cada prop.
+É o ponto de partida de uma redução: variante com um uso só, componente em
+uma tela só.
+
 ### The migration ratchet
 
 `eslint-ds-baseline.json` lists the files still allowed to break these
@@ -196,15 +228,18 @@ São duas coisas, e ficam em lugares diferentes.
 A suíte roda nos hooks do `.pre-commit-config.yaml`, e é lá que ela pertence:
 
 ```bash
-npm run lint      # ESLint, incluindo a fronteira do design system
-npm run lint:ds   # ratchet: a dívida do design system só encolhe
-npm test          # vitest
-npm run knip      # arquivos, exports e dependências sem uso
-npm run build     # tsc + vite build
-npm run e2e       # regressão visual (Playwright)
+npm run lint         # ESLint, incluindo a fronteira do design system
+npm run lint:ds      # ratchet: a dívida do design system só encolhe
+npm run lint:catalog # todo componente no catálogo, e com consumidor
+npm test             # vitest
+npm run knip         # arquivos, exports e dependências sem uso
+npm run build        # tsc + vite build
+npm run e2e          # regressão visual (Playwright)
 ```
 
-Os quatro primeiros a cada commit, `build` e `e2e` no push.
+No `.pre-commit-config.yaml`: `lint` (nos arquivos staged), `lint:ds` e
+`lint:catalog` a cada commit; `knip` e `build` no push. `test` e `e2e` são
+manuais desde que saíram do push por lentidão — ver o cabeçalho do arquivo.
 
 **Fora da máquina do mantenedor — sessão remota, agente — rode só
 `npx tsc -b --noEmit` e `eslint` nos arquivos tocados.** O resto fica para o

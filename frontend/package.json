@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "lint:ds": "node scripts/check-ds-baseline.mjs",
+    "lint:catalog": "node scripts/check-ds-catalog.mjs",
+    "ds:usage": "node scripts/ds-usage.mjs",
     "test": "vitest run",
     "preview": "vite preview",
     "e2e": "playwright test",
