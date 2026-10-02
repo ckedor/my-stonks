@@ -1,5 +1,6 @@
 import { IconButton, Tooltip } from '@mui/material'
 import type { MouseEvent, ReactNode } from 'react'
+import { INTENT_COLOR, type Intent } from './intent'
 
 /* Botão de ícone.
  *
@@ -8,7 +9,9 @@ import type { MouseEvent, ReactNode } from 'react'
  * é só um ícone não diz nada a quem usa leitor de tela, e deixar isso
  * opcional é garantir que metade das telas esqueça. */
 
-type Tone = 'default' | 'primary' | 'error' | 'inherit'
+/* `inherit` pega a cor do texto em volta — o ícone numa barra que já tem a
+ * própria cor. */
+type Tone = 'default' | 'inherit' | Extract<Intent, 'primary' | 'danger'>
 
 const SIZE = { sm: 'small', md: 'medium', lg: 'large' } as const
 
@@ -54,7 +57,7 @@ export default function AppIconButton({
     <IconButton
       aria-label={label}
       onClick={onClick}
-      color={tone === 'default' ? undefined : tone}
+      color={tone === 'default' ? undefined : tone === 'inherit' ? 'inherit' : INTENT_COLOR[tone]}
       size={SIZE[size]}
       disabled={disabled}
       edge={edge}

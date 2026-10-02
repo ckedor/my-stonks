@@ -71,7 +71,7 @@ export default function WorldView() {
   const { readings, loading, failed } = useWorldMarketReadings()
   if (loading) return <WorldSkeleton />
   if (failed || !readings) {
-    return <AppAlert severity="error">Não foi possível carregar as leituras de mercado.</AppAlert>
+    return <AppAlert tone="danger">Não foi possível carregar as leituras de mercado.</AppAlert>
   }
   return <WorldReadings readings={readings} />
 }

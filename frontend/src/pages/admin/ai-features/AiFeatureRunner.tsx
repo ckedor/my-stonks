@@ -118,7 +118,7 @@ export default function AiFeatureRunner({ featureKey }: { featureKey: string }) 
         </AppStack>
       </AppCard>
 
-      {error && <AppAlert severity="error">{error}</AppAlert>}
+      {error && <AppAlert tone="danger">{error}</AppAlert>}
 
       {result && (
         <AppCard>

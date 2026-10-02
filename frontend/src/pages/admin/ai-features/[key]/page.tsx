@@ -222,7 +222,7 @@ export default function AdminAiFeatureDetailPage() {
   }
 
   if (!feature || !featureDraft) {
-    return <AppAlert severity="error">Funcionalidade &quot;{key}&quot; não encontrada.</AppAlert>
+    return <AppAlert tone="danger">Funcionalidade &quot;{key}&quot; não encontrada.</AppAlert>
   }
 
   return (
@@ -276,7 +276,7 @@ export default function AdminAiFeatureDetailPage() {
             checked={featureDraft.enabled}
             onChange={(enabled) => setFeatureDraft({ ...featureDraft, enabled })}
           />
-          {featureError && <AppAlert severity="error">{featureError}</AppAlert>}
+          {featureError && <AppAlert tone="danger">{featureError}</AppAlert>}
           <AppText variant="caption" tone="secondary">
             Uma feature de validade manual não guarda TTL: a resposta fica até alguém pedir uma
             nova.
@@ -294,7 +294,7 @@ export default function AdminAiFeatureDetailPage() {
           <SectionTitle>Prompt</SectionTitle>
           <AppButton onClick={newVersion}>Nova versão</AppButton>
         </AppStack>
-        {versionError && <AppAlert severity="error">{versionError}</AppAlert>}
+        {versionError && <AppAlert tone="danger">{versionError}</AppAlert>}
         <AppSimpleTable<AiPromptVersion>
           columns={versionColumns}
           rows={versions}

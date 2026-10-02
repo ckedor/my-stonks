@@ -254,14 +254,14 @@ export default function PortfolioForm({ open, onClose, onSave, portfolio }: Port
       <AppSnackbar
         open={snackbarOpen}
         message={error ?? ''}
-        severity="error"
+        tone="danger"
         onClose={() => setSnackbarOpen(false)}
       />
 
       <AppSnackbar
         open={successOpen}
         message={isEdit ? 'Carteira atualizada!' : 'Carteira criada com sucesso!'}
-        severity="success"
+        tone="success"
         onClose={() => setSuccessOpen(false)}
       />
     </>

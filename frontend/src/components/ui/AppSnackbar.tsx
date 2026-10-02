@@ -1,4 +1,5 @@
 import { Alert, Snackbar } from '@mui/material'
+import { INTENT_COLOR, type Intent } from './intent'
 
 /* Aviso temporário no rodapé.
  *
@@ -14,11 +15,11 @@ export interface AppSnackbarProps {
    *  o resultado tem uma ressalva que a pessoa precisa saber — linhas
    *  descartadas por não terem preço, por exemplo. Sem ele, essa ressalva
    *  saía pintada de verde, dizendo que estava tudo certo. */
-  severity: 'success' | 'error' | 'info'
+  tone: Extract<Intent, 'danger' | 'info' | 'success'>
   onClose: () => void
 }
 
-export default function AppSnackbar({ open, message, severity, onClose }: AppSnackbarProps) {
+export default function AppSnackbar({ open, message, tone, onClose }: AppSnackbarProps) {
   return (
     <Snackbar
       open={open}
@@ -26,7 +27,7 @@ export default function AppSnackbar({ open, message, severity, onClose }: AppSna
       onClose={onClose}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
     >
-      <Alert severity={severity} onClose={onClose}>
+      <Alert severity={INTENT_COLOR[tone]} onClose={onClose}>
         {message}
       </Alert>
     </Snackbar>

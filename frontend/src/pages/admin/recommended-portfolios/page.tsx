@@ -117,11 +117,11 @@ export default function AdminRecommendedPortfoliosPage() {
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
-    severity: 'success' as 'success' | 'error',
+    tone: 'success' as 'success' | 'danger',
   })
 
-  const notify = useCallback((message: string, severity: 'success' | 'error') => {
-    setSnackbar({ open: true, message, severity })
+  const notify = useCallback((message: string, tone: 'success' | 'danger') => {
+    setSnackbar({ open: true, message, tone })
   }, [])
 
   const loadSaved = useCallback(async () => {
@@ -154,7 +154,7 @@ export default function AdminRecommendedPortfoliosPage() {
         ])
         setAssets(catalogue)
       } catch {
-        notify('Não foi possível carregar as carteiras recomendadas', 'error')
+        notify('Não foi possível carregar as carteiras recomendadas', 'danger')
       } finally {
         setLoading(false)
       }
@@ -182,7 +182,7 @@ export default function AdminRecommendedPortfoliosPage() {
       setTypeId('')
       setPositions(extracted.positions.map((position, index) => ({ ...position, key: index })))
     } catch {
-      notify('Não foi possível ler o relatório', 'error')
+      notify('Não foi possível ler o relatório', 'danger')
     } finally {
       setExtracting(false)
     }
@@ -230,7 +230,7 @@ export default function AdminRecommendedPortfoliosPage() {
           ? ((error as { response?: { data?: { message?: string } } }).response?.data?.message ??
             null)
           : null
-      notify(detail ?? 'Não foi possível salvar a carteira', 'error')
+      notify(detail ?? 'Não foi possível salvar a carteira', 'danger')
     } finally {
       setSaving(false)
     }
@@ -250,7 +250,7 @@ export default function AdminRecommendedPortfoliosPage() {
           ? ((error as { response?: { data?: { message?: string } } }).response?.data?.message ??
             null)
           : null
-      notify(detail ?? 'Não foi possível cadastrar o tipo', 'error')
+      notify(detail ?? 'Não foi possível cadastrar o tipo', 'danger')
     }
   }
 
@@ -260,7 +260,7 @@ export default function AdminRecommendedPortfoliosPage() {
       await Promise.all([loadTypes(), loadSaved()])
       notify('Tipo removido', 'success')
     } catch {
-      notify('Não foi possível remover o tipo', 'error')
+      notify('Não foi possível remover o tipo', 'danger')
     }
   }
 
@@ -269,7 +269,7 @@ export default function AdminRecommendedPortfoliosPage() {
       await setRecommendedPortfolioType(portfolio.id, value ? Number(value) : null)
       await loadSaved()
     } catch {
-      notify('Não foi possível mudar o tipo da carteira', 'error')
+      notify('Não foi possível mudar o tipo da carteira', 'danger')
     }
   }
 
@@ -279,7 +279,7 @@ export default function AdminRecommendedPortfoliosPage() {
       await loadSaved()
       notify('Carteira recomendada removida', 'success')
     } catch {
-      notify('Não foi possível remover a carteira', 'error')
+      notify('Não foi possível remover a carteira', 'danger')
     }
   }
 
@@ -370,7 +370,7 @@ export default function AdminRecommendedPortfoliosPage() {
       render: (position) => (
         <AppIconButton
           label="Remover linha"
-          tone="error"
+          tone="danger"
           size="sm"
           tooltip
           onClick={() =>
@@ -401,7 +401,7 @@ export default function AdminRecommendedPortfoliosPage() {
       render: (type) => (
         <AppIconButton
           label="Remover tipo"
-          tone="error"
+          tone="danger"
           size="sm"
           tooltip
           onClick={() => handleDeleteType(type)}
@@ -461,7 +461,7 @@ export default function AdminRecommendedPortfoliosPage() {
       render: (portfolio) => (
         <AppIconButton
           label="Remover carteira"
-          tone="error"
+          tone="danger"
           size="sm"
           tooltip
           onClick={() => handleDelete(portfolio)}
@@ -696,7 +696,7 @@ export default function AdminRecommendedPortfoliosPage() {
       <AppSnackbar
         open={snackbar.open}
         message={snackbar.message}
-        severity={snackbar.severity}
+        tone={snackbar.tone}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       />
     </>

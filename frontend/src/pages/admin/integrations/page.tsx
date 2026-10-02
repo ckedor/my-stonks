@@ -109,7 +109,7 @@ export default function AdminIntegrationsPage() {
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
-    severity: 'success' as 'success' | 'error',
+    tone: 'success' as 'success' | 'danger',
   })
 
   const routines = dashboard?.routines
@@ -129,7 +129,7 @@ export default function AdminIntegrationsPage() {
 
   if (loading) return <IntegrationsDashboardSkeleton />
   if (error || !dashboard) {
-    return <AppAlert severity="error">Não foi possível carregar o painel de integrações.</AppAlert>
+    return <AppAlert tone="danger">Não foi possível carregar o painel de integrações.</AppAlert>
   }
 
   const { summary } = dashboard
@@ -143,13 +143,13 @@ export default function AdminIntegrationsPage() {
         setSnackbar({
           open: true,
           message: `${routine.name}: execução enviada ao worker`,
-          severity: 'success',
+          tone: 'success',
         }),
       onError: () =>
         setSnackbar({
           open: true,
           message: `${routine.name}: não foi possível disparar. Já há uma execução em andamento?`,
-          severity: 'error',
+          tone: 'danger',
         }),
     })
   }
@@ -358,7 +358,7 @@ export default function AdminIntegrationsPage() {
       <AppSnackbar
         open={snackbar.open}
         message={snackbar.message}
-        severity={snackbar.severity}
+        tone={snackbar.tone}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       />
     </>

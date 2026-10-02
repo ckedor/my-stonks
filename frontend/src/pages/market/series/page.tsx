@@ -41,7 +41,7 @@ export default function MarketSeriesPage() {
     return (
       <AppStack gap="lg">
         <AppPageHeader title="Série de mercado" breadcrumbs={breadcrumbs} />
-        <AppAlert severity="error">
+        <AppAlert tone="danger">
           {current || listFailed
             ? 'Não foi possível carregar o histórico da série.'
             : 'Série não encontrada.'}

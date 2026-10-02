@@ -172,9 +172,9 @@ export default function GeneralTab() {
             <AppText variant="bodySmall" tone="secondary">
               AppAlert — fixo no fluxo, diferente do snackbar
             </AppText>
-            <AppAlert severity="success">success — a ação que você disparou deu certo.</AppAlert>
-            <AppAlert severity="info">info — não há nada para mostrar aqui ainda.</AppAlert>
-            <AppAlert severity="error">error — a requisição falhou.</AppAlert>
+            <AppAlert tone="success">success — a ação que você disparou deu certo.</AppAlert>
+            <AppAlert tone="info">info — não há nada para mostrar aqui ainda.</AppAlert>
+            <AppAlert tone="danger">error — a requisição falhou.</AppAlert>
           </AppStack>
 
           <AppStack gap="sm">

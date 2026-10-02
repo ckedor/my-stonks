@@ -112,7 +112,7 @@ export default function BacktestResult({ result, tab, benchmarks }: Props) {
       </AppCard>
 
       {result.window.limited_by && (
-        <AppAlert severity="info">
+        <AppAlert tone="info">
           A simulação começou em {day(result.window.start_date)} porque é o primeiro
           dia em que <strong>{result.window.limited_by}</strong> já tinha preço. Uma
           janela maior pede uma linha mais antiga.
@@ -145,7 +145,7 @@ export default function BacktestResult({ result, tab, benchmarks }: Props) {
         (result.analysis ? (
           <RiskAnalysisCards analysis={result.analysis} showBenchmarks />
         ) : (
-          <AppAlert severity="info">
+          <AppAlert tone="info">
             A janela simulada é curta demais para medir risco.
           </AppAlert>
         ))}

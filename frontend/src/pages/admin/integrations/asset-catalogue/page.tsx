@@ -13,7 +13,7 @@ export default function AdminAssetCataloguePage() {
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
-    severity: 'success' as 'success' | 'error',
+    tone: 'success' as 'success' | 'danger',
   })
 
   return (
@@ -29,16 +29,16 @@ export default function AdminAssetCataloguePage() {
             setSnackbar({
               open: true,
               message: `Catálogo aplicado: ${report.created.length} cadastrados, ${report.updated.length} corrigidos`,
-              severity: 'success',
+              tone: 'success',
             })
           }
-          onError={(message) => setSnackbar({ open: true, message, severity: 'error' })}
+          onError={(message) => setSnackbar({ open: true, message, tone: 'danger' })}
         />
       </AppStack>
       <AppSnackbar
         open={snackbar.open}
         message={snackbar.message}
-        severity={snackbar.severity}
+        tone={snackbar.tone}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       />
     </>

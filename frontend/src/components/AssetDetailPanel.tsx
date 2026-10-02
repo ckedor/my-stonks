@@ -111,7 +111,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
   const [activeTab, setActiveTab] = useState<TabKey>('visao-geral')
   const [recalculating, setRecalculating] = useState(false)
   const [dividendFormOpen, setDividendFormOpen] = useState(false)
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' })
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; tone: 'success' | 'danger' }>({ open: false, message: '', tone: 'success' })
   const { openTradeForm } = useTradeFormStore()
   const queryClient = useQueryClient()
   const { currency, format: formatCurrency, symbol: currencySymbol } = useCurrency()
@@ -171,11 +171,11 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
       await recalculateAssetPosition(portfolioId, assetId)
       await queryClient.invalidateQueries({ queryKey: [cacheKey] })
       setRecalculating(false)
-      setSnackbar({ open: true, message: 'Posição recalculada com sucesso.', severity: 'success' })
+      setSnackbar({ open: true, message: 'Posição recalculada com sucesso.', tone: 'success' })
     } catch (err) {
       console.error(err)
       setRecalculating(false)
-      setSnackbar({ open: true, message: 'Erro ao recalcular posição.', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao recalcular posição.', tone: 'danger' })
     }
   }
 
@@ -389,7 +389,7 @@ export default function AssetDetailPanel({ assetId, portfolioId, assetSelector }
       <AppSnackbar
         open={snackbar.open}
         message={snackbar.message}
-        severity={snackbar.severity}
+        tone={snackbar.tone}
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
       />
 

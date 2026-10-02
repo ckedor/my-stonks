@@ -82,7 +82,7 @@ export default function AdminMarketDataSeriesPage() {
             size="md"
           />
 
-          {error && <AppAlert severity="error">{error}</AppAlert>}
+          {error && <AppAlert tone="danger">{error}</AppAlert>}
 
           {loadingHistory ? (
             <AppStack gap="md">

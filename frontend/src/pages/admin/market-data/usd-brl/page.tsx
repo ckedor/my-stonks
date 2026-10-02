@@ -43,7 +43,7 @@ export default function AdminMarketDataUsdBrlPage() {
           <AppTableSkeleton columns={4} surface="card" />
         </AppStack>
       ) : error ? (
-        <AppAlert severity="error">{error}</AppAlert>
+        <AppAlert tone="danger">{error}</AppAlert>
       ) : (
         <AppStack gap="md">
           <AppText variant="bodySmall" tone="secondary">

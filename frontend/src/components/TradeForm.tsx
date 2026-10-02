@@ -305,7 +305,7 @@ export default function TradeForm({ open, onClose, onSave, trade, assetId, initi
       <AppSnackbar
         open={snackbarOpen}
         message={error ?? ''}
-        severity="error"
+        tone="danger"
         onClose={() => setSnackbarOpen(false)}
       />
     </>

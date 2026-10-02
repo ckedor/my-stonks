@@ -262,7 +262,7 @@ export default function DistributionPage() {
       <AppSnackbar
         open={rebalancing.snackbar.open}
         message={rebalancing.snackbar.message}
-        severity={rebalancing.snackbar.severity}
+        tone={rebalancing.snackbar.tone}
         onClose={rebalancing.closeSnackbar}
       />
     </AppStack>

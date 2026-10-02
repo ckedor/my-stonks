@@ -84,7 +84,7 @@ function ThemeCard({
             </AppIconButton>
             <AppIconButton
               size="sm"
-              tone="error"
+              tone="danger"
               label="Excluir"
               tooltip
               onClick={(event) => {

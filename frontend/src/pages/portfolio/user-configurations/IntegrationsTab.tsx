@@ -40,7 +40,7 @@ export default function IntegrationsTab() {
 
   const [configurations, setConfigurations] = useState<UserConfiguration[]>([])
   const [loading, setLoading] = useState(true)
-  const [snackbar, setSnackbar] = useState<{ message: string; type: 'success' | 'error' } | null>(
+  const [snackbar, setSnackbar] = useState<{ message: string; type: 'success' | 'danger' } | null>(
     null
   )
 
@@ -65,7 +65,7 @@ export default function IntegrationsTab() {
       )
     } catch (err) {
       console.log('Erro ao carregar configurações:', err)
-      setSnackbar({ message: 'Erro ao carregar configurações', type: 'error' })
+      setSnackbar({ message: 'Erro ao carregar configurações', type: 'danger' })
     } finally {
       setLoading(false)
     }
@@ -86,7 +86,7 @@ export default function IntegrationsTab() {
       )
       setSnackbar({ message: 'Configuração atualizada', type: 'success' })
     } catch {
-      setSnackbar({ message: 'Erro ao atualizar configuração', type: 'error' })
+      setSnackbar({ message: 'Erro ao atualizar configuração', type: 'danger' })
     }
   }
 
@@ -139,7 +139,7 @@ export default function IntegrationsTab() {
       <AppSnackbar
         open={!!snackbar}
         message={snackbar?.message ?? ''}
-        severity={snackbar?.type ?? 'success'}
+        tone={snackbar?.type ?? 'success'}
         onClose={() => setSnackbar(null)}
       />
     </>

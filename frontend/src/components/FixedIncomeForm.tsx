@@ -211,7 +211,7 @@ export default function FixedIncomeForm({ open, assetTypeId, onClose }: Props) {
       <AppSnackbar
         open={snackOpen}
         message={error ?? ''}
-        severity="error"
+        tone="danger"
         onClose={() => setSnackOpen(false)}
       />
     </>

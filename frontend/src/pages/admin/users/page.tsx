@@ -34,7 +34,7 @@ export default function AdminUsersPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' })
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', tone: 'success' as 'success' | 'danger' })
 
   useEffect(() => {
     fetchData()
@@ -59,7 +59,7 @@ export default function AdminUsersPage() {
       setFilteredUsers(res.data)
     } catch (error) {
       console.error('Erro ao buscar dados:', error)
-      setSnackbar({ open: true, message: 'Erro ao carregar dados', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao carregar dados', tone: 'danger' })
     } finally {
       setLoading(false)
     }
@@ -84,11 +84,11 @@ export default function AdminUsersPage() {
     if (!selectedUser) return
     try {
       await api.delete(USER_ROUTES.byId(selectedUser.id))
-      setSnackbar({ open: true, message: 'Usuário excluído com sucesso', severity: 'success' })
+      setSnackbar({ open: true, message: 'Usuário excluído com sucesso', tone: 'success' })
       fetchData()
     } catch (error) {
       console.error('Erro ao excluir:', error)
-      setSnackbar({ open: true, message: 'Erro ao excluir usuário', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao excluir usuário', tone: 'danger' })
     } finally {
       setDeleteDialogOpen(false)
       setSelectedUser(null)
@@ -105,7 +105,7 @@ export default function AdminUsersPage() {
           is_superuser: data.is_superuser,
           is_verified: data.is_verified,
         })
-        setSnackbar({ open: true, message: 'Usuário atualizado com sucesso', severity: 'success' })
+        setSnackbar({ open: true, message: 'Usuário atualizado com sucesso', tone: 'success' })
       } else {
         await api.post(AUTH_ROUTES.register, {
           username: data.username,
@@ -115,7 +115,7 @@ export default function AdminUsersPage() {
           is_superuser: data.is_superuser ?? false,
           is_verified: true,
         })
-        setSnackbar({ open: true, message: 'Usuário criado com sucesso', severity: 'success' })
+        setSnackbar({ open: true, message: 'Usuário criado com sucesso', tone: 'success' })
       }
       fetchData()
     } catch (error) {
@@ -215,7 +215,7 @@ export default function AdminUsersPage() {
       <AppSnackbar
         open={snackbar.open}
         message={snackbar.message}
-        severity={snackbar.severity}
+        tone={snackbar.tone}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       />
     </>

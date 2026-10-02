@@ -98,7 +98,7 @@ export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarPr
   const [recalculating, setRecalculating] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success')
+  const [snackbarTone, setSnackbarTone] = useState<'success' | 'danger'>('success')
   const [actionsAnchor, setActionsAnchor] = useState<null | HTMLElement>(null)
 
   /* `partial` é uma corrida que perdeu algum ativo pelo caminho: o horário
@@ -115,12 +115,12 @@ export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarPr
     try {
       await consolidate.mutateAsync()
       setSnackbarMessage('Posições recalculadas com sucesso.')
-      setSnackbarSeverity('success')
+      setSnackbarTone('success')
       setSnackbarOpen(true)
     } catch (err) {
       console.error(err)
       setSnackbarMessage('Erro ao recalcular posições.')
-      setSnackbarSeverity('error')
+      setSnackbarTone('danger')
       setSnackbarOpen(true)
     } finally {
       setRecalculating(false)
@@ -426,7 +426,7 @@ export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarPr
       <AppSnackbar
         open={snackbarOpen}
         message={snackbarMessage}
-        severity={snackbarSeverity}
+        tone={snackbarTone}
         onClose={() => setSnackbarOpen(false)}
       />
     </>

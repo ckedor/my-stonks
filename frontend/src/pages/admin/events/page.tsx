@@ -50,7 +50,7 @@ export default function AdminEventsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<AssetEvent | null>(null)
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' })
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', tone: 'success' as 'success' | 'danger' })
 
   useEffect(() => {
     fetchData()
@@ -88,7 +88,7 @@ export default function AdminEventsPage() {
       setAssets(assetsRes.data)
     } catch (error) {
       console.error('Erro ao buscar dados:', error)
-      setSnackbar({ open: true, message: 'Erro ao carregar dados', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao carregar dados', tone: 'danger' })
     } finally {
       setLoading(false)
     }
@@ -113,11 +113,11 @@ export default function AdminEventsPage() {
     if (!selectedEvent) return
     try {
       await api.delete(ASSET_ROUTES.eventById(selectedEvent.id))
-      setSnackbar({ open: true, message: 'Evento excluído com sucesso', severity: 'success' })
+      setSnackbar({ open: true, message: 'Evento excluído com sucesso', tone: 'success' })
       fetchData()
     } catch (error) {
       console.error('Erro ao excluir:', error)
-      setSnackbar({ open: true, message: 'Erro ao excluir evento', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao excluir evento', tone: 'danger' })
     } finally {
       setDeleteDialogOpen(false)
       setSelectedEvent(null)
@@ -128,10 +128,10 @@ export default function AdminEventsPage() {
     try {
       if (selectedEvent) {
         await api.put(ASSET_ROUTES.eventById(selectedEvent.id), data)
-        setSnackbar({ open: true, message: 'Evento atualizado com sucesso', severity: 'success' })
+        setSnackbar({ open: true, message: 'Evento atualizado com sucesso', tone: 'success' })
       } else {
         await api.post(ASSET_ROUTES.event, data)
-        setSnackbar({ open: true, message: 'Evento criado com sucesso', severity: 'success' })
+        setSnackbar({ open: true, message: 'Evento criado com sucesso', tone: 'success' })
       }
       fetchData()
     } catch (error) {
@@ -244,7 +244,7 @@ export default function AdminEventsPage() {
       <AppSnackbar
         open={snackbar.open}
         message={snackbar.message}
-        severity={snackbar.severity}
+        tone={snackbar.tone}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       />
     </>

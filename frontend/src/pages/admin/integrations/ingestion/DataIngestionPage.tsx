@@ -149,7 +149,7 @@ export function DataIngestionPage({
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
-    severity: 'success' as 'success' | 'error',
+    tone: 'success' as 'success' | 'danger',
   })
 
   const fetchDetail = useCallback(async (executionId: number) => {
@@ -183,7 +183,7 @@ export function DataIngestionPage({
         await refreshExecutions()
       } catch (error) {
         console.error(error)
-        setSnackbar({ open: true, message: 'Erro ao carregar execuções', severity: 'error' })
+        setSnackbar({ open: true, message: 'Erro ao carregar execuções', tone: 'danger' })
       } finally {
         setLoading(false)
       }
@@ -262,11 +262,11 @@ export function DataIngestionPage({
         message: forceFullHistory
           ? 'Importação completa adicionada à fila'
           : 'Importação incremental adicionada à fila',
-        severity: 'success',
+        tone: 'success',
       })
     } catch (error) {
       console.error(error)
-      setSnackbar({ open: true, message: 'Erro ao iniciar importação', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao iniciar importação', tone: 'danger' })
     } finally {
       setRunningRequest(false)
       setForceDialogOpen(false)
@@ -284,11 +284,11 @@ export function DataIngestionPage({
       setSnackbar({
         open: true,
         message: `Execução #${execution.id} abortada`,
-        severity: 'success',
+        tone: 'success',
       })
     } catch (error) {
       console.error(error)
-      setSnackbar({ open: true, message: 'Erro ao abortar a execução', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao abortar a execução', tone: 'danger' })
     } finally {
       setRunningRequest(false)
       setAbortDialogOpen(false)
@@ -406,12 +406,12 @@ export function DataIngestionPage({
                 Solicitada em {formatDateTime(detail.requested_at)} · início{' '}
                 {formatDateTime(detail.started_at)} · fim {formatDateTime(detail.finished_at)}
               </AppText>
-              {detail.error && <AppAlert severity="error">{detail.error}</AppAlert>}
+              {detail.error && <AppAlert tone="danger">{detail.error}</AppAlert>}
             </AppStack>
           </AppCard>
         </>
       ) : (
-        <AppAlert severity="info">Nenhuma importação executada até agora.</AppAlert>
+        <AppAlert tone="info">Nenhuma importação executada até agora.</AppAlert>
       )}
 
       <AppStack gap="sm">
@@ -595,7 +595,7 @@ export function DataIngestionPage({
       <AppSnackbar
         open={snackbar.open}
         message={snackbar.message}
-        severity={snackbar.severity}
+        tone={snackbar.tone}
         onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
       />
     </AppStack>

@@ -25,7 +25,7 @@ export default function AdminLayout() {
   if (!user?.is_admin) {
     return (
       <AppStack align="center" justify="center" gap="md" fullHeight>
-        <PageTitle tone="error">Acesso Negado</PageTitle>
+        <PageTitle tone="danger">Acesso Negado</PageTitle>
         <AppText>Você não tem permissão para acessar esta área administrativa.</AppText>
       </AppStack>
     )

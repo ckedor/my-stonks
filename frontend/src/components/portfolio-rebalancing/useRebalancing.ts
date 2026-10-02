@@ -85,8 +85,8 @@ export function useRebalancing(portfolioId: number | undefined, options: UseReba
   const [snackbar, setSnackbar] = useState<{
     open: boolean
     message: string
-    severity: 'success' | 'error'
-  }>({ open: false, message: '', severity: 'success' })
+    tone: 'success' | 'danger'
+  }>({ open: false, message: '', tone: 'success' })
   const [simulating, setSimulating] = useState(false)
   const [contribution, setContribution] = useState<number | null>(null)
   const [openCategories, setOpenCategories] = useState<number[]>([])
@@ -289,10 +289,10 @@ export function useRebalancing(portfolioId: number | undefined, options: UseReba
           })),
       }
       await api.put(REBALANCING_ROUTES.byPortfolio(portfolioId), payload)
-      setSnackbar({ open: true, message: 'Targets salvos com sucesso!', severity: 'success' })
+      setSnackbar({ open: true, message: 'Targets salvos com sucesso!', tone: 'success' })
     } catch (err: any) {
       const detail = err?.response?.data?.detail || 'Erro ao salvar targets.'
-      setSnackbar({ open: true, message: detail, severity: 'error' })
+      setSnackbar({ open: true, message: detail, tone: 'danger' })
     } finally {
       setSaving(false)
     }

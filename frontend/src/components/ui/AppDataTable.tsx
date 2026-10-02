@@ -75,7 +75,7 @@ export default function AppDataTable<Row>({
   const paginated = visibleRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
   if (rows.length === 0) {
-    return <AppAlert severity="info">{emptyMessage}</AppAlert>
+    return <AppAlert tone="info">{emptyMessage}</AppAlert>
   }
 
   return (
@@ -98,7 +98,7 @@ export default function AppDataTable<Row>({
       </AppStack>
 
       {visibleRows.length === 0 ? (
-        <AppAlert severity="info">Nenhum registro em {formatDate(dayFilter)}.</AppAlert>
+        <AppAlert tone="info">Nenhum registro em {formatDate(dayFilter)}.</AppAlert>
       ) : (
         <Paper>
           <TableContainer sx={{ overflowX: 'auto' }}>

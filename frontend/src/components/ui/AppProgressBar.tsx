@@ -1,4 +1,5 @@
 import { LinearProgress } from '@mui/material'
+import { INTENT_COLOR, type Intent } from './intent'
 import { useAppTheme, withOpacity } from './useAppTheme'
 
 /* Barra de progresso horizontal.
@@ -14,7 +15,7 @@ export interface AppProgressBarProps {
   /** `danger` para execução que falhou. `golden` para conquista — é a mesma
    *  cor com que a tela escreve o degrau seguinte, e ver as duas juntas é o
    *  que faz a barra e o rótulo falarem da mesma coisa. Padrão: `primary`. */
-  tone?: 'primary' | 'danger' | 'golden'
+  tone?: Extract<Intent, 'primary' | 'danger'> | 'golden'
   /** Espessura em px. Padrão: `4`, a do MUI. Uma barra que é o assunto do
    *  card, e não um detalhe de rodapé, pede mais peso. */
   thickness?: number
@@ -70,7 +71,7 @@ export default function AppProgressBar({
     <LinearProgress
       variant={value === undefined ? 'indeterminate' : 'determinate'}
       value={value}
-      color={tone === 'danger' ? 'error' : 'primary'}
+      color={golden ? 'primary' : INTENT_COLOR[tone]}
       sx={{
         borderRadius: `${theme.radius.sm}px`,
         ...(thickness ? { height: thickness } : {}),

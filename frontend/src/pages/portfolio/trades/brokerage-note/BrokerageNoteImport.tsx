@@ -55,7 +55,7 @@ export default function BrokerageNoteImport() {
         onError: (error) =>
           setNotice({
             message: errorMessage(error, 'Não foi possível ler a nota'),
-            severity: 'error',
+            tone: 'danger',
           }),
       }
     )
@@ -128,7 +128,7 @@ export default function BrokerageNoteImport() {
       <AppSnackbar
         open={notice !== null}
         message={notice?.message ?? ''}
-        severity={notice?.severity ?? 'info'}
+        tone={notice?.tone ?? 'info'}
         onClose={() => setNotice(null)}
       />
     </AppStack>

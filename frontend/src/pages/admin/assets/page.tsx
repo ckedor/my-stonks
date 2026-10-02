@@ -99,7 +99,7 @@ export default function AdminAssetsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState<AssetRow | null>(null)
   const [fundRegistrationOpen, setFundRegistrationOpen] = useState(false)
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' })
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', tone: 'success' as 'success' | 'danger' })
 
   // Reference data
   const [assetTypes, setAssetTypes] = useState<AssetType[]>([])
@@ -182,7 +182,7 @@ export default function AdminAssetsPage() {
       setReferenceSeries(seriesRes.data)
     } catch (error) {
       console.error('Erro ao buscar dados:', error)
-      setSnackbar({ open: true, message: 'Erro ao carregar dados', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao carregar dados', tone: 'danger' })
     } finally {
       setLoading(false)
     }
@@ -241,7 +241,7 @@ export default function AdminAssetsPage() {
       setFormOpen(true)
     } catch (error) {
       console.error('Erro ao carregar ativo:', error)
-      setSnackbar({ open: true, message: 'Erro ao carregar detalhes do ativo', severity: 'error' })
+      setSnackbar({ open: true, message: 'Erro ao carregar detalhes do ativo', tone: 'danger' })
     }
   }
 
@@ -254,14 +254,14 @@ export default function AdminAssetsPage() {
     if (!selectedAsset) return
     try {
       await api.delete(ASSET_ROUTES.byId(selectedAsset.id))
-      setSnackbar({ open: true, message: 'Ativo excluído com sucesso', severity: 'success' })
+      setSnackbar({ open: true, message: 'Ativo excluído com sucesso', tone: 'success' })
       fetchData()
     } catch (error) {
       console.error('Erro ao excluir:', error)
       setSnackbar({
         open: true,
         message: getApiErrorMessage(error, 'Erro ao excluir ativo'),
-        severity: 'error',
+        tone: 'danger',
       })
     } finally {
       setDeleteDialogOpen(false)
@@ -273,10 +273,10 @@ export default function AdminAssetsPage() {
     try {
       if (selectedAsset && selectedAsset.id) {
         await api.put(ASSET_ROUTES.byId(selectedAsset.id), data)
-        setSnackbar({ open: true, message: 'Ativo atualizado com sucesso', severity: 'success' })
+        setSnackbar({ open: true, message: 'Ativo atualizado com sucesso', tone: 'success' })
       } else {
         await api.post(ASSET_ROUTES.create, data)
-        setSnackbar({ open: true, message: 'Ativo criado com sucesso', severity: 'success' })
+        setSnackbar({ open: true, message: 'Ativo criado com sucesso', tone: 'success' })
       }
       fetchData()
     } catch (error) {
@@ -284,7 +284,7 @@ export default function AdminAssetsPage() {
       setSnackbar({
         open: true,
         message: getApiErrorMessage(error, 'Erro ao salvar ativo'),
-        severity: 'error',
+        tone: 'danger',
       })
       throw error
     }
@@ -516,7 +516,7 @@ export default function AdminAssetsPage() {
         open={fundRegistrationOpen}
         onClose={() => setFundRegistrationOpen(false)}
         onRegistered={(assetId) => {
-          setSnackbar({ open: true, message: `Fundo cadastrado como ativo #${assetId}`, severity: 'success' })
+          setSnackbar({ open: true, message: `Fundo cadastrado como ativo #${assetId}`, tone: 'success' })
           fetchData()
         }}
       />
@@ -536,7 +536,7 @@ export default function AdminAssetsPage() {
       <AppSnackbar
         open={snackbar.open}
         message={snackbar.message}
-        severity={snackbar.severity}
+        tone={snackbar.tone}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       />
     </>
