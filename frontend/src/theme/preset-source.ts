@@ -1,10 +1,10 @@
 import type { ThemePreset } from './presets'
 import { fontStacks, type RadiusScale } from './tokens'
 
-/* Um preset escrito como código, para colar em `presets.ts`.
+/* Um preset escrito como código, como fica em `presets.ts`.
  *
- * É o fim do estúdio de temas: o tema montado lá vira este texto, e o commit
- * que o cola na lista é o que o publica. As fontes saem como referência a
+ * É o fim do estúdio de temas: o tema montado lá vira este texto, que o dev
+ * server grava no arquivo (`preset-file.ts`), e o commit é o que o publica. As fontes saem como referência a
  * `fontStacks` (`fontStacks.figtree`), nunca como o nome escrito — é a regra
  * de `themes.test.ts`, e uma pilha copiada por extenso deixaria de
  * acompanhar a de `tokens.ts`. `preset-source.test.ts` prova que o texto
@@ -44,7 +44,6 @@ export function presetSource(preset: ThemePreset): string {
     `    info: ${quote(palette.info)},`,
     `    golden: ${quote(palette.golden)},`,
     `    dark: ${quote(palette.dark)},`,
-    `    sidebar: ${quote(palette.sidebar)},`,
     `    topbar: { background: ${quote(palette.topbar.background)}, text: ${quote(palette.topbar.text)}, activeText: ${quote(palette.topbar.activeText)}, activeBg: ${quote(palette.topbar.activeBg)} },`,
     `    divider: ${quote(palette.divider)},`,
     '    chart: {',

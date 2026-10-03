@@ -6,6 +6,7 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows'
 import CurrencyBitcoinIcon from '@mui/icons-material/CurrencyBitcoin'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import DonutSmallIcon from '@mui/icons-material/DonutSmall'
+import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import LayersIcon from '@mui/icons-material/Layers'
 import ManageSearchIcon from '@mui/icons-material/ManageSearch'
 import LocationCityIcon from '@mui/icons-material/LocationCity'
@@ -49,6 +50,7 @@ const NAVIGATION_ICONS: Record<string, ReactNode> = {
   '/portfolio/trades': <SwapHorizIcon />,
   '/portfolio/dividends': <PaidIcon />,
   '/portfolio/tax-income': <ReceiptLongIcon />,
+  '/portfolio/documents': <FolderOpenIcon />,
   '/portfolio/city': <LocationCityIcon />,
   '/market/overview': <PublicIcon />,
   '/market/assets': <ManageSearchIcon />,

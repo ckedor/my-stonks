@@ -1193,9 +1193,11 @@
     "type": "object"
    },
    "AssetMatch": {
-    "description": "Se o ticker que o modelo sugeriu é um ativo do cadastro, como no research.",
+    "description": "Como o ativo da linha foi achado, ou por que não foi.",
     "enum": [
      "matched",
+     "imported",
+     "by_name",
      "unknown",
      "ambiguous"
     ],
@@ -4005,6 +4007,17 @@
       "title": "Index",
       "type": "integer"
      },
+     "isin": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Isin"
+     },
      "market": {
       "anyOf": [
        {
@@ -4072,6 +4085,7 @@
      "market",
      "security",
      "ticker",
+     "isin",
      "quantity",
      "price",
      "value",

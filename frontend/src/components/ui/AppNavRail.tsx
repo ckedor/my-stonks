@@ -1,18 +1,22 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { Box, Typography } from '@mui/material'
 import { useState, type MouseEvent, type ReactNode } from 'react'
+import { navRailBackground } from '@/theme/themes'
 import { radius } from '@/theme/tokens'
 import AppMenu from './AppMenu'
 import { TOPBAR_HEIGHT } from './AppTopbar'
 import { useAppTheme, withOpacity } from './useAppTheme'
 
-/* Coluna de navegação do app: os destinos de dentro da seção corrente.
+/* Coluna de navegação: os destinos de dentro da seção corrente.
  *
- * Não é o `AppSidebar`, e a diferença não é de estilo: aquele é a lista
- * rasa e permanente do admin, pintada sobre a cor `sidebar` do tema — uma
- * superfície escura que se lê como moldura. Esta acompanha o conteúdo:
- * mesmo fundo da página, separada por um fio, e o único peso de cor está no
- * item ativo. Numa tela cheia de gráfico, a navegação não deveria ser a
+ * É a única barra lateral do app — a da carteira, a do admin e a das
+ * ferramentas de dev. Já foram duas: o admin tinha a sua, pintada sobre uma
+ * cor `sidebar` própria do tema, com outra tipografia e outro realce, e cada
+ * área parecia um produto diferente. Duas barras laterais são duas
+ * aparências para manter em acordo, e elas não ficaram.
+ *
+ * Ela acompanha o conteúdo: separada por um fio, e o único peso de cor está
+ * no item ativo. Numa tela cheia de gráfico, a navegação não deveria ser a
  * coisa mais escura à vista.
  *
  * Recolhida, ela sai da tela inteira — e não vira uma faixa de ícones. A
@@ -123,7 +127,7 @@ export default function AppNavRail({
         /* Fundo próprio e acima do conteúdo: a trilha de patentes sangra até a
            borda da janela e passa por baixo daqui. Sem uma superfície opaca a
            arte subiria por cima da navegação. */
-        bgcolor: wearsTopbar ? bar.background : 'background.default',
+        bgcolor: navRailBackground(theme.palette),
         position: 'relative',
         zIndex: 1,
       }}

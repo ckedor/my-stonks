@@ -3,7 +3,8 @@ import { useAuthStore } from '@/stores/auth'
 
 import AccountCircle from '@mui/icons-material/AccountCircle'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import MenuIcon from '@mui/icons-material/Menu'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -12,11 +13,11 @@ import { AppIconButton, AppMenu, AppTopbar, ThemeToggleButton } from '@/componen
 import { adminNavigationSections, getAdminNavigationSection } from './navigation'
 
 export default function AdminTopbar({
-  showMenuButton = false,
-  onMenuClick,
+  railCollapsed,
+  onToggleRail,
 }: {
-  showMenuButton?: boolean
-  onMenuClick?: () => void
+  railCollapsed: boolean
+  onToggleRail: () => void
 }) {
   const user = useAuthStore((s) => s.user)
   const navigate = useNavigate()
@@ -40,15 +41,12 @@ export default function AdminTopbar({
         const section = adminNavigationSections.find((s) => s.id === id)
         if (section) navigate(section.defaultPath)
       }}
-      menuButton={
-        showMenuButton
-          ? {
-              label: 'Abrir menu de navegação',
-              icon: <MenuIcon />,
-              onClick: () => onMenuClick?.(),
-            }
-          : undefined
-      }
+      brand={{ label: 'Admin', onClick: () => navigate(adminNavigationSections[0].defaultPath) }}
+      menuButton={{
+        label: railCollapsed ? 'Expandir menu' : 'Recolher menu',
+        icon: railCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />,
+        onClick: onToggleRail,
+      }}
     >
       <ThemeToggleButton />
 

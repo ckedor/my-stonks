@@ -16,18 +16,17 @@ import {
 import type { Trade } from '@/types'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import BrokerageNoteImport from './brokerage-note/BrokerageNoteImport'
-import PortfolioDocuments from './documents/PortfolioDocuments'
 import PositionCheck from './position-statement/PositionCheck'
 
 type TradeType = 'Compra' | 'Venda' | 'Todos'
-type TradesTab = 'trades' | 'import' | 'position' | 'documents'
+type TradesTab = 'trades' | 'import' | 'position'
 
 const TABS: { id: TradesTab; label: string }[] = [
   { id: 'trades', label: 'Operações' },
   { id: 'import', label: 'Importar nota' },
   { id: 'position', label: 'Bater posição' },
-  { id: 'documents', label: 'Documentos' },
 ]
 
 const TYPE_OPTIONS = [
@@ -42,7 +41,13 @@ export default function PortfolioTransactionsPage() {
   const { data, isPending: loading } = useTrades()
   const trades = data ?? EMPTY_LIST
 
-  const [tab, setTab] = useState<TradesTab>('trades')
+  /* `?tab=import` abre direto numa aba: é como a tela de Documentos leva ao
+     lugar onde cada tipo de arquivo é enviado. */
+  const [searchParams] = useSearchParams()
+  const [tab, setTab] = useState<TradesTab>(() => {
+    const requested = searchParams.get('tab')
+    return TABS.some((item) => item.id === requested) ? (requested as TradesTab) : 'trades'
+  })
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedTrade, setSelectedTrade] = useState<Trade | undefined>()
   const [selectedAssetId, setSelectedAssetId] = useState<number | undefined>()
@@ -107,7 +112,6 @@ export default function PortfolioTransactionsPage() {
 
       {tab === 'import' && <BrokerageNoteImport />}
       {tab === 'position' && <PositionCheck />}
-      {tab === 'documents' && <PortfolioDocuments />}
 
       {tab === 'trades' && (
         <>

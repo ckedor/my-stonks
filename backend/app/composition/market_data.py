@@ -12,6 +12,7 @@ from app.infra.integrations.gleif_client import GleifClient
 from app.infra.integrations.ishares_client import IsharesClient
 from app.infra.integrations.openfigi_client import OpenFigiClient
 from app.infra.integrations.sec_client import SecClient
+from app.infra.integrations.vanguard_client import VanguardClient
 from app.infra.redis.redis_service import RedisService
 from app.modules.market_data.adapters.market_data_provider import MarketDataProvider
 from app.modules.market_data.service.asset_catalogue_sync_service import (
@@ -419,6 +420,7 @@ async def etf_holdings_ingestion_runner_context() -> AsyncIterator[EtfHoldingsIn
         figi=OpenFigiClient(settings.OPENFIGI_API_KEY),
         dws=DwsClient(),
         ishares=IsharesClient(),
+        vanguard=VanguardClient(),
     )
     try:
         yield service

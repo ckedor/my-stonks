@@ -1,18 +1,15 @@
 import { useAuthStore } from '@/stores/auth'
 
-import { AppShell, AppStack, AppText, PageTitle, SIDEBAR_WIDTH, useViewportMatches } from '@/components/ui'
+import { AppPageShell, AppStack, AppText, PageTitle } from '@/components/ui'
+import { useNavRailCollapsed } from '@/hooks/useNavRailCollapsed'
 
-import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import AdminSidebar from './Sidebar'
 import AdminTopbar from './Topbar'
 
-const COLLAPSE_MEDIA = '(max-width: 1366px)'
-
 export default function AdminLayout() {
   const { isAuthenticated, isLoading, user } = useAuthStore()
-  const collapsedMode = useViewportMatches(COLLAPSE_MEDIA)
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [railCollapsed, toggleRail] = useNavRailCollapsed()
 
   if (isLoading) return null
 
@@ -31,23 +28,14 @@ export default function AdminLayout() {
     )
   }
 
-  const variant = collapsedMode ? 'persistent' : 'permanent'
-
+  /* A mesma moldura e a mesma coluna da carteira: o admin é outra área do
+     mesmo app, não outro produto. */
   return (
-    <AppShell
-      sidebarOffset={variant === 'permanent' ? SIDEBAR_WIDTH : 0}
-      shiftedBy={variant === 'persistent' && drawerOpen ? SIDEBAR_WIDTH : 0}
-      sidebar={
-        <AdminSidebar variant={variant} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      }
-      topbar={
-        <AdminTopbar
-          showMenuButton={variant === 'persistent'}
-          onMenuClick={() => setDrawerOpen((v) => !v)}
-        />
-      }
+    <AppPageShell
+      sidebar={<AdminSidebar collapsed={railCollapsed} />}
+      topbar={<AdminTopbar railCollapsed={railCollapsed} onToggleRail={toggleRail} />}
     >
       <Outlet />
-    </AppShell>
+    </AppPageShell>
   )
 }

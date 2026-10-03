@@ -17,9 +17,10 @@ import AppIconButton from './AppIconButton'
 /* Navegação lateral do mobile: seções que abrem e fecham, cada uma com os
  * seus grupos de itens.
  *
- * Irmã do `AppSidebar`, não a mesma coisa: aquela é uma lista rasa que fica
- * permanentemente visível no admin; esta é hierárquica e só existe quando a
- * tela é estreita demais para a barra superior.
+ * Irmã do `AppNavRail`, não a mesma coisa: aquela é a coluna da seção
+ * corrente, sempre à vista na tela larga; esta é hierárquica — todas as
+ * seções — e só existe quando a tela é estreita demais para a barra
+ * superior.
  *
  * Como as outras, é genérica sobre o conteúdo: recebe a árvore pronta e
  * devolve o `id` escolhido. */

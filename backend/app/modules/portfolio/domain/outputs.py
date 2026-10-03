@@ -29,6 +29,9 @@ class BrokerageNoteLineReading(BaseModel):
     fund_cnpj: str | None = Field(
         description='O CNPJ do fundo ou da classe, como impresso, quando a linha é de um fundo de investimento'
     )
+    isin: str | None = Field(
+        description='O ISIN da linha (12 caracteres, como IE00B5BMR087), só quando o documento o imprime'
+    )
     quantity: float = Field(description='Quantidade, sempre positiva')
     price: float = Field(description='Preço unitário, na moeda da nota')
     value: float = Field(description='Valor bruto da linha, na moeda da nota, sempre positivo')

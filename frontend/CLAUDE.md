@@ -64,12 +64,23 @@ preset em Configurações, e criar tema não é coisa do usuário.
 
 Criar ou ajustar um tema é no estúdio de temas, ferramenta de dev em
 `/dev/design-system/temas` (`src/pages/dev/theme-studio/`; ver **Ferramentas
-de desenvolvimento**). Ele parte de um preset, edita os tokens e redesenha ao
-vivo o dashboard da carteira — a `PortfolioOverviewScreen` de
-verdade, com uma carteira de mentira determinística (`mockPortfolio.ts`) —, e
-não guarda nada: **"Exportar preset" gera a definição, e o commit que a cola
-em `presets.ts` é o que publica o tema.** `src/theme/preset-source.test.ts`
-prova que a definição exportada de cada preset volta a ser o mesmo preset.
+de desenvolvimento**). Ele parte de um preset, escolhido na lista do painel à
+direita, edita os tokens no mesmo painel e redesenha ao vivo a casca inteira
+— barra, coluna, fundo e o próprio painel, sob `AppThemeScope` — em volta do
+dashboard da carteira: a `PortfolioOverviewScreen` de verdade, com uma
+carteira de mentira determinística (`mockPortfolio.ts`).
+
+**"Salvar" e "Novo preset" gravam direto em `src/theme/presets.ts`**, pelo
+dev server (plugin em `vite.config.ts`, que só existe com `npm run dev`); o
+commit do arquivo é o que publica o tema. A edição é de texto, bloco a bloco
+(`src/theme/preset-file.ts`): os comentários entre presets ficam intocados,
+e o que não casa com o esperado falha alto em vez de gravar pela metade.
+
+- O estúdio não salva preset que o teste de contraste reprovaria.
+- O id só se escolhe ao criar; editar nunca o muda (ver abaixo).
+- `preset-source.test.ts` prova que o texto gerado de cada preset volta a ser
+  o mesmo preset; `preset-file.test.ts`, que gravar um preset no
+  `presets.ts` de verdade troca só ele e o põe no lugar certo da lista.
 
 - **Contraste é uma régua só**, `paletteContrastChecks` em
   `src/theme/contrast.ts`. As marcadas `enforced` são as que
@@ -79,6 +90,10 @@ prova que a definição exportada de cada preset volta a ser o mesmo preset.
 - **`warning` é a linha do benchmark**, ao lado da carteira em `primary`, no
   gráfico de rentabilidade: matizes distintos. As séries de `chart.colors` não
   repetem `primary` nem `secondary`.
+- **A coluna de navegação não tem cor própria**: nos temas claros ela veste
+  a barra do topo, nos escuros acompanha a página (`navRailBackground`, em
+  `themes.ts`). Já houve um token `sidebar`; ele pintava a barra lateral do
+  admin, que deixou de existir.
 - **Mudar o id de um preset publicado troca, em silêncio, o tema de quem o
   escolheu** pelo padrão: o id fica no localStorage.
 
@@ -129,8 +144,18 @@ A regra em `eslint.config.js` reprova `PageTitle` dentro de
 `AppPageHeader`. `src/test/eslint-page-header.test.ts` é o que prova que ela
 ainda dispara; sem esse teste a regra pode parar de casar em silêncio.
 
-`src/pages/admin/**` ainda está fora da regra, e é dívida declarada: o admin
-tem shell e navegação próprios. Quando migrar, o glob vira `src/pages/**`.
+`src/pages/admin/**` ainda está fora da regra, e é dívida declarada: as
+telas do admin ainda abrem com `PageTitle`. A moldura já é a mesma da
+carteira; quando as telas migrarem, o glob vira `src/pages/**`.
+
+### Uma moldura só
+
+Toda tela abre em `AppPageShell` com `AppTopbar` e `AppNavRail` — a
+carteira, o admin e as ferramentas de dev. Foram duas molduras e duas barras
+laterais (`AppShell` e `AppSidebar`, do admin), e cada área parecia um
+produto diferente. A coluna recolhida é uma preferência só, guardada por
+`useNavRailCollapsed` (`src/hooks/`). Barra lateral nova não se cria: o que
+uma área precisa a mais vira prop do `AppNavRail`.
 
 ### Integrações no admin
 
@@ -197,8 +222,10 @@ inteira do anterior, então os seletores são compostos a partir de constantes.
 ### Ferramentas de desenvolvimento
 
 `src/pages/dev/` guarda as telas que só servem a quem desenvolve: o catálogo
-do design system e o estúdio de temas, em `/dev/...`, com casca própria
-(`src/pages/dev/layout.tsx`). Elas só existem com `npm run dev`: `App.tsx`
+do design system e o estúdio de temas, em `/dev/...`, na moldura do app
+montada por `src/pages/dev/DevShell.tsx` — o catálogo pela rota-mãe
+(`layout.tsx`), o estúdio direto, porque é ele quem a pinta com o tema em
+edição e lhe dá o painel da direita. Elas só existem com `npm run dev`: `App.tsx`
 registra essas rotas atrás de `import.meta.env.DEV`, que o build de produção
 troca por `false`, e as carrega sob demanda — nada daqui entra no bundle
 publicado. Não pedem login nem backend, porque nenhuma lê dado do servidor; a

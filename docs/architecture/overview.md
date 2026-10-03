@@ -369,17 +369,22 @@ skipped when that accession is the one stored, and otherwise read and written
 in one transaction to `asset.etf_holding_report` and `asset.etf_holding`.
 A UCITS ETF files no holdings with any regulator, so for a class listed in
 `MANAGER_HOLDINGS_FILES` (`market_data/domain/etf_registry.py`) the attempt
-reads its manager's file instead — DWS's constituents spreadsheet, by ISIN,
-through `infra/integrations/dws_client.py`, or the holdings CSV of an iShares
-product page, by product id, through `infra/integrations/ishares_client.py`;
-both read in `market_data/adapters/etf_manager_files.py` — and writes it to the same
-tables with its own `source`, skipped when that date is already stored from
-it. The reader fails a file whose header, date or weights do not add up to the
-fund rather than guess, since nothing promises the layout of a page made for
-people. Every other UCITS class is listed in the run as having no source.
-The same run ends with one more attempt that ties American holdings to
+reads the list its manager's product page shows instead, from the API that
+page loads it from: DWS's holdings table, by ISIN
+(`infra/integrations/dws_client.py`); iShares' holdings component, by
+BlackRock's product id (`infra/integrations/ishares_client.py`); Vanguard's
+GraphQL holdings, by port id and in pages (`infra/integrations/vanguard_client.py`).
+All three are read in `market_data/adapters/etf_manager_files.py` and written
+to the same tables with their own `source`, skipped when that date is already
+stored from it. The reader fails a list whose columns, date or weights do not
+add up to the fund rather than guess, since nothing promises the shape of an
+API made for a page. The date is the one the manager states for the holdings —
+DWS's xlsx export was dropped for that reason: it is dated only by the day it
+was exported. Every other UCITS class is listed in the run as having no
+source. The same run ends with one more attempt that ties American holdings to
 assets; a UCITS fund's holdings are tied only to assets already carrying
-their ISIN, as they are written. A filing gives each holding's ISIN and no ticker, and American stocks are
+their ISIN, as they are written. A filing gives each holding's ISIN and no
+ticker, and American stocks are
 registered by ticker, so the ISINs no asset carries are asked of OpenFIGI
 (`OPENFIGI_API_KEY` is optional and only raises its rate limit); a ticker that
 names exactly one American asset gives that asset its ISIN, never replacing
@@ -551,7 +556,10 @@ upload (PDF) + portfolio
   -> AI provider, document attached, answer constrained to a schema
   -> app checks each note's own totals and splits fees across its lines
   -> broker by CNPJ, else by registered name; asset by ticker — the B3 code in
-     the ticker or the specification (BRL), the symbol column (USD)
+     the ticker or the specification (BRL), the symbol column (USD) —, else by
+     the ISIN the line prints, else by the fund's class CNPJ; a line still
+     open takes the asset of the same execution in the note already
+     imported, else a name suggestion (the same words, one asset)
   -> per note: reconcile against the portfolio's transactions,
      and flag a note already imported (same broker and number)
   -> draft, with the document's id                     (no transaction persisted)
@@ -574,8 +582,19 @@ Three document families are read: the Brazilian Sinacor note (BRL), the US
 trade confirmation (USD, Avenue/Apex), and an account statement that shows fund
 subscriptions and redemptions (BRL, BTG's "Extrato da Conta Investimento") —
 each movement date there becomes one note, with no note number. A line's asset
-is found by its ticker; a fund line has none and is found by the class CNPJ the
-statement prints. A note's currency must be its broker's;
+is found by its ticker; when no asset carries it, by the ISIN the line prints,
+which is how an ETF listed in London (registered as EXUS.L, printed as EXUS or
+with no code at all) is found — an ISIN names the share class, so two listings
+of one class leave the line ambiguous for the person to pick; a fund line has
+neither and is found by the class CNPJ the statement prints. The ISIN is read
+only where printed and kept only when its check digit holds. A line none of
+those find is given, first, the asset of the same execution — side, quantity
+and price in the note's currency — in the note already imported (same broker
+and number, or same trading day), the choice somebody already made; and only
+then a suggestion by name, marked on screen to be checked: the asset whose
+name has the same words as the printed one, both ways, abbreviations counted
+("WLD" for World) and legal form, domicile, currency and Acc/Dist left out
+(`match_by_name`). Two assets with the same words are not chosen between. A note's currency must be its broker's;
 a USD line is stored with `price_usd` as printed and `price` from the day's
 rate, the reverse of a BRL line. Everything that is stored — the note header
 and every line — is editable on screen before confirming, and each edit
@@ -641,6 +660,7 @@ upload (PDF, already checked to be one)
 
 GET /portfolio/document?portfolio_id=                 the history, newest first,
                                                        with the notes confirmed from each
+                                                       (the Documentos screen, /portfolio/documents)
 GET /portfolio/document/{id}/content?portfolio_id=    the file, through the API
 DELETE /portfolio/{id}                                 objects, then rows, then the portfolio
 ```
@@ -653,6 +673,12 @@ the key comes from the content rather than from a row id — an upload that
 reached the bucket and failed before the database leaves an object the next
 upload of that file lands on, not an orphan.
 
+The bucket is meant for general use, so each owner of objects takes a top-level
+prefix of its own; `portfolio/` is this one, then one folder per portfolio and
+one per kind. The history is a screen of its own, Documentos, and not a tab of
+Trades where notes and statements are uploaded: the next kind of document (an
+income statement) is no trade.
+
 A confirmed brokerage note points at the document it was read from
 (`portfolio.brokerage_note.document_id`, `SET NULL`); a note confirmed with no
 document keeps whatever link it had. The file is served through the API rather
@@ -660,7 +686,9 @@ than by a signed link to the bucket, so the bucket never has to be reachable
 from a browser.
 
 The storage is optional infrastructure on the cache's terms, with one
-difference. With no bucket configured (`STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`,
+difference. A note confirmed before the bucket existed has no document and never
+had one kept; uploading its PDF again keeps it, and confirming that reading
+links the note found by broker, number and date to it. With no bucket configured (`STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`,
 `STORAGE_SECRET_ACCESS_KEY`, and `STORAGE_ENDPOINT_URL` outside AWS) a PDF is
 read and not kept, and the reading says so with a null `document_id` that the
 screen shows. With a bucket configured, failing to keep the file fails the

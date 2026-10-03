@@ -7,10 +7,12 @@ import type { ThemePaletteConfig, ThemeShapeConfig } from './themes'
 
    Um preset é paleta mais forma: as cores, as duas fontes, a escala de raio
    e se as superfícies são quietas (borda em vez de sombra). Todos estão
-   aqui, no mesmo formato literal que o estúdio de temas exporta — uma
+   aqui, no mesmo formato literal que o estúdio de temas grava — uma
    ferramenta de dev, em `/dev/design-system/temas` com `npm run dev`. Criar
-   um tema é montá-lo lá, copiar a definição e colá-la nesta lista; o commit
-   é o que o publica.
+   ou ajustar um tema é montá-lo lá e salvar: o estúdio reescreve o bloco do
+   preset, ou acrescenta um novo e o põe nesta lista (`preset-file.ts`). Os
+   comentários entre os presets são escritos à mão e o estúdio não os toca. O
+   commit é o que publica.
 
    `themes.test.ts` e `topbar-contrast.test.ts` rodam sobre esta lista
    inteira: texto e sinal legíveis sobre o card, e a aba da barra legível
@@ -77,7 +79,6 @@ const tintaLight: ThemePreset = {
     info: '#696762',
     golden: '#88632E',
     dark: '#171614',
-    sidebar: '#262521',
     topbar: { background: '#262521', text: '#D1CCC3', activeText: '#EDA37C', activeBg: '#46423A' },
     divider: '#DDDAD3',
     chart: {
@@ -105,7 +106,6 @@ const tintaDark: ThemePreset = {
     info: '#ABA79F',
     golden: '#C6AB75',
     dark: '#171614',
-    sidebar: '#10100F',
     topbar: { background: '#10100F', text: '#BCB6AB', activeText: '#E8956B', activeBg: '#2D2A25' },
     divider: '#33322E',
     chart: {
@@ -151,7 +151,6 @@ const petroleo: ThemePreset = {
     info: '#7CC0D1',
     golden: '#D2A85F',
     dark: '#10253A',
-    sidebar: '#10253A',
     topbar: { background: '#10253A', text: '#C3D1DC', activeText: '#EDA37C', activeBg: '#223F58' },
     divider: 'rgba(227,234,238,0.12)',
     chart: {
@@ -191,7 +190,6 @@ const grafite: ThemePreset = {
     info: '#2F6FB3',
     golden: '#A87A1E',
     dark: '#1B1F24',
-    sidebar: '#1F2630',
     topbar: { background: '#1F2630', text: '#C9D1DC', activeText: '#FFFFFF', activeBg: '#33404F' },
     divider: '#E1E4E8',
     chart: {
@@ -230,7 +228,6 @@ const papel: ThemePreset = {
     info: '#4A6A8C',
     golden: '#9A6B1F',
     dark: '#22201B',
-    sidebar: '#2B2823',
     topbar: { background: '#2B2823', text: '#D8D1C4', activeText: '#E9C88A', activeBg: '#3D3830' },
     divider: '#E3DCCD',
     chart: {
@@ -270,7 +267,6 @@ const oceano: ThemePreset = {
     info: '#2B6CB0',
     golden: '#B07418',
     dark: '#10282E',
-    sidebar: '#0F3B44',
     topbar: { background: '#0F3B44', text: '#CDE3E6', activeText: '#7FE0E8', activeBg: '#1A525C' },
     divider: '#DCE8EA',
     chart: {
@@ -287,172 +283,207 @@ const oceano: ThemePreset = {
 }
 
 /* ══════════════════════════════════════════════
-   Ameixa — lilás neutro e ameixa
+   Nuvem — o claro de ponta a ponta
    ══════════════════════════════════════════════
 
-   O neutro puxa de leve para o roxo, e a ameixa é o destaque; o ocre de apoio
-   é o complemento dela. Cantos de 14px, os mais macios do catálogo. */
-const ameixa: ThemePreset = {
-  id: 'ameixa-light',
-  name: 'Ameixa',
-  description: 'Lilás neutro, ameixa de destaque, ocre de apoio e cantos macios.',
+   Todo outro claro tem a barra escura; este é claro até na moldura, com a
+   barra e a coluna brancas sobre uma página cinza-gelo. Azul de destaque, uma
+   grotesca só e cantos de 10px: o tema de quem não quer pensar em tema. */
+const nuvem: ThemePreset = {
+  id: 'nuvem-light',
+  name: 'Nuvem',
+  description: 'Branco de ponta a ponta, inclusive a barra, com azul de destaque.',
   palette: {
     mode: 'light',
-    background: { default: '#F6F3F7', paper: '#FFFFFF' },
-    text: { primary: '#231A28', secondary: '#6A5F70' },
-    primary: '#7B3F8C',
-    secondary: '#B07D24',
-    error: '#B8324B',
-    warning: '#A86A12',
-    success: '#1E7B57',
-    info: '#4E6BA6',
-    golden: '#A8781F',
-    dark: '#231A28',
-    sidebar: '#2E2233',
-    topbar: { background: '#2E2233', text: '#DCCFE0', activeText: '#E7B6F2', activeBg: '#45324D' },
-    divider: '#E6DFE8',
+    background: { default: '#F2F4F7', paper: '#FFFFFF' },
+    text: { primary: '#1A1D23', secondary: '#5F6672' },
+    primary: '#1D64D8',
+    secondary: '#64748B',
+    error: '#C62828',
+    warning: '#B45309',
+    success: '#15803D',
+    info: '#0369A1',
+    golden: '#A16207',
+    dark: '#1A1D23',
+    topbar: { background: '#FFFFFF', text: '#3D4450', activeText: '#1D64D8', activeBg: '#E6EEFB' },
+    divider: '#E3E6EA',
     chart: {
-      grid: '#ECE6EE',
-      label: '#6A5F70',
-      colors: ['#2F8F83', '#D9804A', '#4F7CC2', '#9B9B2F', '#5E8C3A', '#3F6E8C', '#8A5A44', '#6B7FD1'],
-    },
-  },
-  shape: {
-    radius: { sm: 8, md: 14, lg: 14, pill: 9999 },
-    fontFamily: fontStacks.grotesk,
-    headingFontFamily: fontStacks.grotesk,
-  },
-}
-
-/* ══════════════════════════════════════════════
-   Noite — azul-marinho quase preto
-   ══════════════════════════════════════════════
-
-   O escuro de produto digital: marinho no fundo, azul elétrico de destaque e
-   verde-água de apoio. O sinal é saturado porque sobre um fundo tão escuro o
-   verde e o vermelho apagados somem. */
-const noite: ThemePreset = {
-  id: 'noite-dark',
-  name: 'Noite',
-  description: 'Marinho quase preto, azul elétrico e verde-água.',
-  palette: {
-    mode: 'dark',
-    background: { default: '#0B1220', paper: '#131C2E' },
-    text: { primary: '#E6EAF2', secondary: '#97A3B8' },
-    primary: '#4C8DFF',
-    secondary: '#2BC4A9',
-    error: '#F87171',
-    warning: '#FBBF24',
-    success: '#4ADE80',
-    info: '#60A5FA',
-    golden: '#E8C468',
-    dark: '#070C16',
-    sidebar: '#0E1626',
-    topbar: { background: '#0E1626', text: '#B7C2D6', activeText: '#8AB4FF', activeBg: '#1C2A44' },
-    divider: '#22304A',
-    chart: {
-      grid: 'rgba(230,234,242,0.07)',
-      label: '#97A3B8',
-      colors: ['#F59E6B', '#C084FC', '#F472B6', '#A3E635', '#94A3B8', '#7DD3C0', '#E6C07B', '#D4A5A5'],
+      grid: '#E8EBEF',
+      label: '#5F6672',
+      colors: ['#0F9D8A', '#D9822B', '#8E5CC9', '#C2456B', '#4F8F3A', '#B59A2F', '#9C6644', '#D16BA5'],
     },
   },
   shape: {
     radius: { sm: 6, md: 10, lg: 10, pill: 9999 },
     fontFamily: fontStacks.grotesk,
     headingFontFamily: fontStacks.grotesk,
+    quiet: true,
   },
 }
 
 /* ══════════════════════════════════════════════
-   Musgo — verde-floresta e ouro
+   Grafite escuro — o escuro neutro
    ══════════════════════════════════════════════
 
-   Escuro esverdeado com ouro de destaque e títulos em serifa — a biblioteca,
-   e não o painel. O benchmark sai em salmão, e não em âmbar, porque âmbar ao
-   lado da linha dourada da carteira seria uma cor só. */
-const musgo: ThemePreset = {
-  id: 'musgo-dark',
-  name: 'Musgo',
-  description: 'Verde-floresta escuro, ouro de destaque e títulos em serifa.',
+   O Grafite com a luz apagada: cinza frio, sem puxar para azul nem para
+   preto, o azul de destaque clareado para se ler sobre o card, e a mesma
+   forma do claro — trocar de modo troca a luz, não a voz da tela. */
+const grafiteDark: ThemePreset = {
+  id: 'grafite-dark',
+  name: 'Grafite',
+  description: 'Cinza frio escuro, azul de destaque e superfícies com sombra.',
   palette: {
     mode: 'dark',
-    background: { default: '#121A15', paper: '#1A251E' },
-    text: { primary: '#E8EDE4', secondary: '#A3B0A2' },
-    primary: '#D9B45A',
-    secondary: '#8FBF9F',
-    error: '#F08A7E',
-    warning: '#E59866',
-    success: '#7BD39A',
-    info: '#8FB8D9',
-    golden: '#D9B45A',
-    dark: '#0B110D',
-    sidebar: '#0F1612',
-    topbar: { background: '#0F1612', text: '#BFCBBE', activeText: '#E3C277', activeBg: '#22302A' },
-    divider: '#2A3830',
+    background: { default: '#14171C', paper: '#1C2027' },
+    text: { primary: '#E6E9EE', secondary: '#9AA3B0' },
+    primary: '#6B9BFF',
+    secondary: '#94A3B8',
+    error: '#F2767A',
+    warning: '#F0B44C',
+    success: '#5CCB8A',
+    info: '#7FB2F0',
+    golden: '#E2B65A',
+    dark: '#0E1014',
+    topbar: { background: '#101318', text: '#C2C9D3', activeText: '#FFFFFF', activeBg: '#2A313C' },
+    divider: '#2A2F38',
     chart: {
-      grid: 'rgba(232,237,228,0.07)',
-      label: '#A3B0A2',
-      colors: ['#8FC1D4', '#C99AD6', '#E08A9B', '#A7C46A', '#7FB3A3', '#9DB2C8', '#E3B5A0', '#B8C4A0'],
+      grid: 'rgba(230,233,238,0.07)',
+      label: '#9AA3B0',
+      colors: ['#3CC9B4', '#F0A06A', '#B993F0', '#E683AE', '#9CCB5E', '#D9BE7C', '#C88FB4', '#B4BE73'],
+    },
+  },
+  shape: grafite.shape,
+}
+
+/* ══════════════════════════════════════════════
+   Minimal — preto sobre branco
+   ══════════════════════════════════════════════
+
+   Sem cor de marca: o destaque é o próprio preto — botão, linha da carteira,
+   item ativo —, e a cor fica para o que é dado, as séries do gráfico e o
+   sinal. Moldura branca como o Nuvem, cards desenhados por borda e cantos de
+   12px. */
+const minimal: ThemePreset = {
+  id: 'minimal-light',
+  name: 'Minimal',
+  description: 'Preto sobre branco, cor só no dado, cantos macios.',
+  palette: {
+    mode: 'light',
+    background: { default: '#F6F6F6', paper: '#FFFFFF' },
+    text: { primary: '#111111', secondary: '#6B6B6B' },
+    primary: '#111111',
+    secondary: '#8A8A8A',
+    error: '#D92D20',
+    warning: '#C2410C',
+    success: '#12805C',
+    info: '#2563EB',
+    golden: '#A16207',
+    dark: '#111111',
+    topbar: { background: '#FFFFFF', text: '#4A4A4A', activeText: '#111111', activeBg: '#EDEDED' },
+    divider: '#E6E6E6',
+    chart: {
+      grid: '#EEEEEE',
+      label: '#6B6B6B',
+      colors: ['#2563EB', '#E8562A', '#0F9D8A', '#8E5CC9', '#D4A017', '#C2456B', '#4F8F3A', '#5E7186'],
     },
   },
   shape: {
-    radius: { sm: 2, md: 4, lg: 4, pill: 9999 },
+    radius: { sm: 8, md: 12, lg: 12, pill: 9999 },
+    fontFamily: fontStacks.grotesk,
+    headingFontFamily: fontStacks.grotesk,
+    quiet: true,
+  },
+}
+
+/* ══════════════════════════════════════════════
+   Ardósia — moldura cinza-azulada e laranja
+   ══════════════════════════════════════════════
+
+   O painel administrativo clássico: barra e coluna em ardósia, página
+   cinza-clara, cards brancos e um laranja de destaque. O benchmark sai em
+   dourado-oliva, puxado para o amarelo, para não encostar no laranja da
+   carteira. */
+const ardosia: ThemePreset = {
+  id: 'ardosia-light',
+  name: 'Ardósia',
+  description: 'Moldura cinza-azulada, página clara e laranja de destaque.',
+  palette: {
+    mode: 'light',
+    background: { default: '#EEF1F4', paper: '#FFFFFF' },
+    text: { primary: '#1F2933', secondary: '#5B6672' },
+    primary: '#D35F2A',
+    secondary: '#3E4C5E',
+    error: '#C53030',
+    warning: '#9A7B16',
+    success: '#15803D',
+    info: '#2F6FB3',
+    golden: '#9A7B16',
+    dark: '#1F2933',
+    topbar: { background: '#2E3A48', text: '#D3DAE2', activeText: '#F5A26B', activeBg: '#3E4C5E' },
+    divider: '#DDE2E8',
+    chart: {
+      grid: '#E5E9EE',
+      label: '#5B6672',
+      colors: ['#2F80C9', '#0F9D8A', '#8E5CC9', '#C2456B', '#4F8F3A', '#D16BA5', '#5A62C9', '#8A9A3A'],
+    },
+  },
+  shape: {
+    radius: { sm: 4, md: 8, lg: 8, pill: 9999 },
     fontFamily: fontStacks.figtree,
-    headingFontFamily: fontStacks.sourceSerif,
-    quiet: true,
+    headingFontFamily: fontStacks.figtree,
   },
 }
 
 /* ══════════════════════════════════════════════
-   Terminal — fósforo sobre preto
+   Esmeralda — escuro com verde
    ══════════════════════════════════════════════
 
-   Mono em tudo, canto nenhum, as cores ANSI de um terminal: ciano no prompt,
-   magenta de apoio, verde e vermelho de sinal, amarelo de alerta. A fonte
-   mono deixa toda coluna de número alinhada pelo próprio desenho. */
-const terminal: ThemePreset = {
-  id: 'terminal-dark',
-  name: 'Terminal',
-  description: 'Preto, cores ANSI, fonte mono e canto nenhum.',
+   Quase preto neutro com um verde de destaque, o escuro dos apps de
+   investimento. O verde da carteira e o do sinal positivo são parentes, de
+   propósito: subir é a cor do produto. O botão leva texto escuro, porque
+   branco sobre esse verde não se lê. */
+const esmeralda: ThemePreset = {
+  id: 'esmeralda-dark',
+  name: 'Esmeralda',
+  description: 'Quase preto, verde de destaque e cantos arredondados.',
   palette: {
     mode: 'dark',
-    background: { default: '#0A0C0A', paper: '#111411' },
-    text: { primary: '#D7E6D2', secondary: '#8FA58A' },
-    primary: '#4FD6E0',
-    secondary: '#D58BE0',
-    error: '#FF6E67',
-    warning: '#F4F99D',
-    success: '#5AF78E',
-    info: '#9AA7FF',
-    golden: '#E8D44D',
-    dark: '#060806',
-    sidebar: '#060806',
-    topbar: { background: '#060806', text: '#9FB59A', activeText: '#4FD6E0', activeBg: '#1A221A' },
-    divider: '#243024',
+    background: { default: '#151619', paper: '#1E1F23' },
+    text: { primary: '#E8EAED', secondary: '#9AA0A8' },
+    primary: '#34C77B',
+    secondary: '#8FA3B8',
+    error: '#F26D6D',
+    warning: '#E9B949',
+    success: '#5EDB95',
+    info: '#6FA8F0',
+    golden: '#E2B65A',
+    dark: '#0F1012',
+    topbar: { background: '#111214', text: '#C4C8CE', activeText: '#6EE0A4', activeBg: '#22352B' },
+    divider: '#2B2D32',
     chart: {
-      grid: 'rgba(215,230,210,0.07)',
-      label: '#8FA58A',
-      colors: ['#FF9F43', '#9AA7FF', '#FF6AC1', '#C3E88D', '#B4BCC8', '#E6C07B', '#F07178', '#82AAFF'],
+      grid: 'rgba(232,234,237,0.07)',
+      label: '#9AA0A8',
+      colors: ['#6FA8F0', '#F0A06A', '#B993F0', '#E683AE', '#D9BE7C', '#5CC8D0', '#C88FB4', '#E07A6A'],
     },
   },
   shape: {
-    radius: { sm: 0, md: 0, lg: 0, pill: 9999 },
-    fontFamily: fontStacks.jetbrainsMono,
-    headingFontFamily: fontStacks.jetbrainsMono,
-    quiet: true,
+    radius: { sm: 6, md: 12, lg: 12, pill: 9999 },
+    fontFamily: fontStacks.grotesk,
+    headingFontFamily: fontStacks.grotesk,
   },
 }
 
 /** Na ordem em que aparecem para o usuário, os claros e depois os escuros. */
 export const THEME_PRESETS: ThemePreset[] = [
   tintaLight,
+  nuvem,
+  minimal,
   grafite,
-  papel,
+  ardosia,
   oceano,
-  ameixa,
+  papel,
   tintaDark,
+  grafiteDark,
   petroleo,
-  noite,
-  musgo,
-  terminal,
+  esmeralda,
 ]

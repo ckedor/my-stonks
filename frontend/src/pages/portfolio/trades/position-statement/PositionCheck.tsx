@@ -33,7 +33,7 @@ import AssetTrades from './AssetTrades'
 import DiffTable from './DiffTable'
 import HoldingsTable from './HoldingsTable'
 import { initialHoldings, tradesOf, updateHolding } from './check'
-import { DOCUMENT_NOT_KEPT } from '../documents/copy'
+import { DOCUMENT_NOT_KEPT } from '../copy'
 
 /** Espera depois da última edição antes de comparar de novo. */
 const RECOMPARE_DELAY_MS = 500

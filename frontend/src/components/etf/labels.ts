@@ -56,4 +56,5 @@ export const HOLDINGS_SOURCE_LABEL: Record<string, string> = {
   sec_nport: 'N-PORT da SEC',
   dws: 'arquivo da gestora (DWS)',
   ishares: 'arquivo da gestora (iShares)',
+  vanguard: 'arquivo da gestora (Vanguard)',
 }

@@ -56,6 +56,7 @@ def _reading(**overrides) -> BrokerageNotesReading:
                 security='PETR4F PN N2',
                 ticker=None,
                 fund_cnpj=None,
+                isin=None,
                 quantity=10,
                 price=30,
                 value=300,
@@ -67,6 +68,7 @@ def _reading(**overrides) -> BrokerageNotesReading:
                 security='EMPRESA SEM CADASTRO ON',
                 ticker=None,
                 fund_cnpj=None,
+                isin=None,
                 quantity=100,
                 price=5,
                 value=500,
@@ -147,6 +149,7 @@ def _service(*, existing=(), reading=None, imported=None, document=None):
         ),
         get_asset_transactions_until=AsyncMock(return_value=list(existing)),
         find_brokerage_note=AsyncMock(return_value=imported),
+        list_note_transactions=AsyncMock(return_value=[]),
         get_document=AsyncMock(return_value=document),
         create=AsyncMock(return_value=[900]),
         update=AsyncMock(),
@@ -158,7 +161,10 @@ def _service(*, existing=(), reading=None, imported=None, document=None):
                 SimpleNamespace(id=PETR4, ticker='PETR4', name='Petrobras'),
                 SimpleNamespace(id=QQQM, ticker='QQQM', name='Invesco Nasdaq 100'),
             ]
-        )
+        ),
+        get_by_isins=AsyncMock(return_value=[]),
+        find_by_name_words=AsyncMock(return_value=[]),
+        get_by_ids=AsyncMock(return_value=[]),
     )
     uow = FakeUnitOfWork(portfolios=portfolios, assets=assets)
     extractor = SimpleNamespace(
@@ -354,6 +360,7 @@ def _avenue_reading() -> BrokerageNotesReading:
                         security='INVESCO EXCHANGE TRADED FD TR II INVESCO NASDAQ 100 ETF',
                         ticker='QQQM',
                         fund_cnpj=None,
+                        isin=None,
                         quantity=24.45205,
                         price=299.9923,
                         value=7335.43,
@@ -388,6 +395,177 @@ async def test_a_dollar_confirmation_finds_the_broker_by_name_and_the_us_ticker(
     assert (line.ticker, line.asset_id, line.match) == ('QQQM', QQQM, AssetMatch.MATCHED)
 
 
+EXUS_ISIN = 'IE0006WW1TQ4'
+CSPX_ISIN = 'IE00B5BMR087'
+EXUS = 13284
+
+
+def _ucits_reading(*lines: tuple[str | None, str | None]) -> BrokerageNotesReading:
+    """Compras de ETFs de Londres numa nota em dólar: (código, ISIN) por linha."""
+    reading = _avenue_reading()
+    (note,) = reading.notes
+    template = note.lines[0]
+    note.lines = [
+        template.model_copy(
+            update={
+                'side': 'C',
+                'security': 'XTRACKERS MSCI WLD EX USA UCITS ETF 1C',
+                'ticker': ticker,
+                'isin': isin,
+            }
+        )
+        for ticker, isin in lines
+    ]
+    return reading
+
+
+async def test_a_line_without_a_code_is_found_by_the_isin_it_prints():
+    """O ETF de Londres: a nota não imprime código, e o cadastro o chama de EXUS.L."""
+    service, uow = _service(reading=_ucits_reading((None, ' ie0006ww1tq4 ')))
+    uow.assets.get_by_isins = AsyncMock(
+        return_value=[SimpleNamespace(id=EXUS, ticker='EXUS.L', name='Xtrackers', isin=EXUS_ISIN)]
+    )
+
+    draft = await service.extract(portfolio_id=PORTFOLIO, filename='ucits.pdf', content=PDF)
+
+    (line,) = draft.notes[0].lines
+    assert (line.ticker, line.isin, line.asset_id, line.match) == (
+        None,
+        EXUS_ISIN,
+        EXUS,
+        AssetMatch.MATCHED,
+    )
+    uow.assets.get_by_isins.assert_awaited_once_with([EXUS_ISIN])
+
+
+async def test_one_class_listed_on_two_exchanges_is_ambiguous_by_isin():
+    """CSPX em Londres e SXR8 em Frankfurt são a mesma classe: a pessoa escolhe."""
+    service, uow = _service(reading=_ucits_reading((None, CSPX_ISIN)))
+    uow.assets.get_by_isins = AsyncMock(
+        return_value=[
+            SimpleNamespace(id=1, ticker='CSPX.L', name='CSPX', isin=CSPX_ISIN),
+            SimpleNamespace(id=2, ticker='SXR8.DE', name='SXR8', isin=CSPX_ISIN),
+        ]
+    )
+
+    draft = await service.extract(portfolio_id=PORTFOLIO, filename='ucits.pdf', content=PDF)
+
+    (line,) = draft.notes[0].lines
+    assert (line.asset_id, line.match) == (None, AssetMatch.AMBIGUOUS)
+
+
+async def test_an_isin_with_a_wrong_check_digit_is_not_looked_up():
+    """Um ISIN copiado pela metade casaria com outro ativo, ou com nenhum, em silêncio."""
+    service, uow = _service(reading=_ucits_reading((None, 'IE0006WW1TQ5')))
+
+    draft = await service.extract(portfolio_id=PORTFOLIO, filename='ucits.pdf', content=PDF)
+
+    (line,) = draft.notes[0].lines
+    assert (line.isin, line.match) == (None, AssetMatch.UNKNOWN)
+    uow.assets.get_by_isins.assert_awaited_once_with([])
+
+
+EIMI = 13283
+UCITS_NAMES = (
+    ('Xtrackers (IE) PLC XTRACKERS MSCI WLD EX USA UCITS ETF 1C', 13, 45.57),
+    ('Ishares PLC CORE MSCI EM IMI UCITS ETF USD ACC', 2, 54.92),
+)
+
+
+def _avenue_ucits_reading() -> BrokerageNotesReading:
+    """A confirmação da Avenue com os dois ETFs de Londres: nome, sem código nem ISIN."""
+    reading = _avenue_reading()
+    (note,) = reading.notes
+    template = note.lines[0]
+    note.lines = [
+        template.model_copy(
+            update={
+                'side': 'C',
+                'security': security,
+                'ticker': None,
+                'quantity': quantity,
+                'price': price,
+                'value': quantity * price,
+            }
+        )
+        for security, quantity, price in UCITS_NAMES
+    ]
+    return reading
+
+
+async def test_a_note_already_imported_gives_each_execution_the_asset_chosen_then():
+    """Reenviar a nota não pede de novo o ativo que a importação anterior já escolheu."""
+    previous = SimpleNamespace(id=23, imported_at=datetime(2026, 9, 30))
+    service, uow = _service(reading=_avenue_ucits_reading(), imported=previous)
+    uow.portfolios.list_note_transactions = AsyncMock(
+        return_value=[
+            SimpleNamespace(asset_id=EXUS, quantity=13, price=236.07, price_usd=45.57),
+            SimpleNamespace(asset_id=EIMI, quantity=2, price=284.50, price_usd=54.92),
+        ]
+    )
+    uow.assets.get_by_ids = AsyncMock(
+        return_value=[
+            SimpleNamespace(id=EXUS, name='Xtrackers MSCI World ex USA UCITS ETF 1C USD'),
+            SimpleNamespace(id=EIMI, name='iShares Core MSCI EM IMI UCITS ETF USD (Acc)'),
+        ]
+    )
+
+    draft = await service.extract(portfolio_id=PORTFOLIO, filename='avenue.pdf', content=PDF)
+
+    assert [(line.asset_id, line.match) for line in draft.notes[0].lines] == [
+        (EXUS, AssetMatch.IMPORTED),
+        (EIMI, AssetMatch.IMPORTED),
+    ]
+    uow.portfolios.list_note_transactions.assert_awaited_once_with(23)
+
+
+async def test_an_execution_the_imported_note_does_not_have_is_not_given_its_asset():
+    """Outra quantidade é outra execução: a nota anterior não diz nada sobre ela."""
+    previous = SimpleNamespace(id=23, imported_at=datetime(2026, 9, 30))
+    service, uow = _service(reading=_avenue_ucits_reading(), imported=previous)
+    uow.portfolios.list_note_transactions = AsyncMock(
+        return_value=[SimpleNamespace(asset_id=EXUS, quantity=12, price=236.07, price_usd=45.57)]
+    )
+
+    draft = await service.extract(portfolio_id=PORTFOLIO, filename='avenue.pdf', content=PDF)
+
+    assert {line.match for line in draft.notes[0].lines} == {AssetMatch.UNKNOWN}
+
+
+async def test_a_line_with_only_a_name_is_suggested_the_one_asset_with_the_same_words():
+    service, uow = _service(reading=_avenue_ucits_reading())
+    uow.assets.find_by_name_words = AsyncMock(
+        return_value=[
+            SimpleNamespace(id=EXUS, name='Xtrackers MSCI World ex USA UCITS ETF 1C USD'),
+            SimpleNamespace(id=EIMI, name='iShares Core MSCI EM IMI UCITS ETF USD (Acc)'),
+            # Falta Core e IMI: não é o mesmo fundo, por mais parecido.
+            SimpleNamespace(id=9, name='iShares MSCI EM UCITS ETF USD (Dist)'),
+        ]
+    )
+
+    draft = await service.extract(portfolio_id=PORTFOLIO, filename='avenue.pdf', content=PDF)
+
+    assert [(line.asset_id, line.match) for line in draft.notes[0].lines] == [
+        (EXUS, AssetMatch.BY_NAME),
+        (EIMI, AssetMatch.BY_NAME),
+    ]
+
+
+async def test_two_assets_with_the_same_words_are_not_guessed_between():
+    """Acc e Dist são classes diferentes com o mesmo nome: a pessoa escolhe."""
+    service, uow = _service(reading=_avenue_ucits_reading())
+    uow.assets.find_by_name_words = AsyncMock(
+        return_value=[
+            SimpleNamespace(id=EIMI, name='iShares Core MSCI EM IMI UCITS ETF USD (Acc)'),
+            SimpleNamespace(id=10, name='iShares Core MSCI EM IMI UCITS ETF USD (Dist)'),
+        ]
+    )
+
+    draft = await service.extract(portfolio_id=PORTFOLIO, filename='avenue.pdf', content=PDF)
+
+    assert draft.notes[0].lines[1].match == AssetMatch.UNKNOWN
+
+
 def _fund_statement_reading() -> BrokerageNotesReading:
     """Uma aplicação num fundo, como o extrato de conta do BTG a mostra."""
     return BrokerageNotesReading(
@@ -406,6 +584,7 @@ def _fund_statement_reading() -> BrokerageNotesReading:
                         security='PLGN Equipe FICFIDC',
                         ticker=None,
                         fund_cnpj='55.139.905/0001-39',
+                        isin=None,
                         quantity=13697.925404,
                         price=1.454548,
                         value=19924.29,

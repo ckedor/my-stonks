@@ -1,20 +1,22 @@
-"""The guards of a manager's holdings file.
+"""The guards of a manager's holdings list.
 
-A manager's export is made for people and nothing promises its layout, so the
-reader's worth is in what it refuses: each case below is one way a file can
-look readable and be wrong, and the reader has to stop on it.
+A manager's API is made for its own page and nothing promises its shape, so
+the reader's worth is in what it refuses: each case below is one way an answer
+can look readable and be wrong, and the reader has to stop on it.
 """
 
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 
 import pytest
 
 from app.infra.exceptions import IntegrationBadResponse
-from app.infra.integrations.ishares_client import PRODUCTS
+from app.infra.integrations.ishares_client import PRODUCT_IDS
+from app.infra.integrations.vanguard_client import PORT_IDS
 from app.modules.market_data.adapters.etf_manager_files import (
-    read_dws_constituents,
+    read_dws_holdings,
     read_ishares_holdings,
+    read_vanguard_holdings,
 )
 from app.modules.market_data.domain.etf_registry import (
     MANAGER_HOLDINGS_FILES,
@@ -25,197 +27,190 @@ from app.modules.market_data.domain.etf_registry import (
 )
 from tests.fixtures.etf_manager_files import (
     CSPX_ISIN,
+    DWS_COLUMNS,
+    DWS_LINES,
     EXUS_ISIN,
-    HEADER,
-    ISHARES_FACTS,
-    ISHARES_HEADER,
     ISHARES_LINES,
-    LINES,
-    constituents_xlsx,
-    dated,
-    holdings_csv,
+    VANGUARD_ITEMS,
+    VWRA_ISIN,
+    dws_holdings,
+    ishares_holdings,
+    vanguard_holdings,
 )
 
 # --- DWS ----------------------------------------------------------------------
 
 
-def test_a_constituents_file_gives_its_date_and_every_line_with_its_weight_as_a_ratio():
-    report = read_dws_constituents(constituents_xlsx())
+def test_a_dws_table_gives_its_source_date_and_every_line_with_its_weight_as_a_ratio():
+    report = read_dws_holdings(dws_holdings())
 
-    # Day first: the UK export is the one asked for.
-    assert report.report_date == date(2026, 9, 30)
-    # The footnotes after the table are not holdings.
-    assert [holding['name'] for holding in report.holdings] == [
-        'ASML HOLDING NV',
-        'NESTLE SA',
-        'TOYOTA MOTOR CORP',
-    ]
-    asml, nestle, _ = report.holdings
+    # Day first, from the footnote: the page is the en-GB one.
+    assert report.report_date == date(2026, 10, 1)
+    asml = report.holdings[0]
     assert asml == {
-        'name': 'ASML HOLDING NV',
+        'name': 'ASML HOLDING',
         'isin': 'NL0010273215',
         'ticker': None,
         'country': 'NL',
-        'currency': 'EUR',
-        'weight': Decimal('0.025'),
+        'currency': None,
+        # The unrounded sort value, not the "2.884%" label.
+        'weight': Decimal('0.028835911700'),
     }
-    # A country written out is left out rather than translated by guess.
-    assert nestle['country'] is None
+    # Cash and futures are lines too; their made-up codes are not ISINs.
+    assert [(line['name'], line['isin']) for line in report.holdings[2:4]] == [
+        ('SWEDISH KRONA', None),
+        ('S+P/TSX 60 IX FUT DEC26', None),
+    ]
+    assert report.unread_countries == set()
 
 
-def test_weights_written_as_ratios_or_with_a_percent_sign_read_the_same():
-    as_ratio = tuple((*line[:-1], line[-1] / 100) for line in LINES)
-    as_text = tuple((*line[:-1], f'{line[-1]}%') for line in LINES)
+def test_a_country_name_not_in_the_table_is_left_out_and_reported():
+    lines = (*DWS_LINES[:-1], (*DWS_LINES[-1][:3], 'Atlantis', 'Equities'))
 
-    for lines in (as_ratio, as_text):
-        report = read_dws_constituents(constituents_xlsx(lines=lines))
-        assert report.holdings[0]['weight'] == Decimal('0.025')
+    report = read_dws_holdings(dws_holdings(lines=lines))
 
-
-def test_a_date_cell_is_read_as_the_report_date():
-    report = read_dws_constituents(constituents_xlsx(title=dated(datetime(2026, 10, 1))))
-
-    assert report.report_date == date(2026, 10, 1)
+    assert report.holdings[-1]['country'] is None
+    assert report.unread_countries == {'Atlantis'}
 
 
-def test_an_invalid_isin_is_kept_as_a_line_without_one():
-    lines = (*LINES[:2], ('USD CASH', 'CASH', None, 'USD', None, 'Cash', 96.0))
+def test_a_dws_table_without_the_weight_column_fails_and_says_what_it_needed():
+    columns = [column for column in DWS_COLUMNS if column['value'] != '% Weight']
 
-    report = read_dws_constituents(constituents_xlsx(lines=lines))
-
-    assert report.holdings[-1]['isin'] is None
-
-
-def test_a_file_without_the_weight_column_fails_and_says_what_it_saw():
-    header = tuple('Market Value' if column == 'Weighting' else column for column in HEADER)
-
-    with pytest.raises(IntegrationBadResponse, match='no Name/ISIN/Weighting header.*Market Value'):
-        read_dws_constituents(constituents_xlsx(header=header))
-
-
-def test_a_file_cut_short_fails_instead_of_passing_for_the_whole_fund():
-    with pytest.raises(IntegrationBadResponse, match='add up to'):
-        read_dws_constituents(constituents_xlsx(lines=LINES[:2]))
+    with pytest.raises(IntegrationBadResponse, match='% Weight'):
+        read_dws_holdings(dws_holdings(columns=columns))
 
 
 @pytest.mark.parametrize(
-    'title',
-    [
-        ('Xtrackers MSCI World ex USA UCITS ETF 1C',),
-        ('Xtrackers MSCI World ex USA UCITS ETF 1C', 'As of 30/09/2026', 'Launched 2023-08-01'),
-    ],
+    'disclaimers',
+    [(), ('<p>Source: DWS 01/10/2026</p>', '<p>Source: DWS 30/09/2026</p>')],
     ids=['no date', 'two dates'],
 )
-def test_a_file_without_exactly_one_date_fails(title):
-    with pytest.raises(IntegrationBadResponse, match='dates above its header'):
-        read_dws_constituents(constituents_xlsx(title=title))
+def test_a_dws_table_without_exactly_one_source_date_fails(disclaimers):
+    with pytest.raises(IntegrationBadResponse, match='"Source: DWS" dates'):
+        read_dws_holdings(dws_holdings(disclaimers=disclaimers))
 
 
-def test_a_page_in_place_of_the_spreadsheet_fails():
-    with pytest.raises(IntegrationBadResponse, match='not an xlsx'):
-        read_dws_constituents(b'<!DOCTYPE html><html>Please accept our terms</html>')
+def test_a_dws_table_cut_short_fails_instead_of_passing_for_the_whole_fund():
+    with pytest.raises(IntegrationBadResponse, match='add up to'):
+        read_dws_holdings(dws_holdings(lines=DWS_LINES[:2]))
 
 
 # --- iShares ------------------------------------------------------------------
 
 
-def test_an_ishares_csv_gives_its_date_and_every_line_with_its_weight_as_a_ratio():
-    report = read_ishares_holdings(holdings_csv())
+def test_an_ishares_component_gives_its_date_and_every_line_with_its_weight_as_a_ratio():
+    report = read_ishares_holdings(ishares_holdings())
 
-    assert report.report_date == date(2026, 9, 30)
-    # The legal text after the table is not a holding.
-    assert [holding['name'] for holding in report.holdings] == [
-        'NVIDIA CORP',
-        'APPLE INC',
-        'MICROSOFT CORP',
-        'USD CASH',
-    ]
-    nvidia = report.holdings[0]
-    assert nvidia == {
-        'name': 'NVIDIA CORP',
-        'isin': None,
+    assert report.report_date == date(2026, 10, 1)
+    assert report.holdings[0] == {
+        'name': 'NVIDIA',
+        'isin': 'US67066G1040',
         'ticker': 'NVDA',
-        # "United States" is written out, and left out.
-        'country': None,
+        'country': 'US',
         'currency': 'USD',
-        'weight': Decimal('0.078'),
+        'weight': Decimal('0.0843983'),
     }
-    # The dash is not a ticker.
-    assert report.holdings[-1]['ticker'] is None
+    future = report.holdings[3]
+    assert (future['isin'], future['country'], future['weight']) == (None, None, Decimal(0))
 
 
-def test_an_isin_column_is_read_when_the_csv_has_one():
-    header = (*ISHARES_HEADER, 'ISIN')
-    lines = tuple(
-        (*line, isin)
-        for line, isin in zip(
-            ISHARES_LINES, ['US67066G1040', 'US0378331005', 'US5949181045', '-'], strict=True
-        )
-    )
+def test_an_ishares_component_without_the_isin_column_still_reads():
+    report = read_ishares_holdings(ishares_holdings(drop=('isin',)))
 
-    report = read_ishares_holdings(holdings_csv(header=header, lines=lines))
-
-    assert [holding['isin'] for holding in report.holdings] == [
-        'US67066G1040',
-        'US0378331005',
-        'US5949181045',
-        None,
-    ]
+    assert {line['isin'] for line in report.holdings} == {None}
 
 
-def test_the_us_site_date_reads_too():
-    facts = (ISHARES_FACTS[0], ('Fund Holdings as of', 'Sep 30, 2026'), *ISHARES_FACTS[2:])
-
-    assert read_ishares_holdings(holdings_csv(facts=facts)).report_date == date(2026, 9, 30)
-
-
-def test_an_ishares_csv_without_its_date_fails():
-    facts = (ISHARES_FACTS[0], *ISHARES_FACTS[2:])
-
-    with pytest.raises(IntegrationBadResponse, match='Fund Holdings as of'):
-        read_ishares_holdings(holdings_csv(facts=facts))
+def test_an_ishares_component_without_the_weight_fails():
+    with pytest.raises(IntegrationBadResponse, match='holdingPercent'):
+        read_ishares_holdings(ishares_holdings(drop=('holdingPercent',)))
 
 
-def test_an_ishares_csv_cut_short_fails():
+def test_an_ishares_component_with_columns_of_different_lengths_fails():
+    """Read by position, a column one value short would shift every line."""
+    payload = ishares_holdings()
+    points = payload['componentsByNameMap']['holdings']['containersByNameMap']['all']
+    points['dataPointsByNameMap']['isin']['value'].pop()
+
+    with pytest.raises(IntegrationBadResponse, match='uneven'):
+        read_ishares_holdings(payload)
+
+
+def test_an_ishares_component_without_a_readable_date_fails():
+    with pytest.raises(IntegrationBadResponse, match='not a date'):
+        read_ishares_holdings(ishares_holdings(as_of=0))
+
+
+def test_an_ishares_component_cut_short_fails():
     with pytest.raises(IntegrationBadResponse, match='add up to'):
-        read_ishares_holdings(holdings_csv(lines=ISHARES_LINES[:2]))
+        read_ishares_holdings(ishares_holdings(lines=ISHARES_LINES[:2]))
 
 
-def test_an_ishares_csv_without_the_weight_column_fails_and_says_what_it_saw():
-    header = tuple('Share' if column == 'Weight (%)' else column for column in ISHARES_HEADER)
-
-    with pytest.raises(IntegrationBadResponse, match='no Name/Weight .*Market Value'):
-        read_ishares_holdings(holdings_csv(header=header))
+def test_a_page_in_place_of_the_ishares_component_fails():
+    with pytest.raises(IntegrationBadResponse, match='holdings component'):
+        read_ishares_holdings({'componentsByNameMap': {}})
 
 
-def test_the_gate_page_in_place_of_the_csv_fails():
-    with pytest.raises(IntegrationBadResponse, match='answered a page'):
-        read_ishares_holdings(b'<!DOCTYPE html><html>Select your investor type</html>')
+# --- Vanguard -----------------------------------------------------------------
+
+
+def test_vanguard_pages_give_their_date_and_every_line():
+    report = read_vanguard_holdings(vanguard_holdings())
+
+    assert report.report_date == date(2026, 8, 31)
+    assert report.holdings[1] == {
+        'name': 'Taiwan Semiconductor Manufacturing Co Ltd',
+        'isin': 'TW0002330008',
+        'ticker': '2330',
+        'country': 'TW',
+        'currency': None,
+        'weight': Decimal('0.0122803'),
+    }
+
+
+def test_vanguard_lines_fewer_than_counted_fail():
+    """A page lost in the chain still leaves weights near the whole fund when
+    it held small lines; the count is what catches it."""
+    with pytest.raises(IntegrationBadResponse, match='counted 5'):
+        read_vanguard_holdings(vanguard_holdings(total=5))
+
+
+def test_vanguard_lines_of_two_dates_fail():
+    items = (*VANGUARD_ITEMS[:-1], {**VANGUARD_ITEMS[-1], 'effectiveDate': '2026-07-31'})
+
+    with pytest.raises(IntegrationBadResponse, match='2 dates'):
+        read_vanguard_holdings(vanguard_holdings(items=items))
+
+
+def test_vanguard_lines_cut_short_fail():
+    with pytest.raises(IntegrationBadResponse, match='add up to'):
+        read_vanguard_holdings(vanguard_holdings(items=VANGUARD_ITEMS[:2]))
 
 
 # --- which classes are read ---------------------------------------------------
 
 
-def test_a_holdings_source_is_the_sec_filing_or_a_manager_file_named_by_isin():
+def test_a_holdings_source_is_the_sec_filing_or_a_manager_list_named_by_isin():
     american = EtfRegistry(source=EtfRegistrySource.SEC, name='IVV', domicile='US')
     ucits = EtfRegistry(source=EtfRegistrySource.ESMA, name='EXUS', domicile='IE')
 
     assert holdings_source(american, None) == EtfHoldingSource.SEC_NPORT
     assert holdings_source(ucits, EXUS_ISIN) == EtfHoldingSource.DWS
     assert holdings_source(ucits, CSPX_ISIN) == EtfHoldingSource.ISHARES
-    # VWRA: Vanguard's file is not read.
-    assert holdings_source(ucits, 'IE00BK5BQT80') is None
+    assert holdings_source(ucits, VWRA_ISIN) == EtfHoldingSource.VANGUARD
+    # SWDA: an iShares class nobody has added.
+    assert holdings_source(ucits, 'IE00B4L5Y983') is None
     assert holdings_source(ucits, None) is None
 
 
-def test_every_ishares_class_read_has_its_product_page():
-    """iShares addresses a file by its own product id, not by ISIN: a class
-    added to the domain's list without its page would fail every run."""
-    ishares = {
-        isin
-        for isin, source in MANAGER_HOLDINGS_FILES.items()
-        if source == EtfHoldingSource.ISHARES
-    }
+@pytest.mark.parametrize(
+    ('source', 'ids'),
+    [(EtfHoldingSource.ISHARES, PRODUCT_IDS), (EtfHoldingSource.VANGUARD, PORT_IDS)],
+    ids=['iShares', 'Vanguard'],
+)
+def test_every_class_of_a_manager_addressed_by_its_own_id_has_that_id(source, ids):
+    """iShares and Vanguard address a fund by an id of their own, not by ISIN:
+    a class added to the domain's list without its id would fail every run."""
+    classes = {isin for isin, read_from in MANAGER_HOLDINGS_FILES.items() if read_from == source}
 
-    assert ishares
-    assert ishares <= PRODUCTS.keys()
+    assert classes
+    assert classes <= ids.keys()

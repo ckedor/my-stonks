@@ -20,7 +20,13 @@ from app.modules.market_data.service.etf_holdings_ingestion_service import (
 )
 from app.modules.market_data.service.etf_service import EtfReadService
 from tests.e2e.test_etf_registry_ingestion import CSPX_ISIN, FakeEsma, build_service, etf_asset
-from tests.fixtures.etf_manager_files import EXUS_ISIN, constituents_xlsx, holdings_csv
+from tests.fixtures.etf_manager_files import (
+    EXUS_ISIN,
+    VWRA_ISIN,
+    dws_holdings,
+    ishares_holdings,
+    vanguard_holdings,
+)
 from tests.fixtures.etf_registry import NPORT_DOCUMENT
 
 IVV_FILING = NportFiling(
@@ -60,9 +66,9 @@ class FakeFigi:
 class FakeDws:
     asked: list = field(default_factory=list)
 
-    async def constituents(self, isin):
+    async def holdings(self, isin):
         self.asked.append(isin)
-        return constituents_xlsx()
+        return dws_holdings()
 
     async def close(self):
         pass
@@ -74,13 +80,27 @@ class FakeIshares:
 
     async def holdings(self, isin):
         self.asked.append(isin)
-        return holdings_csv()
+        return ishares_holdings()
 
     async def close(self):
         pass
 
 
-def holdings_service(sec, figi=None, dws=None, ishares=None) -> EtfHoldingsIngestionService:
+@dataclass
+class FakeVanguard:
+    asked: list = field(default_factory=list)
+
+    async def holdings(self, isin):
+        self.asked.append(isin)
+        return vanguard_holdings()
+
+    async def close(self):
+        pass
+
+
+def holdings_service(
+    sec, figi=None, dws=None, ishares=None, vanguard=None
+) -> EtfHoldingsIngestionService:
     return EtfHoldingsIngestionService(
         uow_factory=UnitOfWork,
         ingestion_service=DataIngestionService(uow_factory=UnitOfWork),
@@ -88,6 +108,7 @@ def holdings_service(sec, figi=None, dws=None, ishares=None) -> EtfHoldingsInges
         figi=figi or FakeFigi(),
         dws=dws or FakeDws(),
         ishares=ishares or FakeIshares(),
+        vanguard=vanguard or FakeVanguard(),
     )
 
 
@@ -136,7 +157,7 @@ async def test_holdings_are_read_once_per_filing_and_served_largest_first(db, tm
     )
     execution = await db.get(DataIngestionExecution, first)
     assert execution.status == 'success'
-    # SXR8 is CSPX on Xetra: the same class, read from iShares' file.
+    # SXR8 is CSPX on Xetra: the same class, read from iShares' list.
     assert execution.parameters['without_source'] == []
 
     page = await EtfReadService(UnitOfWork()).get_holdings(asset_id=ivv, page=1, page_size=2)
@@ -184,7 +205,6 @@ async def test_an_amended_filing_replaces_the_report_for_its_date(db, tmp_path):
 #: Sub-fund LEIs with valid check digits, for EXUS's and VWRA's places in FIRDS.
 EXUS_LEI = '549300EXUSTESTFUND24'
 VWRA_LEI = '549300VWRATESTFUND13'
-VWRA_ISIN = 'IE00BK5BQT80'
 
 
 def firds_class(isin, lei, name):
@@ -197,7 +217,7 @@ def firds_class(isin, lei, name):
     }
 
 
-async def test_a_ucits_etf_is_read_from_its_managers_file_once_per_date(db, tmp_path):
+async def test_a_ucits_etf_is_read_from_its_managers_list_once_per_date(db, tmp_path):
     # All three registered by the migrations, with the ISIN that links them.
     exus, cspx, vwra = [
         await db.scalar(text('SELECT id FROM asset.asset WHERE ticker = :t'), {'t': ticker})
@@ -218,48 +238,47 @@ async def test_a_ucits_etf_is_read_from_its_managers_file_once_per_date(db, tmp_
     ]
     await build_service(tmp_path, esma=esma).run()
 
-    dws, ishares, figi = FakeDws(), FakeIshares(), FakeFigi()
+    dws, ishares, vanguard, figi = FakeDws(), FakeIshares(), FakeVanguard(), FakeFigi()
     chosen = [exus, cspx, vwra]
-    first = await holdings_service(FakeNport(), figi, dws, ishares).run(asset_ids=chosen)
-    second = await holdings_service(FakeNport(), figi, dws, ishares).run(asset_ids=chosen)
+    service = holdings_service(FakeNport(), figi, dws, ishares, vanguard)
+    first = await service.run(asset_ids=chosen)
+    second = await service.run(asset_ids=chosen)
 
-    # Read both times — a file's date is only known once it is read — and
+    # Read both times — a list's date is only known once it is read — and
     # written once.
     assert dws.asked == [EXUS_ISIN, EXUS_ISIN]
     assert ishares.asked == [CSPX_ISIN, CSPX_ISIN]
+    assert vanguard.asked == [VWRA_ISIN, VWRA_ISIN]
     once = {attempt.item_label: attempt for attempt in await attempts(db, first)}
     again = {attempt.item_label: attempt for attempt in await attempts(db, second)}
-    assert (once['EXUS.L'].source, once['EXUS.L'].parameters['status']) == ('dws', 'downloaded')
-    assert (once['CSPX.L'].source, once['CSPX.L'].parameters['status']) == (
-        'ishares',
-        'downloaded',
-    )
-    assert again['EXUS.L'].parameters['status'] == 'not_modified'
-    assert again['CSPX.L'].parameters['status'] == 'not_modified'
-    # A UCITS fund's holdings are not asked of OpenFIGI, and a UCITS class
-    # whose manager's file is not read still has no source.
+    assert {
+        label: (attempt.source, attempt.parameters['status']) for label, attempt in once.items()
+    } == {
+        'EXUS.L': ('dws', 'downloaded'),
+        'CSPX.L': ('ishares', 'downloaded'),
+        'VWRA.L': ('vanguard', 'downloaded'),
+    }
+    assert {attempt.parameters['status'] for attempt in again.values()} == {'not_modified'}
+    # A UCITS fund's holdings are not asked of OpenFIGI.
     assert figi.asked == []
     execution = await db.get(DataIngestionExecution, first)
     assert execution.status == 'success'
-    assert execution.parameters['without_source'] == ['VWRA.L']
+    assert execution.parameters['without_source'] == []
 
     page = await EtfReadService(UnitOfWork()).get_holdings(asset_id=exus, page=1, page_size=10)
-    assert (page['source'], page['report_date'], page['total']) == (
-        'dws',
-        date(2026, 9, 30),
-        3,
-    )
-    assert [item['name'] for item in page['items']] == [
+    assert (page['source'], page['report_date'], page['total']) == ('dws', date(2026, 10, 1), 5)
+    assert [item['name'] for item in page['items'][:3]] == [
         'TOYOTA MOTOR CORP',
-        'ASML HOLDING NV',
-        'NESTLE SA',
+        'ASML HOLDING',
+        'HSBC HOLDINGS PLC',
     ]
-    assert page['items'][1]['asset_id'] == asml
+    assert (page['items'][1]['asset_id'], page['items'][1]['country']) == (asml, 'NL')
 
     profile = await EtfReadService(UnitOfWork()).get_profile(asset_id=exus)
     assert (profile['holdings_available'], profile['holdings']['source']) == (True, 'dws')
     cspx_page = await EtfReadService(UnitOfWork()).get_holdings(asset_id=cspx, page=1, page_size=10)
-    assert (cspx_page['source'], cspx_page['total']) == ('ishares', 4)
+    assert (cspx_page['source'], cspx_page['total']) == ('ishares', 5)
     assert cspx_page['items'][0]['ticker'] == 'MSFT'
-    vanguard = await EtfReadService(UnitOfWork()).get_profile(asset_id=vwra)
-    assert vanguard['holdings_available'] is False
+    vwra_page = await EtfReadService(UnitOfWork()).get_holdings(asset_id=vwra, page=1, page_size=10)
+    assert (vwra_page['source'], vwra_page['report_date']) == ('vanguard', date(2026, 8, 31))
+    assert (await EtfReadService(UnitOfWork()).get_profile(asset_id=vwra))['holdings_available']

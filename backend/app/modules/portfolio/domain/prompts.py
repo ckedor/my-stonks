@@ -99,6 +99,11 @@ Nos outros dois formatos, `fund_cnpj` é nulo.
 
 Em qualquer formato, datas em `YYYY-MM-DD` e números como números positivos
 (1234.56, não "1.234,56" nem "1,234.56").
+
+Em qualquer formato, `isin` é o ISIN da linha (12 caracteres, como
+IE00B5BMR087) quando o documento o imprime junto do título — é por ele que um
+ETF listado em Londres ou em Frankfurt casa com o ativo. Nunca deduzido do
+nome: sem ISIN impresso, nulo.
 """
 
 

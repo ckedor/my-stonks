@@ -10,7 +10,9 @@ import api from '@/lib/api'
 
 export type NoteSide = 'C' | 'V'
 export type NoteCurrency = 'BRL' | 'USD'
-type AssetMatch = 'matched' | 'unknown' | 'ambiguous'
+/** Como o ativo da linha foi achado: `imported` pela mesma execução na nota
+ *  já importada, `by_name` pelas mesmas palavras do nome — uma sugestão. */
+type AssetMatch = 'matched' | 'imported' | 'by_name' | 'unknown' | 'ambiguous'
 export type GroupStatus = 'new' | 'unchanged' | 'update' | 'replace' | 'conflict' | 'unresolved'
 export type GroupAction = 'create' | 'update' | 'replace' | 'skip'
 
@@ -25,6 +27,9 @@ export interface DraftLine {
   market: string | null
   security: string
   ticker: string | null
+  /** O ISIN impresso na linha, quando válido: é por ele que casa um ETF
+   *  listado fora dos EUA. */
+  isin: string | null
   quantity: number
   price: number
   value: number

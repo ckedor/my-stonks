@@ -145,16 +145,21 @@ class EtfHoldingSource(StrEnum):
 
     #: The American fund's N-PORT filing with the SEC.
     SEC_NPORT = 'sec_nport'
-    #: The constituents file DWS publishes for each Xtrackers class, by ISIN.
+    #: The holdings each Xtrackers product page shows, from DWS, by ISIN.
     DWS = 'dws'
-    #: The holdings file each iShares product page exports.
+    #: The holdings each iShares product page shows, by BlackRock's product id.
     ISHARES = 'ishares'
+    #: The holdings each Vanguard product page shows, by Vanguard's port id;
+    #: of a month's last day, some weeks later.
+    VANGUARD = 'vanguard'
 
 
-#: The UCITS classes whose manager publishes a holdings file this app reads,
-#: by the class's ISIN. No regulator publishes a UCITS fund's holdings, so
-#: each class is added by hand, once someone has seen its manager's file —
-#: the registry names the manager but says nothing about where its files are.
+#: The UCITS classes whose manager's holdings list this app reads, by the
+#: class's ISIN. No regulator publishes a UCITS fund's holdings, so each class
+#: is added by hand, once someone has seen its manager's page — the registry
+#: names the manager but says nothing about where its pages are. iShares and
+#: Vanguard address a fund by an id of their own, so a class of theirs also
+#: needs its line in the client (`PRODUCT_IDS`, `PORT_IDS`).
 MANAGER_HOLDINGS_FILES: dict[str, EtfHoldingSource] = {
     # EXUS: Xtrackers MSCI World ex USA UCITS ETF 1C.
     'IE0006WW1TQ4': EtfHoldingSource.DWS,
@@ -162,6 +167,8 @@ MANAGER_HOLDINGS_FILES: dict[str, EtfHoldingSource] = {
     'IE00B5BMR087': EtfHoldingSource.ISHARES,
     # EIMI: iShares Core MSCI EM IMI UCITS ETF USD (Acc).
     'IE00BKM4GZ66': EtfHoldingSource.ISHARES,
+    # VWRA: Vanguard FTSE All-World UCITS ETF (USD) Accumulating.
+    'IE00BK5BQT80': EtfHoldingSource.VANGUARD,
 }
 
 
@@ -179,7 +186,7 @@ class EtfHoldingReport:
     An American ETF files it with the SEC as N-PORT: every month, made public
     only for the last month of each fiscal quarter, about two months later. A
     UCITS ETF files it with no regulator; for some, the manager publishes a
-    file of its own, daily. Either way a report carries the date it describes,
+    list of its own, daily or monthly. Either way a report carries the date it describes,
     and the newest is the most recent picture there is, not the current one.
     """
 
@@ -188,7 +195,7 @@ class EtfHoldingReport:
     report_date: date
     source: str
     #: What it was read from: the N-PORT accession, or the date of a
-    #: manager's file. The same one is not written twice.
+    #: manager's list. The same one is not written twice.
     accession: str
     net_assets: Decimal | None = None
     total_assets: Decimal | None = None
@@ -209,7 +216,7 @@ class EtfHolding:
     lei: str | None = None
     ticker: str | None = None
     #: N-PORT's asset category: `EC` equity, `DBT` debt, `STIV` short-term
-    #: investment vehicle, `DE` derivative. None from a manager's file.
+    #: investment vehicle, `DE` derivative. None from a manager's list.
     asset_category: str | None = None
     country: str | None = None
     currency: str | None = None

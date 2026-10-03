@@ -40,12 +40,10 @@ import {
 /** Fora do catálogo, com o motivo. Cada linha aqui é uma decisão, não um
  *  esquecimento: a verificação 3 tira a que deixar de valer. */
 const EXCEPTIONS = {
-  AppShell: 'casca do admin: ocupa a tela inteira, e a página do catálogo já está dentro dela',
-  AppPageShell: 'casca das telas do produto: ocupa a tela inteira',
+  AppPageShell: 'casca de toda tela, inclusive desta: ocupa a tela inteira',
   AppSplitScreen: 'tela de entrada dividida ao meio: ocupa a tela inteira',
   AppTopbar: 'barra do topo do app: aparece em toda tela, inclusive nesta',
-  AppSidebar: 'menu lateral do admin: aparece em toda tela do admin, inclusive nesta',
-  AppNavRail: 'coluna de navegação do produto: aparece em toda tela do produto',
+  AppNavRail: 'coluna de navegação: aparece em toda tela, inclusive nesta',
   AppNavDrawer: 'gaveta de navegação do celular: só abre na casca do produto',
   LoadingSpinner: 'a regra do ESLint o reprova em src/pages/**; aparece pelo loading do AppButton',
 }

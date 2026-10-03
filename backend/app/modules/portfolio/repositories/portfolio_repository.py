@@ -622,6 +622,13 @@ class PortfolioRepository(SQLAlchemyRepository):
         result = await self.session.execute(select(Broker).order_by(Broker.id))
         return list(result.scalars().all())
 
+    async def list_note_transactions(self, note_id: int) -> list[Transaction]:
+        """The transactions a confirmed brokerage note created or completed."""
+        result = await self.session.execute(
+            select(Transaction).where(Transaction.brokerage_note_id == note_id)
+        )
+        return list(result.scalars().all())
+
     async def find_brokerage_note(
         self,
         portfolio_id: int,

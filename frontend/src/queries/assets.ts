@@ -12,6 +12,9 @@ export const assetQueryOptions = (assetId: number) => queryOptions({
 export function useAssets() {
   const { data, isPending } = useQuery({
     queryKey: [...assetKeys.all, 'list'], queryFn: fetchAssets,
+    /* O catálogo inteiro são ~4 MB: guardado, ele toma quase toda a cota do
+       localStorage e empurra a carteira para fora da partida quente. */
+    meta: { persist: false },
   })
   return { assets: data ?? EMPTY_LIST, loading: isPending }
 }

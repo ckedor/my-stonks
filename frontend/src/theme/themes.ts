@@ -10,14 +10,12 @@ declare module '@mui/material/styles' {
     dark: string
     chart: { grid: string; label: string; colors: string[] }
     golden: string
-    sidebar: string
     topbar: { background: string; text: string; activeText: string; activeBg: string }
   }
   interface PaletteOptions {
     dark?: string
     chart?: { grid?: string; label?: string; colors?: string[] }
     golden?: string
-    sidebar?: string
     topbar?: { background?: string; text?: string; activeText?: string; activeBg?: string }
   }
 }
@@ -83,7 +81,6 @@ export interface ThemePaletteConfig {
   info: string
   golden: string
   dark: string
-  sidebar: string
   topbar: { background: string; text: string; activeText: string; activeBg: string }
   divider: string
   chart: { grid: string; label: string; colors: string[] }
@@ -219,7 +216,6 @@ export function buildMuiTheme(
       info: { main: config.info },
       golden: config.golden,
       dark: config.dark,
-      sidebar: config.sidebar,
       topbar: config.topbar,
       divider: config.divider,
       chart: config.chart,
@@ -241,6 +237,19 @@ export function buildMuiTheme(
   })
 }
 
+/** Onde a coluna de navegação é pintada. Nos temas claros ela veste a barra
+ *  do topo; nos escuros acompanha a página — o porquê está no `AppNavRail`,
+ *  que a desenha a partir daqui. A miniatura do tema lê o mesmo, para não
+ *  pintar uma coluna que a tela de verdade não tem. */
+export function navRailBackground(
+  palette: Pick<ThemePaletteConfig, 'mode'> & {
+    background: { default: string }
+    topbar: { background: string }
+  },
+): string {
+  return palette.mode === 'light' ? palette.topbar.background : palette.background.default
+}
+
 /** Extracts a ThemePreview from a palette config */
 export function buildPreview(config: ThemePaletteConfig): ThemePreview {
   return {
@@ -249,7 +258,7 @@ export function buildPreview(config: ThemePaletteConfig): ThemePreview {
     primary: config.primary,
     accent: config.secondary,
     topbar: config.topbar.background,
-    sidebar: config.sidebar,
+    sidebar: navRailBackground(config),
     text: config.text.primary,
   }
 }

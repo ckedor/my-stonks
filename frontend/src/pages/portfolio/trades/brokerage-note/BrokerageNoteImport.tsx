@@ -19,8 +19,8 @@ import UploadFileIcon from '@mui/icons-material/UploadFile'
 import { useState } from 'react'
 import ImportedNotesTable from './ImportedNotesTable'
 import NoteImport, { type Notice } from './NoteImport'
-import { DOCUMENT_NOT_KEPT } from '../documents/copy'
-import { useOpenPortfolioDocument } from '../documents/useOpenPortfolioDocument'
+import { DOCUMENT_NOT_KEPT } from '../copy'
+import { useOpenPortfolioDocument } from '@/hooks/useOpenPortfolioDocument'
 
 /* Aba "Importar nota" de Trades.
  *

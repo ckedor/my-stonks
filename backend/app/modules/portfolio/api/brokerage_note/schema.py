@@ -29,6 +29,9 @@ class DraftLineResponse(_FromAttributes):
     market: str | None
     security: str
     ticker: str | None
+    #: O ISIN impresso na linha, quando válido: é por ele que casa um ETF
+    #: listado fora dos EUA.
+    isin: str | None
     quantity: float
     price: float
     value: float

@@ -1,155 +1,158 @@
-"""Files shaped like a manager's holdings export.
+"""Answers shaped like each manager's holdings API.
 
-Built here, not captured: neither the DWS nor the iShares file could be
-downloaded from where these readers were written. The layouts — a block with
-the date, the header, the lines, then footnotes — are what the readers are
-built to find; when a real file disagrees, the reader fails and its fixture is
-replaced by a slice of that file.
+Sliced from the real answers of 2026-10-02 — EXUS from DWS, CSPX from iShares,
+VWRA from Vanguard — keeping their shape, labels and spellings, a few lines
+each. Only the last line's weight is changed, to make the slice add up to the
+whole fund the way the full list does.
 """
 
-import csv
-import io
-from datetime import datetime
-
-from openpyxl import Workbook
-
 EXUS_ISIN = 'IE0006WW1TQ4'
-
-HEADER = ('Name', 'ISIN', 'Country', 'Currency', 'Exchange', 'Type of Security', 'Weighting')
-
-LINES = (
-    ('ASML HOLDING NV', 'NL0010273215', 'NL', 'EUR', 'Euronext Amsterdam', 'Equity', 2.5),
-    ('NESTLE SA', 'CH0038863350', 'Switzerland', 'CHF', 'SIX Swiss Exchange', 'Equity', 1.5),
-    ('TOYOTA MOTOR CORP', 'JP3633400001', 'JP', 'JPY', 'Tokyo', 'Equity', 96.0),
-)
-
-
-def constituents_xlsx(
-    *,
-    title: tuple = ('Xtrackers MSCI World ex USA UCITS ETF 1C', 'As of 30/09/2026'),
-    header: tuple = HEADER,
-    lines: tuple = LINES,
-    footnotes: tuple = ('Source: DWS', 'Past performance is no guide to future returns.'),
-) -> bytes:
-    workbook = Workbook()
-    sheet = workbook.active
-    for cell in title:
-        sheet.append([cell])
-    sheet.append([])
-    sheet.append(list(header))
-    for line in lines:
-        sheet.append(list(line))
-    sheet.append([])
-    for note in footnotes:
-        sheet.append([note])
-    buffer = io.BytesIO()
-    workbook.save(buffer)
-    return buffer.getvalue()
-
-
-def dated(value: datetime) -> tuple:
-    """A title block whose date is a date cell rather than text."""
-    return ('Xtrackers MSCI World ex USA UCITS ETF 1C', 'Date', value)
-
-
 CSPX_ISIN = 'IE00B5BMR087'
+VWRA_ISIN = 'IE00BK5BQT80'
 
-ISHARES_HEADER = (
-    'Ticker',
-    'Name',
-    'Sector',
-    'Asset Class',
-    'Market Value',
-    'Weight (%)',
-    'Notional Value',
-    'Nominal',
-    'Price',
-    'Location',
-    'Exchange',
-    'Market Currency',
-)
+# --- DWS ----------------------------------------------------------------------
 
-ISHARES_LINES = (
-    (
-        'NVDA',
-        'NVIDIA CORP',
-        'Information Technology',
-        'Equity',
-        '8,100,000,000.00',
-        '7.80',
-        '8,100,000,000.00',
-        '45,000,000',
-        '180.00',
-        'United States',
-        'NASDAQ',
-        'USD',
-    ),
-    (
-        'AAPL',
-        'APPLE INC',
-        'Information Technology',
-        'Equity',
-        '6,900,000,000.00',
-        '6.60',
-        '6,900,000,000.00',
-        '27,000,000',
-        '255.00',
-        'United States',
-        'NASDAQ',
-        'USD',
-    ),
-    (
-        'MSFT',
-        'MICROSOFT CORP',
-        'Information Technology',
-        'Equity',
-        '89,000,000,000.00',
-        '85.40',
-        '89,000,000,000.00',
-        '172,000,000',
-        '517.00',
-        'United States',
-        'NASDAQ',
-        'USD',
-    ),
-    (
-        '-',
-        'USD CASH',
-        'Cash and/or Derivatives',
-        'Cash',
-        '200,000,000.00',
-        '0.20',
-        '200,000,000.00',
-        '200,000,000',
-        '100.00',
-        'United States',
-        '-',
-        'USD',
-    ),
-)
+DWS_COLUMNS = [
+    {'key': 'header', 'value': 'ISIN', 'alignment': 'left', 'isVisibleOnHeader': True},
+    {'key': 'column_0', 'value': 'Name', 'alignment': 'left', 'isVisibleOnHeader': True},
+    {'key': 'column_1', 'value': '% Weight', 'alignment': 'right', 'isVisibleOnHeader': True},
+    {'key': 'column_2', 'value': 'Market value', 'alignment': 'right', 'isVisibleOnHeader': True},
+    {'key': 'column_3', 'value': 'Country', 'alignment': 'left', 'isVisibleOnHeader': True},
+    {'key': 'column_4', 'value': 'Industry', 'alignment': 'left', 'isVisibleOnHeader': True},
+    {'key': 'column_5', 'value': 'Asset class', 'alignment': 'left', 'isVisibleOnHeader': True},
+]
 
-ISHARES_FACTS = (
-    ('iShares Core S&P 500 UCITS ETF',),
-    ('Fund Holdings as of', '30/Sep/2026'),
-    ('Inception Date', '19/May/2010'),
-    ('Shares Outstanding', '170,000,000.00'),
+#: (ISIN, name, weight in percent, country, asset class)
+DWS_LINES = (
+    ('NL0010273215', 'ASML HOLDING', 2.8835911700, 'Netherlands', 'Equities'),
+    ('GB0005405286', 'HSBC HOLDINGS PLC', 1.3473520500, 'United Kingdom', 'Equities'),
+    ('_CURRENCYSEK', 'SWEDISH KRONA', 0.00069006, 'Sweden', 'Cash'),
+    ('___ADI2TZ5Y1', 'S+P/TSX 60 IX FUT DEC26', 0.0, 'Canada', 'Future'),
+    ('JP3633400001', 'TOYOTA MOTOR CORP', 95.76836672, 'Japan', 'Equities'),
 )
 
 
-def holdings_csv(
+def dws_row(isin, name, weight, country, asset_class) -> dict:
+    return {
+        'header': {'value': isin, 'type': 'text'},
+        'column_0': {'value': name, 'type': 'text'},
+        'column_1': {'value': f'{weight:.3f}%', 'sortValue': weight, 'type': 'text'},
+        'column_2': {'value': '0.00 M USD', 'sortValue': 0.0, 'type': 'text'},
+        'column_3': {'value': country, 'type': 'text'},
+        'column_4': {'value': 'Unknown', 'type': 'text'},
+        'column_5': {'value': asset_class, 'type': 'text'},
+    }
+
+
+def dws_holdings(
     *,
-    facts: tuple = ISHARES_FACTS,
-    header: tuple = ISHARES_HEADER,
-    lines: tuple = ISHARES_LINES,
-) -> bytes:
-    buffer = io.StringIO()
-    writer = csv.writer(buffer, quoting=csv.QUOTE_NONNUMERIC)
-    for row in facts:
-        writer.writerow(row)
-    writer.writerow([' '])
-    writer.writerow(header)
-    for line in lines:
-        writer.writerow(line)
-    writer.writerow([' '])
-    writer.writerow(['The content contained herein is owned or licensed by BlackRock.'])
-    return ('\ufeff' + buffer.getvalue()).encode('utf-8')
+    columns: list = DWS_COLUMNS,
+    lines: tuple = DWS_LINES,
+    disclaimers: tuple = ('<p>Source: DWS 01/10/2026</p>',),
+) -> dict:
+    return {
+        'tables': [
+            {
+                'columns': columns,
+                'values': [dws_row(*line) for line in lines],
+                'disclaimers': [
+                    {'text': text, 'disableDefaultWrapping': True} for text in disclaimers
+                ],
+                'headlineText': 'Securities held in Securities Holdings',
+            }
+        ],
+        'accordionItems': [],
+        'asOfDate': '',
+    }
+
+
+# --- iShares ------------------------------------------------------------------
+
+#: (ticker, name, ISIN, location, market currency, weight in percent)
+ISHARES_LINES = (
+    ('NVDA', 'NVIDIA', 'US67066G1040', 'United States', 'USD', 8.43983),
+    ('AAPL', 'APPLE', 'US0378331005', 'United States', 'USD', 7.28312),
+    ('USD', 'USD CASH', None, 'United States', 'USD', 0.18441),
+    ('ESZ6', 'S&P500 EMINI DEC 26', None, None, 'USD', 0.0),
+    ('MSFT', 'MICROSOFT', 'US5949181045', 'United States', 'USD', 84.09264),
+)
+
+
+def ishares_holdings(*, lines: tuple = ISHARES_LINES, as_of: int = 20261001, drop=()) -> dict:
+    columns = dict(
+        zip(
+            (
+                'ticker',
+                'issueName',
+                'isin',
+                'countryOfRisk',
+                'marketCurrencyCode',
+                'holdingPercent',
+            ),
+            zip(*lines, strict=True),
+            strict=True,
+        )
+    )
+    points = {
+        'asOfDate': {'name': 'asOfDate', 'formattedValue': '01/Oct/2026', 'value': as_of},
+        'assetClass': {'name': 'assetClass', 'value': ['Equity'] * len(lines)},
+        **{
+            name: {'name': name, 'formattedValue': list(values), 'value': list(values)}
+            for name, values in columns.items()
+        },
+    }
+    for name in drop:
+        points.pop(name)
+    return {
+        'componentsByNameMap': {
+            'holdings': {
+                'containersByNameMap': {'all': {'dataPointsByNameMap': points}},
+            }
+        },
+        'pageScopeData': {'portfolioId': '253743', 'ticker': 'CSPX'},
+    }
+
+
+# --- Vanguard -----------------------------------------------------------------
+
+VANGUARD_ITEMS = (
+    {
+        'securityLongDescription': 'NVIDIA Corp',
+        'isin': 'US67066G1040',
+        'ticker': 'NVDA',
+        'bloombergIsoCountry': 'US',
+        'marketValuePercentage': 4.76598,
+        'effectiveDate': '2026-08-31',
+    },
+    {
+        'securityLongDescription': 'Taiwan Semiconductor Manufacturing Co Ltd',
+        'isin': 'TW0002330008',
+        'ticker': '2330',
+        'bloombergIsoCountry': 'TW',
+        'marketValuePercentage': 1.22803,
+        'effectiveDate': '2026-08-31',
+    },
+    {
+        'securityLongDescription': 'USD/JPY FWD 20260916',
+        'isin': None,
+        'ticker': 'USD',
+        'bloombergIsoCountry': None,
+        'marketValuePercentage': 0.05613,
+        'effectiveDate': '2026-08-31',
+    },
+    {
+        'securityLongDescription': 'Apple Inc',
+        'isin': 'US0378331005',
+        'ticker': 'AAPL',
+        'bloombergIsoCountry': 'US',
+        'marketValuePercentage': 93.94986,
+        'effectiveDate': '2026-08-31',
+    },
+)
+
+
+def vanguard_holdings(*, items: tuple = VANGUARD_ITEMS, total: int | None = None) -> dict:
+    return {
+        'totalHoldings': len(items) if total is None else total,
+        'items': [dict(item) for item in items],
+    }

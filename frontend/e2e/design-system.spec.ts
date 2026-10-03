@@ -14,7 +14,7 @@ import { expect, expectNothingClipped, test } from './fixtures/app'
    menu, então família nova entra aqui sozinha — e o `Record` abaixo não
    compila sem a altura dela. */
 
-/* A casca de `/dev` rola por dentro, então a viewport precisa comportar a
+/* A coluna de navegação gruda e rola por dentro, e a viewport precisa comportar a
    família inteira. As alturas foram medidas com folga de ~300px;
    `expectNothingClipped` avisa quando uma deixar de bastar. */
 const VIEWPORT_HEIGHT: Record<DesignSystemFamilySlug, number> = {

@@ -23,10 +23,15 @@ from app.modules.portfolio.domain.brokerage_note import (
     NoteWarning,
     ReconciliationGroup,
     allocate_costs,
+    asset_from_imported_note,
     check_note,
     fund_key,
+    isin_key,
+    line_isin,
     line_ticker,
     match_broker,
+    match_by_name,
+    name_search_words,
     note_costs,
     only_digits,
     reconcile,
@@ -86,6 +91,9 @@ class BrokerageNoteImportService:
             for line in note.lines
             if (ticker := line_ticker(line.ticker, line.security, note.currency))
         })
+        isins = sorted({
+            isin for note in reading.notes for line in note.lines if (isin := line_isin(line.isin))
+        })
         fund_cnpjs = sorted({
             cnpj
             for note in reading.notes
@@ -94,20 +102,21 @@ class BrokerageNoteImportService:
         })
         async with self.uow as uow:
             assets = await uow.assets.get_by_tickers(tickers)
+            by_isin = await uow.assets.get_by_isins(isins)
             brokers = await uow.portfolios.list_brokers()
 
             candidates: dict[str, list] = defaultdict(list)
             for asset in assets:
                 if asset.ticker:
                     candidates[asset.ticker.upper()].append(asset)
+            for asset in by_isin:
+                candidates[isin_key(asset.isin)].append(asset)
             for cnpj, funds in (await self._funds_by_cnpj(uow, fund_cnpjs)).items():
                 candidates[fund_key(cnpj)].extend(funds)
             notes = [
                 self._draft_note(index, note, brokers, candidates)
                 for index, note in enumerate(reading.notes)
             ]
-            all_lines = [line for note in notes for line in self._note_lines(note)]
-            existing = await self._existing(uow, portfolio_id, all_lines)
             imported = [
                 await uow.portfolios.find_brokerage_note(
                     portfolio_id, note.broker_id, note.note_number, note.trade_date
@@ -116,6 +125,12 @@ class BrokerageNoteImportService:
                 else None
                 for note in notes
             ]
+            notes = [
+                await self._match_open_lines(uow, note, previous)
+                for note, previous in zip(notes, imported, strict=True)
+            ]
+            all_lines = [line for note in notes for line in self._note_lines(note)]
+            existing = await self._existing(uow, portfolio_id, all_lines)
 
         return BrokerageNoteDraft(
             notes=tuple(
@@ -125,6 +140,59 @@ class BrokerageNoteImportService:
             model=model,
             document_id=document_id,
         )
+
+    @staticmethod
+    async def _match_open_lines(uow, note: DraftNote, previous) -> DraftNote:
+        """As linhas que o código, o ISIN e o CNPJ não acharam.
+
+        Primeiro a nota já importada: a mesma execução nela traz o ativo que
+        alguém já escolheu. Depois o nome, para uma linha que nenhum ativo
+        acha — e só como sugestão, que a pessoa confere antes de salvar.
+        """
+        open_lines = [line for line in note.lines if line.match != AssetMatch.MATCHED]
+        if not open_lines:
+            return note
+        done = await uow.portfolios.list_note_transactions(previous.id) if previous else []
+        from_note = {
+            line.index: asset_id
+            for line in open_lines
+            if (asset_id := asset_from_imported_note(line, note.currency, done)) is not None
+        }
+        unknown = [
+            line
+            for line in open_lines
+            if line.index not in from_note and line.match == AssetMatch.UNKNOWN
+        ]
+        pool = await uow.assets.find_by_name_words(
+            sorted({word for line in unknown for word in name_search_words(line.security)})
+        )
+        by_name = {
+            line.index: asset
+            for line in unknown
+            if (asset := match_by_name(line.security, pool)) is not None
+        }
+        names = {
+            asset.id: asset.name
+            for asset in await uow.assets.get_by_ids(sorted(set(from_note.values())))
+        }
+
+        def matched(line: DraftLine) -> DraftLine:
+            if line.index in from_note:
+                asset_id = from_note[line.index]
+                return replace(
+                    line,
+                    asset_id=asset_id,
+                    asset_name=names.get(asset_id),
+                    match=AssetMatch.IMPORTED,
+                )
+            if line.index in by_name:
+                asset = by_name[line.index]
+                return replace(
+                    line, asset_id=asset.id, asset_name=asset.name, match=AssetMatch.BY_NAME
+                )
+            return line
+
+        return replace(note, lines=tuple(matched(line) for line in note.lines))
 
     async def reconcile(
         self, *, portfolio_id: int, lines: list[NoteLine]
@@ -392,6 +460,7 @@ class BrokerageNoteImportService:
                 costs[line_index],
                 candidates,
                 line_ticker(line.ticker, line.security, reading.currency),
+                line_isin(line.isin),
             )
             for line_index, line in enumerate(reading.lines)
         )
@@ -439,11 +508,13 @@ class BrokerageNoteImportService:
         }
 
     @staticmethod
-    def _draft_line(index, line, costs, candidates, ticker) -> DraftLine:
+    def _draft_line(index, line, costs, candidates, ticker, isin) -> DraftLine:  # noqa: PLR0913
         fees, tax = costs
-        # Fundo não tem ticker: a linha casa pelo CNPJ que o extrato imprime.
-        key = ticker or fund_key(only_digits(line.fund_cnpj))
-        matches = candidates.get(key, []) if key else []
+        # O código primeiro; sem ele, ou sem ativo que o carregue, o ISIN — o
+        # de um ETF de Londres, que o cadastro chama de EXUS.L; e o fundo, que
+        # não tem código, pelo CNPJ que o extrato imprime.
+        keys = (ticker, isin_key(isin), fund_key(only_digits(line.fund_cnpj)))
+        matches = next((candidates[key] for key in keys if key and candidates.get(key)), [])
         if len(matches) == 1:
             match, asset_id, asset_name = AssetMatch.MATCHED, matches[0].id, matches[0].name
         elif matches:
@@ -456,6 +527,7 @@ class BrokerageNoteImportService:
             market=line.market,
             security=line.security,
             ticker=ticker,
+            isin=isin,
             quantity=abs(line.quantity),
             price=abs(line.price),
             value=abs(line.value),

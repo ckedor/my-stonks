@@ -1,4 +1,4 @@
-from sqlalchemy import select, text, update
+from sqlalchemy import or_, select, text, update
 
 from app.infra.db.repositories.base_repository import SQLAlchemyRepository
 from app.modules.market_data.domain.asset_visit import AssetVisit
@@ -155,4 +155,28 @@ class AssetRepository(SQLAlchemyRepository):
         if asset_type_id is not None:
             statement = statement.where(Asset.asset_type_id == asset_type_id)
         result = await self.session.execute(statement)
+        return list(result.scalars().all())
+
+    async def find_by_name_words(self, words: list[str]) -> list[Asset]:
+        """The assets whose name contains any of these words, ignoring case.
+
+        A pool to compare names against, not an answer: the caller decides
+        which of them, if any, a printed name means.
+        """
+        if not words:
+            return []
+        result = await self.session.execute(
+            select(Asset).where(or_(*(Asset.name.ilike(f'%{word}%') for word in words)))
+        )
+        return list(result.scalars().all())
+
+    async def get_by_isins(self, isins: list[str]) -> list[Asset]:
+        """The registered assets carrying these ISINs.
+
+        An ISIN names a share class, not a listing: the same class traded in
+        London and on Xetra is two assets with one ISIN, and both come back.
+        """
+        if not isins:
+            return []
+        result = await self.session.execute(select(Asset).where(Asset.isin.in_(isins)))
         return list(result.scalars().all())

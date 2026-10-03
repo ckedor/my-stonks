@@ -91,6 +91,7 @@ export const navigationSections: NavigationSection[] = [
         items: [
           { label: 'Declaração IR', path: '/portfolio/tax-income' },
           { label: 'Previdência', path: '/portfolio/pension' },
+          { label: 'Documentos', path: '/portfolio/documents' },
         ],
       },
     ],

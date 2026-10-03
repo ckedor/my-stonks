@@ -37,7 +37,7 @@ function parse(fileName, source) {
 }
 
 /** Os componentes que `index.ts` exporta: valor (não tipo), em PascalCase.
- *  Constantes em caixa alta (`SIDEBAR_WIDTH`), hooks e tokens ficam de fora. */
+ *  Constantes em caixa alta (`TOPBAR_HEIGHT`), hooks e tokens ficam de fora. */
 export function componentExports(indexSource) {
   const names = []
   for (const statement of parse('index.ts', indexSource).statements) {

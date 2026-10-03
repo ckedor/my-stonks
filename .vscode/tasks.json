@@ -21,6 +21,15 @@
       "problemMatcher": []
     },
     {
+      "label": "Start Document Storage (Docker)",
+      "type": "shell",
+      "command": "docker compose up -d document_storage",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Run Database Migrations",
       "type": "shell",
       "command": "./.venv/bin/alembic upgrade head",
@@ -34,6 +43,7 @@
       "dependsOn": [
         "Start PostgreSQL (Docker)",
         "Start Redis (Docker)",
+        "Start Document Storage (Docker)",
         "Run Database Migrations"
       ],
       "dependsOrder": "sequence"

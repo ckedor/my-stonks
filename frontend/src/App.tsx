@@ -45,6 +45,7 @@ import PortfolioAssetPage from './pages/portfolio/asset/[id]/page'
 import PortfolioCategoryPage from './pages/portfolio/category/page'
 import CityPage from './pages/portfolio/city/page'
 import DistributionPage from './pages/portfolio/distribution/page'
+import PortfolioDocumentsPage from './pages/portfolio/documents/page'
 import PortfolioDividendsPage from './pages/portfolio/dividends/page'
 import PortfolioSegmentPage from './pages/portfolio/segment/page'
 import PortfolioOverviewPage from './pages/portfolio/overview'
@@ -65,16 +66,21 @@ const devRoutes: RouteObject[] = import.meta.env.DEV
   ? [
       {
         path: '/dev',
-        lazy: async () => ({ Component: (await import('./pages/dev/layout')).default }),
         children: [
           { index: true, element: <Navigate to="/dev/design-system" replace /> },
+          /* Fora da rota-mãe: o estúdio monta a casca sob o tema em edição. */
           {
             path: 'design-system/temas',
             lazy: async () => ({ Component: (await import('./pages/dev/theme-studio/page')).default }),
           },
           {
-            path: 'design-system/:family?',
-            lazy: async () => ({ Component: (await import('./pages/dev/design-system/page')).default }),
+            lazy: async () => ({ Component: (await import('./pages/dev/layout')).default }),
+            children: [
+              {
+                path: 'design-system/:family?',
+                lazy: async () => ({ Component: (await import('./pages/dev/design-system/page')).default }),
+              },
+            ],
           },
         ],
       },
@@ -105,6 +111,7 @@ const router = createBrowserRouter([
       { path: 'portfolio/analysis', element: <PortfolioRiskPage /> },
       { path: 'portfolio/pension', element: <PensionPage /> },
       { path: 'portfolio/tax-income', element: <TaxIncomePage /> },
+      { path: 'portfolio/documents', element: <PortfolioDocumentsPage /> },
       { path: 'portfolio/trades', element: <PortfolioTransactionsPage /> },
       { path: 'portfolio/wealth', element: <PortfolioPatrimonyEvolution /> },
       // Distribuição e rebalanceamento viraram uma tela só; o link antigo

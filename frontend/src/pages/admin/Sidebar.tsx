@@ -1,6 +1,6 @@
 import PsychologyIcon from '@mui/icons-material/Psychology'
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
-import { AppSidebar } from '@/components/ui'
+import { AppNavRail, type AppNavRailGroup } from '@/components/ui'
 
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
@@ -50,33 +50,40 @@ const menuIcons: Record<string, React.ReactNode> = {
   '/admin/users': <PeopleIcon fontSize="small" />,
 }
 
-export default function AdminSidebar({
-  variant,
-  open,
-  onClose,
-}: {
-  variant: 'permanent' | 'persistent'
-  open: boolean
-  onClose: () => void
-}) {
+export default function AdminSidebar({ collapsed }: { collapsed: boolean }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const section = getAdminNavigationSection(pathname)
 
+  // O item mais específico que casa com a rota: `/admin/integrations` é o
+  // painel, e não deve ficar marcado quando se está numa rotina abaixo dele.
+  const activePath = section.items
+    .map((item) => item.path)
+    .filter((path) => pathname === path || pathname.startsWith(`${path}/`))
+    .sort((a, b) => b.length - a.length)[0]
+
+  // Itens seguidos do mesmo grupo ficam sob um título só; a seção sem grupos
+  // vira um grupo com o nome dela.
+  const groups: AppNavRailGroup[] = []
+  for (const item of section.items) {
+    const title = item.group ?? section.label
+    const navItem = {
+      id: item.path,
+      label: item.label,
+      icon: menuIcons[item.path],
+      active: item.path === activePath,
+    }
+    const last = groups[groups.length - 1]
+    if (last?.title === title) last.items.push(navItem)
+    else groups.push({ title, items: [navItem] })
+  }
+
   return (
-    <AppSidebar
-      title="Admin Panel"
-      items={section.items.map((item) => ({
-        path: item.path,
-        label: item.label,
-        icon: menuIcons[item.path],
-        group: item.group,
-      }))}
-      selectedPath={pathname}
-      onNavigate={navigate}
-      variant={variant}
-      open={open}
-      onClose={onClose}
+    <AppNavRail
+      navLabel={`Páginas de ${section.label}`}
+      collapsed={collapsed}
+      groups={groups}
+      onSelect={(path) => navigate(path)}
     />
   )
 }

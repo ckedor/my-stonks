@@ -6,7 +6,6 @@ import {
   AppStack,
   AppSwitch,
   AppTabs,
-  AppTextField,
   SectionLabel,
 } from '@/components/ui'
 import type { ThemePreset } from '@/theme/presets'
@@ -15,17 +14,16 @@ import type { ThemePaletteConfig } from '@/theme/themes'
 import { fontStacks, type RadiusToken } from '@/theme/tokens'
 import { useState, type ReactNode } from 'react'
 
-/* Os tokens de um tema, editáveis: cores, séries de gráfico, forma e
- * identidade. Cada campo escreve direto no preset em edição — a amostra ao
- * lado redesenha a cada mudança. */
+/* Os tokens de um tema, editáveis: cores, séries de gráfico e forma. Nome e
+ * descrição ficam no topo do painel, fora daqui. Cada campo escreve direto no preset em edição — a casca do
+ * estúdio inteira redesenha a cada mudança. */
 
-type Tab = 'cores' | 'grafico' | 'forma' | 'identidade'
+type Tab = 'cores' | 'grafico' | 'forma'
 
 const TABS = [
   { id: 'cores' as const, label: 'Cores' },
   { id: 'grafico' as const, label: 'Gráfico' },
   { id: 'forma' as const, label: 'Forma' },
-  { id: 'identidade' as const, label: 'Identidade' },
 ]
 
 /* Um nome por pilha. O `Record` é o que faz a pilha nova em `fontStacks`
@@ -53,7 +51,8 @@ function Group({ label, children }: { label: string; children: ReactNode }) {
   return (
     <AppStack gap="sm">
       <SectionLabel>{label}</SectionLabel>
-      <AppGrid cols={{ xs: 1, sm: 2, lg: 4 }} gap="md">
+      {/* Uma coluna: o formulário mora no painel estreito à direita. */}
+      <AppGrid cols={1} gap="md">
         {children}
       </AppGrid>
     </AppStack>
@@ -99,12 +98,13 @@ export default function ThemeTokenForm({
             {color('Info', palette.info, (v) => setPalette({ info: v }))}
             {color('Dourado (conquista)', palette.golden, (v) => setPalette({ golden: v }))}
           </Group>
-          <Group label="Barra do topo e menu">
+          {/* A coluna de navegação não tem cor própria: nos claros veste a
+              barra, nos escuros acompanha a página. */}
+          <Group label="Barra do topo (e a coluna, nos claros)">
             {color('Fundo da barra', palette.topbar.background, (v) => setPalette({ topbar: { ...palette.topbar, background: v } }))}
             {color('Texto da barra', palette.topbar.text, (v) => setPalette({ topbar: { ...palette.topbar, text: v } }))}
             {color('Aba ativa: texto', palette.topbar.activeText, (v) => setPalette({ topbar: { ...palette.topbar, activeText: v } }))}
             {color('Aba ativa: fundo', palette.topbar.activeBg, (v) => setPalette({ topbar: { ...palette.topbar, activeBg: v } }))}
-            {color('Menu lateral', palette.sidebar, (v) => setPalette({ sidebar: v }))}
           </Group>
         </AppStack>
       )}
@@ -171,20 +171,6 @@ export default function ThemeTokenForm({
         </AppStack>
       )}
 
-      {tab === 'identidade' && (
-        <AppStack gap="md">
-          <AppGrid cols={{ xs: 1, md: 2 }} gap="md">
-            <AppTextField label="Id" value={draft.id} onChange={(id) => onChange({ ...draft, id })} density="comfortable" helperText="Fica no navegador de quem escolhe o tema: não mude o de um preset publicado." />
-            <AppTextField label="Nome" value={draft.name} onChange={(name) => onChange({ ...draft, name })} density="comfortable" />
-          </AppGrid>
-          <AppTextField
-            label="Descrição"
-            value={draft.description}
-            onChange={(description) => onChange({ ...draft, description })}
-            density="comfortable"
-          />
-        </AppStack>
-      )}
     </AppStack>
   )
 }

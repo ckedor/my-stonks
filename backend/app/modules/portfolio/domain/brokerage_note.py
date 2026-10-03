@@ -12,11 +12,14 @@ e o resultado é uma proposta, não uma decisão.
 
 import re
 from collections import defaultdict
+from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from enum import StrEnum
+from math import isclose
 from typing import Literal
 
+from app.modules.market_data.domain.etf_registry import is_isin
 from app.modules.portfolio.domain.entities import Transaction
 from app.modules.portfolio.domain.outputs import BrokerageNoteReading
 
@@ -96,6 +99,27 @@ def fund_key(cnpj: str | None) -> str | None:
     Prefixada, para um CNPJ nunca se confundir com um código de negociação.
     """
     return f'cnpj:{cnpj}' if cnpj else None
+
+
+def line_isin(isin: str | None) -> str | None:
+    """O ISIN que a linha imprime, ou None quando o lido não é um ISIN válido.
+
+    O dígito verificador barra o código que o modelo copiou pela metade: um
+    ISIN errado casaria com outro ativo, ou com nenhum, em silêncio.
+    """
+    cleaned = re.sub(r'\s+', '', isin or '').upper()
+    return cleaned if is_isin(cleaned) else None
+
+
+def isin_key(isin: str | None) -> str | None:
+    """A chave de uma linha pelo ISIN impresso, prefixada como a do fundo.
+
+    É a que acha um ETF listado fora dos EUA: o cadastro o chama de EXUS.L, e
+    a nota imprime "EXUS" ou nenhum código. O ISIN é da classe, não da
+    listagem — a mesma classe negociada em Londres e em Frankfurt são dois
+    ativos com o mesmo ISIN, e aí a linha fica ambígua para a pessoa escolher.
+    """
+    return f'isin:{isin}' if isin else None
 
 
 def only_digits(value: str | None) -> str | None:
@@ -588,11 +612,99 @@ def _with_position_warning(
 
 
 class AssetMatch(StrEnum):
-    """Se o ticker que o modelo sugeriu é um ativo do cadastro, como no research."""
+    """Como o ativo da linha foi achado, ou por que não foi."""
 
+    #: Pelo código, pelo ISIN ou pelo CNPJ do fundo.
     MATCHED = 'matched'
+    #: Pela mesma execução na nota já importada: a escolha que alguém já fez.
+    IMPORTED = 'imported'
+    #: Pelo nome — as mesmas palavras, num ativo só. Uma sugestão a conferir.
+    BY_NAME = 'by_name'
     UNKNOWN = 'unknown'
     AMBIGUOUS = 'ambiguous'
+
+
+def asset_from_imported_note(
+    line: 'DraftLine', currency: Currency, transactions: Sequence
+) -> int | None:
+    """O ativo que a nota já importada deu a esta mesma execução.
+
+    A nota é a mesma (corretora e pregão, ou número); dentro dela, a mesma
+    execução é o mesmo lado, a mesma quantidade e o mesmo preço na moeda da
+    nota. Quando isso aponta para um ativo só, é o ativo que alguém já
+    escolheu na importação anterior — perguntar de novo seria pedir a mesma
+    resposta duas vezes.
+    """
+    sign = 1 if line.side == 'C' else -1
+    found = {
+        transaction.asset_id
+        for transaction in transactions
+        if transaction.quantity * sign > 0
+        and isclose(abs(transaction.quantity), line.quantity, rel_tol=1e-9, abs_tol=1e-6)
+        and (price := transaction.price_usd if currency == 'USD' else transaction.price) is not None
+        and isclose(price, line.price, rel_tol=1e-6, abs_tol=1e-6)
+    }
+    return found.pop() if len(found) == 1 else None
+
+
+#: Palavras de um nome que não dizem qual é o ativo: a forma jurídica, o
+#: domicílio, a moeda e a política da classe. "Xtrackers (IE) PLC … 1C" e
+#: "Xtrackers … 1C USD" são o mesmo fundo; Acc e Dist, por isso mesmo, empatam
+#: e ficam para a pessoa.
+NAME_NOISE = frozenset({
+    'plc', 'inc', 'corp', 'corporation', 'co', 'ltd', 'limited', 'llc', 'sa', 'nv',
+    'ag', 'se', 'the', 'ie', 'lu', 'class', 'common', 'stock', 'shares', 'share',
+    'usd', 'eur', 'gbp', 'chf', 'brl', 'acc', 'accumulating', 'accumulation',
+    'dist', 'distributing', 'distribution',
+})  # fmt: skip
+
+
+def name_words(text: str | None) -> set[str]:
+    """As palavras de um nome que o distinguem."""
+    return {word for word in _words(text) if word not in NAME_NOISE}
+
+
+def _abbreviates(short: str, word: str) -> bool:
+    """ "wld" por "world": começa igual e as letras vêm na ordem."""
+    if len(short) < 2 or len(short) >= len(word) or short[0] != word[0]:
+        return False
+    letters = iter(word)
+    return all(char in letters for char in short)
+
+
+def _covers(words: set[str], other: set[str]) -> bool:
+    return all(
+        any(word == each or _abbreviates(word, each) or _abbreviates(each, word) for each in other)
+        for word in words
+    )
+
+
+def match_by_name(security: str, assets: Sequence):
+    """O único ativo cujo nome tem as mesmas palavras que a linha imprime.
+
+    As mesmas, nos dois sentidos: o cadastro não pode ter palavra que a nota
+    não tem, nem a nota palavra que o cadastro não tem — senão "iShares MSCI
+    EM" passaria pelo "iShares Core MSCI EM IMI". A ordem não importa, e uma
+    abreviação vale pela palavra. Menos de três palavras é pouco para dizer
+    qual ativo é; dois ativos com as mesmas palavras não dizem qual dos dois.
+    """
+    printed = name_words(security)
+    if len(printed) < 3:
+        return None
+    found = [
+        asset
+        for asset in assets
+        if (words := name_words(asset.name))
+        and len(words) >= 3
+        and _covers(words, printed)
+        and _covers(printed, words)
+    ]
+    return found[0] if len(found) == 1 else None
+
+
+def name_search_words(security: str) -> list[str]:
+    """As palavras longas o bastante para buscar candidatos no cadastro."""
+    return sorted(word for word in name_words(security) if len(word) >= 4)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -638,6 +750,8 @@ class DraftLine:
     market: str | None
     security: str
     ticker: str | None
+    #: O ISIN impresso na linha, quando válido.
+    isin: str | None
     quantity: float
     price: float
     value: float

@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import type { Theme } from '@mui/material/styles'
-import type { ThemePreview } from '@/theme/themes'
+import { navRailBackground, type ThemePreview } from '@/theme/themes'
 import { useAppTheme } from './useAppTheme'
 
 /* Miniatura do app pintada com as cores de um tema.
@@ -55,7 +55,7 @@ export default function AppThemePreview({ colors, sampleTheme }: AppThemePreview
           <Box sx={{ width: 16, height: 2, bgcolor: palette.primary.main, ml: 'auto' }} />
         </Box>
         <Box sx={{ display: 'flex', height: '86%' }}>
-          <Box sx={{ width: '16%', bgcolor: palette.sidebar, px: 0.75, py: 1.5 }}>
+          <Box sx={{ width: '16%', bgcolor: navRailBackground(palette), px: 0.75, py: 1.5 }}>
             {NAV_LINES.map((i) => (
               <Box
                 key={i}

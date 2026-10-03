@@ -252,9 +252,10 @@ export default function FoundationsFamily() {
 
       <Entry
         name="AppThemeScope"
-        role="Um pedaço de tela pintado por outro tema. Aqui, as mesmas peças sob o tema escuro padrão: é como se confere que um componente não depende do tema claro."
+        role="Um pedaço de tela pintado por outro tema — no estúdio de temas, a moldura inteira. Aqui, as mesmas peças sob o tema escuro padrão: é como se confere que um componente não depende do tema claro."
       >
-        <AppThemeScope palette={getPresetById(DEFAULT_DARK_THEME_ID)!.palette} title="Tema escuro padrão">
+        <AppThemeScope palette={getPresetById(DEFAULT_DARK_THEME_ID)!.palette}>
+          <AppCard padding="sm">
           <AppStack direction="row" gap="sm" wrap align="center">
             <AppButton>primary</AppButton>
             <AppButton emphasis="outline">outline</AppButton>
@@ -267,6 +268,7 @@ export default function FoundationsFamily() {
               texto secundário
             </AppText>
           </AppStack>
+          </AppCard>
         </AppThemeScope>
       </Entry>
     </AppStack>

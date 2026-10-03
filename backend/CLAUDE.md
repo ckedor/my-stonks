@@ -94,6 +94,10 @@ Provider calls use adapters/integrations behind the service layer.
   from the same constant the `@cached` call uses.
 - Treat the cache as optional: an unreachable Redis makes a read slow, not
   failed.
+- A migration that writes rows, and a database restore, change data behind
+  the services that invalidate. Both are followed by `python manage.py
+  drop_cache` (`start_web.sh` after `alembic upgrade head`, and
+  `restore_db.py`), which drops every `cache:*` key and only those.
 
 ## Consolidated portfolio reads
 

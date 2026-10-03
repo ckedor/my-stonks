@@ -1,4 +1,4 @@
-"""What each chosen ETF holds, from its latest regulator filing or manager file.
+"""What each chosen ETF holds, from its latest regulator filing or manager list.
 
 The caller picks the ETFs — the scheduled run takes the ones in some portfolio,
 which is portfolio knowledge and is decided in the portfolio module. Each ETF
@@ -6,8 +6,8 @@ is one attempt: its latest report is found, skipped when it is the one already
 stored, and otherwise read and written in one transaction.
 
 An American ETF is read from its N-PORT. A UCITS fund files no holdings with
-any regulator, so it is read from its manager's file when
-`MANAGER_HOLDINGS_FILES` names one for its class, and otherwise is said to
+any regulator, so it is read from the list its manager's product page shows
+when `MANAGER_HOLDINGS_FILES` names one for its class, and otherwise is said to
 have no source in the run instead of failing it.
 """
 
@@ -22,10 +22,12 @@ from app.infra.integrations.ishares_client import IsharesClient
 from app.infra.integrations.openfigi_client import PROVIDER as FIGI_PROVIDER
 from app.infra.integrations.openfigi_client import OpenFigiClient
 from app.infra.integrations.sec_client import PROVIDER, SecClient
+from app.infra.integrations.vanguard_client import VanguardClient
 from app.modules.market_data.adapters.etf_filings import read_nport_document
 from app.modules.market_data.adapters.etf_manager_files import (
-    read_dws_constituents,
+    read_dws_holdings,
     read_ishares_holdings,
+    read_vanguard_holdings,
 )
 from app.modules.market_data.domain.etf_registry import EtfHoldingSource, holdings_source
 from app.modules.market_data.domain.ingestion import DataIngestionType
@@ -46,6 +48,7 @@ class EtfHoldingsIngestionService:
         figi: OpenFigiClient,
         dws: DwsClient,
         ishares: IsharesClient,
+        vanguard: VanguardClient,
     ):
         self.uow_factory = uow_factory
         self.ingestion_service = ingestion_service
@@ -53,6 +56,7 @@ class EtfHoldingsIngestionService:
         self.figi = figi
         self.dws = dws
         self.ishares = ishares
+        self.vanguard = vanguard
 
     async def run(
         self,
@@ -194,11 +198,12 @@ class EtfHoldingsIngestionService:
         isin: str,
         source: EtfHoldingSource,
     ) -> None:
-        """Today's file from the class's manager, skipped when its date is
+        """The list the class's manager shows today, skipped when its date is
         already stored from the same source."""
         download, read = {
-            EtfHoldingSource.DWS: (self.dws.constituents, read_dws_constituents),
+            EtfHoldingSource.DWS: (self.dws.holdings, read_dws_holdings),
             EtfHoldingSource.ISHARES: (self.ishares.holdings, read_ishares_holdings),
+            EtfHoldingSource.VANGUARD: (self.vanguard.holdings, read_vanguard_holdings),
         }[source]
         parameters: dict = {'isin': isin, 'fund': fund.name}
         attempt_id = await self.ingestion_service.start_attempt(
@@ -209,9 +214,11 @@ class EtfHoldingsIngestionService:
             parameters=parameters,
         )
         try:
-            content = await download(isin)
-            report = await asyncio.to_thread(read, content)
+            report = read(await download(isin))
             parameters['report_date'] = report.report_date.isoformat()
+            if report.unread_countries:
+                # Left out of the lines; `COUNTRY_CODES` is where they go.
+                parameters['unread_countries'] = sorted(report.unread_countries)
             async with self.uow_factory() as uow:
                 stored = await uow.etf_registry.get_holding_report(fund.id, report.report_date)
                 if stored is not None and stored.source == source:
@@ -222,7 +229,7 @@ class EtfHoldingsIngestionService:
                             'etf_registry_id': fund.id,
                             'report_date': report.report_date,
                             'source': source,
-                            # A manager's file has no accession: its date is
+                            # A manager's list has no accession: its date is
                             # what tells one apart from the next.
                             'accession': report.report_date.isoformat(),
                             'fetched_at': datetime.now(UTC),
@@ -332,3 +339,4 @@ class EtfHoldingsIngestionService:
         await self.figi.close()
         await self.dws.close()
         await self.ishares.close()
+        await self.vanguard.close()

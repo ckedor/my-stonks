@@ -21,6 +21,29 @@ interface LinesTableProps {
   onRowChange: (lineIndex: number, patch: Partial<NoteRow>) => void
 }
 
+/** Quantas opções o campo de ativo desenha. O catálogo tem mais de 13 mil
+ *  ativos, e desenhá-los todos ao abrir é o que travava a tela: quem procura
+ *  digita, e as primeiras dezenas casadas bastam. */
+const MAX_ASSET_OPTIONS_RENDERED = 50
+
+const assetLabel = (asset: Asset) => `${asset.ticker ?? '—'} · ${asset.name}`
+
+/* Fora do componente: um filtro inline mudaria de identidade a cada render. */
+const filterAssets = (options: Asset[], { inputValue }: { inputValue: string }) => {
+  const query = inputValue.trim().toLowerCase()
+  const matches = query
+    ? options.filter((asset) => assetLabel(asset).toLowerCase().includes(query))
+    : options
+  return matches.slice(0, MAX_ASSET_OPTIONS_RENDERED)
+}
+
+/** De onde veio o ativo, quando não foi do código: a pessoa confere o que
+ *  não saiu de um identificador. */
+const MATCH_NOTE: Partial<Record<DraftNote['lines'][number]['match'], string>> = {
+  imported: 'ativo da nota já importada',
+  by_name: 'ativo pelo nome — confira',
+}
+
 const SIDE_OPTIONS = [
   { value: 'C', label: 'Compra' },
   { value: 'V', label: 'Venda' },
@@ -43,8 +66,13 @@ export default function LinesTable({ note, rows, currency, assets, onRowChange }
           <AppStack gap="xs">
             <AppText variant="bodySmall">{line?.security ?? '—'}</AppText>
             <AppText variant="caption" tone="secondary">
-              {[line?.ticker, line?.market].filter(Boolean).join(' · ') || 'sem código'}
+              {[line?.ticker ?? line?.isin, line?.market].filter(Boolean).join(' · ') || 'sem código'}
             </AppText>
+            {line && MATCH_NOTE[line.match] && (
+              <AppText variant="caption" tone={line.match === 'by_name' ? 'caution' : 'secondary'}>
+                {MATCH_NOTE[line.match]}
+              </AppText>
+            )}
           </AppStack>
         )
       },
@@ -69,7 +97,8 @@ export default function LinesTable({ note, rows, currency, assets, onRowChange }
           options={assets}
           value={row.asset_id === null ? null : (assetById.get(row.asset_id) ?? null)}
           onChange={(asset) => onRowChange(row.line_index, { asset_id: asset?.id ?? null })}
-          getOptionLabel={(asset) => `${asset.ticker ?? '—'} · ${asset.name}`}
+          getOptionLabel={assetLabel}
+          filterOptions={filterAssets}
           isOptionEqualToValue={(option, value) => option.id === value.id}
           label="Ativo"
           size="sm"

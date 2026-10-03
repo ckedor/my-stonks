@@ -33,6 +33,7 @@ def _line(side='C', quantity=100.0, price=30.0, value=None, security='PETROBRAS 
         security=security,
         ticker='PETR4',
         fund_cnpj=None,
+        isin=None,
         quantity=quantity,
         price=price,
         value=value if value is not None else quantity * price,

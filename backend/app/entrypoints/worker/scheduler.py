@@ -39,7 +39,7 @@ beat_schedule = {
     },
     # An ETF's N-PORT is public for the last month of each fiscal quarter,
     # about two months later; a weekly look finds each one within days. A
-    # manager's file is daily, and a weekly picture of it is enough.
+    # UCITS manager's list is daily or monthly, and a weekly picture is enough.
     'ingest-etf-holdings-for-held-etfs': {
         'task': 'ingest_etf_holdings_for_held_etfs',
         'schedule': crontab(hour='10', minute=0, day_of_week='4'),
