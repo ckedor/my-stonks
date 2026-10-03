@@ -80,6 +80,7 @@ PERSISTED_ENTITIES = [
     portfolio_entities.PortfolioConsolidation,
     portfolio_entities.ConfigurationName,
     portfolio_entities.BrokerageNote,
+    portfolio_entities.PortfolioDocument,
     DarfPayment,
     User,
     MarketDataSeries,
@@ -101,7 +102,7 @@ PERSISTED_ENTITIES = [
     AIRun,
     TaskRun,
 ]
-EXPECTED_PERSISTED_ENTITY_COUNT = 64
+EXPECTED_PERSISTED_ENTITY_COUNT = 65
 
 
 def test_every_persisted_entity_is_one_mapped_domain_dataclass():
