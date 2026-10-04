@@ -8,9 +8,9 @@ import type { ThemePaletteConfig, ThemeShapeConfig } from './themes'
    Um preset é paleta mais forma: as cores, as duas fontes, a escala de raio
    e se as superfícies são quietas (borda em vez de sombra). Todos estão
    aqui, no mesmo formato literal que o estúdio de temas grava — uma
-   ferramenta de dev, em `/dev/design-system/temas` com `npm run dev`. Criar
-   ou ajustar um tema é montá-lo lá e salvar: o estúdio reescreve o bloco do
-   preset, ou acrescenta um novo e o põe nesta lista (`preset-file.ts`). Os
+   ferramenta de dev, em `tools/` (`tools/start.sh`). Criar ou ajustar um
+   tema é montá-lo lá e salvar: o estúdio reescreve o bloco do preset, ou
+   acrescenta um novo e o põe nesta lista (`tools/server/preset-file.ts`). Os
    comentários entre os presets são escritos à mão e o estúdio não os toca. O
    commit é o que publica.
 

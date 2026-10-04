@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, RouterProvider, type RouteObject } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import './App.css'
 import { initAuth } from './actions/auth'
 import MainLayout from './layouts/MainLayout'
@@ -27,7 +27,6 @@ import AdminQuoteIngestionPage from './pages/admin/integrations/quotes/page'
 import AdminTaskRunsPage from './pages/admin/integrations/runs/page'
 import AdminUsdBrlIngestionPage from './pages/admin/integrations/usd-brl/page'
 import AdminUsersPage from './pages/admin/users/page'
-import GameSandboxPage from './pages/admin/game/sandbox/page'
 import LoginPage from './pages/login'
 import MarketAssetPage from './pages/market/asset/page'
 import MarketAtivosPage from './pages/market/ativos/page'
@@ -56,36 +55,6 @@ import PortfolioTransactionsPage from './pages/portfolio/trades/page'
 import UserConfigurationPage from './pages/portfolio/user-configurations/page'
 import PortfolioPatrimonyEvolution from './pages/portfolio/wealth/page'
 import { ThemeRegistry } from './theme'
-
-/* Ferramentas de desenvolvimento: o catálogo do design system e o estúdio de
-   temas. Só existem com `npm run dev` — o build de produção troca
-   `import.meta.env.DEV` por `false`, descarta este ramo e, com ele, os
-   imports sob demanda, de modo que nenhum chunk daqui é gerado. A regressão
-   visual roda contra o dev server e as alcança. */
-const devRoutes: RouteObject[] = import.meta.env.DEV
-  ? [
-      {
-        path: '/dev',
-        children: [
-          { index: true, element: <Navigate to="/dev/design-system" replace /> },
-          /* Fora da rota-mãe: o estúdio monta a casca sob o tema em edição. */
-          {
-            path: 'design-system/temas',
-            lazy: async () => ({ Component: (await import('./pages/dev/theme-studio/page')).default }),
-          },
-          {
-            lazy: async () => ({ Component: (await import('./pages/dev/layout')).default }),
-            children: [
-              {
-                path: 'design-system/:family?',
-                lazy: async () => ({ Component: (await import('./pages/dev/design-system/page')).default }),
-              },
-            ],
-          },
-        ],
-      },
-    ]
-  : []
 
 const router = createBrowserRouter([
   {
@@ -158,7 +127,6 @@ const router = createBrowserRouter([
       { path: 'brokers', element: <AdminBrokersPage /> },
       { path: 'events', element: <AdminEventsPage /> },
       { path: 'users', element: <AdminUsersPage /> },
-      { path: 'game/sandbox', element: <GameSandboxPage /> },
       { path: 'market-data/usd-brl', element: <AdminMarketDataUsdBrlPage /> },
       { path: 'market-data/series', element: <AdminMarketDataSeriesPage /> },
       { path: 'market-data/quotes', element: <AdminMarketDataQuotesPage /> },
@@ -185,7 +153,6 @@ const router = createBrowserRouter([
     path: '/login',
     element: <LoginPage />,
   },
-  ...devRoutes,
   {
     path: '/*',
     element: <div>404 Not Found</div>,

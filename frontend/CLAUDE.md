@@ -62,25 +62,16 @@ moram em `src/theme/presets.ts`, escritos por extenso, e `themes.ts` só os
 converte em temas do MUI. Não há tema fora dessa lista: o usuário escolhe um
 preset em Configurações, e criar tema não é coisa do usuário.
 
-Criar ou ajustar um tema é no estúdio de temas, ferramenta de dev em
-`/dev/design-system/temas` (`src/pages/dev/theme-studio/`; ver **Ferramentas
-de desenvolvimento**). Ele parte de um preset, escolhido na lista do painel à
-direita, edita os tokens no mesmo painel e redesenha ao vivo a casca inteira
-— barra, coluna, fundo e o próprio painel, sob `AppThemeScope` — em volta do
-dashboard da carteira: a `PortfolioOverviewScreen` de verdade, com uma
-carteira de mentira determinística (`mockPortfolio.ts`).
+Criar ou ajustar um tema é no estúdio de temas, em `tools/` (ver
+**Ferramentas de desenvolvimento**). Ele parte de um preset, edita os tokens
+e redesenha ao vivo a casca inteira em volta do dashboard da carteira — a
+`PortfolioOverviewScreen` de verdade, com uma carteira de mentira.
 
 **"Salvar" e "Novo preset" gravam direto em `src/theme/presets.ts`**, pelo
-dev server (plugin em `vite.config.ts`, que só existe com `npm run dev`); o
-commit do arquivo é o que publica o tema. A edição é de texto, bloco a bloco
-(`src/theme/preset-file.ts`): os comentários entre presets ficam intocados,
-e o que não casa com o esperado falha alto em vez de gravar pela metade.
+dev server do `tools/`; o commit do arquivo é o que publica o tema.
 
-- O estúdio não salva preset que o teste de contraste reprovaria.
-- O id só se escolhe ao criar; editar nunca o muda (ver abaixo).
 - `preset-source.test.ts` prova que o texto gerado de cada preset volta a ser
-  o mesmo preset; `preset-file.test.ts`, que gravar um preset no
-  `presets.ts` de verdade troca só ele e o põe no lugar certo da lista.
+  o mesmo preset.
 
 - **Contraste é uma régua só**, `paletteContrastChecks` em
   `src/theme/contrast.ts`. As marcadas `enforced` são as que
@@ -97,9 +88,9 @@ e o que não casa com o esperado falha alto em vez de gravar pela metade.
 - **Mudar o id de um preset publicado troca, em silêncio, o tema de quem o
   escolheu** pelo padrão: o id fica no localStorage.
 
-`e2e/theme-studio.spec.ts` fotografa o estúdio com cada preset — é a
-regressão visual dos temas, inclusive dos escuros, que o resto da suíte
-(presa ao Tinta claro) não vê.
+A regressão visual roda presa ao Tinta claro: os outros presets, inclusive
+os escuros, não têm snapshot. Quem os cobre é o `themes.test.ts` (contraste,
+fontes) — o desenho, só no estúdio.
 
 ### Dashboard da carteira
 
@@ -221,46 +212,46 @@ inteira do anterior, então os seletores são compostos a partir de constantes.
 
 ### Ferramentas de desenvolvimento
 
-`src/pages/dev/` guarda as telas que só servem a quem desenvolve: o catálogo
-do design system e o estúdio de temas, em `/dev/...`, na moldura do app
-montada por `src/pages/dev/DevShell.tsx` — o catálogo pela rota-mãe
-(`layout.tsx`), o estúdio direto, porque é ele quem a pinta com o tema em
-edição e lhe dá o painel da direita. Elas só existem com `npm run dev`: `App.tsx`
-registra essas rotas atrás de `import.meta.env.DEV`, que o build de produção
-troca por `false`, e as carrega sob demanda — nada daqui entra no bundle
-publicado. Não pedem login nem backend, porque nenhuma lê dado do servidor; a
-regressão visual as alcança porque roda contra o dev server.
+O catálogo do design system, o estúdio de temas, o estúdio do jogo (sandbox
+da cidade e catálogo da loja) e o painel de deploy moram em `tools/`, na raiz
+do repositório — **fora do app**, num dev server próprio (`tools/start.sh`,
+porta 5180). `tools/` é ferramenta, não produto:
+sem lint, sem teste, sem as regras deste arquivo. Quebrou, conserta-se ali.
 
-Tela que só desenvolvedor usa vai para cá, e não para o admin: o admin é
-para operar o app de verdade, e o que mora lá vai para todo usuário no
+- **O app não importa nada de `tools/`.** O `tools/` importa o app pelo mesmo
+  `@/`, e usa a mesma cópia de React, MUI e tema: `tools/node_modules` é um
+  link para `frontend/node_modules`, criado pelo `start.sh`. Duas cópias de
+  MUI e o `ThemeProvider` de uma não pinta os componentes da outra.
+- **O único elo é o link "Dev"** na barra do topo, ao lado de Mercado, numa
+  cor própria (`accent` do `AppTopbar`). Ele mora em `DEV_SECTION`
+  (`src/layouts/navigation.ts`), inteiro atrás de `import.meta.env.DEV`: no
+  build de produção vira `null`, e nem o rótulo nem o endereço vão para o
+  bundle. `VITE_DEVTOOLS_URL` troca o endereço.
+- **O que grava arquivo ou roda git fica no dev server do `tools/`**
+  (`tools/server/`), nunca no do app: o gravador de presets, o do catálogo
+  do jogo (`catalog-file.ts`, que reescreve `CITY_CATALOG` linha a linha — por
+  isso cada peça fica numa linha só, com `id` primeiro) e o runner do deploy.
+
+Tela que só desenvolvedor usa vai para `tools/`, e não para o admin: o admin
+é para operar o app de verdade, e o que mora lá vai para todo usuário no
 bundle.
 
-### Catálogo e superfície
+### Superfície do design system
 
-O catálogo do design system mora em `/dev/design-system/<família>`, uma
-tela por família (`src/pages/dev/design-system/families.ts`). A família
-junta os componentes pelo trabalho que fazem, não pelo nome: os jeitos de
-escolher uma opção ficam na mesma tela, e é ali que se vê quando dois fazem a
-mesma coisa. Cada componente é um `Entry` com o papel dele e os estados
-(`States`, `Matrix`), escritos só com primitivos — a página é também o
-exemplo de como uma tela se escreve.
-
-- **Componente novo entra no catálogo no mesmo commit**, com os estados que
-  as telas usam. Prop nova que muda o desenho ganha um estado ali.
-- **Todo componente exportado tem consumidor.** O que só o catálogo usa é
-  código morto com vitrine, e sai.
+- **Todo componente exportado tem consumidor em `src/`.** O catálogo, em
+  `tools/`, não conta: o que só ele usa é código morto com vitrine, e sai.
+  O catálogo é opcional — componente novo não precisa entrar nele.
 - **Tom é intenção, e o nome é um só**: `primary`, `info`, `success`,
   `caution`, `danger` (`src/components/ui/intent.ts`). Cada componente aceita
   um recorte da lista e traduz para a paleta do MUI por `INTENT_COLOR`. A
   falha é `danger` no botão, no aviso e no texto — nunca `error` ou
   `severity`.
 
-`npm run lint:catalog` (`scripts/check-ds-catalog.mjs`) é o que segura as
-duas primeiras regras, no pre-commit: reprova componente exportado que não
-aparece no catálogo nem na lista de exceções com motivo, componente sem
-consumidor fora do catálogo, e exceção que deixou de valer. Antes de olhar o
-código ela roda contra um caso inventado em que tem de falhar, e falha alto
-se não falhar — é o teste da guarda, e ele roda junto com ela.
+`npm run lint:catalog` (`scripts/check-ds-catalog.mjs`) segura a primeira
+regra no pre-commit: reprova componente exportado que nenhum arquivo de
+`src/` importa. Antes de olhar o código ela roda contra um caso inventado em
+que tem de falhar, e falha alto se não falhar — é o teste da guarda, e ele
+roda junto com ela.
 
 `npm run ds:usage` conta pela AST quantos arquivos usam cada componente;
 com nomes (`npm run ds:usage -- AppButton`), conta cada valor de cada prop.
@@ -311,7 +302,7 @@ A suíte roda nos hooks do `.pre-commit-config.yaml`, e é lá que ela pertence:
 ```bash
 npm run lint         # ESLint, incluindo a fronteira do design system
 npm run lint:ds      # ratchet: a dívida do design system só encolhe
-npm run lint:catalog # todo componente no catálogo, e com consumidor
+npm run lint:catalog # todo componente do design system com consumidor
 npm test             # vitest
 npm run knip         # arquivos, exports e dependências sem uso
 npm run build        # tsc + vite build

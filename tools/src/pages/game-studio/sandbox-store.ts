@@ -19,10 +19,8 @@ interface GameSandboxState {
   clear: () => void
 }
 
-/** O mapa do sandbox do admin: livre, começa vazio e fica neste navegador.
- *
- *  É um lugar para testar peças e ver o mapa em escala, não o jogo de
- *  ninguém; quando o jogo tiver estado de verdade, ele mora no servidor. */
+/** O mapa do sandbox do estúdio do jogo: começa vazio e fica neste
+ *  navegador, na origem do `tools/` — não é a cidade de nenhuma carteira. */
 export const useGameSandboxStore = create<GameSandboxState>()(
   persist(
     (set) => ({

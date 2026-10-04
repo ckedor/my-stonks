@@ -18,7 +18,8 @@ import {
    de US$ 10 mil custa US$ 1 mil. Na régua cheia, a loja inteira custava o
    patrimônio de uma carteira grande, e o que entrava num mês — dividendos,
    bônus — não comprava quase nada. Ruas e árvores são de graça, e os
-   prédios de ativo também — eles não se compram, vêm do que se tem.
+   prédios de ativo também — eles não se compram, vêm do que se tem. Um
+   preço fixado no catálogo, pelo estúdio do jogo, vale no lugar do volume.
 
    Além do patrimônio, entram bônus (`bonuses.ts`): os dividendos contam em
    dobro, cada aporte rende um quarto dele, e cada categoria que vence o

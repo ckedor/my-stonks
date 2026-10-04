@@ -12,12 +12,12 @@ import {
   AppStack,
   AppStackItem,
   AppText,
-  AppThemeScope,
   radius,
   space,
   useAppTheme,
   type SpaceToken,
 } from '@/components/ui'
+import AppThemeScope from '../../components/AppThemeScope'
 import { DEFAULT_DARK_THEME_ID, getPresetById } from '@/theme/themes'
 import DeleteIcon from '@mui/icons-material/Delete'
 import { Entry, Matrix, State, States } from './Specimen'

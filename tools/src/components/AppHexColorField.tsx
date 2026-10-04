@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import AppColorField from './AppColorField'
-import AppStack, { AppStackItem } from './AppStack'
-import AppTextField from './AppTextField'
+import { AppColorField, AppStack, AppStackItem, AppTextField } from '@/components/ui'
 
 /* Uma cor editável dos dois jeitos: pelo seletor do sistema e pelo hexadecimal
  * escrito à mão. O par existe porque nenhum dos dois basta — o seletor não

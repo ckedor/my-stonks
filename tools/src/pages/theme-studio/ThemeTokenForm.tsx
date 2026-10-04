@@ -1,6 +1,5 @@
 import {
   AppGrid,
-  AppHexColorField,
   AppNumberField,
   AppSelect,
   AppStack,
@@ -8,6 +7,7 @@ import {
   AppTabs,
   SectionLabel,
 } from '@/components/ui'
+import AppHexColorField from '../../components/AppHexColorField'
 import type { ThemePreset } from '@/theme/presets'
 import { fontStackKey, type FontStackKey } from '@/theme/preset-source'
 import type { ThemePaletteConfig } from '@/theme/themes'

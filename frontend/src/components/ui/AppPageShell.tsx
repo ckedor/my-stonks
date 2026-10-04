@@ -18,9 +18,9 @@ import { TOPBAR_HEIGHT } from './AppTopbar'
  * de nada. Sem a coluna (tela estreita), a faixa se centraliza na janela
  * inteira, que é o respiro que ela sempre teve.
  *
- * Pinta o próprio fundo, em vez de deixar o do `body` aparecer: sob um
- * `AppThemeScope` — o estúdio de temas —, é o que faz o tema em edição
- * chegar à página inteira, e não só aos componentes dela. */
+ * Pinta o próprio fundo, em vez de deixar o do `body` aparecer: sob outro
+ * `ThemeProvider` — o do estúdio de temas, em `tools/` —, é o que faz o tema
+ * em edição chegar à página inteira, e não só aos componentes dela. */
 
 /** O conteúdo para de crescer aqui: numa tela ultralarga, uma tabela que vai
  *  de borda a borda obriga o olho a percorrer a linha inteira. */

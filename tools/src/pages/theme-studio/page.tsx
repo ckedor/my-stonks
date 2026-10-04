@@ -13,7 +13,7 @@ import {
   SectionTitle,
 } from '@/components/ui'
 import { paletteContrastChecks } from '@/theme/contrast'
-import { PRESET_FILE_ENDPOINT, type PresetFileChange } from '@/theme/preset-file'
+import { PRESET_FILE_ENDPOINT, type PresetFileChange } from '../../../server/preset-file'
 import { presetSource } from '@/theme/preset-source'
 import { THEME_PRESETS, type ThemePreset } from '@/theme/presets'
 import { DEFAULT_LIGHT_THEME_ID } from '@/theme/themes'

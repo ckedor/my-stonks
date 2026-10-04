@@ -47,10 +47,12 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   getNavigationSection,
-  getSectionDefaultPath,
   isNavigationItemActive,
   navigationSections,
+  DEV_SECTION,
+  getSectionDefaultPath,
   resolveGroups,
+  topbarSections,
   type SectionId,
 } from './navigation'
 
@@ -155,9 +157,14 @@ export default function MainTopbar({ railCollapsed, onToggleRail }: MainTopbarPr
         layout="centered"
         navLabel="Seções do app"
         brand={{ label: 'My Stonks', onClick: () => navigate('/portfolio/overview') }}
-        sections={isMobile ? [] : navigationSections.map((s) => ({ id: s.id, label: s.label }))}
+        sections={isMobile ? [] : topbarSections()}
         selectedSectionId={currentSection}
         onSelectSection={(id) => {
+          // Dev é outro servidor: sai do app.
+          if (DEV_SECTION && id === DEV_SECTION.id) {
+            window.location.assign(DEV_SECTION.url)
+            return
+          }
           const section = navigationSections.find((s) => s.id === id)
           if (section) navigate(getSectionDefaultPath(section))
         }}

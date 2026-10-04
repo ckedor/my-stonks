@@ -6,7 +6,6 @@ import {
   AppDayField,
   AppFileField,
   AppFilterBar,
-  AppHexColorField,
   AppMultiAutocomplete,
   AppNumberField,
   AppPasswordField,
@@ -17,6 +16,7 @@ import {
   useAppTheme,
   type AppMultiAutocompleteOption,
 } from '@/components/ui'
+import AppHexColorField from '../../components/AppHexColorField'
 import AddIcon from '@mui/icons-material/Add'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import dayjs, { type Dayjs } from 'dayjs'

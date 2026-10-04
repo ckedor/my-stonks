@@ -15,10 +15,9 @@
                                           cada prop de cada um, com a
                                           contagem de cada valor
 
-   Conta só os consumidores: ficam de fora a própria pasta do design system,
-   o catálogo (`src/pages/dev/design-system/`) e os testes. O catálogo
-   renderiza tudo de propósito, e contado ele faria de todo componente um
-   componente usado.
+   Conta só os consumidores de `src/`: ficam de fora a própria pasta do
+   design system e os testes. O catálogo, que renderiza tudo de propósito,
+   mora em `tools/` e nem é lido.
 
    As funções daqui também servem `scripts/check-ds-catalog.mjs`. */
 
@@ -30,7 +29,6 @@ import ts from 'typescript'
 const frontendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const DS_MODULE = '@/components/ui'
 export const DS_DIR = 'src/components/ui/'
-export const CATALOG_DIR = 'src/pages/dev/design-system/'
 
 function parse(fileName, source) {
   return ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
@@ -119,10 +117,9 @@ export function sourceFiles() {
   return files
 }
 
-/** Arquivo que conta como consumidor: fora do design system, fora do
- *  catálogo, e não teste. */
-export const isConsumer = (file) =>
-  !file.startsWith(DS_DIR) && !file.startsWith(CATALOG_DIR) && !/\.test\.tsx?$/.test(file)
+/** Arquivo que conta como consumidor: fora do design system, e não teste.
+ *  O catálogo mora em `tools/`, fora de `src/`, e não entra na conta. */
+export const isConsumer = (file) => !file.startsWith(DS_DIR) && !/\.test\.tsx?$/.test(file)
 
 export const read = (file) => readFileSync(path.join(frontendDir, file), 'utf8')
 

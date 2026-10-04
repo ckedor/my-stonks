@@ -70,6 +70,9 @@ export const TOPBAR_HEIGHT = 64
 export interface AppTopbarSection {
   id: string
   label: string
+  /** Uma seção que não é do produto — as ferramentas de dev —, pintada numa
+   *  cor própria para nunca passar por navegação de verdade. */
+  accent?: boolean
 }
 
 export interface AppTopbarProps {
@@ -109,6 +112,13 @@ export default function AppTopbar({
     contrastRatio(topbar.activeBg, topbar.background)
       ? topbar.activeText
       : topbar.activeBg
+  /* A seção `accent`, pelo mesmo critério: das duas cores de chamar atenção
+     do tema, a que se lê sobre a barra. */
+  const { golden, warning } = useAppTheme().palette
+  const sectionAccent =
+    contrastRatio(golden, topbar.background) >= contrastRatio(warning.main, topbar.background)
+      ? golden
+      : warning.main
 
   return (
     <AppBar
@@ -189,6 +199,7 @@ export default function AppTopbar({
                 const selected = section.id === selectedSectionId
 
                 if (centered) {
+                  const accent = section.accent ? sectionAccent : selectedAccent
                   return (
                     <Button
                       key={section.id}
@@ -196,9 +207,9 @@ export default function AppTopbar({
                       sx={{
                         textTransform: 'none',
                         fontWeight: selected ? 'bold' : 'normal',
-                        color: selected ? selectedAccent : 'topbar.text',
+                        color: selected || section.accent ? accent : 'topbar.text',
                         borderBottom: selected ? 2 : 0,
-                        borderColor: selectedAccent,
+                        borderColor: accent,
                         borderRadius: 0,
                         px: 1.5,
                       }}
@@ -219,7 +230,7 @@ export default function AppTopbar({
                       border: 0,
                       borderRadius: 1.5,
                       bgcolor: selected ? 'topbar.activeBg' : 'transparent',
-                      color: selected ? 'topbar.activeText' : 'topbar.text',
+                      color: section.accent ? sectionAccent : selected ? 'topbar.activeText' : 'topbar.text',
                       cursor: 'pointer',
                       font: 'inherit',
                       fontSize: '0.875rem',

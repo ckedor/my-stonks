@@ -9,8 +9,10 @@
       "module": "uvicorn",
       "args": [
         "app.main_fastapi:app",
-        "--host", "127.0.0.1",
-        "--port", "7000",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "7000",
         "--reload"
       ],
       "jinja": true,
@@ -29,9 +31,12 @@
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}/backend",
       "args": [
-        "-A", "app.main_celery.celery_app",
+        "-A",
+        "app.main_celery.celery_app",
         "worker",
-        "-l", "info", "--pool=solo",
+        "-l",
+        "info",
+        "--pool=solo",
         "--beat"
       ],
       "env": {
@@ -45,8 +50,19 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "cwd": "${workspaceFolder}/frontend",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Tools: Vite (Dev)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/tools/start.sh",
+      "cwd": "${workspaceFolder}/tools",
       "console": "integratedTerminal"
     }
   ],
@@ -60,11 +76,12 @@
       "stopAll": true
     },
     {
-      "name": "Full Stack (API + Worker + Frontend)",
+      "name": "Full Stack (API + Worker + Frontend + Tools)",
       "configurations": [
         "Python: FastAPI (uvicorn)",
         "Run Celery Worker",
-        "Frontend: Vite Dev"
+        "Frontend: Vite Dev",
+        "Tools: Vite (Dev)"
       ],
       "stopAll": true
     }

@@ -172,6 +172,30 @@ export function getSectionDefaultPath(section: NavigationSection): string {
   return section.groups[0].items[0].path
 }
 
+/** O link para as ferramentas de desenvolvimento — catálogo do design
+ *  system, estúdio de temas, painel de deploy —, que moram em `tools/`, num
+ *  dev server próprio (`tools/start.sh`).
+ *
+ *  Inteiro atrás de `import.meta.env.DEV`: o build de produção o troca por
+ *  `false`, a seção vira `null` e tudo o que depende dela some do bundle —
+ *  nem o rótulo nem o endereço vão para produção. */
+export const DEV_SECTION = import.meta.env.DEV
+  ? {
+      id: 'dev',
+      label: 'Dev',
+      accent: true,
+      url: (import.meta.env.VITE_DEVTOOLS_URL as string | undefined) ?? 'http://localhost:5180',
+    }
+  : null
+
+/** As seções da barra do topo; "Dev" só em dev. */
+export function topbarSections() {
+  return [
+    ...navigationSections.map((section) => ({ id: section.id as string, label: section.label })),
+    ...(DEV_SECTION ? [DEV_SECTION] : []),
+  ]
+}
+
 export function getNavigationSection(pathname: string): SectionId {
   return pathname.startsWith('/market') ? 'mercado' : 'carteira'
 }

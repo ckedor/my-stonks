@@ -6,13 +6,25 @@ when code conflicts with it, do not silently copy the conflicting pattern.
 
 ## Product context
 
-The admin city sandbox (`/admin/game/sandbox`) uses one fixed terrain map
+The city game sandbox lives in the developer tools, outside the app
+(`tools/src/pages/game-studio/`, served by `tools/start.sh` at
+`/dev/jogo/sandbox`). Next to it, the game catalogue editor
+(`/dev/jogo/catalogo`) moves pieces between shop groups and subgroups and
+fixes or clears a piece's price; it keeps a draft the sandbox already plays
+with, and saving rewrites `frontend/src/components/city-game/catalog.ts`
+line by line through the tools dev server (`tools/server/catalog-file.ts`).
+The sandbox's money is either unlimited, with the whole map open, or a
+simulated player whose patrimony, dividends and bonus feed the same balance,
+rank and territory rules as the game.
+
+The sandbox uses one fixed terrain map
 from `frontend/src/components/city-game/map.ts`: mainland to the north, two
 big islands facing each other across a strait with one islet in it, and three
 outer islands — south, southwest and a desert one to the east, whose land is
 drawn in sand (`grounds` on the terrain). `AppIsoBuilder` renders the supplied land polygons
 and checks placement footprints against land before placing or moving pieces.
-Terrain is independent of the browser-persisted pieces in `game-sandbox`;
+Terrain is independent of the browser-persisted pieces in `game-sandbox`
+(`tools/src/pages/game-studio/sandbox-store.ts`, in the tools' origin);
 clearing those pieces preserves the map. Existing pieces are retained when
 the terrain changes. The map spans 512 × 512 tiles. The sandbox opens with
 an overview of the editable area. Water and mainland continue beyond the

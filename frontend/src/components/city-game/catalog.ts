@@ -1,8 +1,13 @@
 import type { IsoBuilderItem } from '@/components/ui'
 
-/* O catálogo do jogo da cidade: o jogo da carteira e o sandbox do admin
-   leem o mesmo. O preço não mora aqui: sai do volume de cada peça, em
-   `economy.ts`, para que um item novo não tenha preço inventado à mão. */
+/* O catálogo do jogo da cidade: o jogo da carteira e o sandbox do estúdio
+   do jogo (`tools/`) leem o mesmo. O preço sai do volume de cada peça, em
+   `economy.ts`, para que um item novo não tenha preço inventado à mão; um
+   `price` na linha fixa o preço daquela peça.
+
+   O estúdio do jogo grava este arquivo — categoria, subcategoria e preço —
+   linha a linha (`tools/server/catalog-file.ts`): cada peça fica numa linha
+   só, com `id` primeiro. */
 export const CITY_CATALOG: IsoBuilderItem[] = [
   { id: 'suburban-block', label: 'Casas de subúrbio', group: 'Residencial', subgroup: 'Casas', recipe: 'suburbanBlock' },
   { id: 'slate-cottages', label: 'Casas de ardósia', group: 'Residencial', subgroup: 'Casas', recipe: 'slateCottages' },

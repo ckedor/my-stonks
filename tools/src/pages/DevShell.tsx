@@ -1,16 +1,20 @@
-import { AppNavRail, AppPageShell, AppThemeScope, AppTopbar, ThemeToggleButton } from '@/components/ui'
+import { AppNavRail, AppPageShell, AppTopbar, ThemeToggleButton } from '@/components/ui'
+import AppThemeScope from '../components/AppThemeScope'
 import { useNavRailCollapsed } from '@/hooks/useNavRailCollapsed'
 import type { ThemePreset } from '@/theme/presets'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import BrushIcon from '@mui/icons-material/Brush'
+import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import EditNoteIcon from '@mui/icons-material/EditNote'
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
 import LayersIcon from '@mui/icons-material/Layers'
+import MapOutlinedIcon from '@mui/icons-material/MapOutlined'
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone'
 import NumbersIcon from '@mui/icons-material/Numbers'
 import PaletteIcon from '@mui/icons-material/Palette'
+import RocketLaunchOutlinedIcon from '@mui/icons-material/RocketLaunchOutlined'
 import TableChartIcon from '@mui/icons-material/TableChart'
 import TextFieldsIcon from '@mui/icons-material/TextFields'
 import ToggleOnIcon from '@mui/icons-material/ToggleOn'
@@ -22,10 +26,14 @@ import {
   THEME_STUDIO_PATH,
   type DesignSystemFamilySlug,
 } from './design-system/families'
-import { devNavigationItems } from './navigation'
+import { DEV_SECTION, getSectionDefaultPath, navigationSections, topbarSections } from '@/layouts/navigation'
 
-/* A casca das ferramentas de desenvolvimento: o catálogo do design system e o
- * estúdio de temas.
+/** O app, no dev server dele: Carteira e Mercado levam de volta para lá. */
+const APP_URL: string = import.meta.env.VITE_APP_URL ?? 'http://localhost:5173'
+import { CATALOG_PATH, DEPLOY_PATH, devNavigationItems, SANDBOX_PATH } from './navigation'
+
+/* A casca das ferramentas de desenvolvimento: o painel de deploy, o estúdio
+ * do jogo, o catálogo do design system e o estúdio de temas.
  *
  * É a moldura do app — `AppPageShell`, `AppTopbar`, `AppNavRail` —, e não uma
  * própria: o estúdio desenha o tema em edição sobre ela, e uma moldura que
@@ -35,10 +43,8 @@ import { devNavigationItems } from './navigation'
  * ela precisa: o tema em edição, que pinta a casca inteira, e o painel de
  * tokens à direita.
  *
- * Só existe com `npm run dev`. `App.tsx` registra as rotas de `/dev` atrás de
- * `import.meta.env.DEV`, que o build de produção troca por `false`, e as
- * carrega sob demanda — então nada daqui entra no bundle publicado. Também
- * não pede login nem backend: nenhuma tela daqui lê dado do servidor. */
+ * Mora em `tools/`, fora do app, num dev server próprio (`tools/start.sh`).
+ * Não pede login nem backend: nenhuma tela daqui lê dado do servidor do app. */
 
 /* Um ícone por família. O `Record` é o que obriga a família nova a chegar ao
  * menu com o dela. */
@@ -64,9 +70,10 @@ const ICONS: Record<string, ReactNode> = {
     ]),
   ),
   [THEME_STUDIO_PATH]: <BrushIcon fontSize="small" />,
+  [DEPLOY_PATH]: <RocketLaunchOutlinedIcon fontSize="small" />,
+  [SANDBOX_PATH]: <MapOutlinedIcon fontSize="small" />,
+  [CATALOG_PATH]: <CategoryOutlinedIcon fontSize="small" />,
 }
-
-const SECTION = { id: 'design-system', label: 'Design System' }
 
 /* Os grupos do menu, na ordem da lista: itens seguidos do mesmo grupo ficam
  * sob um título só. */
@@ -113,10 +120,16 @@ export default function DevShell({ children, theme, aside }: DevShellProps) {
         <AppTopbar
           layout="centered"
           navLabel="Ferramentas de desenvolvimento"
-          sections={[SECTION]}
-          selectedSectionId={SECTION.id}
-          onSelectSection={() => navigate(devNavigationItems[0].path)}
-          brand={{ label: 'My Stonks', onClick: () => navigate('/') }}
+          // As seções do app, com Dev marcada: daqui se volta à carteira e ao
+          // mercado pelo mesmo lugar por onde se chegou.
+          sections={topbarSections()}
+          selectedSectionId="dev"
+          onSelectSection={(id) => {
+            if (id === DEV_SECTION?.id) return navigate('/dev/deploy')
+            const section = navigationSections.find((each) => each.id === id)
+            if (section) window.location.assign(`${APP_URL}${getSectionDefaultPath(section)}`)
+          }}
+          brand={{ label: 'My Stonks', onClick: () => window.location.assign(APP_URL) }}
           menuButton={{
             label: railCollapsed ? 'Expandir menu' : 'Recolher menu',
             icon: railCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />,

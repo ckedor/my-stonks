@@ -12,7 +12,7 @@
 #
 # ── Onde cada check roda ───────────────────────────────────────────────────
 # COMMIT: só o que olha o arquivo que você acabou de mexer e responde na hora —
-#         ruff, eslint, ds-baseline, ds-catalog e a regra de importação
+#         ruff, eslint, ds-baseline, ds-catalog (componente morto) e a regra de importação
 #         (lint-imports).
 # PUSH:   knip, pytest e tsc + build. É lento demais para pagar a cada commit,
 #         mas nada sai daqui sem passar.
@@ -79,11 +79,10 @@ repos:
         files: ^frontend/
         verbose: true
 
-      # O catálogo do design system tem de mostrar todo componente exportado,
-      # e todo componente exportado tem de ter consumidor fora do catálogo.
-      # Ver o cabeçalho de `frontend/scripts/check-ds-catalog.mjs`.
+      # Todo componente exportado pelo design system tem de ter consumidor em
+      # `frontend/src/`. Ver o cabeçalho de `frontend/scripts/check-ds-catalog.mjs`.
       - id: ds-catalog
-        name: catálogo do design system
+        name: design system sem componente morto
         entry: bash -c 'cd frontend && npm run --silent lint:catalog'
         language: system
         pass_filenames: false

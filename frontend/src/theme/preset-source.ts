@@ -4,7 +4,7 @@ import { fontStacks, type RadiusScale } from './tokens'
 /* Um preset escrito como código, como fica em `presets.ts`.
  *
  * É o fim do estúdio de temas: o tema montado lá vira este texto, que o dev
- * server grava no arquivo (`preset-file.ts`), e o commit é o que o publica. As fontes saem como referência a
+ * server do `tools/` grava no arquivo (`tools/server/preset-file.ts`), e o commit é o que o publica. As fontes saem como referência a
  * `fontStacks` (`fontStacks.figtree`), nunca como o nome escrito — é a regra
  * de `themes.test.ts`, e uma pilha copiada por extenso deixaria de
  * acompanhar a de `tokens.ts`. `preset-source.test.ts` prova que o texto

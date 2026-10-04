@@ -16,3 +16,7 @@ test-results/
 
 # Folhas de estudo de `npm run iso:render`: rascunho de quem modela uma peça.
 output/iso-render/
+
+# Link para frontend/node_modules, criado por tools/start.sh
+tools/node_modules
+tools/.vite

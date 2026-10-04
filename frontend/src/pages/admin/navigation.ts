@@ -117,12 +117,6 @@ export const adminNavigationSections: AdminNavigationSection[] = [
     defaultPath: '/admin/users',
     items: [{ label: 'Usuários', path: '/admin/users' }],
   },
-  {
-    id: 'game',
-    label: 'Jogo',
-    defaultPath: '/admin/game/sandbox',
-    items: [{ label: 'Sandbox', path: '/admin/game/sandbox' }],
-  },
 ]
 
 export function getAdminNavigationSection(pathname: string): AdminNavigationSection {
