@@ -8,8 +8,13 @@ export function useCurrency() {
   const symbol = currency === 'BRL' ? 'R$' : 'US$'
   const locale = currency === 'BRL' ? 'pt-BR' : 'en-US'
 
-  const format = (value: number) =>
-    value.toLocaleString(locale, { style: 'currency', currency })
+  const format = (value: number, fractionDigits?: number) =>
+    value.toLocaleString(locale, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    })
 
   return { currency, setCurrency, toggleCurrency, symbol, locale, format }
 }

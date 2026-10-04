@@ -1,4 +1,5 @@
-import { assetSculptureRecipe, assetSculptureLayout, ASSET_SCULPTURE_MATERIALS, assetTowerShape, type AssetSculptureMaterial, type AssetSculptureStyle, type AssetTowerStyle, type IsoBuilderItem } from '@/components/ui'
+import { type AssetSculptureMaterial, type AssetSculptureStyle, type AssetTowerStyle, type IsoBuilderItem } from '@/components/ui'
+import { assetSculptureRecipe, assetSculptureLayout, ASSET_SCULPTURE_MATERIALS, assetTowerShape } from '@/components/ui/city'
 
 /* Asset sculptures share a civic stone pedestal. The id preserves the
    holding's value and finish across reloads; old tower ids remain readable. */

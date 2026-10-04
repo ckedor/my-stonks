@@ -1,60 +1,63 @@
+import { lazy, Suspense } from 'react'
+import RouteSkeleton from './layouts/RouteSkeleton'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import './App.css'
 import { initAuth } from './actions/auth'
 import MainLayout from './layouts/MainLayout'
-import AdminAssetsPage from './pages/admin/assets/page'
-import AdminBrokersPage from './pages/admin/brokers/page'
-import AdminEventsPage from './pages/admin/events/page'
-import AdminAiFeaturesPage from './pages/admin/ai-features/page'
-import AdminAiFeatureDetailPage from './pages/admin/ai-features/[key]/page'
-import AdminAiUsagePage from './pages/admin/ai-usage/page'
-import AdminRecommendedPortfoliosPage from './pages/admin/recommended-portfolios/page'
-import AdminMarketDataQuotesPage from './pages/admin/market-data/quotes/page'
-import AdminMarketDataSeriesPage from './pages/admin/market-data/series/page'
-import AdminMarketDataUsdBrlPage from './pages/admin/market-data/usd-brl/page'
-import AdminLayout from './pages/admin/layout'
-import AdminIntegrationsPage from './pages/admin/integrations/page'
-import AdminAssetCataloguePage from './pages/admin/integrations/asset-catalogue/page'
-import AdminCompanyRegistryPage from './pages/admin/integrations/company-registry/page'
-import AdminConsolidationPage from './pages/admin/integrations/consolidation/page'
-import AdminEtfHoldingsIngestionPage from './pages/admin/integrations/etf-holdings/page'
-import AdminEtfRegistryIngestionPage from './pages/admin/integrations/etf-registry/page'
-import AdminFundLinksPage from './pages/admin/integrations/fund-links/page'
-import AdminFundRegistryIngestionPage from './pages/admin/integrations/fund-registry/page'
-import AdminFundShareValueIngestionPage from './pages/admin/integrations/fund-share-values/page'
-import AdminMarketDataSeriesIngestionPage from './pages/admin/integrations/market-series/page'
-import AdminQuoteIngestionPage from './pages/admin/integrations/quotes/page'
-import AdminTaskRunsPage from './pages/admin/integrations/runs/page'
-import AdminUsdBrlIngestionPage from './pages/admin/integrations/usd-brl/page'
-import AdminUsersPage from './pages/admin/users/page'
-import LoginPage from './pages/login'
-import MarketAssetPage from './pages/market/asset/page'
-import MarketAtivosPage from './pages/market/ativos/page'
-import PensionPage from './pages/portfolio/pension/page'
-import MarketCataloguePage from './pages/market/catalogue/page'
-import MarketFIIPage from './pages/market/fii/page'
-import MarketInvestmentFundPage from './pages/market/investment-fund/page'
-import MarketLaboratoryPage from './pages/market/laboratory/page'
-import MarketLaboratoryComparePage from './pages/market/laboratory/compare/page'
-import MarketOverviewPage from './pages/market/overview/page'
-import MarketSeriesPage from './pages/market/series/page'
-import MarketUsdBrlPage from './pages/market/usd-brl/page'
-import PortfolioAssetsPage from './pages/portfolio/asset'
-import PortfolioAssetPage from './pages/portfolio/asset/[id]/page'
-import PortfolioCategoryPage from './pages/portfolio/category/page'
-import CityPage from './pages/portfolio/city/page'
-import DistributionPage from './pages/portfolio/distribution/page'
-import PortfolioDocumentsPage from './pages/portfolio/documents/page'
-import PortfolioDividendsPage from './pages/portfolio/dividends/page'
-import PortfolioSegmentPage from './pages/portfolio/segment/page'
 import PortfolioOverviewPage from './pages/portfolio/overview'
-import PortfolioReturnsPage from './pages/portfolio/returns/page'
-import PortfolioRiskPage from './pages/portfolio/risk/page'
-import TaxIncomePage from './pages/portfolio/tax-income/page'
-import PortfolioTransactionsPage from './pages/portfolio/trades/page'
-import UserConfigurationPage from './pages/portfolio/user-configurations/page'
-import PortfolioPatrimonyEvolution from './pages/portfolio/wealth/page'
 import { ThemeRegistry } from './theme'
+
+const AdminAssetsPage = lazy(() => import('./pages/admin/assets/page'))
+const AdminBrokersPage = lazy(() => import('./pages/admin/brokers/page'))
+const AdminEventsPage = lazy(() => import('./pages/admin/events/page'))
+const AdminAiFeaturesPage = lazy(() => import('./pages/admin/ai-features/page'))
+const AdminAiFeatureDetailPage = lazy(() => import('./pages/admin/ai-features/[key]/page'))
+const AdminAiUsagePage = lazy(() => import('./pages/admin/ai-usage/page'))
+const AdminRecommendedPortfoliosPage = lazy(() => import('./pages/admin/recommended-portfolios/page'))
+const AdminMarketDataQuotesPage = lazy(() => import('./pages/admin/market-data/quotes/page'))
+const AdminMarketDataSeriesPage = lazy(() => import('./pages/admin/market-data/series/page'))
+const AdminMarketDataUsdBrlPage = lazy(() => import('./pages/admin/market-data/usd-brl/page'))
+const AdminLayout = lazy(() => import('./pages/admin/layout'))
+const AdminIntegrationsPage = lazy(() => import('./pages/admin/integrations/page'))
+const AdminAssetCataloguePage = lazy(() => import('./pages/admin/integrations/asset-catalogue/page'))
+const AdminCompanyRegistryPage = lazy(() => import('./pages/admin/integrations/company-registry/page'))
+const AdminConsolidationPage = lazy(() => import('./pages/admin/integrations/consolidation/page'))
+const AdminEtfHoldingsIngestionPage = lazy(() => import('./pages/admin/integrations/etf-holdings/page'))
+const AdminEtfRegistryIngestionPage = lazy(() => import('./pages/admin/integrations/etf-registry/page'))
+const AdminFundLinksPage = lazy(() => import('./pages/admin/integrations/fund-links/page'))
+const AdminFundRegistryIngestionPage = lazy(() => import('./pages/admin/integrations/fund-registry/page'))
+const AdminFundShareValueIngestionPage = lazy(() => import('./pages/admin/integrations/fund-share-values/page'))
+const AdminMarketDataSeriesIngestionPage = lazy(() => import('./pages/admin/integrations/market-series/page'))
+const AdminQuoteIngestionPage = lazy(() => import('./pages/admin/integrations/quotes/page'))
+const AdminTaskRunsPage = lazy(() => import('./pages/admin/integrations/runs/page'))
+const AdminUsdBrlIngestionPage = lazy(() => import('./pages/admin/integrations/usd-brl/page'))
+const AdminUsersPage = lazy(() => import('./pages/admin/users/page'))
+const LoginPage = lazy(() => import('./pages/login'))
+const MarketAssetPage = lazy(() => import('./pages/market/asset/page'))
+const MarketAtivosPage = lazy(() => import('./pages/market/ativos/page'))
+const PensionPage = lazy(() => import('./pages/portfolio/pension/page'))
+const MarketCataloguePage = lazy(() => import('./pages/market/catalogue/page'))
+const MarketFIIPage = lazy(() => import('./pages/market/fii/page'))
+const MarketInvestmentFundPage = lazy(() => import('./pages/market/investment-fund/page'))
+const MarketLaboratoryPage = lazy(() => import('./pages/market/laboratory/page'))
+const MarketLaboratoryComparePage = lazy(() => import('./pages/market/laboratory/compare/page'))
+const MarketOverviewPage = lazy(() => import('./pages/market/overview/page'))
+const MarketSeriesPage = lazy(() => import('./pages/market/series/page'))
+const MarketUsdBrlPage = lazy(() => import('./pages/market/usd-brl/page'))
+const PortfolioAssetsPage = lazy(() => import('./pages/portfolio/asset'))
+const PortfolioAssetPage = lazy(() => import('./pages/portfolio/asset/[id]/page'))
+const PortfolioCategoryPage = lazy(() => import('./pages/portfolio/category/page'))
+const CityPage = lazy(() => import('./pages/portfolio/city/page'))
+const DistributionPage = lazy(() => import('./pages/portfolio/distribution/page'))
+const PortfolioDocumentsPage = lazy(() => import('./pages/portfolio/documents/page'))
+const PortfolioDividendsPage = lazy(() => import('./pages/portfolio/dividends/page'))
+const PortfolioSegmentPage = lazy(() => import('./pages/portfolio/segment/page'))
+const PortfolioReturnsPage = lazy(() => import('./pages/portfolio/returns/page'))
+const PortfolioRiskPage = lazy(() => import('./pages/portfolio/risk/page'))
+const TaxIncomePage = lazy(() => import('./pages/portfolio/tax-income/page'))
+const PortfolioTransactionsPage = lazy(() => import('./pages/portfolio/trades/page'))
+const UserConfigurationPage = lazy(() => import('./pages/portfolio/user-configurations/page'))
+const PortfolioPatrimonyEvolution = lazy(() => import('./pages/portfolio/wealth/page'))
 
 const router = createBrowserRouter([
   {
@@ -165,7 +168,9 @@ initAuth()
 function App() {
   return (
     <ThemeRegistry>
-      <RouterProvider router={router} />
+      <Suspense fallback={<RouteSkeleton />}>
+        <RouterProvider router={router} />
+      </Suspense>
     </ThemeRegistry>
   )
 }

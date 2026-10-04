@@ -1,3 +1,5 @@
+import { Suspense } from 'react'
+import RouteSkeleton from '@/layouts/RouteSkeleton'
 import GlobalTradeForm from '@/components/GlobalTradeForm'
 import { AppPageShell, useAppTheme, useViewportMatches } from '@/components/ui'
 import { useAuthStore } from '@/stores/auth'
@@ -27,7 +29,9 @@ export default function MainLayout() {
         topbar={<MainTopbar railCollapsed={railCollapsed} onToggleRail={toggleRail} />}
         sidebar={isMobile ? undefined : <MainSidebar collapsed={railCollapsed} />}
       >
-        <Outlet />
+        <Suspense fallback={<RouteSkeleton />}>
+          <Outlet />
+        </Suspense>
       </AppPageShell>
 
       {/* Fora da moldura porque é um diálogo: renderiza em portal e não

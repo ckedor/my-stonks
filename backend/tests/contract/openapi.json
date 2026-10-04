@@ -11370,6 +11370,26 @@
     "title": "Portfolio",
     "type": "object"
    },
+   "PortfolioCdiCagr": {
+    "properties": {
+     "cagr": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cagr"
+     }
+    },
+    "required": [
+     "cagr"
+    ],
+    "title": "PortfolioCdiCagr",
+    "type": "object"
+   },
    "PortfolioConsolidation": {
     "description": "When the portfolio's derived data was last rebuilt.\n\n`consolidated_at` is when the run finished, not the date the numbers reach:\nthat one is bounded by the last quote ingested.",
     "properties": {
@@ -23199,6 +23219,64 @@
      }
     ],
     "summary": "Get Category Analysis",
+    "tags": [
+     "Portfolio Position"
+    ]
+   }
+  },
+  "/portfolio/position/{portfolio_id}/cdi-cagr": {
+   "get": {
+    "description": "CAGR do CDI no período da carteira, sem calcular a análise de risco.",
+    "operationId": "get_portfolio_cdi_cagr_portfolio_position__portfolio_id__cdi_cagr_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "currency",
+      "required": false,
+      "schema": {
+       "default": "BRL",
+       "title": "Currency",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PortfolioCdiCagr"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Portfolio Cdi Cagr",
     "tags": [
      "Portfolio Position"
     ]

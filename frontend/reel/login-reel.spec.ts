@@ -210,6 +210,9 @@ test('vídeo da tela de login', async ({ page, mockApi }, testInfo) => {
   const chart = page.locator('.recharts-surface').first()
   await page.goto('/portfolio/overview')
   await chart.waitFor()
+  /* O link "Dev" só existe no dev server, que é onde se grava; o vídeo vai
+     para a tela de login pública. */
+  await page.getByRole('banner').getByText('Dev', { exact: true }).evaluate((a) => a.remove())
   await page.waitForTimeout(1500)
   const start = (Date.now() - started) / 1000
 

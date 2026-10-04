@@ -1,4 +1,5 @@
-import { isoPieceSize, type IsoBuilderItem, type IsoBuilderPlacement } from '@/components/ui'
+import { type IsoBuilderItem, type IsoBuilderPlacement } from '@/components/ui'
+import { isoPieceSize } from '@/components/ui/city'
 import { parseAssetBuildingId } from './asset-buildings'
 
 /** Bumped whenever an asset's footprint can change — the enlarged monument

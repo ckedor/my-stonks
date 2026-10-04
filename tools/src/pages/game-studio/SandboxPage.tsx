@@ -14,9 +14,10 @@ import { TERRITORY_STAGES, territoryOf } from '@/components/city-game/territory'
 import { cityTierStanding } from '@/components/city-game/tiers'
 import {
   AppAlert, AppButton, AppCard, AppNumberField, AppSkeleton, AppStack,
-  AppStackItem, AppSwitch, AppText, AppTextField, AppToggleGroup, PageTitle, SectionLabel, isoTerrainAvailability,
+  AppStackItem, AppSwitch, AppText, AppTextField, AppToggleGroup, PageTitle, SectionLabel,
   type IsoBuilderPlacement, type IsoBuilderStatus,
 } from '@/components/ui'
+import { isoTerrainAvailability } from '@/components/ui/city'
 import { CATALOG_PATH } from '../navigation'
 import { useGameSandboxStore } from './sandbox-store'
 import { draftCatalog, useGameStudioStore, type MoneyMode } from './studio-store'

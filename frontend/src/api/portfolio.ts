@@ -129,3 +129,6 @@ export const consolidatePortfolio = (portfolioId: number): Promise<void> =>
 
 export const recalculateAssetPosition = (portfolioId: number, assetId: number): Promise<void> =>
   api.post(POSITION_CONSOLIDATOR_ROUTES.recalculateAssetPosition(portfolioId), null, { params: { asset_id: assetId } }).then(() => undefined)
+
+export const fetchCdiCagr = (portfolioId: number, currency: string = 'BRL'): Promise<{ cagr: number | null }> =>
+  api.get<{ cagr: number | null }>(POSITION_ROUTES.cdiCagr(portfolioId), { params: { currency } }).then((r) => r.data)

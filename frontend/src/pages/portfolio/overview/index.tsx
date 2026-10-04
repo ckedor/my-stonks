@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import PortfolioOverviewScreen from '@/components/portfolio-overview/PortfolioOverviewScreen'
-import { AppButton, AppEmptyState } from '@/components/ui'
+import { AppAlert, AppButton, AppEmptyState } from '@/components/ui'
 import { EMPTY_LIST, EMPTY_MAP } from '@/queries/empty'
 import {
-  useAnalysis,
+  useCdiCagr,
   useBenchmarks,
   useDividends,
   usePatrimony,
@@ -22,32 +23,23 @@ export default function PortfolioOverviewPage() {
 
   const portfolio = useSelectedPortfolio()
   const positionsQuery = usePositions()
-  const patrimonyQuery = usePatrimony()
+  const [patrimonyPortfolioId, setPatrimonyPortfolioId] = useState<number>()
+  const patrimonyQuery = usePatrimony(undefined, portfolio != null && patrimonyPortfolioId === portfolio.id)
   const dividendsQuery = useDividends()
   const benchmarksQuery = useBenchmarks()
-  const analysisQuery = useAnalysis()
+  const cdiCagrQuery = useCdiCagr()
   const returnCurves = useReturnCurves()
 
   const positions = positionsQuery.data ?? EMPTY_LIST
 
-  /* A tela inteira aparece de uma vez.
-   *
-   * Antes o portão olhava só posições e séries, e o resto entrava conforme
-   * chegava: o cabeçalho e as listas pintavam primeiro e o gráfico de
-   * rentabilidade ficava sozinho no esqueleto, o que se lê como travamento e
-   * não como carregamento. Enquanto qualquer uma das buscas da página não
-   * respondeu, o que se vê é o esqueleto dela — e com a cache quente nenhuma
-   * está pendente, então a página abre montada. */
-  const loading =
-    positionsQuery.isPending ||
-    patrimonyQuery.isPending ||
-    dividendsQuery.isPending ||
-    benchmarksQuery.isPending ||
-    analysisQuery.isPending ||
-    returnCurves.isPending
-
-  if (loading) {
+  // Posições bastam para o patrimônio atual, a composição e as categorias.
+  // Cada gráfico reserva seu próprio espaço enquanto a série chega.
+  if (positionsQuery.isPending) {
     return <OverviewSkeleton />
+  }
+
+  if (positionsQuery.isError && !positionsQuery.data) {
+    return <AppAlert tone="danger">Não foi possível carregar sua carteira.</AppAlert>
   }
 
   if (positions.length === 0) {
@@ -62,13 +54,26 @@ export default function PortfolioOverviewPage() {
 
   return (
     <PortfolioOverviewScreen
+      key={portfolio?.id}
       positions={positions}
       categories={portfolio?.custom_categories ?? EMPTY_LIST}
       patrimonyEvolution={patrimonyQuery.data ?? EMPTY_LIST}
       dividends={dividendsQuery.data ?? EMPTY_LIST}
       returnCurves={returnCurves}
       benchmarks={benchmarksQuery.data ?? EMPTY_MAP}
-      cdiCagr={analysisQuery.data?.performance_metrics?.benchmarks_metrics?.['CDI']?.cagr ?? null}
+      cdiCagr={cdiCagrQuery.data?.cagr ?? null}
+      pending={{
+        benchmarks: benchmarksQuery.isPending,
+        cdi: cdiCagrQuery.isPending,
+        dividends: dividendsQuery.isPending,
+        patrimony: patrimonyQuery.isPending,
+      }}
+      errors={{
+        returns: returnCurves.isError || (benchmarksQuery.isError && !benchmarksQuery.data),
+        dividends: dividendsQuery.isError && !dividendsQuery.data,
+        patrimony: patrimonyQuery.isError && !patrimonyQuery.data,
+      }}
+      onPatrimonyRequest={() => setPatrimonyPortfolioId(portfolio?.id)}
       onAssetSelect={(assetId) => navigate(`/portfolio/asset/${assetId}`)}
     />
   )

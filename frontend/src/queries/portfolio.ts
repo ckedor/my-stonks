@@ -5,6 +5,7 @@ import {
   fetchAnalysis,
   fetchCategoryReturns,
   fetchClosedPositions,
+  fetchCdiCagr,
   fetchContributionAverage,
   fetchDividends,
   fetchPatrimony,
@@ -40,6 +41,8 @@ const portfolioKeys = {
     [...portfolioKeys.all, id, 'returns', currency] as const,
   categoryReturns: (id: number, currency: Currency) =>
     [...portfolioKeys.all, id, 'category-returns', currency] as const,
+  cdiCagr: (id: number, currency: Currency) =>
+    [...portfolioKeys.all, id, 'cdi-cagr', currency] as const,
   analysis: (id: number, currency: Currency) =>
     [...portfolioKeys.all, id, 'analysis', currency] as const,
   dividends: (id: number, currency: Currency) =>
@@ -242,6 +245,7 @@ export interface ReturnCurves {
   series: Record<string, ReturnsEntry[]>
   cagr: Record<string, number | null>
   isPending: boolean
+  isError: boolean
 }
 
 export function useReturnCurves(): ReturnCurves {
@@ -258,8 +262,9 @@ export function useReturnCurves(): ReturnCurves {
         ...(portfolio.data ? { [WHOLE_PORTFOLIO_CURVE]: portfolio.data.cagr } : {}),
       },
       isPending: portfolio.isPending || categories.isPending,
+      isError: (portfolio.isError && !portfolio.data) || (categories.isError && !categories.data),
     }),
-    [portfolio.data, categories.data, portfolio.isPending, categories.isPending],
+    [portfolio.data, categories.data, portfolio.isPending, categories.isPending, portfolio.isError, categories.isError],
   )
 }
 
@@ -293,14 +298,14 @@ export function useDividends(explicitPortfolioId?: number) {
   })
 }
 
-export function usePatrimony(explicitPortfolioId?: number) {
+export function usePatrimony(explicitPortfolioId?: number, enabled = true) {
   const selectedPortfolioId = useSelectedPortfolioId()
   const portfolioId = explicitPortfolioId ?? selectedPortfolioId
   const currency = useCurrency()
   return useQuery({
     queryKey: portfolioKeys.patrimony(portfolioId!, currency),
     queryFn: () => fetchPatrimony(portfolioId!, currency),
-    enabled: portfolioId != null,
+    enabled: enabled && portfolioId != null,
   })
 }
 
@@ -397,5 +402,16 @@ export function useConsolidatePortfolio(explicitPortfolioId?: number) {
     mutationFn: () => consolidatePortfolio(portfolioId!),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: [...portfolioKeys.all, portfolioId] }),
+  })
+}
+
+/** Só o CAGR do CDI no período da carteira, sem a análise de risco. */
+export function useCdiCagr() {
+  const portfolioId = useSelectedPortfolioId()
+  const currency = useCurrency()
+  return useQuery({
+    queryKey: portfolioKeys.cdiCagr(portfolioId!, currency),
+    queryFn: () => fetchCdiCagr(portfolioId!, currency),
+    enabled: portfolioId != null,
   })
 }

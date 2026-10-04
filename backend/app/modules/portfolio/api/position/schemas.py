@@ -55,3 +55,7 @@ class ClosedPositionEntry(BaseModel):
     cagr: float | None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PortfolioCdiCagr(BaseModel):
+    cagr: float | None

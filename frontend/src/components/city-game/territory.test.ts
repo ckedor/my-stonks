@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isoTerrainAvailability } from '@/components/ui'
+import { isoTerrainAvailability } from '@/components/ui/city'
 import { regionAvailability } from '@/components/ui/iso/terrain'
 
 import { CITY_MAP, CITY_MAP_SIZE, CITY_REGIONS, type CityRegion } from './map'

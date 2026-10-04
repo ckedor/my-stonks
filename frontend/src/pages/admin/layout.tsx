@@ -1,3 +1,5 @@
+import { Suspense } from 'react'
+import RouteSkeleton from '@/layouts/RouteSkeleton'
 import { useAuthStore } from '@/stores/auth'
 
 import { AppPageShell, AppStack, AppText, PageTitle } from '@/components/ui'
@@ -35,7 +37,9 @@ export default function AdminLayout() {
       sidebar={<AdminSidebar collapsed={railCollapsed} />}
       topbar={<AdminTopbar railCollapsed={railCollapsed} onToggleRail={toggleRail} />}
     >
-      <Outlet />
+      <Suspense fallback={<RouteSkeleton />}>
+        <Outlet />
+      </Suspense>
     </AppPageShell>
   )
 }

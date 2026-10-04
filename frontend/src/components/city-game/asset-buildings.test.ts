@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isoPieceVolume, assetSculptureLayout, isoPieceSize } from '@/components/ui'
+import { isoPieceVolume, assetSculptureLayout, isoPieceSize } from '@/components/ui/city'
 import {
   assetBuildingId, assetBuildingItem, assetBuildingItems, buildingTypeOf, parseAssetBuildingId, type AssetBuilding,
 } from './asset-buildings'

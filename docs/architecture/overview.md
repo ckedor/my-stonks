@@ -441,6 +441,24 @@ whole-type segment used to be a select — one screen, two code paths. Now they
 are all scopes of `portfolio.return_series`. An empty segment answers with
 nothing, never with the whole portfolio.
 
+## Portfolio overview loading
+
+The frontend keeps the overview and the application shell in the initial entry
+and loads other pages with React lazy imports. Each layout reserves the page
+while its module downloads. City runtime exports live in
+`frontend/src/components/ui/city.ts`, separate from the common UI entry point,
+so the sculpture meshes and sprite initialization are only loaded with the game.
+
+The overview opens once current positions are available. Return and dividend
+panels reserve their own space while their queries run. Patrimony history is
+requested only when the user selects Patrimônio or Aportes; both tabs share the
+same query and persisted cache. Switching portfolios resets the selected tab
+and the deferred request. The percentage of CDI uses
+`GET /portfolio/position/{portfolio_id}/cdi-cagr`, which returns only its CAGR
+in percentage points. It uses the same consolidated portfolio start date,
+benchmark currency conversion and CAGR function as the full analysis, without
+calculating risk, drawdown or rolling CAGR. The full analysis route is unchanged.
+
 ## Consolidated reads
 
 A portfolio's derived data is four things at four altitudes — the portfolio, a

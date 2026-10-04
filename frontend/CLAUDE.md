@@ -31,7 +31,9 @@ not know where it came from.
 
 Rules for layers 2 and 3:
 
-- Import from `@/components/ui`, never from `@mui/material`.
+- Import from `@/components/ui`, never from `@mui/material`. City runtime
+  resources use `@/components/ui/city`: exporting them from the common entry
+  would load game meshes and sprite initialization on every screen.
 - No `sx` and no `style` props. Compose layout through the primitives'
   props: `AppStack` (flex), `AppGrid` + `AppGridItem` (CSS grid).
 - Read theme tokens through `useAppTheme`, not `@mui/material/styles`.
@@ -99,6 +101,11 @@ que recebe tudo por props; a página (`pages/portfolio/overview`) só busca,
 mostra o esqueleto e decide o vazio. Painel novo entra na tela, nunca na
 página — o estúdio de temas desenha a mesma tela, e um painel escrito na
 página não apareceria lá.
+
+O Resumo abre com as posições. Cada painel reserva seu espaço enquanto sua
+série chega; o patrimônio histórico só é buscado ao selecionar Patrimônio ou
+Aportes, por um callback da tela para a página. A comparação com CDI usa a
+leitura escalar `cdi-cagr`, sem buscar a análise de risco completa.
 
 ### Gramática de tela
 

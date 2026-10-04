@@ -213,6 +213,7 @@ export const POSITION_ROUTES = {
     `${PORTFOLIO}/position/${portfolioId}/patrimony_evolution`,
   contributionAverage: (portfolioId: number | string) =>
     `${PORTFOLIO}/position/${portfolioId}/contribution-average`,
+  cdiCagr: (portfolioId: number | string) => `${PORTFOLIO}/position/${portfolioId}/cdi-cagr`,
   analysis: (portfolioId: number | string) => `${PORTFOLIO}/position/${portfolioId}/analysis`,
   categoryReturns: (portfolioId: number | string) =>
     `${PORTFOLIO}/position/${portfolioId}/category/returns`,

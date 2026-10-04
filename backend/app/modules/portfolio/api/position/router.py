@@ -11,6 +11,7 @@ from app.modules.market_data.api.asset.schemas import (
 from app.modules.portfolio.api.position.schemas import (
     ClosedPositionEntry,
     ContributionAverage,
+    PortfolioCdiCagr,
     PortfolioConsolidation,
 )
 from app.modules.portfolio.domain.portfolio_segment import PortfolioSegment
@@ -144,6 +145,17 @@ async def get_contribution_average(
     """
     average = await service.get_contribution_average(portfolio_id, currency=currency)
     return ContributionAverage(monthly_average=average)
+
+
+@router.get('/{portfolio_id}/cdi-cagr', response_model=PortfolioCdiCagr)
+async def get_portfolio_cdi_cagr(
+    portfolio_id: int,
+    currency: str = Query('BRL'),
+    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+):
+    """CAGR do CDI no período da carteira, sem calcular a análise de risco."""
+    value = await service.get_portfolio_cdi_cagr(portfolio_id, currency)
+    return PortfolioCdiCagr(cagr=value)
 
 
 @router.get('/{portfolio_id}/analysis')

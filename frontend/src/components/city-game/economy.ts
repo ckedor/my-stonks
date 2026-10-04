@@ -1,4 +1,5 @@
-import { isoPieceVolume, type IsoBuilderItem, type IsoBuilderPlacement } from '@/components/ui'
+import { type IsoBuilderItem, type IsoBuilderPlacement } from '@/components/ui'
+import { isoPieceVolume } from '@/components/ui/city'
 
 import {
   M3_PER_USD, assetBuildingItem, buildingTypeOf, clampValueUsd,

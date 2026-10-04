@@ -1,4 +1,4 @@
-import { AppStack, AppText } from '@/components/ui'
+import { AppSkeleton, AppStack, AppText } from '@/components/ui'
 
 /* Onde a carteira está: quanto ela vale e quanto ela rende ao ano.
  *
@@ -13,6 +13,8 @@ export interface PortfolioStandingCardProps {
   cagr: number | null
   /** O CAGR como percentual do CDI. Ausente quando não há benchmark. */
   cdiPct: number | null
+  cagrPending?: boolean
+  cdiPending?: boolean
   /** A formatação de moeda da tela, para o card não escolher a sua. */
   formatCurrency: (value: number) => string
 }
@@ -21,6 +23,8 @@ export default function PortfolioStandingCard({
   patrimony,
   cagr,
   cdiPct,
+  cagrPending = false,
+  cdiPending = false,
   formatCurrency,
 }: PortfolioStandingCardProps) {
   return (
@@ -32,17 +36,23 @@ export default function PortfolioStandingCard({
         <AppText variant="pageHeading">{formatCurrency(patrimony)}</AppText>
       </AppStack>
 
-      {cagr != null && (
+      {(cagrPending || cagr != null) && (
         <AppStack direction="row" gap="sm" align="baseline" wrap>
-          <AppText
-            variant="bodySmall"
-            weight="strong"
-            tone={cagr >= 0 ? 'success' : 'danger'}
-          >
-            CAGR {cagr >= 0 ? '+' : ''}
-            {cagr.toFixed(2)}%
-          </AppText>
-          {cdiPct != null && (
+          {cagrPending ? (
+            <AppSkeleton shape="text" width={120} height={20} />
+          ) : cagr != null && (
+            <AppText
+              variant="bodySmall"
+              weight="strong"
+              tone={cagr >= 0 ? 'success' : 'danger'}
+            >
+              CAGR {cagr >= 0 ? '+' : ''}
+              {cagr.toFixed(2)}%
+            </AppText>
+          )}
+          {cdiPending ? (
+            <AppSkeleton shape="text" width={110} height={20} />
+          ) : cdiPct != null && (
             <AppText variant="bodySmall" tone="secondary">
               ({cdiPct.toFixed(0)}% do CDI)
             </AppText>

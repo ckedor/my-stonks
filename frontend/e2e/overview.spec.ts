@@ -68,15 +68,7 @@ async function mockOverview(mockApi: (path: string, body: unknown) => Promise<vo
     { date: '2025-03-17', custom_category_id: 11, category: 'FIIs', daily_return: 0, acc_return: 0, cagr: null },
     { date: '2026-03-17', custom_category_id: 11, category: 'FIIs', daily_return: -0.001, acc_return: -0.04, cagr: -0.04 },
   ])
-  await mockApi('/portfolio/position/1/analysis', {
-    start_date: '2025-03-17',
-    performance_metrics: {
-      cagr: 0.21,
-      benchmarks_metrics: { CDI: { cagr: 12, alpha: 9, beta: 0.3, correlation: 0.1 } },
-    },
-    risk_metrics: null,
-    rolling_cagr: [],
-  })
+  await mockApi('/portfolio/position/1/cdi-cagr', { cagr: 12 })
   await mockApi('/market_data/series/time_series', {
     CDI: [
       { date: '2025-03-17', value: 0 },
@@ -102,7 +94,7 @@ test('portfolio/visão geral', async ({ page, mockApi }) => {
 
   await page.goto('/portfolio/overview')
 
-  await expect(page.getByText('Investidor')).toBeVisible()
+  await expect(page.getByText('(175% do CDI)')).toBeVisible()
   await expect(page.getByText('Ações').first()).toBeVisible()
   await expectNothingClipped(page)
 
@@ -133,4 +125,45 @@ test('portfolio/visão geral — carteira vazia', async ({ page, mockApi }) => {
   await expectNothingClipped(page)
 
   await expect(page).toHaveScreenshot('page-overview-empty.png')
+})
+
+
+test('portfolio/visão geral — histórico só ao abrir sua aba', async ({ page, mockApi }) => {
+  await mockOverview(mockApi)
+  const paths: string[] = []
+  page.on('request', (request) => paths.push(new URL(request.url()).pathname))
+
+  await page.goto('/portfolio/overview')
+  await expect(page.getByText('(175% do CDI)')).toBeVisible()
+  expect(paths).not.toContain('/portfolio/position/1/analysis')
+  expect(paths).not.toContain('/portfolio/position/1/patrimony_evolution')
+
+  await Promise.all([
+    page.waitForResponse((response) => new URL(response.url()).pathname === '/portfolio/position/1/patrimony_evolution'),
+    page.getByRole('tab', { name: 'Patrimônio' }).click(),
+  ])
+  await page.getByRole('tab', { name: 'Aportes' }).click()
+  expect(paths.filter((path) => path === '/portfolio/position/1/patrimony_evolution')).toHaveLength(1)
+})
+
+
+test('portfolio/visão geral — posições aparecem enquanto benchmarks carregam', async ({ page, mockApi }) => {
+  await mockOverview(mockApi)
+  let release: () => void = () => {}
+  const pending = new Promise<void>((resolve) => { release = resolve })
+  await page.route(
+    (url) => url.pathname === '/market_data/series/time_series',
+    async (route) => {
+      await pending
+      await route.fulfill({ json: { CDI: [] } })
+    },
+  )
+
+  try {
+    await page.goto('/portfolio/overview')
+    await expect(page.getByText('Composição', { exact: true })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Proventos' })).toBeVisible()
+  } finally {
+    release()
+  }
 })

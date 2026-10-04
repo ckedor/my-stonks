@@ -17,6 +17,7 @@ import {
 } from '@/components/ui'
 import { useCurrency } from '@/hooks/useCurrency'
 import { useMemo, useState } from 'react'
+import MonthEarningsTicker from './MonthEarningsTicker'
 import PortfolioMonthlyAportsChart from './PortfolioMonthlyAportsChart'
 
 export default function PortfolioPatrimonyEvolution() {
@@ -80,7 +81,7 @@ export default function PortfolioPatrimonyEvolution() {
   if (loading) {
     return (
       <AppStack gap="lg">
-        <AppPageHeaderSkeleton titleWidth={200} metrics={4} />
+        <AppPageHeaderSkeleton titleWidth={200} metrics={6} />
         <AppChartSkeleton height={520} toolbar surface="card" />
         <AppChartSkeleton height={300} toolbar surface="card" />
       </AppStack>
@@ -115,6 +116,13 @@ export default function PortfolioPatrimonyEvolution() {
               label="Aporte médio mensal"
               value={defaultContribution == null ? '—' : formatCurrency(defaultContribution)}
             />
+            {current && defaultRate != null && (
+              <MonthEarningsTicker
+                patrimony={current.value}
+                cagr={defaultRate / 100}
+                formatCurrency={formatCurrency}
+              />
+            )}
           </>
         }
       />

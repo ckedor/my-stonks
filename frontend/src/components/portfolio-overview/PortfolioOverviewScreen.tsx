@@ -63,10 +63,13 @@ export interface PortfolioOverviewData {
   benchmarks: Record<string, ReturnsEntry[]>
   /** CAGR do CDI no período da carteira, em %. */
   cdiCagr: number | null
+  pending?: { benchmarks?: boolean; dividends?: boolean; patrimony?: boolean; cdi?: boolean }
+  errors?: { returns?: boolean; dividends?: boolean; patrimony?: boolean }
 }
 
 interface PortfolioOverviewScreenProps extends PortfolioOverviewData {
   onAssetSelect: (assetId: number) => void
+  onPatrimonyRequest?: () => void
 }
 
 export default function PortfolioOverviewScreen({
@@ -78,6 +81,9 @@ export default function PortfolioOverviewScreen({
   benchmarks,
   cdiCagr,
   onAssetSelect,
+  onPatrimonyRequest,
+  pending,
+  errors,
 }: PortfolioOverviewScreenProps) {
   const { format: formatCurrency } = useCurrency()
 
@@ -89,6 +95,9 @@ export default function PortfolioOverviewScreen({
   const [selectedCategory, setSelectedCategory] = useState<string>('portfolio')
   const [bottomTab, setBottomTab] = useState<BottomTab>('dividends')
   const [grouping, setGrouping] = useState<CompositionGrouping>('category')
+
+  const bottomPending = bottomTab === 'dividends' ? pending?.dividends : pending?.patrimony
+  const bottomError = bottomTab === 'dividends' ? errors?.dividends : errors?.patrimony
 
   // The chart matches the height the category list has with its drawers closed.
   // Measured from the data, never from interaction, so expanding a category
@@ -111,6 +120,8 @@ export default function PortfolioOverviewScreen({
         patrimony={totalValue}
         cagr={cagr}
         cdiPct={cdiPct}
+        cagrPending={returnCurves.isPending && cagr == null}
+        cdiPending={pending?.cdi}
         formatCurrency={formatCurrency}
       />
 
@@ -120,13 +131,18 @@ export default function PortfolioOverviewScreen({
           <AppCard>
             <AppStack gap="sm">
               <SectionTitle>Rentabilidade</SectionTitle>
-              <OverviewReturnsChart
-                categoryReturns={returnCurves.series}
-                benchmarks={benchmarks}
-                pending={returnCurves.isPending}
-                size={OVERVIEW_PANEL_HEIGHT}
-                selectedCategory={selectedCategory}
-              />
+              {errors?.returns ? (
+                <AppChartArea height={OVERVIEW_PANEL_HEIGHT} emptyMessage="Não foi possível carregar a rentabilidade." />
+              ) : returnCurves.isPending || pending?.benchmarks ? (
+                <AppChartArea height={OVERVIEW_PANEL_HEIGHT} loading />
+              ) : (
+                <OverviewReturnsChart
+                  categoryReturns={returnCurves.series}
+                  benchmarks={benchmarks}
+                  size={OVERVIEW_PANEL_HEIGHT}
+                  selectedCategory={selectedCategory}
+                />
+              )}
             </AppStack>
           </AppCard>
         </AppGridItem>
@@ -184,23 +200,34 @@ export default function PortfolioOverviewScreen({
                 <AppTabs
                   items={BOTTOM_TABS}
                   value={bottomTab}
-                  onChange={setBottomTab}
+                  onChange={(tab) => {
+                    if (tab !== 'dividends') onPatrimonyRequest?.()
+                    setBottomTab(tab)
+                  }}
                   label="Séries da carteira"
                 />
               }
             >
-              {bottomTab === 'dividends' && (
-                <OverviewDividendsChart dividends={dividends} selected={selectedCategory} size="100%" />
-              )}
-              {bottomTab === 'patrimony' && (
-                <OverviewPatrimonyChart
-                  patrimonyEvolution={patrimonyEvolution}
-                  selected={selectedCategory}
-                  size="100%"
-                />
-              )}
-              {bottomTab === 'aports' && (
-                <OverviewAportsChart patrimonyEvolution={patrimonyEvolution} size="100%" />
+              {bottomError ? (
+                <AppChartArea height="100%" emptyMessage="Não foi possível carregar esta série." />
+              ) : bottomPending ? (
+                <AppChartArea height="100%" loading />
+              ) : (
+                <>
+                  {bottomTab === 'dividends' && (
+                    <OverviewDividendsChart dividends={dividends} selected={selectedCategory} size="100%" />
+                  )}
+                  {bottomTab === 'patrimony' && (
+                    <OverviewPatrimonyChart
+                      patrimonyEvolution={patrimonyEvolution}
+                      selected={selectedCategory}
+                      size="100%"
+                    />
+                  )}
+                  {bottomTab === 'aports' && (
+                    <OverviewAportsChart patrimonyEvolution={patrimonyEvolution} size="100%" />
+                  )}
+                </>
               )}
             </AppChartArea>
           </AppCard>

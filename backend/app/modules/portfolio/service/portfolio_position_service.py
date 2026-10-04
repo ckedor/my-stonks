@@ -9,7 +9,9 @@ from app.core.exceptions import NotFoundError
 from app.infra.db.unit_of_work import UnitOfWork
 from app.infra.redis.decorators import cached
 from app.infra.redis.redis_service import RedisService
-from app.lib.finance.analysis import calculate_returns_analysis
+from app.lib.finance.analysis import calculate_returns_analysis, sanitize_nan
+from app.lib.finance.performance_metrics import cagr
+from app.lib.finance.returns import calculate_returns
 from app.lib.finance.trade import profit_by_trade_df
 from app.lib.utils.df import df_to_dict_list, rows_to_df
 from app.lib.utils.fastapi import df_response
@@ -574,6 +576,25 @@ class PortfolioPositionService:
         pos_df['value'] = pos_df['quantity'] * pos_df['price']
 
         return df_response(pos_df)
+
+    async def get_portfolio_cdi_cagr(
+        self, portfolio_id: int, currency: str = 'BRL'
+    ) -> float | None:
+        """The CDI CAGR over the same period as the full portfolio analysis.
+
+        The overview needs this scalar, not risk metrics or daily drawdown and
+        rolling CAGR series. Keep the same benchmark conversion and arithmetic.
+        """
+        async with self.uow as uow:
+            rows = await uow.portfolios.get_portfolio_returns(portfolio_id, currency)
+        if not rows:
+            return None
+
+        start_date = min(pd.Timestamp(row['date']) for row in rows)
+        cdi_history = await self.market_data_service.get_series_history_values(
+            start_date, SERIES.CDI, currency
+        )
+        return sanitize_nan(cagr(calculate_returns(cdi_history)) * 100)
 
     async def get_portfolio_stats(self, portfolio_id: int, currency: str = 'BRL') -> dict:
         async with self.uow as uow:

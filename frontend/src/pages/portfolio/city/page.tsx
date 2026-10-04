@@ -10,10 +10,8 @@ import { ASSET_LAYOUT_REVISION, displacedAssets } from '@/components/city-game/l
 import { CITY_MAP, CITY_MAP_SIZE } from '@/components/city-game/map'
 import { TERRITORY_STAGES, territoryOf } from '@/components/city-game/territory'
 import { CITY_TIERS, cityTierStanding, projectTierArrival } from '@/components/city-game/tiers'
-import {
-  AppPageHeader, AppSkeleton, AppStack, AppText, isoTerrainAvailability,
-  type IsoBuilderItem, type IsoBuilderPlacement, type IsoBuilderStatus,
-} from '@/components/ui'
+import { AppPageHeader, AppSkeleton, AppStack, AppText, type IsoBuilderItem, type IsoBuilderPlacement, type IsoBuilderStatus } from '@/components/ui'
+import { isoTerrainAvailability } from '@/components/ui/city'
 import {
   useBenchmarksIn, useCategoryReturnsIn, useContributionAverageIn, useDividendsIn, usePatrimonyIn,
   usePortfolioReturnsIn, usePositionsIn, useSelectedPortfolio, useSelectedPortfolioId,
