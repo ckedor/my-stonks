@@ -168,39 +168,47 @@ const petroleo: ThemePreset = {
 }
 
 /* ══════════════════════════════════════════════
-   Penumbra — o escuro azul-acinzentado
+   Penumbra — o Nord, com o laranja do Claude
    ══════════════════════════════════════════════
 
-   Cinza-azulado frio, na linha dos temas escuros de terminal (Omarchy): o
-   fundo lê como cor e não como apagão, o card sobe um degrau, e o texto é
-   um cinza-gelo em vez do branco puro. O acento é o laranja do Claude,
-   clareado (#E8906A) para se ler sobre o card; a aba ativa da barra usa o
-   pêssego dos outros temas (#EDA37C). Mesma tipografia do Tinta. */
+   A paleta Nord (a do site do Omarchy): azul-acinzentado frio, texto
+   cinza-gelo (#D8DEE9) e o azul-aço (#81A1C1) como apoio. A página é o
+   degrau mais fundo e o card sobe para o #2E3440, o fundo do Nord. O acento
+   é o laranja do Claude, clareado (#E8906A) para se ler sobre o card; a
+   aba ativa da barra usa o pêssego dos outros temas (#EDA37C).
+
+   Corpo em JetBrains Mono e títulos em Figtree, como no site: a mono alinha
+   toda coluna de número, e o título em sans quebra a monotonia dela. */
 const penumbra: ThemePreset = {
   id: 'penumbra-dark',
   name: 'Penumbra',
-  description: 'Cinza-azulado escuro, texto gelo e o laranja do Claude de destaque.',
+  description: 'Nord: azul-acinzentado escuro, corpo em mono e o laranja do Claude de destaque.',
   palette: {
     mode: 'dark',
-    background: { default: '#1A1F2B', paper: '#242B3B' },
-    text: { primary: '#D8DEE9', secondary: '#9AA5BA' },
+    background: { default: '#1E222B', paper: '#2E3440' },
+    text: { primary: '#D8DEE9', secondary: '#A0AABC' },
     primary: '#E8906A',
-    secondary: '#7F96BC',
-    error: '#F2897F',
-    warning: '#E2B25C',
-    success: '#6FD0A0',
-    info: '#7FA6E0',
-    golden: '#D2A85F',
-    dark: '#141824',
-    topbar: { background: '#141824', text: '#B4BFD3', activeText: '#EDA37C', activeBg: '#2A3248' },
+    secondary: '#81A1C1',
+    error: '#E0828B',
+    warning: '#EBCB8B',
+    success: '#A3BE8C',
+    info: '#88C0D0',
+    golden: '#EBCB8B',
+    dark: '#191C24',
+    topbar: { background: '#191C24', text: '#B7C1D2', activeText: '#EDA37C', activeBg: '#2E3440' },
     divider: 'rgba(216,222,233,0.12)',
     chart: {
       grid: 'rgba(216,222,233,0.08)',
-      label: '#B4BFD3',
-      colors: ['#7FC4D8', '#A896D8', '#86B87A', '#D2A85F', '#D98098', '#93A9BA', '#B4BE73', '#C88FB4'],
+      label: '#B7C1D2',
+      colors: ['#88C0D0', '#B48EAD', '#A3BE8C', '#EBCB8B', '#E0828B', '#8FBCBB', '#D6B07A', '#9AA5C4'],
     },
   },
-  shape: tintaShape,
+  shape: {
+    radius: { sm: 2, md: 3, lg: 3, pill: 9999 },
+    fontFamily: fontStacks.jetbrainsMono,
+    headingFontFamily: fontStacks.figtree,
+    quiet: true,
+  },
 }
 
 /* ══════════════════════════════════════════════
