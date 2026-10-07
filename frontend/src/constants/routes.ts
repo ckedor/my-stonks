@@ -143,6 +143,7 @@ export const OPERATIONS_ROUTES = {
   dashboard: `${OPERATIONS}/dashboard`,
   runs: `${OPERATIONS}/runs`,
   runRoutine: (routine: string) => `${OPERATIONS}/routines/${routine}/run`,
+  storage: `${OPERATIONS}/storage`,
 } as const
 
 export const DATA_INGESTION_ROUTES = {

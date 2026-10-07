@@ -144,3 +144,24 @@ export const runRoutine = (routine: RoutineKey) =>
       OPERATIONS_ROUTES.runRoutine(routine),
     )
     .then((response) => response.data)
+
+/* Quanto espaço o banco ocupa, tabela a tabela. Espelha
+ * `DatabaseStorageResponse` em `backend/app/modules/operations/api/schemas.py`. */
+
+export interface TableStorage {
+  schema_name: string
+  name: string
+  /** Estimativa do planejador, não uma contagem. */
+  rows: number
+  table_bytes: number
+  index_bytes: number
+  total_bytes: number
+}
+
+export interface DatabaseStorage {
+  database_bytes: number
+  tables: TableStorage[]
+}
+
+export const fetchDatabaseStorage = () =>
+  api.get<DatabaseStorage>(OPERATIONS_ROUTES.storage).then((response) => response.data)

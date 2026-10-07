@@ -1203,6 +1203,7 @@ GET /operations/dashboard -> OperationsReadService
    health     : ok / warning / failing / running / missed / never / on demand
 GET  /operations/runs                 the run record, filtered
 POST /operations/routines/{key}/run   sends what the schedule sends
+GET  /operations/storage              the database's size, table by table
 ```
 
 The run record is written by `celery_async_task`, around every task, into
@@ -1221,6 +1222,12 @@ route, which opens its execution first; a plain task by the operations route,
 which sends exactly the tasks its schedule entries send; a routine that shows
 a diff before writing (the asset catalogue, the CVM company registry, the fund
 links) only on its own screen.
+
+`GET /operations/storage` (admin: Armazenamento › Banco de dados) reads the
+database's own catalog (`pg_stat_user_tables`, `pg_table_size`,
+`pg_indexes_size`) and keeps nothing: sizes are exact, the row counts are the
+planner's estimate, because counting a large table to draw a screen would cost
+more than the screen.
 
 Two tests keep the catalog whole: every scheduler entry and every registered
 task belongs to exactly one routine. Operations is a leaf module — no other

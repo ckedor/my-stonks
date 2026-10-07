@@ -19,6 +19,7 @@ from app.entrypoints.worker.task_runner import _recorded
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.operations.domain.task_run import TaskRun
 from app.modules.operations.service.operations_read_service import OperationsReadService
+from app.modules.operations.service.storage_read_service import StorageReadService
 from app.modules.operations.service.task_run_service import TaskRunService
 
 # Wednesday 2026-09-23, 12:50 in Brasília: the 12:30 consolidation is due.
@@ -191,3 +192,16 @@ async def test_history_closes_lost_runs_and_drops_old_ones(db):
     (lost,) = await runs_of(db, 'ingest_usd_brl')
     await db.refresh(lost)
     assert lost.status == 'failure'
+
+
+async def test_the_storage_lists_every_table_with_its_indexes_largest_first(db):
+    storage = await StorageReadService(UnitOfWork()).database_storage()
+
+    names = {(table.schema, table.name) for table in storage.tables}
+    assert ('operations', 'task_run') in names
+    sizes = [table.total_bytes for table in storage.tables]
+    assert sizes == sorted(sizes, reverse=True)
+    task_run = next(t for t in storage.tables if t.name == 'task_run')
+    assert task_run.table_bytes > 0
+    assert task_run.index_bytes > 0
+    assert storage.database_bytes >= sum(sizes)

@@ -15,6 +15,7 @@ from app.modules.operations.service.operations_read_service import (
     OperationsReadService,
     ScheduleEntry,
 )
+from app.modules.operations.service.storage_read_service import StorageReadService
 from app.modules.operations.service.task_run_service import TaskRunService
 
 
@@ -39,6 +40,10 @@ def get_operations_read_service(uow: UnitOfWork = Depends(get_uow)) -> Operation
     return OperationsReadService(
         uow=uow, schedule=schedule_entries(), zone=ZoneInfo(WORKER_TIMEZONE)
     )
+
+
+def get_storage_read_service(uow: UnitOfWork = Depends(get_uow)) -> StorageReadService:
+    return StorageReadService(uow=uow)
 
 
 def build_task_run_service() -> TaskRunService:

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { runDataIngestion, type DataIngestionType } from '@/api/dataIngestion'
 import {
+  fetchDatabaseStorage,
   fetchOperationsDashboard,
   fetchTaskRuns,
   runRoutine,
@@ -14,6 +15,7 @@ import { EMPTY_LIST } from '@/queries/empty'
 const operationsKeys = {
   all: ['operations'] as const,
   dashboard: () => [...operationsKeys.all, 'dashboard'] as const,
+  storage: () => [...operationsKeys.all, 'storage'] as const,
   runs: (filters: TaskRunFilters) => [...operationsKeys.all, 'runs', filters] as const,
 }
 
@@ -54,4 +56,16 @@ export function useRunRoutine() {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: operationsKeys.all }),
   })
+}
+
+/** Uma fotografia do catálogo do banco: não se persiste, e não precisa de
+ *  mais que a releitura a cada minuto. */
+export function useDatabaseStorage() {
+  const { data, isPending, isFetching, error } = useQuery({
+    queryKey: operationsKeys.storage(),
+    queryFn: fetchDatabaseStorage,
+    refetchInterval: REFRESH_IDLE_MS,
+    meta: { persist: false },
+  })
+  return { storage: data, loading: isPending && !data, refreshing: isFetching, error }
 }

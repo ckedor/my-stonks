@@ -16,6 +16,7 @@ from app.modules.market_data.repositories.ingestion_repository import DataIngest
 from app.modules.market_data.repositories.market_data_repository import MarketDataRepository
 from app.modules.market_data.repositories.quote_repository import QuoteRepository
 from app.modules.market_data.repositories.source_file_repository import SourceFileRepository
+from app.modules.operations.repositories.storage_repository import StorageRepository
 from app.modules.operations.repositories.task_run_repository import TaskRunRepository
 from app.modules.portfolio.repositories.portfolio_repository import PortfolioRepository
 
@@ -51,6 +52,7 @@ class UnitOfWork:
         self.portfolios = PortfolioRepository(self._session)
         self.ai = AIRepository(self._session)
         self.task_runs = TaskRunRepository(self._session)
+        self.storage = StorageRepository(self._session)
         return self
 
     async def commit(self) -> None:

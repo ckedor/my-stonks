@@ -112,3 +112,17 @@ class DispatchedTaskResponse(BaseModel):
 class RoutineRunResponse(BaseModel):
     routine: RoutineKey
     dispatched: list[DispatchedTaskResponse]
+
+
+class TableStorageResponse(BaseModel):
+    schema_name: str
+    name: str
+    rows: int
+    table_bytes: int
+    index_bytes: int
+    total_bytes: int
+
+
+class DatabaseStorageResponse(BaseModel):
+    database_bytes: int
+    tables: list[TableStorageResponse]

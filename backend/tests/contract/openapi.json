@@ -3706,6 +3706,27 @@
     "title": "DataIngestionExecutionResponse",
     "type": "object"
    },
+   "DatabaseStorageResponse": {
+    "properties": {
+     "database_bytes": {
+      "title": "Database Bytes",
+      "type": "integer"
+     },
+     "tables": {
+      "items": {
+       "$ref": "#/components/schemas/TableStorageResponse"
+      },
+      "title": "Tables",
+      "type": "array"
+     }
+    },
+    "required": [
+     "database_bytes",
+     "tables"
+    ],
+    "title": "DatabaseStorageResponse",
+    "type": "object"
+   },
    "DispatchedTaskResponse": {
     "properties": {
      "task": {
@@ -15213,6 +15234,44 @@
     "title": "StockSubscriptionResponse",
     "type": "object"
    },
+   "TableStorageResponse": {
+    "properties": {
+     "index_bytes": {
+      "title": "Index Bytes",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "rows": {
+      "title": "Rows",
+      "type": "integer"
+     },
+     "schema_name": {
+      "title": "Schema Name",
+      "type": "string"
+     },
+     "table_bytes": {
+      "title": "Table Bytes",
+      "type": "integer"
+     },
+     "total_bytes": {
+      "title": "Total Bytes",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "schema_name",
+     "name",
+     "rows",
+     "table_bytes",
+     "index_bytes",
+     "total_bytes"
+    ],
+    "title": "TableStorageResponse",
+    "type": "object"
+   },
    "TaskRunResponse": {
     "properties": {
      "arguments": {
@@ -21626,6 +21685,33 @@
      }
     ],
     "summary": "List Task Runs",
+    "tags": [
+     "Operations"
+    ]
+   }
+  },
+  "/operations/storage": {
+   "get": {
+    "description": "How much room the database takes, table by table, largest first.",
+    "operationId": "get_database_storage_operations_storage_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DatabaseStorageResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Database Storage",
     "tags": [
      "Operations"
     ]

@@ -112,6 +112,12 @@ export const adminNavigationSections: AdminNavigationSection[] = [
     ],
   },
   {
+    id: 'storage',
+    label: 'Armazenamento',
+    defaultPath: '/admin/storage',
+    items: [{ label: 'Banco de dados', path: '/admin/storage' }],
+  },
+  {
     id: 'users',
     label: 'Usuários',
     defaultPath: '/admin/users',

@@ -13,6 +13,7 @@ const AdminEventsPage = lazy(() => import('./pages/admin/events/page'))
 const AdminAiFeaturesPage = lazy(() => import('./pages/admin/ai-features/page'))
 const AdminAiFeatureDetailPage = lazy(() => import('./pages/admin/ai-features/[key]/page'))
 const AdminAiUsagePage = lazy(() => import('./pages/admin/ai-usage/page'))
+const AdminStoragePage = lazy(() => import('./pages/admin/storage/page'))
 const AdminRecommendedPortfoliosPage = lazy(() => import('./pages/admin/recommended-portfolios/page'))
 const AdminMarketDataQuotesPage = lazy(() => import('./pages/admin/market-data/quotes/page'))
 const AdminMarketDataSeriesPage = lazy(() => import('./pages/admin/market-data/series/page'))
@@ -145,6 +146,7 @@ const router = createBrowserRouter([
         path: 'ai-usage',
         element: <AdminAiUsagePage />,
       },
+      { path: 'storage', element: <AdminStoragePage /> },
       {
         path: 'recommended-portfolios',
         element: <AdminRecommendedPortfoliosPage />,
