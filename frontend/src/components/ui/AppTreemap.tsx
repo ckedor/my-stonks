@@ -78,9 +78,6 @@ export interface AppTreemapProps {
   backgroundColor: string
   /** Cor do nome do grupo. */
   labelColor: string
-  /** Cor do texto dentro dos blocos. O padrão é claro, para o bloco saturado;
-   *  quem pinta o bloco de uma cor esmaecida passa a do texto da página. */
-  leafTextColor?: string
 }
 
 export default function AppTreemap({
@@ -90,7 +87,6 @@ export default function AppTreemap({
   renderTooltip,
   backgroundColor,
   labelColor,
-  leafTextColor = LEAF_TEXT_COLOR,
 }: AppTreemapProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
@@ -178,7 +174,7 @@ export default function AppTreemap({
                       width: px(node.x1 - node.x0),
                       height: px(node.y1 - node.y0),
                       backgroundColor: leaf.tint,
-                      color: leafTextColor,
+                      color: LEAF_TEXT_COLOR,
                       fontSize: LEAF_FONT_SIZE,
                       overflow: 'hidden',
                       display: 'flex',

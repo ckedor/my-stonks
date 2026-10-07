@@ -8,29 +8,28 @@ import {
   AppGrid,
   AppMetric,
   AppMetricRow,
+  AppPieChart,
   AppSimpleTable,
   type AppSimpleTableColumn,
   AppSkeleton,
   AppStack,
   AppText,
-  AppTreemap,
   PageTitle,
   SectionTitle,
   useAppTheme,
   useViewportMatches,
   withOpacity,
-  type AppTreemapGroup,
 } from '@/components/ui'
 import { useDatabaseStorage } from '@/queries/operations'
 import { formatBytes } from './format'
 
 /* O espaço do banco, por módulo e tabela a tabela.
  *
- * Cada módulo é um esquema do banco, e a cor dele é a mesma no card e no mapa:
- * é o que amarra um ao outro. No mapa, cada tabela ocupa uma área proporcional
- * ao espaço que ocupa — uma barra de progresso dizia "quanto falta", e aqui a
- * pergunta é "quem pesa mais". Clicar num módulo recorta a tela inteira para
- * ele; clicar de novo volta ao banco todo.
+ * Cada módulo é um esquema do banco, e a cor dele é a mesma no card e na
+ * pizza: é o que amarra um ao outro. A pergunta da tela é "quem pesa mais",
+ * e a fatia responde isso melhor que uma barra, que diz "quanto falta".
+ * Clicar num módulo recorta a tela inteira para ele — a pizza passa a ser das
+ * tabelas dele —; clicar de novo volta ao banco todo.
  *
  * O número de registros é a estimativa do planejador (daí o "≈"): contar de
  * verdade uma tabela grande só para desenhar esta tela custaria mais que a
@@ -43,12 +42,11 @@ const records = (value: number) => `${count(value)} ${value === 1 ? 'registro' :
 const sum = (tables: TableStorage[], pick: (table: TableStorage) => number) =>
   tables.reduce((total, table) => total + pick(table), 0)
 
-/** Um mapa de área precisa de altura para as fatias pequenas terem rótulo. */
-const TREEMAP_HEIGHT = 240
+const PIE_HEIGHT = 260
 
-/** Esmaecida sobre a superfície: a cor identifica o módulo sem competir com o
- *  texto que está em cima dela. */
-const TINT_OPACITY = 0.3
+/** Fatia que ocupa menos que isso do círculo não leva rótulo: o nome dela
+ *  não cabe, e a tabela embaixo tem o número. */
+const MIN_LABELLED_SLICE = 4
 
 export default function AdminStoragePage() {
   const { storage, loading } = useDatabaseStorage()
@@ -78,29 +76,31 @@ export default function AdminStoragePage() {
 
   const colorOf = (schema: string) => modules.find((module) => module.name === schema)?.color ?? ''
 
-  const groups: AppTreemapGroup[] = useMemo(
-    () =>
-      modules
-        .filter((module) => selected === null || module.name === selected)
-        .map((module) => ({
-          label: module.name,
-          items: module.tables.map((table) => ({
-            key: `${table.schema_name}.${table.name}`,
-            label: table.name,
-            caption: formatBytes(table.total_bytes),
-            value: table.total_bytes,
-            tint: withOpacity(module.color, TINT_OPACITY),
-          })),
-        })),
-    [modules, selected],
-  )
+  /* Sem módulo escolhido, cada fatia é um módulo, na cor do card dele. Com
+     um escolhido, cada fatia é uma tabela dele, em tons da mesma cor: a cor
+     continua dizendo de que módulo se está falando. */
+  const slices = useMemo(() => {
+    if (selected === null) {
+      return {
+        data: modules.map((module) => ({ label: module.name, value: module.bytes })),
+        colors: modules.map((module) => module.color),
+      }
+    }
+    const module = modules.find((candidate) => candidate.name === selected)
+    const members = module?.tables ?? []
+    return {
+      data: members.map((table) => ({ label: table.name, value: table.total_bytes })),
+      colors: members.map((_, index) =>
+        withOpacity(module?.color ?? '', Math.max(0.35, 1 - index * 0.15)),
+      ),
+    }
+  }, [modules, selected])
 
   if (loading) return <StoragePageSkeleton />
 
   const visible = selected === null ? tables : tables.filter((table) => table.schema_name === selected)
   const totalBytes = sum(visible, (table) => table.total_bytes)
   const indexBytes = sum(visible, (table) => table.index_bytes)
-  const byKey = new Map(tables.map((table) => [`${table.schema_name}.${table.name}`, table]))
 
   const allColumns: AppSimpleTableColumn<TableStorage>[] = [
     {
@@ -145,7 +145,7 @@ export default function AdminStoragePage() {
   ]
 
   /* No celular a tabela fica com o que identifica e o que pesa: dados e
-     índices já estão no balão do mapa e somam no total. */
+     índices já estão no balão da pizza e somam no total. */
   const columns = isMobile
     ? allColumns.filter((column) => column.label === 'Tabela' || column.label === 'Total')
     : allColumns
@@ -200,28 +200,15 @@ export default function AdminStoragePage() {
 
           <AppCard>
             <AppStack gap="sm">
-              <SectionTitle>Mapa do espaço</SectionTitle>
-              <AppTreemap
-                groups={groups}
-                height={TREEMAP_HEIGHT}
-                backgroundColor={theme.palette.background.paper}
-                labelColor={theme.palette.text.primary}
-                leafTextColor={theme.palette.text.primary}
-                renderTooltip={(leaf) => {
-                  const table = byKey.get(String(leaf.key))
-                  if (!table) return null
-                  return (
-                    <AppStack gap="none">
-                      <AppText variant="caption" weight="strong">
-                        {table.schema_name}.{table.name}
-                      </AppText>
-                      <AppText variant="caption">Total: {formatBytes(table.total_bytes)}</AppText>
-                      <AppText variant="caption">Dados: {formatBytes(table.table_bytes)}</AppText>
-                      <AppText variant="caption">Índices: {formatBytes(table.index_bytes)}</AppText>
-                      <AppText variant="caption">Registros: ≈ {count(table.rows)}</AppText>
-                    </AppStack>
-                  )
-                }}
+              <SectionTitle>
+                {selected === null ? 'Espaço por módulo' : `Espaço em ${selected}`}
+              </SectionTitle>
+              <AppPieChart
+                data={slices.data}
+                colors={slices.colors}
+                height={PIE_HEIGHT}
+                formatValue={formatBytes}
+                minOuterLabelPercentage={MIN_LABELLED_SLICE}
               />
             </AppStack>
           </AppCard>
@@ -240,7 +227,7 @@ export default function AdminStoragePage() {
   )
 }
 
-/* A reserva: título, o card de números, os cards de módulo, o mapa e a tabela. */
+/* A reserva: título, o card de números, os cards de módulo, a pizza e a tabela. */
 function StoragePageSkeleton() {
   return (
     <AppStack gap="lg">
@@ -251,7 +238,7 @@ function StoragePageSkeleton() {
           <AppSkeleton key={index} height={96} />
         ))}
       </AppGrid>
-      <AppSkeleton height={TREEMAP_HEIGHT} />
+      <AppSkeleton height={PIE_HEIGHT} />
     </AppStack>
   )
 }

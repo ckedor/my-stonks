@@ -10,6 +10,9 @@ type AppPieChartProps = {
   data: { label: string; value: number }[]
   height: number
   isCurrency?: boolean
+  /** Como o valor de uma fatia se escreve no balão, quando não é dinheiro —
+   *  um tamanho em bytes. Tem precedência sobre `isCurrency`. */
+  formatValue?: (value: number) => string
   colors?: string[]
   onItemClick?: (label: string) => void
   minOuterLabelPercentage?: number
@@ -23,6 +26,7 @@ export default function AppPieChart({
   data,
   height,
   isCurrency = false,
+  formatValue,
   colors,
   onItemClick,
   minOuterLabelPercentage = 0,
@@ -110,9 +114,11 @@ export default function AppPieChart({
           <Tooltip
             formatter={(value: number, name: string) => {
               const percentage = total > 0 ? (Number(value) / total) * 100 : 0
-              const formattedValue = isCurrency
-                ? formatCurrency(value)
-                : value
+              const formattedValue = formatValue
+                ? formatValue(value)
+                : isCurrency
+                  ? formatCurrency(value)
+                  : value
               return [`${formattedValue} (${percentage.toFixed(1)}%)`, name]
             }}
           />
