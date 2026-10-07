@@ -172,14 +172,19 @@ const petroleo: ThemePreset = {
    ══════════════════════════════════════════════
 
    A paleta Nord (a do site do Omarchy): azul-acinzentado frio e texto
-   cinza-gelo (#D8DEE9). A página (#1A1D25) é o degrau mais fundo e o card sobe para
-   #272C37, medidos a olho no site: um passo abaixo do #2E3440 do Nord. O acento é o azul-claro do título do site
-   (#8DAFD6), com a aba ativa da barra um tom acima (#A9C4E4).
+   cinza-gelo (#D8DEE9). A página (#1A1D25) é o degrau mais fundo e o card
+   sobe para #272C37, medidos a olho no site: um passo abaixo do #2E3440 do
+   Nord.
+
+   O acento é o azul do título do site, mas com mais croma (#78B0FA): na
+   tinta do site ele apagava sobre o card. A aba ativa da barra vai um tom
+   acima (#9DC8FF). Verde e vermelho de sinal também vivos (#8CE39A,
+   #FF8C8C), no mesmo passo.
 
    Acento azul sobre fundo azul pede o resto longe do azul: o benchmark
-   (`warning`) é um terracota suave (#DA9578), complementar da linha da
-   carteira, e o apoio (`secondary`, a barra do ano atual em Proventos) é o branco-gelo do
-   Nord (#E5E9F0): azul e branco, como no gráfico do site.
+   (`warning`) é um terracota (#F2A27E), complementar da linha da carteira,
+   e o apoio (`secondary`, a barra do ano atual em Proventos) é o branco-gelo
+   (#EEF2F8): azul e branco, como no gráfico do site.
 
    Corpo em JetBrains Mono e títulos em Figtree, como no site: a mono alinha
    toda coluna de número, e o título em sans quebra a monotonia dela. */
@@ -191,20 +196,20 @@ const penumbra: ThemePreset = {
     mode: 'dark',
     background: { default: '#1A1D25', paper: '#272C37' },
     text: { primary: '#D8DEE9', secondary: '#A0AABC' },
-    primary: '#8DAFD6',
-    secondary: '#E5E9F0',
-    error: '#E0828B',
-    warning: '#DA9578',
-    success: '#A3BE8C',
-    info: '#88C0D0',
+    primary: '#78B0FA',
+    secondary: '#EEF2F8',
+    error: '#FF8C8C',
+    warning: '#F2A27E',
+    success: '#8CE39A',
+    info: '#7FD3EA',
     golden: '#EBCB8B',
     dark: '#14171E',
-    topbar: { background: '#14171E', text: '#B7C1D2', activeText: '#A9C4E4', activeBg: '#272C37' },
+    topbar: { background: '#14171E', text: '#B7C1D2', activeText: '#9DC8FF', activeBg: '#272C37' },
     divider: 'rgba(216,222,233,0.12)',
     chart: {
       grid: 'rgba(216,222,233,0.08)',
       label: '#B7C1D2',
-      colors: ['#A3BE8C', '#EBCB8B', '#E0828B', '#C9A9A6', '#7FA3B8', '#D6B07A', '#9AA5C4', '#D08770'],
+      colors: ['#8CE39A', '#F0D07E', '#FF8C8C', '#D8B4B0', '#6FC3DC', '#E0B882', '#A9B6DC', '#E8967A'],
     },
   },
   shape: {
