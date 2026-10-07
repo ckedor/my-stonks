@@ -45,8 +45,9 @@ const sum = (tables: TableStorage[], pick: (table: TableStorage) => number) =>
 const PIE_HEIGHT = 260
 
 /** Esmaecida sobre a superfície: a cor identifica o módulo sem competir com o
- *  texto que está em cima dela. */
-const TINT_OPACITY = 0.4
+ *  texto que está em cima dela. No tema escuro ela precisa de mais corpo: a
+ *  mesma opacidade sobre fundo escuro fica turva, e não suave. */
+const TINT_OPACITY = { light: 0.45, dark: 0.75 }
 
 /** Fatia que ocupa menos que isso do círculo não leva rótulo: o nome dela
  *  não cabe, e a tabela embaixo tem o número. */
@@ -56,6 +57,7 @@ export default function AdminStoragePage() {
   const { storage, loading } = useDatabaseStorage()
   const theme = useAppTheme()
   const isMobile = useViewportMatches(theme.breakpoints.down('md'))
+  const opacity = TINT_OPACITY[theme.palette.mode]
   const [selected, setSelected] = useState<string | null>(null)
 
   const tables = useMemo(() => storage?.tables ?? [], [storage])
@@ -87,7 +89,7 @@ export default function AdminStoragePage() {
     if (selected === null) {
       return {
         data: modules.map((module) => ({ label: module.name, value: module.bytes })),
-        colors: modules.map((module) => withOpacity(module.color, TINT_OPACITY)),
+        colors: modules.map((module) => withOpacity(module.color, opacity)),
       }
     }
     const module = modules.find((candidate) => candidate.name === selected)
@@ -95,10 +97,10 @@ export default function AdminStoragePage() {
     return {
       data: members.map((table) => ({ label: table.name, value: table.total_bytes })),
       colors: members.map((_, index) =>
-        withOpacity(module?.color ?? '', Math.max(0.15, TINT_OPACITY - index * 0.07)),
+        withOpacity(module?.color ?? '', Math.max(0.25, opacity - index * 0.08)),
       ),
     }
-  }, [modules, selected])
+  }, [modules, selected, opacity])
 
   if (loading) return <StoragePageSkeleton />
 
