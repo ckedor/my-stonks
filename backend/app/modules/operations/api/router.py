@@ -1,18 +1,25 @@
 from fastapi import APIRouter, Depends, Query
 
-from app.composition.operations import get_operations_read_service, get_storage_read_service
+from app.composition.operations import (
+    get_bucket_read_service,
+    get_operations_read_service,
+    get_storage_read_service,
+)
 from app.core.exceptions import TaskDispatchError
 from app.entrypoints.worker.task_runner import run_task_by_name
 from app.modules.operations.api.schemas import (
+    BucketUsageResponse,
     DatabaseStorageResponse,
     DispatchedTaskResponse,
     OperationsDashboardResponse,
+    PrefixUsageResponse,
     RoutineRunResponse,
     TableStorageResponse,
     TaskRunResponse,
 )
 from app.modules.operations.domain.routines import RoutineKey
 from app.modules.operations.domain.task_run import TaskRunStatus
+from app.modules.operations.service.bucket_read_service import BucketReadService
 from app.modules.operations.service.operations_read_service import OperationsReadService
 from app.modules.operations.service.storage_read_service import StorageReadService
 from app.modules.users.views import current_superuser
@@ -87,5 +94,31 @@ async def get_database_storage(
                 total_bytes=table.total_bytes,
             )
             for table in storage.tables
+        ],
+    )
+
+
+@router.get('/bucket', response_model=BucketUsageResponse)
+async def get_bucket_usage(
+    service: BucketReadService = Depends(get_bucket_read_service),
+):
+    """What the object bucket holds, by the top-level folder of each key."""
+    usage = await service.usage()
+    if usage is None:
+        return BucketUsageResponse(configured=False)
+    return BucketUsageResponse(
+        configured=True,
+        bucket=usage.bucket,
+        objects=usage.objects,
+        bytes=usage.bytes,
+        truncated=usage.truncated,
+        prefixes=[
+            PrefixUsageResponse(
+                prefix=prefix.prefix,
+                objects=prefix.objects,
+                bytes=prefix.bytes,
+                last_modified=prefix.last_modified,
+            )
+            for prefix in usage.prefixes
         ],
     )

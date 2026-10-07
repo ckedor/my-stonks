@@ -126,3 +126,20 @@ class TableStorageResponse(BaseModel):
 class DatabaseStorageResponse(BaseModel):
     database_bytes: int
     tables: list[TableStorageResponse]
+
+
+class PrefixUsageResponse(BaseModel):
+    prefix: str
+    objects: int
+    bytes: int
+    last_modified: datetime | None
+
+
+class BucketUsageResponse(BaseModel):
+    #: False when the deploy has no bucket; the rest is then empty.
+    configured: bool
+    bucket: str | None = None
+    objects: int = 0
+    bytes: int = 0
+    truncated: bool = False
+    prefixes: list[PrefixUsageResponse] = []

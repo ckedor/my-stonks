@@ -10,7 +10,9 @@ from fastapi import Depends
 
 from app.entrypoints.worker.scheduler import WORKER_TIMEZONE, beat_schedule
 from app.infra.db.unit_of_work import UnitOfWork, get_uow
+from app.infra.storage.factory import get_document_storage
 from app.modules.operations.domain.schedule import CronSpec
+from app.modules.operations.service.bucket_read_service import BucketReadService
 from app.modules.operations.service.operations_read_service import (
     OperationsReadService,
     ScheduleEntry,
@@ -44,6 +46,10 @@ def get_operations_read_service(uow: UnitOfWork = Depends(get_uow)) -> Operation
 
 def get_storage_read_service(uow: UnitOfWork = Depends(get_uow)) -> StorageReadService:
     return StorageReadService(uow=uow)
+
+
+def get_bucket_read_service() -> BucketReadService:
+    return BucketReadService(storage=get_document_storage())
 
 
 def build_task_run_service() -> TaskRunService:

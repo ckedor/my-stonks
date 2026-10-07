@@ -18,9 +18,11 @@ from app.entrypoints.worker.scheduler import WORKER_TIMEZONE
 from app.entrypoints.worker.task_runner import _recorded
 from app.infra.db.unit_of_work import UnitOfWork
 from app.modules.operations.domain.task_run import TaskRun
+from app.modules.operations.service.bucket_read_service import BucketReadService
 from app.modules.operations.service.operations_read_service import OperationsReadService
 from app.modules.operations.service.storage_read_service import StorageReadService
 from app.modules.operations.service.task_run_service import TaskRunService
+from tests.fakes import InMemoryDocumentStorage
 
 # Wednesday 2026-09-23, 12:50 in Brasília: the 12:30 consolidation is due.
 NOW = datetime(2026, 9, 23, 15, 50, tzinfo=UTC)
@@ -205,3 +207,16 @@ async def test_the_storage_lists_every_table_with_its_indexes_largest_first(db):
     assert task_run.table_bytes > 0
     assert task_run.index_bytes > 0
     assert storage.database_bytes >= sum(sizes)
+
+
+async def test_the_bucket_reads_as_not_configured_when_the_deploy_has_none():
+    assert await BucketReadService(storage=None).usage() is None
+
+
+async def test_the_bucket_usage_is_what_the_storage_reports():
+    storage = InMemoryDocumentStorage()
+    await storage.put('portfolio/1/a.pdf', b'12345', content_type='application/pdf')
+
+    usage = await BucketReadService(storage=storage).usage()
+
+    assert (usage.objects, usage.bytes) == (1, 5)

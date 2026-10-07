@@ -1204,6 +1204,7 @@ GET /operations/dashboard -> OperationsReadService
 GET  /operations/runs                 the run record, filtered
 POST /operations/routines/{key}/run   sends what the schedule sends
 GET  /operations/storage              the database's size, table by table
+GET  /operations/bucket               the object bucket's size, by top-level folder
 ```
 
 The run record is written by `celery_async_task`, around every task, into
@@ -1228,6 +1229,14 @@ database's own catalog (`pg_stat_user_tables`, `pg_table_size`,
 `pg_indexes_size`) and keeps nothing: sizes are exact, the row counts are the
 planner's estimate, because counting a large table to draw a screen would cost
 more than the screen.
+
+`GET /operations/bucket` (admin: Armazenamento › Bucket) lists the document
+bucket (`DocumentStorage.usage`, S3 `list_objects_v2`) and groups it by the
+top-level folder of each key, which is how each owner of objects tells its own
+apart (`portfolio/` is the documents). It lists on request and keeps nothing; a
+bucket past 50,000 objects answers with totals marked as a lower bound. With no
+bucket configured it answers `configured: false`, which is a state of the
+deploy and not an error.
 
 Two tests keep the catalog whole: every scheduler entry and every registered
 task belongs to exactly one routine. Operations is a leaf module — no other

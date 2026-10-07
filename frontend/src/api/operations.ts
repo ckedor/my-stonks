@@ -165,3 +165,28 @@ export interface DatabaseStorage {
 
 export const fetchDatabaseStorage = () =>
   api.get<DatabaseStorage>(OPERATIONS_ROUTES.storage).then((response) => response.data)
+
+/* O bucket de arquivos, por pasta de primeiro nível — que é como cada dono de
+ * objetos se identifica. Espelha `BucketUsageResponse`. */
+
+export interface BucketPrefix {
+  /** Vazio para o que não está em pasta nenhuma. */
+  prefix: string
+  objects: number
+  bytes: number
+  last_modified: string | null
+}
+
+export interface BucketUsage {
+  /** Falso quando o deploy não tem bucket: o resto vem vazio. */
+  configured: boolean
+  bucket: string | null
+  objects: number
+  bytes: number
+  /** A listagem parou no limite: os totais são um piso. */
+  truncated: boolean
+  prefixes: BucketPrefix[]
+}
+
+export const fetchBucketUsage = () =>
+  api.get<BucketUsage>(OPERATIONS_ROUTES.bucket).then((response) => response.data)

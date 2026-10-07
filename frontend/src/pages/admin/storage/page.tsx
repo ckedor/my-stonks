@@ -22,6 +22,7 @@ import {
 } from '@/components/ui'
 import { useDatabaseStorage } from '@/queries/operations'
 import { formatBytes } from './format'
+import { TINT_OPACITY } from './tint'
 
 /* O espaço do banco, por módulo e tabela a tabela.
  *
@@ -43,11 +44,6 @@ const sum = (tables: TableStorage[], pick: (table: TableStorage) => number) =>
   tables.reduce((total, table) => total + pick(table), 0)
 
 const PIE_HEIGHT = 260
-
-/** Esmaecida sobre a superfície: a cor identifica o módulo sem competir com o
- *  texto que está em cima dela. No tema escuro ela precisa de mais corpo: a
- *  mesma opacidade sobre fundo escuro fica turva, e não suave. */
-const TINT_OPACITY = { light: 0.45, dark: 0.75 }
 
 /** Fatia que ocupa menos que isso do círculo não leva rótulo: o nome dela
  *  não cabe, e a tabela embaixo tem o número. */

@@ -3,6 +3,8 @@
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+from app.infra.storage.document_storage import BucketUsage
+
 
 class FakeUnitOfWork:
     """Stands in for UnitOfWork: same repository attributes, no session.
@@ -89,3 +91,12 @@ class InMemoryDocumentStorage:
 
     async def delete(self, key: str) -> None:
         self.objects.pop(key, None)
+
+    async def usage(self):
+        return BucketUsage(
+            bucket='memory',
+            objects=len(self.objects),
+            bytes=sum(len(content) for content in self.objects.values()),
+            truncated=False,
+            prefixes=[],
+        )

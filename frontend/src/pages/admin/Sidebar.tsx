@@ -1,3 +1,4 @@
+import FolderZipIcon from '@mui/icons-material/FolderZip'
 import StorageIcon from '@mui/icons-material/Storage'
 import PsychologyIcon from '@mui/icons-material/Psychology'
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
@@ -54,6 +55,7 @@ const menuIcons: Record<string, React.ReactNode> = {
   '/admin/market-data/quotes': <TableChartIcon fontSize="small" />,
   '/admin/recommended-portfolios': <TokenIcon fontSize="small" />,
   '/admin/storage': <StorageIcon fontSize="small" />,
+  '/admin/bucket': <FolderZipIcon fontSize="small" />,
   '/admin/users': <PeopleIcon fontSize="small" />,
 }
 

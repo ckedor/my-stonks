@@ -144,6 +144,7 @@ export const OPERATIONS_ROUTES = {
   runs: `${OPERATIONS}/runs`,
   runRoutine: (routine: string) => `${OPERATIONS}/routines/${routine}/run`,
   storage: `${OPERATIONS}/storage`,
+  bucket: `${OPERATIONS}/bucket`,
 } as const
 
 export const DATA_INGESTION_ROUTES = {

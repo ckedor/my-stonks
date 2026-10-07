@@ -212,7 +212,7 @@ const penumbra: ThemePreset = {
     },
   },
   shape: {
-    radius: { sm: 2, md: 3, lg: 3, pill: 9999 },
+    radius: { sm: 6, md: 12, lg: 16, pill: 9999 },
     fontFamily: fontStacks.jetbrainsMono,
     headingFontFamily: fontStacks.figtree,
     quiet: true,

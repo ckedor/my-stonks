@@ -2633,6 +2633,53 @@
     "title": "BrokerageNoteResponse",
     "type": "object"
    },
+   "BucketUsageResponse": {
+    "properties": {
+     "bucket": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Bucket"
+     },
+     "bytes": {
+      "default": 0,
+      "title": "Bytes",
+      "type": "integer"
+     },
+     "configured": {
+      "title": "Configured",
+      "type": "boolean"
+     },
+     "objects": {
+      "default": 0,
+      "title": "Objects",
+      "type": "integer"
+     },
+     "prefixes": {
+      "default": [],
+      "items": {
+       "$ref": "#/components/schemas/PrefixUsageResponse"
+      },
+      "title": "Prefixes",
+      "type": "array"
+     },
+     "truncated": {
+      "default": false,
+      "title": "Truncated",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "configured"
+    ],
+    "title": "BucketUsageResponse",
+    "type": "object"
+   },
    "CapitalGainOperationResponse": {
     "description": "Uma alienação de criptoativo para o GCAP.",
     "properties": {
@@ -11788,6 +11835,42 @@
      "document_id"
     ],
     "title": "PositionStatementDraftResponse",
+    "type": "object"
+   },
+   "PrefixUsageResponse": {
+    "properties": {
+     "bytes": {
+      "title": "Bytes",
+      "type": "integer"
+     },
+     "last_modified": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Modified"
+     },
+     "objects": {
+      "title": "Objects",
+      "type": "integer"
+     },
+     "prefix": {
+      "title": "Prefix",
+      "type": "string"
+     }
+    },
+    "required": [
+     "prefix",
+     "objects",
+     "bytes",
+     "last_modified"
+    ],
+    "title": "PrefixUsageResponse",
     "type": "object"
    },
    "PresetLineResponse": {
@@ -21518,6 +21601,33 @@
     "summary": "Get Usd Brl History",
     "tags": [
      "USD/BRL"
+    ]
+   }
+  },
+  "/operations/bucket": {
+   "get": {
+    "description": "What the object bucket holds, by the top-level folder of each key.",
+    "operationId": "get_bucket_usage_operations_bucket_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/BucketUsageResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "summary": "Get Bucket Usage",
+    "tags": [
+     "Operations"
     ]
    }
   },

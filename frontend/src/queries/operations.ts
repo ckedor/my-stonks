@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { runDataIngestion, type DataIngestionType } from '@/api/dataIngestion'
 import {
+  fetchBucketUsage,
   fetchDatabaseStorage,
   fetchOperationsDashboard,
   fetchTaskRuns,
@@ -16,6 +17,7 @@ const operationsKeys = {
   all: ['operations'] as const,
   dashboard: () => [...operationsKeys.all, 'dashboard'] as const,
   storage: () => [...operationsKeys.all, 'storage'] as const,
+  bucket: () => [...operationsKeys.all, 'bucket'] as const,
   runs: (filters: TaskRunFilters) => [...operationsKeys.all, 'runs', filters] as const,
 }
 
@@ -68,4 +70,15 @@ export function useDatabaseStorage() {
     meta: { persist: false },
   })
   return { storage: data, loading: isPending && !data, refreshing: isFetching, error }
+}
+
+/** O bucket é listado objeto a objeto, então se relê só quando se pede: sem
+ *  intervalo, e fora da persistência. */
+export function useBucketUsage() {
+  const { data, isPending, isFetching, error } = useQuery({
+    queryKey: operationsKeys.bucket(),
+    queryFn: fetchBucketUsage,
+    meta: { persist: false },
+  })
+  return { usage: data, loading: isPending && !data, refreshing: isFetching, error }
 }

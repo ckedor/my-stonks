@@ -1,4 +1,6 @@
 import asyncio
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol
 
 import boto3
@@ -10,6 +12,32 @@ from app.infra.exceptions import IntegrationBadResponse, IntegrationUnavailable
 PROVIDER = 'document_storage'
 
 _MISSING_KEY_CODES = {'NoSuchKey', '404'}
+
+#: Listing walks the whole bucket, one request per thousand objects. Past this
+#: the answer is a floor, said so, and not a screen that hangs.
+USAGE_LISTING_LIMIT = 50_000
+
+#: Objects with no folder in their key, which no owner prefixed.
+ROOT_PREFIX = ''
+
+
+@dataclass(frozen=True)
+class PrefixUsage:
+    #: The top-level folder of the key, which is how owners tell their objects apart.
+    prefix: str
+    objects: int
+    bytes: int
+    last_modified: datetime | None
+
+
+@dataclass(frozen=True)
+class BucketUsage:
+    bucket: str
+    objects: int
+    bytes: int
+    #: The listing stopped at ``USAGE_LISTING_LIMIT``: the totals are a lower bound.
+    truncated: bool
+    prefixes: list[PrefixUsage]
 
 
 class DocumentStorage(Protocol):
@@ -24,6 +52,8 @@ class DocumentStorage(Protocol):
     async def get(self, key: str) -> bytes: ...
 
     async def delete(self, key: str) -> None: ...
+
+    async def usage(self) -> BucketUsage: ...
 
 
 class S3DocumentStorage:
@@ -73,6 +103,60 @@ class S3DocumentStorage:
     async def delete(self, key: str) -> None:
         # S3 answers a delete of a missing key with success, so this is idempotent.
         await self._call(self.client.delete_object, Bucket=self.bucket, Key=key)
+
+    async def usage(self) -> BucketUsage:
+        """What the bucket holds, by the top-level folder of each key."""
+        return await asyncio.to_thread(self._usage)
+
+    def _usage(self) -> BucketUsage:
+        counts: dict[str, list] = {}
+        seen = 0
+        truncated = False
+        try:
+            pages = self.client.get_paginator('list_objects_v2').paginate(Bucket=self.bucket)
+            for page in pages:
+                for item in page.get('Contents', []):
+                    if seen >= USAGE_LISTING_LIMIT:
+                        truncated = True
+                        break
+                    seen += 1
+                    key = item['Key']
+                    prefix = key.split('/', 1)[0] if '/' in key else ROOT_PREFIX
+                    entry = counts.setdefault(prefix, [0, 0, None])
+                    entry[0] += 1
+                    entry[1] += item['Size']
+                    modified = item.get('LastModified')
+                    if modified and (entry[2] is None or modified > entry[2]):
+                        entry[2] = modified
+                if truncated:
+                    break
+        except ClientError as error:
+            details = error.response.get('Error', {})
+            raise IntegrationUnavailable(
+                provider=PROVIDER,
+                status_code=error.response.get('ResponseMetadata', {}).get('HTTPStatusCode'),
+                context={'code': details.get('Code'), 'detail': details.get('Message')},
+            ) from error
+        except BotoCoreError as error:
+            raise IntegrationUnavailable(
+                provider=PROVIDER, context={'detail': str(error)}
+            ) from error
+
+        prefixes = sorted(
+            (
+                PrefixUsage(prefix=prefix, objects=n, bytes=size, last_modified=modified)
+                for prefix, (n, size, modified) in counts.items()
+            ),
+            key=lambda usage: usage.bytes,
+            reverse=True,
+        )
+        return BucketUsage(
+            bucket=self.bucket,
+            objects=sum(usage.objects for usage in prefixes),
+            bytes=sum(usage.bytes for usage in prefixes),
+            truncated=truncated,
+            prefixes=prefixes,
+        )
 
     @staticmethod
     async def _call(operation, **kwargs):
