@@ -172,14 +172,13 @@ const petroleo: ThemePreset = {
    ══════════════════════════════════════════════
 
    A paleta Nord (a do site do Omarchy): azul-acinzentado frio e texto
-   cinza-gelo (#D8DEE9). A página (#1A1D25) é o degrau mais fundo e o card
-   sobe para #272C37, medidos a olho no site: um passo abaixo do #2E3440 do
-   Nord.
+   cinza-gelo (#D8DEE9). Página #2F343F e card #353B48, valores medidos no
+   site; a barra do topo fica um degrau abaixo da página (#262A33).
 
-   O acento é o azul do título do site, mas com mais croma (#78B0FA): na
-   tinta do site ele apagava sobre o card. A aba ativa da barra vai um tom
-   acima (#9DC8FF). Verde e vermelho de sinal também vivos (#8CE39A,
-   #FF8C8C), no mesmo passo.
+   O acento é o azul do título do site com um pouco mais de croma (#84AEE6):
+   na tinta exata (#8DAFD6) ele apagava sobre o card, e com croma demais
+   (#78B0FA) passava do ponto. A aba ativa da barra vai um tom acima
+   (#A5C4EE). Verde e vermelho de sinal vivos (#8CE39A, #FF8C8C).
 
    Acento azul sobre fundo azul pede o resto longe do azul: o benchmark
    (`warning`) é um terracota (#F2A27E), complementar da linha da carteira,
@@ -194,17 +193,17 @@ const penumbra: ThemePreset = {
   description: 'Nord: azul-acinzentado escuro, corpo em mono e azul-claro de destaque.',
   palette: {
     mode: 'dark',
-    background: { default: '#1A1D25', paper: '#272C37' },
+    background: { default: '#2F343F', paper: '#353B48' },
     text: { primary: '#D8DEE9', secondary: '#A0AABC' },
-    primary: '#78B0FA',
+    primary: '#84AEE6',
     secondary: '#EEF2F8',
     error: '#FF8C8C',
     warning: '#F2A27E',
     success: '#8CE39A',
     info: '#7FD3EA',
     golden: '#EBCB8B',
-    dark: '#14171E',
-    topbar: { background: '#14171E', text: '#B7C1D2', activeText: '#9DC8FF', activeBg: '#272C37' },
+    dark: '#22262E',
+    topbar: { background: '#262A33', text: '#B7C1D2', activeText: '#A5C4EE', activeBg: '#353B48' },
     divider: 'rgba(216,222,233,0.12)',
     chart: {
       grid: 'rgba(216,222,233,0.08)',
