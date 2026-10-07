@@ -168,39 +168,42 @@ const petroleo: ThemePreset = {
 }
 
 /* ══════════════════════════════════════════════
-   Penumbra — o Nord, com o laranja do Claude
+   Penumbra — o Nord, com o azul do Omarchy
    ══════════════════════════════════════════════
 
-   A paleta Nord (a do site do Omarchy): azul-acinzentado frio, texto
-   cinza-gelo (#D8DEE9) e o azul-aço (#81A1C1) como apoio. A página é o
-   degrau mais fundo e o card sobe para o #2E3440, o fundo do Nord. O acento
-   é o laranja do Claude, clareado (#E8906A) para se ler sobre o card; a
-   aba ativa da barra usa o pêssego dos outros temas (#EDA37C).
+   A paleta Nord (a do site do Omarchy): azul-acinzentado frio e texto
+   cinza-gelo (#D8DEE9). A página é o degrau mais fundo e o card sobe para o
+   #2E3440, o fundo do Nord. O acento é o azul-claro do título do site
+   (#8DAFD6), com a aba ativa da barra um tom acima (#A9C4E4).
+
+   Acento azul sobre fundo azul pede o resto longe do azul: o benchmark
+   (`warning`) é um terracota suave (#DA9578), complementar da linha da
+   carteira, e o apoio (`secondary`) é o malva do Nord.
 
    Corpo em JetBrains Mono e títulos em Figtree, como no site: a mono alinha
    toda coluna de número, e o título em sans quebra a monotonia dela. */
 const penumbra: ThemePreset = {
   id: 'penumbra-dark',
   name: 'Penumbra',
-  description: 'Nord: azul-acinzentado escuro, corpo em mono e o laranja do Claude de destaque.',
+  description: 'Nord: azul-acinzentado escuro, corpo em mono e azul-claro de destaque.',
   palette: {
     mode: 'dark',
     background: { default: '#1E222B', paper: '#2E3440' },
     text: { primary: '#D8DEE9', secondary: '#A0AABC' },
-    primary: '#E8906A',
-    secondary: '#81A1C1',
+    primary: '#8DAFD6',
+    secondary: '#B48EAD',
     error: '#E0828B',
-    warning: '#EBCB8B',
+    warning: '#DA9578',
     success: '#A3BE8C',
     info: '#88C0D0',
     golden: '#EBCB8B',
     dark: '#191C24',
-    topbar: { background: '#191C24', text: '#B7C1D2', activeText: '#EDA37C', activeBg: '#2E3440' },
+    topbar: { background: '#191C24', text: '#B7C1D2', activeText: '#A9C4E4', activeBg: '#2E3440' },
     divider: 'rgba(216,222,233,0.12)',
     chart: {
       grid: 'rgba(216,222,233,0.08)',
       label: '#B7C1D2',
-      colors: ['#88C0D0', '#B48EAD', '#A3BE8C', '#EBCB8B', '#E0828B', '#8FBCBB', '#D6B07A', '#9AA5C4'],
+      colors: ['#8FBCBB', '#A3BE8C', '#EBCB8B', '#E0828B', '#C9A9A6', '#7FA3B8', '#D6B07A', '#9AA5C4'],
     },
   },
   shape: {
