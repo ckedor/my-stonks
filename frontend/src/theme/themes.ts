@@ -296,4 +296,4 @@ export function getPresetById(id: string): ThemePreset | undefined {
 }
 
 export const DEFAULT_LIGHT_THEME_ID = 'earth-tinta-light'
-export const DEFAULT_DARK_THEME_ID = 'petroleo'
+export const DEFAULT_DARK_THEME_ID = 'penumbra-dark'

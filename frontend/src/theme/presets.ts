@@ -168,6 +168,42 @@ const petroleo: ThemePreset = {
 }
 
 /* ══════════════════════════════════════════════
+   Penumbra — o escuro azul-acinzentado
+   ══════════════════════════════════════════════
+
+   Cinza-azulado frio, na linha dos temas escuros de terminal (Omarchy): o
+   fundo lê como cor e não como apagão, o card sobe um degrau, e o texto é
+   um cinza-gelo em vez do branco puro. O acento é o laranja do Claude,
+   clareado (#E8906A) para se ler sobre o card; a aba ativa da barra usa o
+   pêssego dos outros temas (#EDA37C). Mesma tipografia do Tinta. */
+const penumbra: ThemePreset = {
+  id: 'penumbra-dark',
+  name: 'Penumbra',
+  description: 'Cinza-azulado escuro, texto gelo e o laranja do Claude de destaque.',
+  palette: {
+    mode: 'dark',
+    background: { default: '#1A1F2B', paper: '#242B3B' },
+    text: { primary: '#D8DEE9', secondary: '#9AA5BA' },
+    primary: '#E8906A',
+    secondary: '#7F96BC',
+    error: '#F2897F',
+    warning: '#E2B25C',
+    success: '#6FD0A0',
+    info: '#7FA6E0',
+    golden: '#D2A85F',
+    dark: '#141824',
+    topbar: { background: '#141824', text: '#B4BFD3', activeText: '#EDA37C', activeBg: '#2A3248' },
+    divider: 'rgba(216,222,233,0.12)',
+    chart: {
+      grid: 'rgba(216,222,233,0.08)',
+      label: '#B4BFD3',
+      colors: ['#7FC4D8', '#A896D8', '#86B87A', '#D2A85F', '#D98098', '#93A9BA', '#B4BE73', '#C88FB4'],
+    },
+  },
+  shape: tintaShape,
+}
+
+/* ══════════════════════════════════════════════
    Grafite — o neutro frio de painel financeiro
    ══════════════════════════════════════════════
 
@@ -484,6 +520,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   papel,
   tintaDark,
   grafiteDark,
+  penumbra,
   petroleo,
   esmeralda,
 ]

@@ -4,7 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import 'dayjs/locale/pt-br';
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ThemeModeContext, type ThemeMode, type ThemeModeContextValue } from "./theme-mode";
 import {
     darkThemes,
@@ -28,13 +28,6 @@ export function ThemeRegistry({ children }: { children: React.ReactNode }) {
   const getInitialMode = (): ThemeMode => {
     const saved = localStorage.getItem("theme-mode") as ThemeMode | null;
     if (saved === "light" || saved === "dark") return saved;
-
-    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      return "dark";
-    }
-    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
-      return "light";
-    }
 
     return "dark";
   };
@@ -70,16 +63,6 @@ export function ThemeRegistry({ children }: { children: React.ReactNode }) {
     setMode("dark");
     localStorage.setItem("theme-mode", "dark");
   };
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = () => {
-      const saved = localStorage.getItem("theme-mode");
-      if (!saved) setMode(media.matches ? "dark" : "light");
-    };
-    media.addEventListener("change", handleChange);
-    return () => media.removeEventListener("change", handleChange);
-  }, []);
 
   const theme = useMemo(() => {
     const id = mode === "light" ? lightThemeId : darkThemeId;
