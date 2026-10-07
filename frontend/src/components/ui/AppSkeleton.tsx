@@ -25,7 +25,12 @@ export default function AppSkeleton({ width, height, shape = 'rounded' }: AppSke
       variant={shape === 'text' ? 'text' : shape === 'circle' ? 'circular' : 'rounded'}
       width={width ?? '100%'}
       height={height}
-      sx={shape === 'pill' ? { borderRadius: `${theme.radius.pill}px` } : undefined}
+      /* Reserva de largura fixa não pode passar da coluna: no celular, 520px
+         numa coluna de 326 empurrava a tela para o lado enquanto carregava. */
+      sx={{
+        maxWidth: '100%',
+        ...(shape === 'pill' ? { borderRadius: `${theme.radius.pill}px` } : null),
+      }}
     />
   )
 }

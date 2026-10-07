@@ -22,7 +22,12 @@ import TokenIcon from '@mui/icons-material/Token'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { getAdminNavigationSection, INTEGRATIONS_PATH } from './navigation'
+import {
+  getActiveAdminPath,
+  getAdminNavigationSection,
+  groupAdminItems,
+  INTEGRATIONS_PATH,
+} from './navigation'
 
 const menuIcons: Record<string, React.ReactNode> = {
   [INTEGRATIONS_PATH]: <DashboardIcon fontSize="small" />,
@@ -55,28 +60,17 @@ export default function AdminSidebar({ collapsed }: { collapsed: boolean }) {
   const { pathname } = useLocation()
   const section = getAdminNavigationSection(pathname)
 
-  // O item mais específico que casa com a rota: `/admin/integrations` é o
-  // painel, e não deve ficar marcado quando se está numa rotina abaixo dele.
-  const activePath = section.items
-    .map((item) => item.path)
-    .filter((path) => pathname === path || pathname.startsWith(`${path}/`))
-    .sort((a, b) => b.length - a.length)[0]
+  const activePath = getActiveAdminPath(section, pathname)
 
-  // Itens seguidos do mesmo grupo ficam sob um título só; a seção sem grupos
-  // vira um grupo com o nome dela.
-  const groups: AppNavRailGroup[] = []
-  for (const item of section.items) {
-    const title = item.group ?? section.label
-    const navItem = {
+  const groups: AppNavRailGroup[] = groupAdminItems(section).map((group) => ({
+    title: group.title,
+    items: group.items.map((item) => ({
       id: item.path,
       label: item.label,
       icon: menuIcons[item.path],
       active: item.path === activePath,
-    }
-    const last = groups[groups.length - 1]
-    if (last?.title === title) last.items.push(navItem)
-    else groups.push({ title, items: [navItem] })
-  }
+    })),
+  }))
 
   return (
     <AppNavRail

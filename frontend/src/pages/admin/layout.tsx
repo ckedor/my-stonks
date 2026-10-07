@@ -2,7 +2,14 @@ import { Suspense } from 'react'
 import RouteSkeleton from '@/layouts/RouteSkeleton'
 import { useAuthStore } from '@/stores/auth'
 
-import { AppPageShell, AppStack, AppText, PageTitle } from '@/components/ui'
+import {
+  AppPageShell,
+  AppStack,
+  AppText,
+  PageTitle,
+  useAppTheme,
+  useViewportMatches,
+} from '@/components/ui'
 import { useNavRailCollapsed } from '@/hooks/useNavRailCollapsed'
 
 import { Outlet } from 'react-router-dom'
@@ -12,6 +19,8 @@ import AdminTopbar from './Topbar'
 export default function AdminLayout() {
   const { isAuthenticated, isLoading, user } = useAuthStore()
   const [railCollapsed, toggleRail] = useNavRailCollapsed()
+  const theme = useAppTheme()
+  const isMobile = useViewportMatches(theme.breakpoints.down('md'))
 
   if (isLoading) return null
 
@@ -34,7 +43,7 @@ export default function AdminLayout() {
      mesmo app, não outro produto. */
   return (
     <AppPageShell
-      sidebar={<AdminSidebar collapsed={railCollapsed} />}
+      sidebar={isMobile ? undefined : <AdminSidebar collapsed={railCollapsed} />}
       topbar={<AdminTopbar railCollapsed={railCollapsed} onToggleRail={toggleRail} />}
     >
       <Suspense fallback={<RouteSkeleton />}>

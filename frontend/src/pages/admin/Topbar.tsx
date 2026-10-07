@@ -5,12 +5,26 @@ import AccountCircle from '@mui/icons-material/AccountCircle'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import MenuIcon from '@mui/icons-material/Menu'
 
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { AppIconButton, AppMenu, AppTopbar, ThemeToggleButton } from '@/components/ui'
-import { adminNavigationSections, getAdminNavigationSection } from './navigation'
+import {
+  AppIconButton,
+  AppMenu,
+  AppNavDrawer,
+  AppTopbar,
+  ThemeToggleButton,
+  useAppTheme,
+  useViewportMatches,
+} from '@/components/ui'
+import {
+  adminNavigationSections,
+  getActiveAdminPath,
+  getAdminNavigationSection,
+  groupAdminItems,
+} from './navigation'
 
 export default function AdminTopbar({
   railCollapsed,
@@ -24,6 +38,13 @@ export default function AdminTopbar({
   const { pathname } = useLocation()
   const activeSection = getAdminNavigationSection(pathname)
 
+  /* Abaixo de `md` a coluna comeria a largura do conteúdo: a navegação vira o
+     drawer, como na carteira. */
+  const theme = useAppTheme()
+  const isMobile = useViewportMatches(theme.breakpoints.down('md'))
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [openSectionIds, setOpenSectionIds] = useState<string[]>(() => [activeSection.id])
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
 
@@ -33,20 +54,29 @@ export default function AdminTopbar({
   }
 
   return (
+    <>
     <AppTopbar
       navLabel="Áreas administrativas"
-      sections={adminNavigationSections.map((s) => ({ id: s.id, label: s.label }))}
+      sections={isMobile ? [] : adminNavigationSections.map((s) => ({ id: s.id, label: s.label }))}
       selectedSectionId={activeSection.id}
       onSelectSection={(id) => {
         const section = adminNavigationSections.find((s) => s.id === id)
         if (section) navigate(section.defaultPath)
       }}
       brand={{ label: 'Admin', onClick: () => navigate(adminNavigationSections[0].defaultPath) }}
-      menuButton={{
-        label: railCollapsed ? 'Expandir menu' : 'Recolher menu',
-        icon: railCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />,
-        onClick: onToggleRail,
-      }}
+      menuButton={
+        isMobile
+          ? {
+              label: 'Abrir menu de navegação',
+              icon: <MenuIcon />,
+              onClick: () => setDrawerOpen(true),
+            }
+          : {
+              label: railCollapsed ? 'Expandir menu' : 'Recolher menu',
+              icon: railCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />,
+              onClick: onToggleRail,
+            }
+      }
     >
       <ThemeToggleButton />
 
@@ -78,5 +108,35 @@ export default function AdminTopbar({
         ]}
       />
     </AppTopbar>
+
+    <AppNavDrawer
+      open={drawerOpen}
+      onClose={() => setDrawerOpen(false)}
+      title="Admin"
+      sections={adminNavigationSections.map((section) => {
+        const activePath = getActiveAdminPath(section, pathname)
+        return {
+          id: section.id,
+          label: section.label,
+          active: section.id === activeSection.id,
+          groups: groupAdminItems(section).map((group) => ({
+            title: group.title,
+            items: group.items.map((item) => ({
+              id: item.path,
+              label: item.label,
+              active: item.path === activePath,
+            })),
+          })),
+        }
+      })}
+      openSectionIds={openSectionIds}
+      onToggleSection={(id) =>
+        setOpenSectionIds((prev) =>
+          prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
+        )
+      }
+      onSelect={(path) => navigate(path)}
+    />
+    </>
   )
 }

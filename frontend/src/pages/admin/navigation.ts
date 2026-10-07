@@ -128,3 +128,31 @@ export function getAdminNavigationSection(pathname: string): AdminNavigationSect
     ) ?? adminNavigationSections[0]
   )
 }
+
+/* Itens seguidos do mesmo grupo ficam sob um título só; a seção sem grupos
+ * vira um grupo com o nome dela. É a lista que a coluna e o drawer do celular
+ * desenham, e por isso mora aqui. */
+export function groupAdminItems(
+  section: AdminNavigationSection,
+): { title: string; items: AdminNavigationItem[] }[] {
+  const groups: { title: string; items: AdminNavigationItem[] }[] = []
+  for (const item of section.items) {
+    const title = item.group ?? section.label
+    const last = groups[groups.length - 1]
+    if (last?.title === title) last.items.push(item)
+    else groups.push({ title, items: [item] })
+  }
+  return groups
+}
+
+/* O item mais específico que casa com a rota: `/admin/integrations` é o
+ * painel, e não deve ficar marcado quando se está numa rotina abaixo dele. */
+export function getActiveAdminPath(
+  section: AdminNavigationSection,
+  pathname: string,
+): string | undefined {
+  return section.items
+    .map((item) => item.path)
+    .filter((path) => pathname === path || pathname.startsWith(`${path}/`))
+    .sort((a, b) => b.length - a.length)[0]
+}
