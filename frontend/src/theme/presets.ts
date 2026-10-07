@@ -172,8 +172,8 @@ const petroleo: ThemePreset = {
    ══════════════════════════════════════════════
 
    A paleta Nord (a do site do Omarchy): azul-acinzentado frio e texto
-   cinza-gelo (#D8DEE9). A página é o degrau mais fundo e o card sobe para o
-   #2E3440, o fundo do Nord. O acento é o azul-claro do título do site
+   cinza-gelo (#D8DEE9). A página (#1A1D25) é o degrau mais fundo e o card sobe para
+   #272C37, medidos a olho no site: um passo abaixo do #2E3440 do Nord. O acento é o azul-claro do título do site
    (#8DAFD6), com a aba ativa da barra um tom acima (#A9C4E4).
 
    Acento azul sobre fundo azul pede o resto longe do azul: o benchmark
@@ -189,7 +189,7 @@ const penumbra: ThemePreset = {
   description: 'Nord: azul-acinzentado escuro, corpo em mono e azul-claro de destaque.',
   palette: {
     mode: 'dark',
-    background: { default: '#1E222B', paper: '#2E3440' },
+    background: { default: '#1A1D25', paper: '#272C37' },
     text: { primary: '#D8DEE9', secondary: '#A0AABC' },
     primary: '#8DAFD6',
     secondary: '#E5E9F0',
@@ -198,8 +198,8 @@ const penumbra: ThemePreset = {
     success: '#A3BE8C',
     info: '#88C0D0',
     golden: '#EBCB8B',
-    dark: '#191C24',
-    topbar: { background: '#191C24', text: '#B7C1D2', activeText: '#A9C4E4', activeBg: '#2E3440' },
+    dark: '#14171E',
+    topbar: { background: '#14171E', text: '#B7C1D2', activeText: '#A9C4E4', activeBg: '#272C37' },
     divider: 'rgba(216,222,233,0.12)',
     chart: {
       grid: 'rgba(216,222,233,0.08)',
