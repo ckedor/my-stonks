@@ -49,7 +49,7 @@ export default function OverviewReturnsChart({
   const theme = useAppTheme()
 
   const portfolioColor = theme.palette.primary.main
-  const benchmarkColor = theme.palette.warning.main
+  const benchmarkColor = theme.palette.secondary.main
 
   /* Memorizados porque o recharts embrulha `Area` e `Line` em `React.memo`, e
      um objeto literal aqui furaria essa comparação a cada render: a série

@@ -180,10 +180,11 @@ const petroleo: ThemePreset = {
    (#78B0FA) passava do ponto. A aba ativa da barra vai um tom acima
    (#A5C4EE). Verde e vermelho de sinal vivos (#8CE39A, #FF8C8C).
 
-   Acento azul sobre fundo azul pede o resto longe do azul: o benchmark
-   (`warning`) é um terracota (#F2A27E), complementar da linha da carteira,
-   e o apoio (`secondary`, a barra do ano atual em Proventos) é o branco-gelo
-   (#EEF2F8): azul e branco, como no gráfico do site.
+   Acento azul sobre fundo azul pede o resto longe do azul: o apoio
+   (`secondary`) é o branco-gelo (#EEF2F8), que desenha o benchmark no
+   gráfico de rentabilidade e a barra do ano atual em Proventos: azul e
+   branco, como no gráfico do site. O `warning` (#F2A27E) fica só como
+   sinal de atenção.
 
    Corpo em JetBrains Mono e títulos em Figtree, como no site: a mono alinha
    toda coluna de número, e o título em sans quebra a monotonia dela. */

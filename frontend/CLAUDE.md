@@ -80,7 +80,7 @@ dev server do `tools/`; o commit do arquivo é o que publica o tema.
   `themes.test.ts` aplica a todo preset (texto e sinal sobre o card, aba ativa
   sobre a barra); o estúdio mostra as mesmas enquanto se edita, mais as de
   conselho.
-- **`warning` é a linha do benchmark**, ao lado da carteira em `primary`, no
+- **`secondary` é a linha do benchmark**, ao lado da carteira em `primary`, no
   gráfico de rentabilidade: matizes distintos. As séries de `chart.colors` não
   repetem `primary` nem `secondary`.
 - **A coluna de navegação não tem cor própria**: nos temas claros ela veste
