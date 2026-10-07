@@ -18,6 +18,8 @@ export interface AllocationSlice {
   label: string
   value: number
   color: string
+  /** Some do desenho, mas segue no total: as outras fatias não mudam. */
+  hidden?: boolean
 }
 
 export interface AllocationPieProps {
@@ -36,6 +38,7 @@ export default function AllocationPie({ slices }: AllocationPieProps) {
   return (
     <AppPieChart
       data={drawable.map((slice) => ({ label: slice.label, value: slice.value }))}
+      hiddenLabels={drawable.filter((slice) => slice.hidden).map((slice) => slice.label)}
       colors={drawable.map((slice) => slice.color)}
       height={HEIGHT}
       isCurrency

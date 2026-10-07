@@ -13,6 +13,9 @@ type AppPieChartProps = {
   colors?: string[]
   onItemClick?: (label: string) => void
   minOuterLabelPercentage?: number
+  /** Fatias que continuam no total, mas não são desenhadas: o ângulo e a
+   *  porcentagem das outras não mudam, só o traço some. */
+  hiddenLabels?: string[]
 }
 
 export default function AppPieChart({
@@ -22,6 +25,7 @@ export default function AppPieChart({
   colors,
   onItemClick,
   minOuterLabelPercentage = 0,
+  hiddenLabels,
 }: AppPieChartProps) {
   const theme = useTheme()
   const { format: formatCurrency } = useCurrency()
@@ -31,6 +35,7 @@ export default function AppPieChart({
   const textMain = theme.palette.text.primary
 
   const labels = data.map((item) => item.label)
+  const hidden = new Set(hiddenLabels)
   const total = data.reduce((sum, item) => sum + item.value, 0)
 
   return (
@@ -55,10 +60,12 @@ export default function AppPieChart({
             isAnimationActive={false}
             labelLine={false}
             label={(props) => (
-              <PercentageLabel
-                {...props}
-                minPercentage={minOuterLabelPercentage}
-              />
+              hidden.has(data[props.index ?? -1]?.label) ? null : (
+                <PercentageLabel
+                  {...props}
+                  minPercentage={minOuterLabelPercentage}
+                />
+              )
             )}
             startAngle={90}
             endAngle={-270}
@@ -67,8 +74,12 @@ export default function AppPieChart({
             onClick={(entry) => onItemClick?.(entry.label)}
             style={{ cursor: onItemClick ? 'pointer' : 'default' }}
           >
-            {data.map((_, index) => (
-              <Cell key={`cell-${index}`} fill={activeColors[index % activeColors.length]} />
+            {data.map((item, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={hidden.has(item.label) ? 'transparent' : activeColors[index % activeColors.length]}
+                style={hidden.has(item.label) ? { pointerEvents: 'none' } : undefined}
+              />
             ))}
           </Pie>
 
@@ -82,11 +93,13 @@ export default function AppPieChart({
             isAnimationActive={false}
             labelLine={false}
             label={(props) => (
-              <OuterLabel
-                {...props}
-                labels={labels}
-                minPercentage={minOuterLabelPercentage}
-              />
+              hidden.has(data[props.index ?? -1]?.label) ? null : (
+                <OuterLabel
+                  {...props}
+                  labels={labels}
+                  minPercentage={minOuterLabelPercentage}
+                />
+              )
             )}
             startAngle={90}
             endAngle={-270}

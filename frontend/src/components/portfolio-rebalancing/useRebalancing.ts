@@ -90,6 +90,9 @@ export function useRebalancing(portfolioId: number | undefined, options: UseReba
   const [simulating, setSimulating] = useState(false)
   const [contribution, setContribution] = useState<number | null>(null)
   const [openCategories, setOpenCategories] = useState<number[]>([])
+  /* Rótulos de fatia escondidos das pizzas. É só desenho: o total, as
+     porcentagens e os alvos continuam os mesmos. */
+  const [hiddenSlices, setHiddenSlices] = useState<string[]>([])
 
   useEffect(() => {
     if (fetchedData) setData(fetchedData)
@@ -193,10 +196,12 @@ export function useRebalancing(portfolioId: number | undefined, options: UseReba
           label: asset.ticker,
           value: asset.current_value,
           color: color(index),
+          hidden: hiddenSlices.includes(asset.ticker),
         })),
         suggested: single.assets.map((asset, index) => ({
           label: asset.ticker,
           color: color(index),
+          hidden: hiddenSlices.includes(asset.ticker),
           value: simulating
             ? asset.current_value + (buyPlan.byAsset.get(asset.asset_id) ?? 0)
             : (asset.target_value ?? asset.current_value),
@@ -208,11 +213,13 @@ export function useRebalancing(portfolioId: number | undefined, options: UseReba
       label: cat.category_name,
       value: cat.current_value,
       color: cat.color,
+      hidden: hiddenSlices.includes(cat.category_name),
     }))
 
     const suggested = view.categories.map((cat) => ({
       label: cat.category_name,
       color: cat.color,
+      hidden: hiddenSlices.includes(cat.category_name),
       value: simulating
         ? cat.current_value + (buyPlan.byCategory.get(cat.category_id) ?? 0)
         : cat.target_pct != null
@@ -221,7 +228,7 @@ export function useRebalancing(portfolioId: number | undefined, options: UseReba
     }))
 
     return { current, suggested }
-  }, [view, simulating, buyPlan, theme])
+  }, [view, simulating, buyPlan, theme, hiddenSlices])
 
   const setCategoryTarget = useCallback((categoryId: number, value: number | null) => {
     setData((prev) =>
@@ -260,6 +267,12 @@ export function useRebalancing(portfolioId: number | undefined, options: UseReba
     },
     [],
   )
+
+  const toggleSlice = useCallback((label: string) => {
+    setHiddenSlices((current) =>
+      current.includes(label) ? current.filter((l) => l !== label) : [...current, label],
+    )
+  }, [])
 
   const toggleCategory = useCallback((categoryId: number) => {
     setOpenCategories((current) =>
@@ -309,6 +322,8 @@ export function useRebalancing(portfolioId: number | undefined, options: UseReba
     pies,
     openCategories,
     toggleCategory,
+    hiddenSlices,
+    toggleSlice,
     setCategoryTarget,
     setAssetTarget,
     simulating,

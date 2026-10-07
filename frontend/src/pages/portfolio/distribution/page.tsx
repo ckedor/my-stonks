@@ -250,6 +250,8 @@ export default function DistributionPage() {
             buyPlan={rebalancing.buyPlan}
             openCategories={rebalancing.openCategories}
             onToggleCategory={rebalancing.toggleCategory}
+                  hiddenSlices={rebalancing.hiddenSlices}
+                  onToggleSlice={rebalancing.toggleSlice}
             onCategoryTargetChange={rebalancing.setCategoryTarget}
             onAssetTargetChange={rebalancing.setAssetTarget}
             simulating={simulating}

@@ -1,5 +1,7 @@
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 
 import {
   AppCard,
@@ -43,6 +45,8 @@ export interface RebalancingTableProps {
   buyPlan: { byCategory: Map<number, number>; byAsset: Map<number, number> }
   openCategories: number[]
   onToggleCategory: (categoryId: number) => void
+  hiddenSlices: string[]
+  onToggleSlice: (label: string) => void
   onCategoryTargetChange: (categoryId: number, value: number | null) => void
   onAssetTargetChange: (categoryId: number, assetId: number, value: number | null) => void
   simulating: boolean
@@ -55,6 +59,8 @@ export default function RebalancingTable({
   buyPlan,
   openCategories,
   onToggleCategory,
+  hiddenSlices,
+  onToggleSlice,
   onCategoryTargetChange,
   onAssetTargetChange,
   simulating,
@@ -62,6 +68,22 @@ export default function RebalancingTable({
   categoryTargetSum,
 }: RebalancingTableProps) {
   const { format: fmt } = useCurrency()
+
+  /* A fatia das pizzas é a categoria, ou o ativo quando há uma categoria só
+     (ver `pies`): o olho fica na linha que é a fatia. */
+  const sliceIsAsset = view.categories.length === 1
+  const sliceToggle = (label: string) => {
+    const hidden = hiddenSlices.includes(label)
+    return (
+      <AppIconButton
+        size="sm"
+        label={hidden ? 'Mostrar na pizza' : 'Esconder da pizza'}
+        onClick={() => onToggleSlice(label)}
+      >
+        {hidden ? <VisibilityOffIcon /> : <VisibilityIcon />}
+      </AppIconButton>
+    )
+  }
 
   const currentPctSum = view.categories.reduce((sum, cat) => sum + cat.current_pct, 0)
 
@@ -117,6 +139,7 @@ export default function RebalancingTable({
                   se contradizer. A cor da categoria está nas pizzas acima,
                   onde ela identifica uma fatia. */}
               <AppText weight="strong">{row.category.category_name}</AppText>
+              {!sliceIsAsset && sliceToggle(row.category.category_name)}
             </AppStack>
           )
         }
@@ -130,6 +153,7 @@ export default function RebalancingTable({
                 {row.asset.name}
               </AppText>
             )}
+            {sliceIsAsset && sliceToggle(row.asset.ticker)}
           </AppStack>
         )
       },
