@@ -178,8 +178,8 @@ const petroleo: ThemePreset = {
 
    Acento azul sobre fundo azul pede o resto longe do azul: o benchmark
    (`warning`) é um terracota suave (#DA9578), complementar da linha da
-   carteira, e o apoio (`secondary`, a barra do ano atual em Proventos) é o verde-água do
-   Nord, da mesma família do azul.
+   carteira, e o apoio (`secondary`, a barra do ano atual em Proventos) é o branco-gelo do
+   Nord (#E5E9F0): azul e branco, como no gráfico do site.
 
    Corpo em JetBrains Mono e títulos em Figtree, como no site: a mono alinha
    toda coluna de número, e o título em sans quebra a monotonia dela. */
@@ -192,7 +192,7 @@ const penumbra: ThemePreset = {
     background: { default: '#1E222B', paper: '#2E3440' },
     text: { primary: '#D8DEE9', secondary: '#A0AABC' },
     primary: '#8DAFD6',
-    secondary: '#8FBCBB',
+    secondary: '#E5E9F0',
     error: '#E0828B',
     warning: '#DA9578',
     success: '#A3BE8C',
