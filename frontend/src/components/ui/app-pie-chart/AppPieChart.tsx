@@ -43,8 +43,7 @@ export default function AppPieChart({
   const labels = drawn.map((item) => item.label)
   /* O anel é refeito só com o que sobrou, mas o número escrito é a fatia no
      total: esconder um ativo não altera a porcentagem dos outros. */
-  const ofTotal = (index?: number) =>
-    total > 0 && index != null ? drawn[index].value / total : 0
+  const ofTotal = (value: unknown) => (total > 0 ? Number(value) / total : 0)
 
   return (
     <Box
@@ -70,7 +69,7 @@ export default function AppPieChart({
             label={(props) => (
               <PercentageLabel
                 {...props}
-                percent={ofTotal(props.index)}
+                percent={ofTotal(props.value)}
                 minPercentage={minOuterLabelPercentage}
               />
             )}
@@ -98,7 +97,7 @@ export default function AppPieChart({
             label={(props) => (
               <OuterLabel
                 {...props}
-                percent={ofTotal(props.index)}
+                percent={ofTotal(props.value)}
                 labels={labels}
                 minPercentage={minOuterLabelPercentage}
               />
