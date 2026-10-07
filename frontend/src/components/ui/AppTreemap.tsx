@@ -40,6 +40,11 @@ const LEAF_TEXT_COLOR = '#dedede'
 const TOOLTIP_WIDTH = 220
 const TOOLTIP_OFFSET = 12
 
+/** Em string porque o `sx` lê um número entre 0 e 1 como fração do pai: um
+ *  bloco de 1px de altura virava 100% e pintava por cima do que vem abaixo do
+ *  mapa. */
+const px = (value: number) => `${value}px`
+
 export interface AppTreemapLeaf {
   key: string | number
   /** Texto principal dentro do bloco. */
@@ -73,6 +78,9 @@ export interface AppTreemapProps {
   backgroundColor: string
   /** Cor do nome do grupo. */
   labelColor: string
+  /** Cor do texto dentro dos blocos. O padrão é claro, para o bloco saturado;
+   *  quem pinta o bloco de uma cor esmaecida passa a do texto da página. */
+  leafTextColor?: string
 }
 
 export default function AppTreemap({
@@ -82,6 +90,7 @@ export default function AppTreemap({
   renderTooltip,
   backgroundColor,
   labelColor,
+  leafTextColor = LEAF_TEXT_COLOR,
 }: AppTreemapProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
@@ -131,8 +140,8 @@ export default function AppTreemap({
                     position: 'absolute',
                     top: group.y0,
                     left: group.x0,
-                    width: group.x1 - group.x0,
-                    height: group.y1 - group.y0,
+                    width: px(group.x1 - group.x0),
+                    height: px(group.y1 - group.y0),
                     border: `1px solid ${backgroundColor}`,
                     boxSizing: 'border-box',
                     pointerEvents: 'none',
@@ -166,10 +175,10 @@ export default function AppTreemap({
                       position: 'absolute',
                       top: node.y0,
                       left: node.x0,
-                      width: node.x1 - node.x0,
-                      height: node.y1 - node.y0,
+                      width: px(node.x1 - node.x0),
+                      height: px(node.y1 - node.y0),
                       backgroundColor: leaf.tint,
-                      color: LEAF_TEXT_COLOR,
+                      color: leafTextColor,
                       fontSize: LEAF_FONT_SIZE,
                       overflow: 'hidden',
                       display: 'flex',

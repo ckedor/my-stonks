@@ -18,6 +18,7 @@ import {
   SectionTitle,
   useAppTheme,
   useViewportMatches,
+  withOpacity,
   type AppTreemapGroup,
 } from '@/components/ui'
 import { useDatabaseStorage } from '@/queries/operations'
@@ -43,7 +44,11 @@ const sum = (tables: TableStorage[], pick: (table: TableStorage) => number) =>
   tables.reduce((total, table) => total + pick(table), 0)
 
 /** Um mapa de área precisa de altura para as fatias pequenas terem rótulo. */
-const TREEMAP_HEIGHT = 420
+const TREEMAP_HEIGHT = 240
+
+/** Esmaecida sobre a superfície: a cor identifica o módulo sem competir com o
+ *  texto que está em cima dela. */
+const TINT_OPACITY = 0.3
 
 export default function AdminStoragePage() {
   const { storage, loading } = useDatabaseStorage()
@@ -84,7 +89,7 @@ export default function AdminStoragePage() {
             label: table.name,
             caption: formatBytes(table.total_bytes),
             value: table.total_bytes,
-            tint: module.color,
+            tint: withOpacity(module.color, TINT_OPACITY),
           })),
         })),
     [modules, selected],
@@ -201,6 +206,7 @@ export default function AdminStoragePage() {
                 height={TREEMAP_HEIGHT}
                 backgroundColor={theme.palette.background.paper}
                 labelColor={theme.palette.text.primary}
+                leafTextColor={theme.palette.text.primary}
                 renderTooltip={(leaf) => {
                   const table = byKey.get(String(leaf.key))
                   if (!table) return null
