@@ -44,6 +44,10 @@ const sum = (tables: TableStorage[], pick: (table: TableStorage) => number) =>
 
 const PIE_HEIGHT = 260
 
+/** Esmaecida sobre a superfície: a cor identifica o módulo sem competir com o
+ *  texto que está em cima dela. */
+const TINT_OPACITY = 0.4
+
 /** Fatia que ocupa menos que isso do círculo não leva rótulo: o nome dela
  *  não cabe, e a tabela embaixo tem o número. */
 const MIN_LABELLED_SLICE = 4
@@ -83,7 +87,7 @@ export default function AdminStoragePage() {
     if (selected === null) {
       return {
         data: modules.map((module) => ({ label: module.name, value: module.bytes })),
-        colors: modules.map((module) => module.color),
+        colors: modules.map((module) => withOpacity(module.color, TINT_OPACITY)),
       }
     }
     const module = modules.find((candidate) => candidate.name === selected)
@@ -91,7 +95,7 @@ export default function AdminStoragePage() {
     return {
       data: members.map((table) => ({ label: table.name, value: table.total_bytes })),
       colors: members.map((_, index) =>
-        withOpacity(module?.color ?? '', Math.max(0.35, 1 - index * 0.15)),
+        withOpacity(module?.color ?? '', Math.max(0.15, TINT_OPACITY - index * 0.07)),
       ),
     }
   }, [modules, selected])
@@ -208,6 +212,7 @@ export default function AdminStoragePage() {
                 colors={slices.colors}
                 height={PIE_HEIGHT}
                 formatValue={formatBytes}
+                percentageColor={theme.palette.text.primary}
                 minOuterLabelPercentage={MIN_LABELLED_SLICE}
               />
             </AppStack>

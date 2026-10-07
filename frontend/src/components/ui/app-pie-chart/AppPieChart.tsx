@@ -13,6 +13,9 @@ type AppPieChartProps = {
   /** Como o valor de uma fatia se escreve no balão, quando não é dinheiro —
    *  um tamanho em bytes. Tem precedência sobre `isCurrency`. */
   formatValue?: (value: number) => string
+  /** Cor da porcentagem dentro da fatia. O padrão é escuro, para fatia viva;
+   *  quem esmaece as cores passa a do texto da página. */
+  percentageColor?: string
   colors?: string[]
   onItemClick?: (label: string) => void
   minOuterLabelPercentage?: number
@@ -27,6 +30,7 @@ export default function AppPieChart({
   height,
   isCurrency = false,
   formatValue,
+  percentageColor,
   colors,
   onItemClick,
   minOuterLabelPercentage = 0,
@@ -75,6 +79,7 @@ export default function AppPieChart({
                 {...props}
                 percent={ofTotal(props.value)}
                 minPercentage={minOuterLabelPercentage}
+                color={percentageColor}
               />
             )}
             startAngle={90}

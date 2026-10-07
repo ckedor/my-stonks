@@ -4,6 +4,8 @@ import { PieLabelRenderProps } from 'recharts'
 
 type PercentageLabelProps = PieLabelRenderProps & {
   minPercentage: number
+  /** Padrão: o escuro do tema, que se lê sobre fatia viva. */
+  color?: string
 }
 
 export default function PercentageLabel({
@@ -14,6 +16,7 @@ export default function PercentageLabel({
   outerRadius,
   percent,
   minPercentage,
+  color,
 }: PercentageLabelProps) {
   const theme = useTheme()
 
@@ -32,7 +35,7 @@ export default function PercentageLabel({
       textAnchor="middle"
       dominantBaseline="central"
       fontSize={12}
-      style={{ pointerEvents: 'none', fill: theme.palette.dark }}
+      style={{ pointerEvents: 'none', fill: color ?? theme.palette.dark }}
     >
       {`${(Number(percent) * 100).toFixed(1)}%`}
     </text>
