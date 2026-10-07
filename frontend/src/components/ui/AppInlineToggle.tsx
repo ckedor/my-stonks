@@ -26,7 +26,7 @@ export default function AppInlineToggle<T extends string>({
   onChange,
 }: AppInlineToggleProps<T>) {
   return (
-    <AppStack direction="row" gap="sm">
+    <AppStack direction="row" gap="sm" wrap>
       {options.map((option) => (
         <Typography
           key={option.value}

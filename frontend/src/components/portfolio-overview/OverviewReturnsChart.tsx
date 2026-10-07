@@ -193,7 +193,7 @@ export default function OverviewReturnsChart({
       sizing="frame"
       loading={loading}
       toolbar={
-        <AppStack direction="row" justify="between" align="start" gap="md">
+        <AppStack direction="row" justify="between" align="start" gap="md" wrap>
           <AppStack direction="row" gap="lg" align="baseline">
             <SeriesLegend
               name="Carteira"
@@ -207,7 +207,7 @@ export default function OverviewReturnsChart({
             />
           </AppStack>
 
-          <AppStack direction="row" gap="md" align="center">
+          <AppStack direction="row" gap="md" align="center" wrap>
             <AppInlineToggle
               options={ranges}
               value={range}
