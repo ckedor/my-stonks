@@ -986,6 +986,36 @@ sources of truth for the same text.
 Entrypoints delegate workflows to services, while provider and persistence
 details remain behind adapters and repositories.
 
+## Portfolio ownership
+
+A portfolio is reached by id, and an id is something anybody can type, so
+ownership is checked on every request rather than assumed from the screen that
+sent it:
+
+```text
+route under /portfolio
+  -> portfolio id in path/query/form   OwnedPortfolioId / OwnedFormPortfolioId
+     ids in a body, or a row's own id  PortfolioGuard, once the body is parsed
+  -> PortfolioBaseService.ensure_owner(user, portfolios, transactions, dividends, categories)
+       each row -> the portfolio it hangs off
+       each portfolio -> its user
+       anything missing or somebody else's -> 404, the same answer for both
+  -> the route's own service
+```
+
+The rule is in the service and the wiring in `modules/portfolio/api/access.py`.
+A row is followed to its portfolio instead of being trusted to belong to the
+one the request names, because pairing one's own portfolio with somebody else's
+transaction is how a portfolio-only check is walked around. Administrators get
+no pass here: the routes that act on any portfolio for operations
+(`position_consolidator`, `/portfolio/all`) are superuser routes and never reach
+the check. The income tax assessment and the theoretical portfolios were already
+scoped by user and stay so.
+
+`tests/e2e/test_portfolio_isolation.py` sends every route under `/portfolio` as
+another user, reading the routes from the application, and fails on any that
+answers. Before this check, 43 of its 52 routes answered.
+
 ## Persistence lifecycle
 
 SQLAlchemy sessions are infrastructure details and are not passed through HTTP

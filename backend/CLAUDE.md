@@ -113,6 +113,28 @@ Provider calls use adapters/integrations behind the service layer.
   one — that is caching a cache, and it puts back an invalidation to keep
   honest.
 
+## Acesso à carteira
+
+- Toda rota que recebe o id de uma carteira, ou de uma linha dela (transação,
+  provento, categoria), passa por `PortfolioBaseService.ensure_owner` antes de
+  ler ou escrever. A regra mora lá; `modules/portfolio/api/access.py` só a liga
+  ao request:
+  - `portfolio_id: OwnedPortfolioId` no lugar de `portfolio_id: int` quando o
+    id vem no path ou na query (`OwnedFormPortfolioId` num form);
+  - `guard: PortfolioGuard` quando o id vem no corpo ou é de uma linha: a rota
+    chama `await guard(portfolios=[...], transactions=[...])` com tudo em que
+    vai mexer, antes do service.
+- Uma linha é seguida até a carteira dela, nunca confiada à carteira que o
+  request diz. Mandar a própria carteira com a transação de outro é o jeito de
+  contornar uma checagem só da carteira.
+- Ausente e alheia respondem o mesmo 404. Admin não tem passe: as rotas
+  administrativas que agem sobre qualquer carteira (`position_consolidator`,
+  `/portfolio/all`) são de superusuário e não passam pela checagem.
+- `tests/e2e/test_portfolio_isolation.py` manda toda rota sob `/portfolio`
+  como outro usuário e falha na que responder. Uma rota nova com corpo
+  obrigatório precisa de um caso em `_bodies`; uma que só age sobre o que é do
+  próprio usuário, por `user.id`, entra em `OWN_DATA_ROUTES`.
+
 ## IA
 
 - Toda chamada a um provedor passa por `app/infra/ai/`, e o registro em

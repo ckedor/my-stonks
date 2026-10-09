@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends
 
 from app.composition.portfolio import get_wealth_tier_service
+from app.modules.portfolio.api.access import OwnedPortfolioId
 from app.modules.portfolio.api.wealth_tier.schemas import (
     PortfolioWealthTier,
     WealthTier,
@@ -27,7 +28,7 @@ async def list_wealth_tiers(
 
 @router.get('/status/{portfolio_id}', response_model=PortfolioWealthTier)
 async def get_portfolio_wealth_tier(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     service: PortfolioWealthTierService = Depends(get_wealth_tier_service),
 ):
     """The tier a portfolio has earned, and how far the next one is."""

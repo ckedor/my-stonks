@@ -160,11 +160,17 @@ async def test_dividend_writes_enqueue_complete_asset_recalculation(monkeypatch)
         update_dividend=AsyncMock(return_value=record),
         delete_dividend=AsyncMock(return_value=record),
     )
+    # O acesso à carteira tem teste próprio (tests/e2e/test_portfolio_isolation.py).
+    allow = AsyncMock()
     await routes.create_dividend(
-        DividendCreateRequest(portfolio_id=3, asset_id=7, date='2020-01-01', amount=10), service
+        DividendCreateRequest(portfolio_id=3, asset_id=7, date='2020-01-01', amount=10),
+        guard=allow,
+        service=service,
     )
-    await routes.update_dividend(1, DividendUpdateRequest(id=1, amount=20), service)
-    await routes.delete_dividend(1, service)
+    await routes.update_dividend(
+        1, DividendUpdateRequest(id=1, amount=20), guard=allow, service=service
+    )
+    await routes.delete_dividend(1, guard=allow, service=service)
     assert dispatch.call_count == 3
     for call in dispatch.call_args_list:
         assert call.args == ('recalculate_asset_position', 3, 7)
@@ -236,7 +242,9 @@ async def test_moving_transaction_rebuilds_old_and_new_assets(monkeypatch):
     dispatch = Mock()
     monkeypatch.setattr(routes, 'run_task_by_name', dispatch)
     service = SimpleNamespace(update_transaction=AsyncMock(return_value=(3, 7)))
-    await routes.update_transaction(1, {'portfolio_id': 3, 'asset_id': 8}, service)
+    await routes.update_transaction(
+        1, {'portfolio_id': 3, 'asset_id': 8}, guard=AsyncMock(), service=service
+    )
     assert [call.args for call in dispatch.call_args_list] == [
         ('recalculate_asset_position', 3, 8),
         ('recalculate_asset_position', 3, 7),

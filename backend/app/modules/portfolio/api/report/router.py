@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 
 from app.composition.portfolio import get_portfolio_reports_service
+from app.modules.portfolio.api.access import OwnedPortfolioId
 from app.modules.portfolio.domain.portfolio_reports import StatementScope
 from app.modules.portfolio.service.portfolio_reports_service import (
     PortfolioReportsService,
@@ -11,7 +12,7 @@ router = APIRouter(prefix='/report', tags=['Portfolio Report'])
 
 @router.get('/{portfolio_id}/performance_statement.xlsx')
 async def get_portfolio_returns(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     asset_ids: list[int] | None = Query(default=None),
     scope: StatementScope = StatementScope.PORTFOLIO,
     service: PortfolioReportsService = Depends(get_portfolio_reports_service),

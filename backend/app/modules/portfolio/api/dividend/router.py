@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.composition.portfolio import get_portfolio_dividend_service
 from app.entrypoints.worker.task_runner import run_task_by_name
+from app.modules.portfolio.api.access import OwnedPortfolioId, PortfolioGuard
 from app.modules.portfolio.api.dividend.schema import (
     Dividend,
     DividendCreateRequest,
@@ -19,7 +20,7 @@ router = APIRouter(prefix='/dividend', tags=['Portfolio Dividend'])
 
 @router.get('', response_model=list[Dividend])
 async def list_dividends(
-    portfolio_id: int = Query(...),
+    portfolio_id: OwnedPortfolioId,
     filters: Annotated[DividendFilters, Depends()] = None,
     currency: str = Query('BRL'),
     service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
@@ -30,8 +31,10 @@ async def list_dividends(
 @router.post('')
 async def create_dividend(
     dividend: DividendCreateRequest,
+    guard: PortfolioGuard,
     service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
 ):
+    await guard(portfolios=[dividend.portfolio_id])
     created = await service.create_dividend(dividend)
     run_task_by_name('recalculate_asset_position', dividend.portfolio_id, dividend.asset_id)
     return created
@@ -41,8 +44,10 @@ async def create_dividend(
 async def update_dividend(
     dividend_id: int,
     dividend_data: DividendUpdateRequest,
+    guard: PortfolioGuard,
     service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
 ):
+    await guard(dividends=[dividend_id])
     payload = dividend_data.model_copy(update={'id': dividend_id})
     updated = await service.update_dividend(payload)
     if not updated:
@@ -54,8 +59,10 @@ async def update_dividend(
 @router.delete('/{dividend_id}')
 async def delete_dividend(
     dividend_id: int,
+    guard: PortfolioGuard,
     service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
 ):
+    await guard(dividends=[dividend_id])
     deleted = await service.delete_dividend(dividend_id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Dividend not found')

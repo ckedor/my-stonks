@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 
 from app.composition.portfolio import get_position_statement_service
+from app.modules.portfolio.api.access import OwnedFormPortfolioId, PortfolioGuard
 from app.modules.portfolio.service.position_statement_service import PositionStatementService
 
 from .schema import (
@@ -14,7 +15,7 @@ router = APIRouter(prefix='/position_statement', tags=['Portfolio Position State
 
 @router.post('/extraction', response_model=PositionStatementDraftResponse)
 async def extract_position_statement(
-    portfolio_id: int = Form(...),
+    portfolio_id: OwnedFormPortfolioId,
     file: UploadFile = File(..., description='Extrato de posição da corretora, em PDF'),
     service: PositionStatementService = Depends(get_position_statement_service),
 ):
@@ -30,9 +31,11 @@ async def extract_position_statement(
 @router.post('/comparison', response_model=list[PositionDiffResponse])
 async def compare_position_statement(
     request: PositionComparisonRequest,
+    guard: PortfolioGuard,
     service: PositionStatementService = Depends(get_position_statement_service),
 ):
     """Compare reviewed holdings with the portfolio again, without reading the PDF again."""
+    await guard(portfolios=[request.portfolio_id])
     return await service.compare(
         portfolio_id=request.portfolio_id,
         broker_id=request.broker_id,

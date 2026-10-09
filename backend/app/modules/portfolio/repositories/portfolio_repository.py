@@ -429,6 +429,22 @@ class PortfolioRepository(SQLAlchemyRepository):
         result = await self.session.execute(stmt)
         return result.unique().scalars().all()
 
+    async def get_portfolio_owners(self, portfolio_ids: Sequence[int]) -> dict[int, int]:
+        """The user each existing portfolio belongs to, keyed by portfolio id."""
+        result = await self.session.execute(
+            select(Portfolio.id, Portfolio.user_id).where(Portfolio.id.in_(portfolio_ids))
+        )
+        return dict(result.tuples().all())
+
+    async def get_parent_portfolio_ids(
+        self, model: type[Transaction | Dividend | CustomCategory], ids: Sequence[int]
+    ) -> dict[int, int]:
+        """The portfolio each existing row of ``model`` hangs off, keyed by row id."""
+        result = await self.session.execute(
+            select(model.id, model.portfolio_id).where(model.id.in_(ids))
+        )
+        return dict(result.tuples().all())
+
     async def get_all_portfolios(self) -> list[Portfolio]:
         """Every portfolio in the application, for administrative reads.
 

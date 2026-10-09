@@ -1,7 +1,12 @@
-from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 
 from app.composition.portfolio import get_brokerage_note_import_service
 from app.entrypoints.worker.task_runner import run_task_by_name
+from app.modules.portfolio.api.access import (
+    OwnedFormPortfolioId,
+    OwnedPortfolioId,
+    PortfolioGuard,
+)
 from app.modules.portfolio.service.brokerage_note_import_service import (
     BrokerageNoteImportService,
 )
@@ -23,7 +28,7 @@ router = APIRouter(prefix='/brokerage_note', tags=['Portfolio Brokerage Note'])
 
 @router.get('', response_model=list[BrokerageNoteResponse])
 async def list_brokerage_notes(
-    portfolio_id: int = Query(...),
+    portfolio_id: OwnedPortfolioId,
     service: BrokerageNoteImportService = Depends(get_brokerage_note_import_service),
 ):
     """Imported notes of the portfolio, newest trading day first."""
@@ -32,7 +37,7 @@ async def list_brokerage_notes(
 
 @router.post('/extraction', response_model=BrokerageNoteDraftResponse)
 async def extract_brokerage_note(
-    portfolio_id: int = Form(...),
+    portfolio_id: OwnedFormPortfolioId,
     file: UploadFile = File(..., description='Nota de corretagem em PDF'),
     service: BrokerageNoteImportService = Depends(get_brokerage_note_import_service),
 ):
@@ -48,9 +53,11 @@ async def extract_brokerage_note(
 @router.post('/reconciliation', response_model=list[ReconciliationGroupResponse])
 async def reconcile_brokerage_note(
     request: ReconciliationRequest,
+    guard: PortfolioGuard,
     service: BrokerageNoteImportService = Depends(get_brokerage_note_import_service),
 ):
     """Cross reviewed lines with the portfolio again, without reading the PDF again."""
+    await guard(portfolios=[request.portfolio_id])
     return await service.reconcile(
         portfolio_id=request.portfolio_id,
         lines=[line.to_domain() for line in request.lines],
@@ -60,9 +67,11 @@ async def reconcile_brokerage_note(
 @router.post('', response_model=ImportResponse)
 async def import_brokerage_note(
     request: ImportRequest,
+    guard: PortfolioGuard,
     service: BrokerageNoteImportService = Depends(get_brokerage_note_import_service),
 ):
     """Save one note and apply the decisions taken over a reconciliation that must still hold."""
+    await guard(portfolios=[request.portfolio_id])
     result = await service.apply(
         portfolio_id=request.portfolio_id,
         note=request.note.to_domain(),

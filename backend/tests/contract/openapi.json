@@ -2322,8 +2322,8 @@
      }
     },
     "required": [
-     "portfolio_id",
-     "file"
+     "file",
+     "portfolio_id"
     ],
     "title": "Body_extract_brokerage_note_portfolio_brokerage_note_extraction_post",
     "type": "object"
@@ -2342,8 +2342,8 @@
      }
     },
     "required": [
-     "portfolio_id",
-     "file"
+     "file",
+     "portfolio_id"
     ],
     "title": "Body_extract_position_statement_portfolio_position_statement_extraction_post",
     "type": "object"
@@ -22255,21 +22255,21 @@
     "parameters": [
      {
       "in": "query",
-      "name": "portfolio_id",
-      "required": true,
-      "schema": {
-       "title": "Portfolio Id",
-       "type": "integer"
-      }
-     },
-     {
-      "in": "query",
       "name": "currency",
       "required": false,
       "schema": {
        "default": "BRL",
        "title": "Currency",
        "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
       }
      },
      {
@@ -22932,19 +22932,19 @@
     "parameters": [
      {
       "in": "path",
-      "name": "portfolio_id",
+      "name": "asset_type_id",
       "required": true,
       "schema": {
-       "title": "Portfolio Id",
+       "title": "Asset Type Id",
        "type": "integer"
       }
      },
      {
       "in": "path",
-      "name": "asset_type_id",
+      "name": "portfolio_id",
       "required": true,
       "schema": {
-       "title": "Asset Type Id",
+       "title": "Portfolio Id",
        "type": "integer"
       }
      },
@@ -22996,19 +22996,19 @@
     "parameters": [
      {
       "in": "path",
-      "name": "portfolio_id",
+      "name": "asset_type_id",
       "required": true,
       "schema": {
-       "title": "Portfolio Id",
+       "title": "Asset Type Id",
        "type": "integer"
       }
      },
      {
       "in": "path",
-      "name": "asset_type_id",
+      "name": "portfolio_id",
       "required": true,
       "schema": {
-       "title": "Asset Type Id",
+       "title": "Portfolio Id",
        "type": "integer"
       }
      },
@@ -23060,19 +23060,19 @@
     "parameters": [
      {
       "in": "path",
-      "name": "portfolio_id",
+      "name": "asset_id",
       "required": true,
       "schema": {
-       "title": "Portfolio Id",
+       "title": "Asset Id",
        "type": "integer"
       }
      },
      {
       "in": "path",
-      "name": "asset_id",
+      "name": "portfolio_id",
       "required": true,
       "schema": {
-       "title": "Asset Id",
+       "title": "Portfolio Id",
        "type": "integer"
       }
      },
@@ -23124,19 +23124,19 @@
     "parameters": [
      {
       "in": "path",
-      "name": "portfolio_id",
+      "name": "asset_id",
       "required": true,
       "schema": {
-       "title": "Portfolio Id",
+       "title": "Asset Id",
        "type": "integer"
       }
      },
      {
       "in": "path",
-      "name": "asset_id",
+      "name": "portfolio_id",
       "required": true,
       "schema": {
-       "title": "Asset Id",
+       "title": "Portfolio Id",
        "type": "integer"
       }
      },
@@ -23190,19 +23190,19 @@
     "parameters": [
      {
       "in": "path",
-      "name": "portfolio_id",
+      "name": "asset_id",
       "required": true,
       "schema": {
-       "title": "Portfolio Id",
+       "title": "Asset Id",
        "type": "integer"
       }
      },
      {
       "in": "path",
-      "name": "asset_id",
+      "name": "portfolio_id",
       "required": true,
       "schema": {
-       "title": "Asset Id",
+       "title": "Portfolio Id",
        "type": "integer"
       }
      },
@@ -23362,19 +23362,19 @@
     "parameters": [
      {
       "in": "path",
-      "name": "portfolio_id",
+      "name": "category_id",
       "required": true,
       "schema": {
-       "title": "Portfolio Id",
+       "title": "Category Id",
        "type": "integer"
       }
      },
      {
       "in": "path",
-      "name": "category_id",
+      "name": "portfolio_id",
       "required": true,
       "schema": {
-       "title": "Category Id",
+       "title": "Portfolio Id",
        "type": "integer"
       }
      },
@@ -23823,19 +23823,19 @@
     "parameters": [
      {
       "in": "path",
+      "name": "segment",
+      "required": true,
+      "schema": {
+       "$ref": "#/components/schemas/PortfolioSegment"
+      }
+     },
+     {
+      "in": "path",
       "name": "portfolio_id",
       "required": true,
       "schema": {
        "title": "Portfolio Id",
        "type": "integer"
-      }
-     },
-     {
-      "in": "path",
-      "name": "segment",
-      "required": true,
-      "schema": {
-       "$ref": "#/components/schemas/PortfolioSegment"
       }
      },
      {
@@ -23886,19 +23886,19 @@
     "parameters": [
      {
       "in": "path",
+      "name": "segment",
+      "required": true,
+      "schema": {
+       "$ref": "#/components/schemas/PortfolioSegment"
+      }
+     },
+     {
+      "in": "path",
       "name": "portfolio_id",
       "required": true,
       "schema": {
        "title": "Portfolio Id",
        "type": "integer"
-      }
-     },
-     {
-      "in": "path",
-      "name": "segment",
-      "required": true,
-      "schema": {
-       "$ref": "#/components/schemas/PortfolioSegment"
       }
      },
      {
@@ -24499,15 +24499,6 @@
     "parameters": [
      {
       "in": "query",
-      "name": "portfolio_id",
-      "required": true,
-      "schema": {
-       "title": "Portfolio Id",
-       "type": "integer"
-      }
-     },
-     {
-      "in": "query",
       "name": "asset_id",
       "required": false,
       "schema": {
@@ -24548,6 +24539,15 @@
         }
        ],
        "title": "Currency Id"
+      }
+     },
+     {
+      "in": "query",
+      "name": "portfolio_id",
+      "required": true,
+      "schema": {
+       "title": "Portfolio Id",
+       "type": "integer"
       }
      }
     ],

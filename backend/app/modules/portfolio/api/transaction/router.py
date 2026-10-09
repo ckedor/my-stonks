@@ -2,6 +2,7 @@ from fastapi import APIRouter, Body, Depends, Query
 
 from app.composition.portfolio import get_portfolio_transaction_service
 from app.entrypoints.worker.task_runner import run_task_by_name
+from app.modules.portfolio.api.access import OwnedPortfolioId, PortfolioGuard
 from app.modules.portfolio.service.portfolio_transaction_service import (
     PortfolioTransactionService,
 )
@@ -17,7 +18,7 @@ router = APIRouter(prefix='/transaction', tags=['Portfolio Transaction'])
 
 @router.get('')
 async def list_transactions(
-    portfolio_id: int = Query(...),
+    portfolio_id: OwnedPortfolioId,
     asset_id: int = Query(None),
     asset_type_ids: list[int] | None = Query(None),
     currency_id: int | None = Query(None),
@@ -34,8 +35,10 @@ async def list_transactions(
 @router.post('')
 async def create_transaction(
     transaction: Transaction,
+    guard: PortfolioGuard,
     service: PortfolioTransactionService = Depends(get_portfolio_transaction_service),
 ):
+    await guard(portfolios=[transaction.portfolio_id])
     await service.create_transaction(transaction.model_dump())
     run_task_by_name(
         RECALCULATE_ASSET_POSITION_TASK, transaction.portfolio_id, transaction.asset_id
@@ -47,8 +50,11 @@ async def create_transaction(
 async def update_transaction(
     transaction_id: int,
     transaction: dict,
+    guard: PortfolioGuard,
     service: PortfolioTransactionService = Depends(get_portfolio_transaction_service),
 ):
+    # A transação pode mudar de carteira: a de origem e a de destino são do dono.
+    await guard(transactions=[transaction_id], portfolios=[transaction['portfolio_id']])
     transaction = {**transaction, 'id': transaction_id}
     old_portfolio_id, old_asset_id = await service.update_transaction(transaction)
     run_task_by_name(
@@ -62,10 +68,12 @@ async def update_transaction(
 @router.delete('/{transaction_id}')
 async def delete_transaction(
     transaction_id: int,
+    guard: PortfolioGuard,
     portfolio_id: int = Body(...),
     asset_id: int = Body(...),
     service: PortfolioTransactionService = Depends(get_portfolio_transaction_service),
 ):
+    await guard(transactions=[transaction_id], portfolios=[portfolio_id])
     await service.delete_transaction(transaction_id)
     run_task_by_name(RECALCULATE_ASSET_POSITION_TASK, portfolio_id, asset_id)
     return {'message': 'Transaction deleted'}

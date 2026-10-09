@@ -5,6 +5,7 @@ from app.composition.portfolio import (
     get_portfolio_position_service,
     get_portfolio_service,
 )
+from app.modules.portfolio.api.access import OwnedPortfolioId, PortfolioGuard, category_refs
 from app.modules.portfolio.api.portfolio.schemas import (
     CreatePortfolioRequest,
     Portfolio,
@@ -71,10 +72,12 @@ async def create_portfolio(
 
 @router.put('/{portfolio_id}')
 async def update_portfolio(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     payload: UpdatePortfolioRequest,
+    guard: PortfolioGuard,
     service: PortfolioBaseService = Depends(get_portfolio_service),
 ):
+    await guard(**category_refs(payload.user_categories or []))
     await service.update_portfolio(
         portfolio_id,
         name=payload.name,
@@ -85,7 +88,7 @@ async def update_portfolio(
 
 @router.delete('/{portfolio_id}')
 async def delete_portfolio(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     service: PortfolioBaseService = Depends(get_portfolio_service),
     position_service: PortfolioPositionService = Depends(get_portfolio_position_service),
     document_service: PortfolioDocumentService = Depends(get_portfolio_document_service),

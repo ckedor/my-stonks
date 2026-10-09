@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.composition.portfolio import get_portfolio_user_configuration_service
+from app.modules.portfolio.api.access import OwnedPortfolioId
 from app.modules.portfolio.service.portfolio_user_configuration import (
     PortfolioUserConfigurationService,
 )
@@ -12,7 +13,7 @@ router = APIRouter(prefix='/user_configuration', tags=['Portfolio User Configura
 
 @router.get('/{portfolio_id}')
 async def get_user_configurations(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     service: PortfolioUserConfigurationService = Depends(get_portfolio_user_configuration_service),
 ):
     return await service.get_user_configurations(portfolio_id)
@@ -20,7 +21,7 @@ async def get_user_configurations(
 
 @router.put('/{portfolio_id}')
 async def update_user_configuration(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     user_configuration_request: UserConfigurationUpdateRequest,
     service: PortfolioUserConfigurationService = Depends(get_portfolio_user_configuration_service),
 ):

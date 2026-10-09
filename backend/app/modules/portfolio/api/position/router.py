@@ -8,6 +8,7 @@ from app.modules.market_data.api.asset.schemas import (
     AssetDetailsOut,
     AssetDetailsWithPosition,
 )
+from app.modules.portfolio.api.access import OwnedPortfolioId
 from app.modules.portfolio.api.position.schemas import (
     ClosedPositionEntry,
     ContributionAverage,
@@ -24,7 +25,7 @@ router = APIRouter(prefix='/position', tags=['Portfolio Position'])
 
 @router.get('/{portfolio_id}')
 async def get_portfolio_position(  # noqa: PLR0913
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     most_recent: bool = Query(True),
     group_by_broker: bool = Query(False),
     asset_id: int = Query(None),
@@ -40,7 +41,7 @@ async def get_portfolio_position(  # noqa: PLR0913
 
 @router.get('/{portfolio_id}/closed', response_model=list[ClosedPositionEntry])
 async def get_closed_positions(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
@@ -56,7 +57,7 @@ async def get_closed_positions(
 
 @router.get('/{portfolio_id}/consolidation', response_model=PortfolioConsolidation | None)
 async def get_consolidation(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
     """When this portfolio was last consolidated.
@@ -69,7 +70,7 @@ async def get_consolidation(
 
 @router.get('/{portfolio_id}/returns')
 async def get_portfolio_returns(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
@@ -78,7 +79,7 @@ async def get_portfolio_returns(
 
 @router.get('/{portfolio_id}/asset-type/{asset_type_id}/returns')
 async def get_asset_type_returns(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     asset_type_id: int,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
@@ -88,7 +89,7 @@ async def get_asset_type_returns(
 
 @router.get('/{portfolio_id}/asset-type/{asset_type_id}/analysis')
 async def get_asset_type_analysis(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     asset_type_id: int,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
@@ -98,7 +99,7 @@ async def get_asset_type_analysis(
 
 @router.get('/{portfolio_id}/segment/{segment}/returns')
 async def get_segment_returns(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     segment: PortfolioSegment,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
@@ -108,7 +109,7 @@ async def get_segment_returns(
 
 @router.get('/{portfolio_id}/segment/{segment}/analysis')
 async def get_segment_analysis(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     segment: PortfolioSegment,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
@@ -118,7 +119,7 @@ async def get_segment_analysis(
 
 @router.get('/{portfolio_id}/patrimony_evolution')
 async def get_patrimony_evolution(  # noqa: PLR0913
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     asset_id: int = Query(None),
     asset_type_id: int = Query(None),
     asset_type_ids: list[int] | None = Query(None),
@@ -133,7 +134,7 @@ async def get_patrimony_evolution(  # noqa: PLR0913
 
 @router.get('/{portfolio_id}/contribution-average', response_model=ContributionAverage)
 async def get_contribution_average(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
@@ -149,7 +150,7 @@ async def get_contribution_average(
 
 @router.get('/{portfolio_id}/cdi-cagr', response_model=PortfolioCdiCagr)
 async def get_portfolio_cdi_cagr(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
@@ -160,7 +161,7 @@ async def get_portfolio_cdi_cagr(
 
 @router.get('/{portfolio_id}/analysis')
 async def get_portfolio_analysis(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
 ):
@@ -169,7 +170,7 @@ async def get_portfolio_analysis(
 
 @router.get('/{portfolio_id}/category/returns')
 async def get_category_returns(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     category_id: int = Query(None),
     most_recent: bool = Query(False),
     currency: str = Query('BRL'),
@@ -180,7 +181,7 @@ async def get_category_returns(
 
 @router.get('/{portfolio_id}/category/{category_id}/analysis')
 async def get_category_analysis(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     category_id: int,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
@@ -190,7 +191,7 @@ async def get_category_analysis(
 
 @router.get('/{portfolio_id}/asset/{asset_id}/returns')
 async def get_asset_returns(  # noqa: PLR0913
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     asset_id: int,
     # Datas, e não texto: o repositório compara a coluna `date` direto, e o
     # Postgres não compara `date` com `varchar` -- estes dois parâmetros
@@ -211,7 +212,7 @@ async def get_asset_returns(  # noqa: PLR0913
 
 @router.get('/{portfolio_id}/asset/{asset_id}/details', response_model=AssetDetailsWithPosition)
 async def get_asset_details(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     asset_id: int,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),
@@ -231,7 +232,7 @@ async def get_asset_details(
 
 @router.get('/{portfolio_id}/asset/{asset_id}/analysis')
 async def get_asset_analysis(
-    portfolio_id: int,
+    portfolio_id: OwnedPortfolioId,
     asset_id: int,
     currency: str = Query('BRL'),
     service: PortfolioPositionService = Depends(get_portfolio_position_service),

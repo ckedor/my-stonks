@@ -1,7 +1,9 @@
 # Primeira versão com usuários de teste
 
-Status: plano, montado em 09/10/2026 a partir de uma leitura do código. Nada
-foi implementado ainda.
+Status: plano montado em 09/10/2026 a partir de uma leitura do código.
+Entregues em 09/10: itens 1 e 2 de segunda, 12/10 (dependência de posse e
+teste de varredura). Antes, 43 das 52 rotas sob `/portfolio` respondiam a outro
+usuário; agora nenhuma responde. Os itens 3 a 5 de segunda seguem pendentes.
 Janela: três semanas, de 12/10 a 30/10/2026. Os primeiros convites saem em
 29/10.
 
@@ -58,15 +60,17 @@ checada contra `user.id`, venha o usuário de onde vier.
 
 ### Seg 12/10: isolamento entre usuários
 
-1. **Dependência de posse.** Criar `owned_portfolio(portfolio_id, user)` em
-   `app/modules/portfolio/api/`. Ela lê a carteira e responde 404 quando
-   `portfolio.user_id != user.id`, para não confirmar que o id existe.
-   Aplicar a todas as rotas que recebem `portfolio_id` por path, query, form
-   ou body.
+1. **Dependência de posse** (entregue). `PortfolioBaseService.ensure_owner`,
+   ligado ao request por `modules/portfolio/api/access.py`
+   (`OwnedPortfolioId`, `OwnedFormPortfolioId`, `PortfolioGuard`). Responde
+   404 quando a carteira não é do usuário, para não confirmar que o id
+   existe. Aplicada a todas as rotas que recebem `portfolio_id` por path,
+   query, form ou body.
    - As rotas que recebem só o id do filho (`PUT/DELETE /transaction/{id}`,
      `/dividend/{id}`) resolvem a carteira do filho e checam a posse.
    - Mover uma transação para outra carteira checa as duas.
-2. **Teste que prova o guard.** Em `tests/e2e/`, um teste percorre
+2. **Teste que prova o guard** (entregue,
+   `tests/e2e/test_portfolio_isolation.py`). Um teste percorre
    `app.routes`, encontra toda rota sob `/portfolio` que tem `portfolio_id`
    ou id de filho, e chama cada uma com o usuário B sobre a carteira do
    usuário A. Todas têm de responder 404 ou 403. Uma rota nova sem a checagem
