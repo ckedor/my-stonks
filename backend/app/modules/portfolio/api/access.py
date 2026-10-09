@@ -38,8 +38,8 @@ class PortfolioGuardCall(Protocol):
 
 
 def _portfolio_guard(
-    user: User = Depends(current_active_user),
-    service: PortfolioBaseService = Depends(get_portfolio_service),
+    user: Annotated[User, Depends(current_active_user)],
+    service: Annotated[PortfolioBaseService, Depends(get_portfolio_service)],
 ) -> PortfolioGuardCall:
     def guard(**ids: Iterable[int]) -> Awaitable[None]:
         return service.ensure_owner(user.id, **ids)
@@ -55,7 +55,9 @@ async def _owned_portfolio_id(portfolio_id: int, guard: PortfolioGuard) -> int:
     return portfolio_id
 
 
-async def _owned_form_portfolio_id(guard: PortfolioGuard, portfolio_id: int = Form(...)) -> int:
+async def _owned_form_portfolio_id(
+    portfolio_id: Annotated[int, Form()], guard: PortfolioGuard
+) -> int:
     return await _owned_portfolio_id(portfolio_id, guard)
 
 
