@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Depends, Query
 
@@ -49,14 +49,14 @@ admin_router = APIRouter(dependencies=[Depends(current_superuser)])
 
 
 @admin_router.get('/feature', response_model=list[AIFeatureResponse])
-async def list_features(service: AIFeatureService = Depends(get_ai_feature_service)):
+async def list_features(service: Annotated[AIFeatureService, Depends(get_ai_feature_service)]):
     return await service.list()
 
 
 @admin_router.get('/feature/{feature_key}', response_model=AIFeatureResponse)
 async def get_feature(
     feature_key: str,
-    service: AIFeatureService = Depends(get_ai_feature_service),
+    service: Annotated[AIFeatureService, Depends(get_ai_feature_service)],
 ):
     return await service.get(feature_key)
 
@@ -65,7 +65,7 @@ async def get_feature(
 async def update_feature(
     feature_key: str,
     payload: AIFeatureUpdateRequest,
-    service: AIFeatureService = Depends(get_ai_feature_service),
+    service: Annotated[AIFeatureService, Depends(get_ai_feature_service)],
 ):
     command = UpdateAIFeatureCommand(
         feature_key=feature_key,
@@ -81,8 +81,8 @@ async def update_feature(
 @admin_router.get('/feature/{feature_key}/form', response_model=AIFeatureFormResponse)
 async def get_feature_form(
     feature_key: str,
-    features: AIFeatureService = Depends(get_ai_feature_service),
-    prompts: AIPromptService = Depends(get_ai_prompt_service),
+    features: Annotated[AIFeatureService, Depends(get_ai_feature_service)],
+    prompts: Annotated[AIPromptService, Depends(get_ai_prompt_service)],
 ):
     """Everything the admin needs to run and to write a prompt for a feature.
 
@@ -99,8 +99,8 @@ async def get_feature_form(
 @admin_router.post('/feature/{feature_key}/run', response_model=AIArtifactResponse)
 async def run_feature(
     feature_key: str,
-    payload: dict[str, Any] = Body(default_factory=dict),
-    service: AIArtifactService = Depends(get_ai_artifact_service),
+    payload: Annotated[dict[str, Any], Body(default_factory=dict)],
+    service: Annotated[AIArtifactService, Depends(get_ai_artifact_service)],
 ):
     """Generate now and replace what was stored — the refresh, in other words.
 
@@ -126,7 +126,7 @@ async def run_feature_schedule(feature_key: str):
 )
 async def list_prompt_versions(
     feature_key: str,
-    service: AIPromptService = Depends(get_ai_prompt_service),
+    service: Annotated[AIPromptService, Depends(get_ai_prompt_service)],
 ):
     return await service.list_versions(feature_key)
 
@@ -135,7 +135,7 @@ async def list_prompt_versions(
 async def create_prompt_version(
     feature_key: str,
     payload: AIPromptVersionCreateRequest,
-    service: AIPromptService = Depends(get_ai_prompt_service),
+    service: Annotated[AIPromptService, Depends(get_ai_prompt_service)],
 ):
     command = CreateAIPromptVersionCommand(
         feature_key=feature_key,
@@ -154,32 +154,32 @@ async def create_prompt_version(
 @admin_router.post('/prompt_version/{version_id}/activate', response_model=AIPromptVersionResponse)
 async def activate_prompt_version(
     version_id: int,
-    service: AIPromptService = Depends(get_ai_prompt_service),
+    service: Annotated[AIPromptService, Depends(get_ai_prompt_service)],
 ):
     return await service.activate(version_id)
 
 
 @admin_router.get('/usage', response_model=list[AIUsageRowResponse])
 async def get_usage(
-    days: int = Query(default=DEFAULT_WINDOW_DAYS, ge=1, le=365),
-    service: AIUsageService = Depends(get_ai_usage_service),
+    service: Annotated[AIUsageService, Depends(get_ai_usage_service)],
+    days: Annotated[int, Query(ge=1, le=365)] = DEFAULT_WINDOW_DAYS,
 ):
     return await service.usage_by_day(days)
 
 
 @admin_router.get('/run', response_model=list[AIRunResponse])
 async def list_runs(
-    limit: int = Query(default=DEFAULT_RUN_LIMIT, ge=1, le=500),
-    service: AIUsageService = Depends(get_ai_usage_service),
+    service: Annotated[AIUsageService, Depends(get_ai_usage_service)],
+    limit: Annotated[int, Query(ge=1, le=500)] = DEFAULT_RUN_LIMIT,
 ):
     return await service.recent_runs(limit)
 
 
 @router.get('/asset_description_draft', response_model=AIArtifactResponse)
 async def get_asset_description_draft(
-    asset_id: int = Query(..., description='Id do ativo registrado'),
-    _: object = Depends(current_active_user),
-    service: AIArtifactService = Depends(get_ai_artifact_service),
+    asset_id: Annotated[int, Query(description='Id do ativo registrado')],
+    _: Annotated[object, Depends(current_active_user)],
+    service: Annotated[AIArtifactService, Depends(get_ai_artifact_service)],
 ):
     """O rascunho do texto de cadastro, para o botão de preencher.
 

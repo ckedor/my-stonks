@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 
 from app.composition.market_data import get_market_data_read_service
@@ -9,7 +11,7 @@ router = APIRouter(prefix='/currency', tags=['Market Data Currency'])
 
 @router.get('', response_model=list[Currency])
 async def list_currencies(
-    service: MarketDataReadService = Depends(get_market_data_read_service),
+    service: Annotated[MarketDataReadService, Depends(get_market_data_read_service)],
 ):
     """The monetary units the application works in.
 

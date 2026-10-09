@@ -1,6 +1,7 @@
 """Persisted and on-demand asset quote routes."""
 
 from datetime import date
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
@@ -27,17 +28,11 @@ MAX_TICKER_LENGTH = 30
 
 @router.get('/persisted', response_model=list[PersistedQuotesResponse])
 async def get_persisted_quotes(
-    asset_ids: list[int] | None = Query(
-        default=None,
-        max_length=MAX_ASSETS_PER_PERSISTED_QUERY,
-    ),
-    tickers: list[str] | None = Query(
-        default=None,
-        max_length=MAX_ASSETS_PER_PERSISTED_QUERY,
-    ),
-    asset_type_id: int | None = Query(default=None),
-    start_date: date | None = Query(default=None),
-    service: PersistedQuoteReadService = Depends(get_persisted_quote_read_service),
+    service: Annotated[PersistedQuoteReadService, Depends(get_persisted_quote_read_service)],
+    asset_ids: Annotated[list[int] | None, Query(max_length=MAX_ASSETS_PER_PERSISTED_QUERY)] = None,
+    tickers: Annotated[list[str] | None, Query(max_length=MAX_ASSETS_PER_PERSISTED_QUERY)] = None,
+    asset_type_id: Annotated[int | None, Query()] = None,
+    start_date: Annotated[date | None, Query()] = None,
 ):
     return await service.get_quotes(
         asset_ids=asset_ids,
@@ -50,9 +45,9 @@ async def get_persisted_quotes(
 @router.get('/asset/{asset_id}', response_model=AssetQuoteHistoryResponse)
 async def get_asset_quote_history(
     asset_id: int,
-    start_date: date | None = Query(default=None),
-    currency: str = Query(default='BRL'),
-    service: AssetQuoteHistoryService = Depends(get_asset_quote_history_service),
+    service: Annotated[AssetQuoteHistoryService, Depends(get_asset_quote_history_service)],
+    start_date: Annotated[date | None, Query()] = None,
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     """Quote history for one asset, from storage when it exists.
 
@@ -68,11 +63,11 @@ async def get_asset_quote_history(
 
 @router.get('/on-demand', response_model=OnDemandQuotesResponse)
 async def get_on_demand_quotes(
-    ticker: str = Query(min_length=1, max_length=MAX_TICKER_LENGTH),
-    asset_type_id: int = Query(ge=1),
-    start_date: date | None = Query(default=None),
-    exchange: str | None = Query(default=None, max_length=10),
-    service: OnDemandQuoteReadService = Depends(get_on_demand_quote_read_service),
+    ticker: Annotated[str, Query(min_length=1, max_length=MAX_TICKER_LENGTH)],
+    asset_type_id: Annotated[int, Query(ge=1)],
+    service: Annotated[OnDemandQuoteReadService, Depends(get_on_demand_quote_read_service)],
+    start_date: Annotated[date | None, Query()] = None,
+    exchange: Annotated[str | None, Query(max_length=10)] = None,
 ):
     return await service.get_quotes(
         ticker=ticker,

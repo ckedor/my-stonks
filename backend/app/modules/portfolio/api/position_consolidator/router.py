@@ -1,4 +1,5 @@
 import asyncio
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
@@ -50,8 +51,8 @@ async def _recalculate_assets_in_parallel(
 @router.post('/{portfolio_id}/consolidate')
 async def consolidate_portfolio(
     portfolio_id: int,
-    service: PortfolioConsolidatorService = Depends(get_portfolio_consolidator_service),
-    position_service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioConsolidatorService, Depends(get_portfolio_consolidator_service)],
+    position_service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
 ):
     asset_ids = await service.get_asset_ids_to_consolidate(portfolio_id)
     await _recalculate_assets_in_parallel(portfolio_id, asset_ids, incremental=True)
@@ -64,8 +65,8 @@ async def consolidate_portfolio(
 async def consolidate_portfolio_asset(
     portfolio_id: int,
     asset_id: int,
-    service: PortfolioConsolidatorService = Depends(get_portfolio_consolidator_service),
-    position_service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioConsolidatorService, Depends(get_portfolio_consolidator_service)],
+    position_service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
 ):
     await service.recalculate_position_asset(portfolio_id, asset_id)
     await position_service.invalidate_patrimony_evolution(portfolio_id)
@@ -76,8 +77,8 @@ async def consolidate_portfolio_asset(
 @router.post('/{portfolio_id}/recalculate_all_position')
 async def recalculate_all_positions(
     portfolio_id: int,
-    service: PortfolioConsolidatorService = Depends(get_portfolio_consolidator_service),
-    position_service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioConsolidatorService, Depends(get_portfolio_consolidator_service)],
+    position_service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
 ):
     asset_ids = await service.get_asset_ids_with_transactions(portfolio_id)
     await _recalculate_assets_in_parallel(portfolio_id, asset_ids)
@@ -89,9 +90,9 @@ async def recalculate_all_positions(
 @router.post('/{portfolio_id}/consolidate_portfolio_returns')
 async def consolidate_portfolio_returns(
     portfolio_id: int,
-    service: PortfolioReturnsConsolidatorService = Depends(
-        get_portfolio_returns_consolidator_service
-    ),
+    service: Annotated[
+        PortfolioReturnsConsolidatorService, Depends(get_portfolio_returns_consolidator_service)
+    ],
 ):
     await service.consolidate_returns(portfolio_id)
     return {'message': 'OK'}
@@ -100,9 +101,9 @@ async def consolidate_portfolio_returns(
 @router.post('/{portfolio_id}/consolidate_category_returns')
 async def consolidate_category_returns(
     portfolio_id: int,
-    service: PortfolioReturnsConsolidatorService = Depends(
-        get_portfolio_returns_consolidator_service
-    ),
+    service: Annotated[
+        PortfolioReturnsConsolidatorService, Depends(get_portfolio_returns_consolidator_service)
+    ],
 ):
     await service.consolidate_category_returns(portfolio_id)
     return {'message': 'OK'}
@@ -111,9 +112,9 @@ async def consolidate_category_returns(
 @router.post('/{portfolio_id}/consolidate_asset_type_returns')
 async def consolidate_asset_type_returns(
     portfolio_id: int,
-    service: PortfolioReturnsConsolidatorService = Depends(
-        get_portfolio_returns_consolidator_service
-    ),
+    service: Annotated[
+        PortfolioReturnsConsolidatorService, Depends(get_portfolio_returns_consolidator_service)
+    ],
 ):
     await service.consolidate_asset_type_returns(portfolio_id)
     return {'message': 'OK'}

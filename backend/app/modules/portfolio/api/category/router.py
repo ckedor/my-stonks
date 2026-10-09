@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 
 from app.composition.portfolio import (
@@ -21,7 +23,7 @@ router = APIRouter(prefix='/category', tags=['Portfolio Category'])
 async def save_custom_category(
     payload: SaveCategoriesRequest,
     guard: PortfolioGuard,
-    service: PortfolioCategoryService = Depends(get_portfolio_category_service),
+    service: Annotated[PortfolioCategoryService, Depends(get_portfolio_category_service)],
 ):
     await guard(**category_refs(payload.categories))
     await service.save_custom_categories(payload.categories)
@@ -32,7 +34,7 @@ async def save_custom_category(
 async def delete_custom_category(
     category_id: int,
     guard: PortfolioGuard,
-    service: PortfolioCategoryService = Depends(get_portfolio_category_service),
+    service: Annotated[PortfolioCategoryService, Depends(get_portfolio_category_service)],
 ):
     await guard(categories=[category_id])
     await service.delete_custom_category(category_id)
@@ -43,8 +45,8 @@ async def delete_custom_category(
 async def assign_category_to_assets(
     payload: CategoryAssignmentRequest,
     guard: PortfolioGuard,
-    service: PortfolioCategoryService = Depends(get_portfolio_category_service),
-    position_service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioCategoryService, Depends(get_portfolio_category_service)],
+    position_service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
 ):
     await guard(portfolios=[payload.portfolio_id], categories=[payload.category_id])
     await service.assign_category_to_asset(payload)

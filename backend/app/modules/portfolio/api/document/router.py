@@ -1,3 +1,4 @@
+from typing import Annotated
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Response
@@ -14,7 +15,7 @@ router = APIRouter(prefix='/document', tags=['Portfolio Document'])
 @router.get('', response_model=list[PortfolioDocumentResponse])
 async def list_documents(
     portfolio_id: OwnedPortfolioId,
-    service: PortfolioDocumentService = Depends(get_portfolio_document_service),
+    service: Annotated[PortfolioDocumentService, Depends(get_portfolio_document_service)],
 ):
     """Files uploaded to the portfolio and kept, newest first."""
     return await service.list_documents(portfolio_id)
@@ -24,7 +25,7 @@ async def list_documents(
 async def read_document_content(
     document_id: int,
     portfolio_id: OwnedPortfolioId,
-    service: PortfolioDocumentService = Depends(get_portfolio_document_service),
+    service: Annotated[PortfolioDocumentService, Depends(get_portfolio_document_service)],
 ):
     """The file itself, as it was uploaded."""
     document = await service.read(portfolio_id=portfolio_id, document_id=document_id)

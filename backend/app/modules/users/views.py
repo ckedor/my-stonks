@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import (
@@ -86,6 +88,6 @@ def setup_user_views(app: FastAPI):
     )
 
     @app.get('/users', response_model=list[UserRead], tags=['Usuários'])
-    async def list_users(uow: UnitOfWork = Depends(get_uow)):
+    async def list_users(uow: Annotated[UnitOfWork, Depends(get_uow)]):
         async with uow:
             return await uow.repository.get(User, order_by='id')

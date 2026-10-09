@@ -55,7 +55,7 @@ router = APIRouter(prefix='/asset', tags=['Asset'])
 # ---------------------------------------------------------------------------
 @router.get('/type', response_model=list[AssetType])
 async def list_asset_types(
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """List all asset types."""
     return await service.list_asset_types()
@@ -64,7 +64,7 @@ async def list_asset_types(
 @router.post('/fixed_income')
 async def create_fixed_income(
     fixed_income: FixedIncomeAsset,
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """Create a new fixed income asset."""
     return await service.create_fixed_income(fixed_income.model_dump())
@@ -72,7 +72,7 @@ async def create_fixed_income(
 
 @router.get('/fixed_income/type', response_model=list[FixedIncomeType])
 async def list_fixed_income_types(
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """List all fixed income types."""
     return await service.list_fixed_income_types()
@@ -80,7 +80,7 @@ async def list_fixed_income_types(
 
 @router.get('/fii/segment')
 async def list_fii_segments(
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """List FII segments."""
     return await service.list_fii_segments()
@@ -88,7 +88,7 @@ async def list_fii_segments(
 
 @router.get('/etf/segment')
 async def list_etf_segments(
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """List all ETF segments."""
     return await service.list_etf_segments()
@@ -96,7 +96,7 @@ async def list_etf_segments(
 
 @router.get('/treasury_bond/type', response_model=list[TreasuryBondTypeOut])
 async def list_treasury_bond_types(
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """List all treasury bond types."""
     return await service.list_treasury_bond_types()
@@ -105,7 +105,7 @@ async def list_treasury_bond_types(
 @router.post('/fund', dependencies=[Depends(current_active_user)])
 async def register_fund(
     payload: RegisterFundRequest,
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """Make one priced unit of a registered fund class an FI or PREV asset."""
     return await service.register_fund(**payload.model_dump())
@@ -115,7 +115,7 @@ async def register_fund(
 async def select_fund_series(
     asset_id: int,
     payload: SelectFundSeriesRequest,
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """Confirm the series of a legacy FIDC asset without replacing its transactions."""
     return await service.select_fund_series(asset_id, **payload.model_dump())
@@ -129,7 +129,7 @@ async def select_fund_series(
 async def confirm_fund_series_aliases(
     asset_id: int,
     payload: ConfirmSeriesAliasesRequest,
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """Confirm filing labels that meant the asset's series, keeping earlier ones.
 
@@ -143,7 +143,7 @@ async def confirm_fund_series_aliases(
 
 @router.get('/exchange', response_model=list[ExchangeOut])
 async def list_exchanges(
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """List all exchanges."""
     return await service.list_exchanges()
@@ -152,8 +152,8 @@ async def list_exchanges(
 @router.get('/favorites', response_model=list[FavoriteAsset])
 async def list_favorite_assets(
     filters: Annotated[FavoriteAssetFilters, Query()],
-    user: User = Depends(current_active_user),
-    service: AssetService = Depends(get_asset_service),
+    user: Annotated[User, Depends(current_active_user)],
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """The assets this user opens most often."""
     return await service.list_favorite_assets(
@@ -168,8 +168,8 @@ async def list_favorite_assets(
 @router.post('/{asset_id}/visit', status_code=204)
 async def record_asset_visit(
     asset_id: int,
-    user: User = Depends(current_active_user),
-    service: AssetService = Depends(get_asset_service),
+    user: Annotated[User, Depends(current_active_user)],
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """Count a visit, which is what ranks the favourites."""
     await service.record_visit(user.id, asset_id)
@@ -184,7 +184,7 @@ async def record_asset_visit(
     dependencies=[Depends(current_superuser)],
 )
 async def list_events(
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """List all asset events."""
     return await service.list_events()
@@ -193,7 +193,7 @@ async def list_events(
 @router.post('/event', dependencies=[Depends(current_superuser)])
 async def create_event(
     event: AssetEvent,
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """Create a new asset event."""
     return await service.create_event(event)
@@ -203,7 +203,7 @@ async def create_event(
 async def update_event(
     event_id: int,
     event: AssetEvent,
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """Update an asset event."""
     payload = event.model_copy(update={'id': event_id})
@@ -213,7 +213,7 @@ async def update_event(
 @router.delete('/event/{event_id}', dependencies=[Depends(current_superuser)])
 async def delete_event(
     event_id: int,
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """Delete an asset event."""
     await service.delete_event(event_id)
@@ -225,9 +225,9 @@ async def delete_event(
 # ---------------------------------------------------------------------------
 @router.post('/sync', response_model=AssetSyncReport, dependencies=[Depends(current_superuser)])
 async def sync_assets_with_catalogue(
-    kinds: list[str] | None = Query(default=None),
-    dry_run: bool = Query(default=True),
-    service: AssetCatalogueSyncService = Depends(get_asset_catalogue_sync_service),
+    service: Annotated[AssetCatalogueSyncService, Depends(get_asset_catalogue_sync_service)],
+    kinds: Annotated[list[str] | None, Query()] = None,
+    dry_run: Annotated[bool, Query()] = True,
 ):
     """Casar o cadastro local com o catálogo do provedor.
 
@@ -245,8 +245,8 @@ async def sync_assets_with_catalogue(
     dependencies=[Depends(current_superuser)],
 )
 async def sync_assets_with_regulator(
-    dry_run: bool = Query(default=True),
-    service: CvmRegistrySyncService = Depends(get_cvm_registry_sync_service),
+    service: Annotated[CvmRegistrySyncService, Depends(get_cvm_registry_sync_service)],
+    dry_run: Annotated[bool, Query()] = True,
 ):
     """Casar o cadastro local com o que a CVM publica sobre companhias.
 
@@ -264,7 +264,7 @@ async def sync_assets_with_regulator(
     dependencies=[Depends(current_superuser)],
 )
 async def suggest_fund_links(
-    service: FundRegistryLinkService = Depends(get_fund_registry_link_service),
+    service: Annotated[FundRegistryLinkService, Depends(get_fund_registry_link_service)],
 ):
     """As propostas de vínculo entre um FII e o fundo registrado na CVM.
 
@@ -282,7 +282,7 @@ async def suggest_fund_links(
 )
 async def link_asset_to_fund_registry(
     payload: FundLinkRequest,
-    service: FundRegistryLinkService = Depends(get_fund_registry_link_service),
+    service: Annotated[FundRegistryLinkService, Depends(get_fund_registry_link_service)],
 ):
     """Confirma o vínculo de um FII ou ETF com um fundo do registro.
 
@@ -300,7 +300,7 @@ async def link_asset_to_fund_registry(
 # ---------------------------------------------------------------------------
 @router.get('')
 async def list_assets(
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """List all assets (cached for 24h)."""
     return await service.list_assets()
@@ -309,7 +309,7 @@ async def list_assets(
 @router.post('')
 async def create_asset(
     data: AssetCreate,
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """Create a new asset with subclass data."""
     return await service.create_asset(data.model_dump())
@@ -318,7 +318,7 @@ async def create_asset(
 @router.get('/{asset_id}', response_model=AssetDetailsOut)
 async def get_asset(
     asset_id: int,
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """Get a single asset with all details."""
     return await service.get_asset(asset_id)
@@ -328,7 +328,7 @@ async def get_asset(
 async def update_asset(
     asset_id: int,
     data: AssetUpdate,
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """Update an asset with subclass data."""
     return await service.update_asset({**data.model_dump(), 'id': asset_id})
@@ -337,7 +337,7 @@ async def update_asset(
 @router.delete('/{asset_id}')
 async def delete_asset(
     asset_id: int,
-    service: AssetService = Depends(get_asset_service),
+    service: Annotated[AssetService, Depends(get_asset_service)],
 ):
     """Delete an asset by ID."""
     return await service.delete_asset(asset_id)

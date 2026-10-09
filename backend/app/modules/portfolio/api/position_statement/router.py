@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, File, UploadFile
 
 from app.composition.portfolio import get_position_statement_service
@@ -16,8 +18,8 @@ router = APIRouter(prefix='/position_statement', tags=['Portfolio Position State
 @router.post('/extraction', response_model=PositionStatementDraftResponse)
 async def extract_position_statement(
     portfolio_id: OwnedFormPortfolioId,
-    file: UploadFile = File(..., description='Extrato de posição da corretora, em PDF'),
-    service: PositionStatementService = Depends(get_position_statement_service),
+    file: Annotated[UploadFile, File(description='Extrato de posição da corretora, em PDF')],
+    service: Annotated[PositionStatementService, Depends(get_position_statement_service)],
 ):
     """Read a broker statement and compare its holdings with the portfolio. Writes nothing."""
     content = await file.read()
@@ -32,7 +34,7 @@ async def extract_position_statement(
 async def compare_position_statement(
     request: PositionComparisonRequest,
     guard: PortfolioGuard,
-    service: PositionStatementService = Depends(get_position_statement_service),
+    service: Annotated[PositionStatementService, Depends(get_position_statement_service)],
 ):
     """Compare reviewed holdings with the portfolio again, without reading the PDF again."""
     await guard(portfolios=[request.portfolio_id])

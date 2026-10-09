@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, File, UploadFile
 
 from app.composition.portfolio import get_brokerage_note_import_service
@@ -29,7 +31,7 @@ router = APIRouter(prefix='/brokerage_note', tags=['Portfolio Brokerage Note'])
 @router.get('', response_model=list[BrokerageNoteResponse])
 async def list_brokerage_notes(
     portfolio_id: OwnedPortfolioId,
-    service: BrokerageNoteImportService = Depends(get_brokerage_note_import_service),
+    service: Annotated[BrokerageNoteImportService, Depends(get_brokerage_note_import_service)],
 ):
     """Imported notes of the portfolio, newest trading day first."""
     return await service.list_notes(portfolio_id)
@@ -38,8 +40,8 @@ async def list_brokerage_notes(
 @router.post('/extraction', response_model=BrokerageNoteDraftResponse)
 async def extract_brokerage_note(
     portfolio_id: OwnedFormPortfolioId,
-    file: UploadFile = File(..., description='Nota de corretagem em PDF'),
-    service: BrokerageNoteImportService = Depends(get_brokerage_note_import_service),
+    file: Annotated[UploadFile, File(description='Nota de corretagem em PDF')],
+    service: Annotated[BrokerageNoteImportService, Depends(get_brokerage_note_import_service)],
 ):
     """Read a brokerage note and show what importing it would do. Writes nothing."""
     content = await file.read()
@@ -54,7 +56,7 @@ async def extract_brokerage_note(
 async def reconcile_brokerage_note(
     request: ReconciliationRequest,
     guard: PortfolioGuard,
-    service: BrokerageNoteImportService = Depends(get_brokerage_note_import_service),
+    service: Annotated[BrokerageNoteImportService, Depends(get_brokerage_note_import_service)],
 ):
     """Cross reviewed lines with the portfolio again, without reading the PDF again."""
     await guard(portfolios=[request.portfolio_id])
@@ -68,7 +70,7 @@ async def reconcile_brokerage_note(
 async def import_brokerage_note(
     request: ImportRequest,
     guard: PortfolioGuard,
-    service: BrokerageNoteImportService = Depends(get_brokerage_note_import_service),
+    service: Annotated[BrokerageNoteImportService, Depends(get_brokerage_note_import_service)],
 ):
     """Save one note and apply the decisions taken over a reconciliation that must still hold."""
     await guard(portfolios=[request.portfolio_id])

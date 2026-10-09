@@ -21,9 +21,9 @@ router = APIRouter(prefix='/dividend', tags=['Portfolio Dividend'])
 @router.get('', response_model=list[Dividend])
 async def list_dividends(
     portfolio_id: OwnedPortfolioId,
+    service: Annotated[PortfolioDividendService, Depends(get_portfolio_dividend_service)],
     filters: Annotated[DividendFilters, Depends()] = None,
-    currency: str = Query('BRL'),
-    service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     return await service.get_dividends(portfolio_id, filters.to_domain(), currency=currency)
 
@@ -32,7 +32,7 @@ async def list_dividends(
 async def create_dividend(
     dividend: DividendCreateRequest,
     guard: PortfolioGuard,
-    service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
+    service: Annotated[PortfolioDividendService, Depends(get_portfolio_dividend_service)],
 ):
     await guard(portfolios=[dividend.portfolio_id])
     created = await service.create_dividend(dividend)
@@ -45,7 +45,7 @@ async def update_dividend(
     dividend_id: int,
     dividend_data: DividendUpdateRequest,
     guard: PortfolioGuard,
-    service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
+    service: Annotated[PortfolioDividendService, Depends(get_portfolio_dividend_service)],
 ):
     await guard(dividends=[dividend_id])
     payload = dividend_data.model_copy(update={'id': dividend_id})
@@ -60,7 +60,7 @@ async def update_dividend(
 async def delete_dividend(
     dividend_id: int,
     guard: PortfolioGuard,
-    service: PortfolioDividendService = Depends(get_portfolio_dividend_service),
+    service: Annotated[PortfolioDividendService, Depends(get_portfolio_dividend_service)],
 ):
     await guard(dividends=[dividend_id])
     deleted = await service.delete_dividend(dividend_id)

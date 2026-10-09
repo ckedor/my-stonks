@@ -80,6 +80,11 @@ Provider calls use adapters/integrations behind the service layer.
 
 - Instantiate services in a named `service` variable before calling
   their methods. Do not instantiate and invoke a service in the same expression.
+- Declare route and dependency parameters with `Annotated`:
+  `service: Annotated[XService, Depends(get_x_service)]`,
+  `limit: Annotated[int, Query(ge=1)] = 50`. The default goes after the `=`,
+  never inside `Query(...)`; a required parameter has none. Parameters
+  without a default come first. Ruff's `FAST` rules enforce this.
 
 ## Cached reads and their invalidation
 

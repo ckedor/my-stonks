@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 
 from app.composition.market_data import (
@@ -63,8 +65,8 @@ def _revoke_pending_task(execution) -> None:
 
 @router.get('/quote', response_model=list[DataIngestionExecutionResponse])
 async def list_quote_ingestions(
-    limit: int = Query(default=50, ge=1, le=200),
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ):
     return await service.list_quote_executions(limit=limit)
 
@@ -75,7 +77,7 @@ async def list_quote_ingestions(
 )
 async def get_quote_ingestion(
     execution_id: int,
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
 ):
     return await service.get_quote_execution(execution_id)
 
@@ -83,8 +85,8 @@ async def get_quote_ingestion(
 @router.post('/quote', response_model=DataIngestionExecutionResponse)
 async def run_quote_ingestion(
     payload: RunDataIngestionRequest,
-    user: User = Depends(current_superuser),
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    user: Annotated[User, Depends(current_superuser)],
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.request_quote_execution(
         requested_by_user_id=user.id,
@@ -115,7 +117,7 @@ async def run_quote_ingestion(
 @router.post('/quote/{execution_id}/abort', response_model=DataIngestionExecutionResponse)
 async def abort_quote_ingestion(
     execution_id: int,
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.abort_quote_execution(execution_id)
     _revoke_pending_task(execution)
@@ -127,8 +129,8 @@ async def abort_quote_ingestion(
     response_model=list[DataIngestionExecutionResponse],
 )
 async def list_market_data_series_ingestions(
-    limit: int = Query(default=50, ge=1, le=200),
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ):
     return await service.list_series_executions(limit=limit)
 
@@ -139,7 +141,7 @@ async def list_market_data_series_ingestions(
 )
 async def get_market_data_series_ingestion(
     execution_id: int,
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
 ):
     return await service.get_series_execution(execution_id)
 
@@ -147,8 +149,8 @@ async def get_market_data_series_ingestion(
 @router.post('/market_data_series', response_model=DataIngestionExecutionResponse)
 async def run_market_data_series_ingestion(
     payload: RunMarketDataSeriesIngestionRequest,
-    user: User = Depends(current_superuser),
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    user: Annotated[User, Depends(current_superuser)],
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.request_series_execution(
         requested_by_user_id=user.id,
@@ -172,7 +174,7 @@ async def run_market_data_series_ingestion(
 )
 async def abort_market_data_series_ingestion(
     execution_id: int,
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.abort_series_execution(execution_id)
     _revoke_pending_task(execution)
@@ -181,8 +183,8 @@ async def abort_market_data_series_ingestion(
 
 @router.get('/usd_brl', response_model=list[DataIngestionExecutionResponse])
 async def list_usd_brl_ingestions(
-    limit: int = Query(default=50, ge=1, le=200),
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ):
     return await service.list_usd_brl_executions(limit=limit)
 
@@ -193,7 +195,7 @@ async def list_usd_brl_ingestions(
 )
 async def get_usd_brl_ingestion(
     execution_id: int,
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
 ):
     return await service.get_usd_brl_execution(execution_id)
 
@@ -201,8 +203,8 @@ async def get_usd_brl_ingestion(
 @router.post('/usd_brl', response_model=DataIngestionExecutionResponse)
 async def run_usd_brl_ingestion(
     payload: RunUsdBrlIngestionRequest,
-    user: User = Depends(current_superuser),
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    user: Annotated[User, Depends(current_superuser)],
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.request_usd_brl_execution(
         requested_by_user_id=user.id,
@@ -223,7 +225,7 @@ async def run_usd_brl_ingestion(
 @router.post('/usd_brl/{execution_id}/abort', response_model=DataIngestionExecutionResponse)
 async def abort_usd_brl_ingestion(
     execution_id: int,
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.abort_usd_brl_execution(execution_id)
     _revoke_pending_task(execution)
@@ -232,8 +234,8 @@ async def abort_usd_brl_ingestion(
 
 @router.get('/fund_registry', response_model=list[DataIngestionExecutionResponse])
 async def list_fund_registry_ingestions(
-    limit: int = Query(default=50, ge=1, le=200),
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ):
     return await service.list_fund_registry_executions(limit=limit)
 
@@ -244,7 +246,7 @@ async def list_fund_registry_ingestions(
 )
 async def get_fund_registry_ingestion(
     execution_id: int,
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
 ):
     return await service.get_fund_registry_execution(execution_id)
 
@@ -252,8 +254,8 @@ async def get_fund_registry_ingestion(
 @router.post('/fund_registry', response_model=DataIngestionExecutionResponse)
 async def run_fund_registry_ingestion(
     payload: RunFundRegistryIngestionRequest,
-    user: User = Depends(current_superuser),
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    user: Annotated[User, Depends(current_superuser)],
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.request_manual_execution(
         ingestion_type=DataIngestionType.FUND_REGISTRY,
@@ -279,7 +281,7 @@ async def run_fund_registry_ingestion(
 )
 async def abort_fund_registry_ingestion(
     execution_id: int,
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.abort_execution(
         ingestion_type=DataIngestionType.FUND_REGISTRY,
@@ -291,8 +293,8 @@ async def abort_fund_registry_ingestion(
 
 @router.get('/etf_registry', response_model=list[DataIngestionExecutionResponse])
 async def list_etf_registry_ingestions(
-    limit: int = Query(default=50, ge=1, le=200),
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ):
     return await service.list_etf_registry_executions(limit=limit)
 
@@ -303,15 +305,15 @@ async def list_etf_registry_ingestions(
 )
 async def get_etf_registry_ingestion(
     execution_id: int,
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
 ):
     return await service.get_etf_registry_execution(execution_id)
 
 
 @router.post('/etf_registry', response_model=DataIngestionExecutionResponse)
 async def run_etf_registry_ingestion(
-    user: User = Depends(current_superuser),
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    user: Annotated[User, Depends(current_superuser)],
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.request_manual_execution(
         ingestion_type=DataIngestionType.ETF_REGISTRY,
@@ -333,7 +335,7 @@ async def run_etf_registry_ingestion(
 )
 async def abort_etf_registry_ingestion(
     execution_id: int,
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.abort_execution(
         ingestion_type=DataIngestionType.ETF_REGISTRY,
@@ -345,8 +347,8 @@ async def abort_etf_registry_ingestion(
 
 @router.get('/etf_holdings', response_model=list[DataIngestionExecutionResponse])
 async def list_etf_holdings_ingestions(
-    limit: int = Query(default=50, ge=1, le=200),
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ):
     return await service.list_etf_holdings_executions(limit=limit)
 
@@ -357,15 +359,15 @@ async def list_etf_holdings_ingestions(
 )
 async def get_etf_holdings_ingestion(
     execution_id: int,
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
 ):
     return await service.get_etf_holdings_execution(execution_id)
 
 
 @router.post('/etf_holdings', response_model=DataIngestionExecutionResponse)
 async def run_etf_holdings_ingestion(
-    user: User = Depends(current_superuser),
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    user: Annotated[User, Depends(current_superuser)],
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.request_manual_execution(
         ingestion_type=DataIngestionType.ETF_HOLDINGS,
@@ -387,7 +389,7 @@ async def run_etf_holdings_ingestion(
 )
 async def abort_etf_holdings_ingestion(
     execution_id: int,
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.abort_execution(
         ingestion_type=DataIngestionType.ETF_HOLDINGS,
@@ -399,8 +401,8 @@ async def abort_etf_holdings_ingestion(
 
 @router.get('/fund_share_value', response_model=list[DataIngestionExecutionResponse])
 async def list_fund_share_value_ingestions(
-    limit: int = Query(default=50, ge=1, le=200),
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ):
     return await service.list_fund_share_value_executions(limit=limit)
 
@@ -411,7 +413,7 @@ async def list_fund_share_value_ingestions(
 )
 async def get_fund_share_value_ingestion(
     execution_id: int,
-    service: DataIngestionReadService = Depends(get_data_ingestion_read_service),
+    service: Annotated[DataIngestionReadService, Depends(get_data_ingestion_read_service)],
 ):
     return await service.get_fund_share_value_execution(execution_id)
 
@@ -419,8 +421,8 @@ async def get_fund_share_value_ingestion(
 @router.post('/fund_share_value', response_model=DataIngestionExecutionResponse)
 async def run_fund_share_value_ingestion(
     payload: RunDataIngestionRequest,
-    user: User = Depends(current_superuser),
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    user: Annotated[User, Depends(current_superuser)],
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     """Ingest share values now. ``item_ids`` narrows the run to chosen funds;
     ``force_full_history`` re-reads from each first purchase, ignoring validators."""
@@ -449,7 +451,7 @@ async def run_fund_share_value_ingestion(
 )
 async def abort_fund_share_value_ingestion(
     execution_id: int,
-    service: DataIngestionService = Depends(get_data_ingestion_service),
+    service: Annotated[DataIngestionService, Depends(get_data_ingestion_service)],
 ):
     execution = await service.abort_execution(
         ingestion_type=DataIngestionType.FUND_SHARE_VALUE,

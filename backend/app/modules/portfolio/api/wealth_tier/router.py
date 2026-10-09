@@ -1,5 +1,7 @@
 """Wealth-tier routes: the fixed ladder, and a portfolio's standing on it."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 
 from app.composition.portfolio import get_wealth_tier_service
@@ -20,7 +22,7 @@ router = APIRouter(prefix='/wealth_tier', tags=['Wealth Tier'])
 
 @router.get('', response_model=list[WealthTier])
 async def list_wealth_tiers(
-    service: PortfolioWealthTierService = Depends(get_wealth_tier_service),
+    service: Annotated[PortfolioWealthTierService, Depends(get_wealth_tier_service)],
 ):
     """The whole ladder, lowest rung first."""
     return await service.list_tiers()
@@ -29,7 +31,7 @@ async def list_wealth_tiers(
 @router.get('/status/{portfolio_id}', response_model=PortfolioWealthTier)
 async def get_portfolio_wealth_tier(
     portfolio_id: OwnedPortfolioId,
-    service: PortfolioWealthTierService = Depends(get_wealth_tier_service),
+    service: Annotated[PortfolioWealthTierService, Depends(get_wealth_tier_service)],
 ):
     """The tier a portfolio has earned, and how far the next one is."""
     return await service.get_portfolio_tier(portfolio_id)

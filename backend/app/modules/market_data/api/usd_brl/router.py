@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
@@ -15,8 +16,8 @@ router = APIRouter(prefix='/usd-brl', tags=['USD/BRL'])
 
 @router.get('/history', response_model=list[UsdBrlHistoryPoint])
 async def get_usd_brl_history(
-    start_date: date | None = Query(default=None),
-    service: UsdBrlReadService = Depends(get_usd_brl_read_service),
+    service: Annotated[UsdBrlReadService, Depends(get_usd_brl_read_service)],
+    start_date: Annotated[date | None, Query()] = None,
 ):
     return await service.get_history(start_date=start_date)
 
@@ -24,7 +25,7 @@ async def get_usd_brl_history(
 @router.post('/convert', response_model=UsdBrlConversionResponse)
 async def convert_usd_brl(
     payload: UsdBrlConversionRequest,
-    service: UsdBrlReadService = Depends(get_usd_brl_read_service),
+    service: Annotated[UsdBrlReadService, Depends(get_usd_brl_read_service)],
 ):
     return await service.convert(
         amount=payload.amount,

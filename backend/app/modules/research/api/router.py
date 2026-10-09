@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 
 from app.composition.research import (
@@ -39,8 +41,8 @@ recommended_portfolio_type_router = APIRouter(prefix='/recommended_portfolio_typ
 
 @recommended_portfolio_type_router.get('', response_model=list[RecommendedPortfolioTypeResponse])
 async def list_recommended_portfolio_types(
-    _: object = Depends(current_active_user),
-    service: RecommendedPortfolioService = Depends(get_recommended_portfolio_service),
+    _: Annotated[object, Depends(current_active_user)],
+    service: Annotated[RecommendedPortfolioService, Depends(get_recommended_portfolio_service)],
 ):
     return await service.list_types()
 
@@ -52,7 +54,7 @@ async def list_recommended_portfolio_types(
 )
 async def create_recommended_portfolio_type(
     payload: SaveRecommendedPortfolioTypeRequest,
-    service: RecommendedPortfolioService = Depends(get_recommended_portfolio_service),
+    service: Annotated[RecommendedPortfolioService, Depends(get_recommended_portfolio_service)],
 ):
     return await service.create_type(payload.name)
 
@@ -63,7 +65,7 @@ async def create_recommended_portfolio_type(
 )
 async def delete_recommended_portfolio_type(
     type_id: int,
-    service: RecommendedPortfolioService = Depends(get_recommended_portfolio_service),
+    service: Annotated[RecommendedPortfolioService, Depends(get_recommended_portfolio_service)],
 ):
     await service.delete_type(type_id)
     return {'message': 'Recommended portfolio type deleted successfully.'}
@@ -71,8 +73,8 @@ async def delete_recommended_portfolio_type(
 
 @router.get('/source', response_model=list[ResearchSourceResponse])
 async def list_sources(
-    _: object = Depends(current_active_user),
-    service: RecommendedPortfolioService = Depends(get_recommended_portfolio_service),
+    _: Annotated[object, Depends(current_active_user)],
+    service: Annotated[RecommendedPortfolioService, Depends(get_recommended_portfolio_service)],
 ):
     return await service.list_sources()
 
@@ -83,10 +85,10 @@ async def list_sources(
     dependencies=[Depends(current_superuser)],
 )
 async def extract_recommended_portfolio(
-    file: UploadFile = File(..., description='Relatório em PDF da carteira recomendada'),
-    service: RecommendedPortfolioExtractionService = Depends(
-        get_recommended_portfolio_extraction_service
-    ),
+    file: Annotated[UploadFile, File(description='Relatório em PDF da carteira recomendada')],
+    service: Annotated[
+        RecommendedPortfolioExtractionService, Depends(get_recommended_portfolio_extraction_service)
+    ],
 ):
     """Read a research PDF and line its tickers up against the catalogue.
 
@@ -99,8 +101,8 @@ async def extract_recommended_portfolio(
 
 @recommended_portfolio_router.get('', response_model=list[RecommendedPortfolioResponse])
 async def list_recommended_portfolios(
-    _: object = Depends(current_active_user),
-    service: RecommendedPortfolioService = Depends(get_recommended_portfolio_service),
+    _: Annotated[object, Depends(current_active_user)],
+    service: Annotated[RecommendedPortfolioService, Depends(get_recommended_portfolio_service)],
 ):
     return await service.list()
 
@@ -110,8 +112,8 @@ async def list_recommended_portfolios(
 )
 async def get_recommended_portfolio(
     recommended_portfolio_id: int,
-    _: object = Depends(current_active_user),
-    service: RecommendedPortfolioService = Depends(get_recommended_portfolio_service),
+    _: Annotated[object, Depends(current_active_user)],
+    service: Annotated[RecommendedPortfolioService, Depends(get_recommended_portfolio_service)],
 ):
     return await service.get(recommended_portfolio_id)
 
@@ -123,7 +125,7 @@ async def get_recommended_portfolio(
 )
 async def create_recommended_portfolio(
     payload: SaveRecommendedPortfolioRequest,
-    service: RecommendedPortfolioService = Depends(get_recommended_portfolio_service),
+    service: Annotated[RecommendedPortfolioService, Depends(get_recommended_portfolio_service)],
 ):
     command = SaveRecommendedPortfolioCommand(
         source_name=payload.source_name,
@@ -155,7 +157,7 @@ async def create_recommended_portfolio(
 async def update_recommended_portfolio(
     recommended_portfolio_id: int,
     payload: UpdateRecommendedPortfolioRequest,
-    service: RecommendedPortfolioService = Depends(get_recommended_portfolio_service),
+    service: Annotated[RecommendedPortfolioService, Depends(get_recommended_portfolio_service)],
 ):
     """Reclassificar uma edição salva. O tipo é o que a tela deixa mudar."""
     return await service.set_type(recommended_portfolio_id, payload.type_id)
@@ -167,7 +169,7 @@ async def update_recommended_portfolio(
 )
 async def delete_recommended_portfolio(
     recommended_portfolio_id: int,
-    service: RecommendedPortfolioService = Depends(get_recommended_portfolio_service),
+    service: Annotated[RecommendedPortfolioService, Depends(get_recommended_portfolio_service)],
 ):
     await service.delete(recommended_portfolio_id)
     return {'message': 'Recommended portfolio deleted successfully.'}
@@ -175,18 +177,24 @@ async def delete_recommended_portfolio(
 
 @router.get('/recommendation_consensus', response_model=RecommendationConsensusResponse)
 async def get_recommendation_consensus(
-    asset_type: str | None = Query(
-        None,
-        description='Recorte pelo tipo do ativo recomendado, pelo nome curto: FII, ETF, Ação.',
-    ),
-    window_months: int = Query(
-        DEFAULT_WINDOW_MONTHS,
-        ge=0,
-        le=60,
-        description='Quantos meses para trás uma edição ainda conta. 0 desliga a janela.',
-    ),
-    _: object = Depends(current_active_user),
-    service: RecommendationConsensusService = Depends(get_recommendation_consensus_service),
+    _: Annotated[object, Depends(current_active_user)],
+    service: Annotated[
+        RecommendationConsensusService, Depends(get_recommendation_consensus_service)
+    ],
+    asset_type: Annotated[
+        str | None,
+        Query(
+            description='Recorte pelo tipo do ativo recomendado, pelo nome curto: FII, ETF, Ação.'
+        ),
+    ] = None,
+    window_months: Annotated[
+        int,
+        Query(
+            ge=0,
+            le=60,
+            description='Quantos meses para trás uma edição ainda conta. 0 desliga a janela.',
+        ),
+    ] = DEFAULT_WINDOW_MONTHS,
 ):
     """Quantas casas recomendam cada ativo, entre as carteiras vigentes.
 

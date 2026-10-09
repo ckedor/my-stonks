@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 
 from app.composition.portfolio import (
@@ -39,8 +41,8 @@ router = APIRouter(prefix='/portfolio', dependencies=[Depends(current_active_use
 
 @router.get('', response_model=list[Portfolio])
 async def list_user_portfolios(
-    user: User = Depends(current_active_user),
-    service: PortfolioBaseService = Depends(get_portfolio_service),
+    user: Annotated[User, Depends(current_active_user)],
+    service: Annotated[PortfolioBaseService, Depends(get_portfolio_service)],
 ):
     return await service.list_user_portfolios(user.id)
 
@@ -51,7 +53,7 @@ async def list_user_portfolios(
     dependencies=[Depends(current_superuser)],
 )
 async def list_all_portfolios(
-    service: PortfolioBaseService = Depends(get_portfolio_service),
+    service: Annotated[PortfolioBaseService, Depends(get_portfolio_service)],
 ):
     """Every portfolio in the application, for administrative screens."""
     return await service.list_all_portfolios()
@@ -60,8 +62,8 @@ async def list_all_portfolios(
 @router.post('')
 async def create_portfolio(
     portfolio: CreatePortfolioRequest,
-    user: User = Depends(current_active_user),
-    service: PortfolioBaseService = Depends(get_portfolio_service),
+    user: Annotated[User, Depends(current_active_user)],
+    service: Annotated[PortfolioBaseService, Depends(get_portfolio_service)],
 ):
     return await service.create_portfolio(
         user.id,
@@ -75,7 +77,7 @@ async def update_portfolio(
     portfolio_id: OwnedPortfolioId,
     payload: UpdatePortfolioRequest,
     guard: PortfolioGuard,
-    service: PortfolioBaseService = Depends(get_portfolio_service),
+    service: Annotated[PortfolioBaseService, Depends(get_portfolio_service)],
 ):
     await guard(**category_refs(payload.user_categories or []))
     await service.update_portfolio(
@@ -89,9 +91,9 @@ async def update_portfolio(
 @router.delete('/{portfolio_id}')
 async def delete_portfolio(
     portfolio_id: OwnedPortfolioId,
-    service: PortfolioBaseService = Depends(get_portfolio_service),
-    position_service: PortfolioPositionService = Depends(get_portfolio_position_service),
-    document_service: PortfolioDocumentService = Depends(get_portfolio_document_service),
+    service: Annotated[PortfolioBaseService, Depends(get_portfolio_service)],
+    position_service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    document_service: Annotated[PortfolioDocumentService, Depends(get_portfolio_document_service)],
 ):
     # Os documentos saem antes: os arquivos moram no storage, fora do alcance
     # da transação que apaga a carteira, e as linhas deles a referenciam.

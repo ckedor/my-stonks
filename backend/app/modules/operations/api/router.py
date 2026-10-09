@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 
 from app.composition.operations import (
@@ -33,18 +35,18 @@ router = APIRouter(
 
 @router.get('/dashboard', response_model=OperationsDashboardResponse)
 async def get_operations_dashboard(
-    service: OperationsReadService = Depends(get_operations_read_service),
+    service: Annotated[OperationsReadService, Depends(get_operations_read_service)],
 ):
     return await service.dashboard()
 
 
 @router.get('/runs', response_model=list[TaskRunResponse])
 async def list_task_runs(
+    service: Annotated[OperationsReadService, Depends(get_operations_read_service)],
     routine: RoutineKey | None = None,
     status: TaskRunStatus | None = None,
     include_chained: bool = True,
-    limit: int = Query(default=100, ge=1, le=500),
-    service: OperationsReadService = Depends(get_operations_read_service),
+    limit: Annotated[int, Query(ge=1, le=500)] = 100,
 ):
     return await service.runs(
         routine=routine,
@@ -57,7 +59,7 @@ async def list_task_runs(
 @router.post('/routines/{routine}/run', response_model=RoutineRunResponse)
 async def run_routine(
     routine: RoutineKey,
-    service: OperationsReadService = Depends(get_operations_read_service),
+    service: Annotated[OperationsReadService, Depends(get_operations_read_service)],
 ):
     """Send what the schedule sends for this routine, now.
 
@@ -78,7 +80,7 @@ async def run_routine(
 
 @router.get('/storage', response_model=DatabaseStorageResponse)
 async def get_database_storage(
-    service: StorageReadService = Depends(get_storage_read_service),
+    service: Annotated[StorageReadService, Depends(get_storage_read_service)],
 ):
     """How much room the database takes, table by table, largest first."""
     storage = await service.database_storage()
@@ -100,7 +102,7 @@ async def get_database_storage(
 
 @router.get('/bucket', response_model=BucketUsageResponse)
 async def get_bucket_usage(
-    service: BucketReadService = Depends(get_bucket_read_service),
+    service: Annotated[BucketReadService, Depends(get_bucket_read_service)],
 ):
     """What the object bucket holds, by the top-level folder of each key."""
     usage = await service.usage()

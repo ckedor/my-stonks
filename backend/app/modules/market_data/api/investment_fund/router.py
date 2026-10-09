@@ -5,6 +5,8 @@ A FII is answered by ``/market_data/fii``, which is about buildings and vacancy;
 an ETF is read like any other listed asset.
 """
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 
 from app.composition.market_data import (
@@ -25,7 +27,9 @@ router = APIRouter(prefix='/investment_fund', tags=['Investment fund'])
 
 @router.get('/market', response_model=InvestmentFundMarketResponse)
 async def get_investment_fund_market(
-    service: InvestmentFundMarketReadService = Depends(get_investment_fund_market_read_service),
+    service: Annotated[
+        InvestmentFundMarketReadService, Depends(get_investment_fund_market_read_service)
+    ],
 ):
     """Catalogue of funds that are neither real-estate funds nor ETFs."""
     return await service.list_market()
@@ -34,7 +38,9 @@ async def get_investment_fund_market(
 @router.get('/{asset_id}/profile', response_model=InvestmentFundProfileResponse)
 async def get_investment_fund_profile(
     asset_id: int,
-    service: InvestmentFundProfileReadService = Depends(get_investment_fund_profile_read_service),
+    service: Annotated[
+        InvestmentFundProfileReadService, Depends(get_investment_fund_profile_read_service)
+    ],
 ):
     """Registration, indicators, share value, payments and portfolio of one fund."""
     return await service.get_profile(asset_id=asset_id)

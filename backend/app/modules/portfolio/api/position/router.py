@@ -1,4 +1,5 @@
 import datetime as dt
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
@@ -26,11 +27,11 @@ router = APIRouter(prefix='/position', tags=['Portfolio Position'])
 @router.get('/{portfolio_id}')
 async def get_portfolio_position(  # noqa: PLR0913
     portfolio_id: OwnedPortfolioId,
-    most_recent: bool = Query(True),
-    group_by_broker: bool = Query(False),
-    asset_id: int = Query(None),
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    most_recent: Annotated[bool, Query()] = True,
+    group_by_broker: Annotated[bool, Query()] = False,
+    asset_id: Annotated[int | None, Query()] = None,
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     if most_recent:
         return await service.get_portfolio_position(
@@ -42,8 +43,8 @@ async def get_portfolio_position(  # noqa: PLR0913
 @router.get('/{portfolio_id}/closed', response_model=list[ClosedPositionEntry])
 async def get_closed_positions(
     portfolio_id: OwnedPortfolioId,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     """Os ativos que a carteira teve e não tem mais.
 
@@ -58,7 +59,7 @@ async def get_closed_positions(
 @router.get('/{portfolio_id}/consolidation', response_model=PortfolioConsolidation | None)
 async def get_consolidation(
     portfolio_id: OwnedPortfolioId,
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
 ):
     """When this portfolio was last consolidated.
 
@@ -71,8 +72,8 @@ async def get_consolidation(
 @router.get('/{portfolio_id}/returns')
 async def get_portfolio_returns(
     portfolio_id: OwnedPortfolioId,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     return await service.get_portfolio_returns(portfolio_id, currency)
 
@@ -81,8 +82,8 @@ async def get_portfolio_returns(
 async def get_asset_type_returns(
     portfolio_id: OwnedPortfolioId,
     asset_type_id: int,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     return await service.get_asset_type_returns(portfolio_id, asset_type_id, currency)
 
@@ -91,8 +92,8 @@ async def get_asset_type_returns(
 async def get_asset_type_analysis(
     portfolio_id: OwnedPortfolioId,
     asset_type_id: int,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     return await service.get_asset_type_stats(portfolio_id, asset_type_id, currency)
 
@@ -101,8 +102,8 @@ async def get_asset_type_analysis(
 async def get_segment_returns(
     portfolio_id: OwnedPortfolioId,
     segment: PortfolioSegment,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     return await service.get_segment_returns(portfolio_id, segment, currency)
 
@@ -111,8 +112,8 @@ async def get_segment_returns(
 async def get_segment_analysis(
     portfolio_id: OwnedPortfolioId,
     segment: PortfolioSegment,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     return await service.get_segment_stats(portfolio_id, segment, currency)
 
@@ -120,12 +121,12 @@ async def get_segment_analysis(
 @router.get('/{portfolio_id}/patrimony_evolution')
 async def get_patrimony_evolution(  # noqa: PLR0913
     portfolio_id: OwnedPortfolioId,
-    asset_id: int = Query(None),
-    asset_type_id: int = Query(None),
-    asset_type_ids: list[int] | None = Query(None),
-    segment: PortfolioSegment | None = Query(None),
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    asset_id: Annotated[int | None, Query()] = None,
+    asset_type_id: Annotated[int | None, Query()] = None,
+    asset_type_ids: Annotated[list[int] | None, Query()] = None,
+    segment: Annotated[PortfolioSegment | None, Query()] = None,
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     return await service.get_patrimony_evolution(
         portfolio_id, asset_id, asset_type_id, asset_type_ids, currency=currency, segment=segment
@@ -135,8 +136,8 @@ async def get_patrimony_evolution(  # noqa: PLR0913
 @router.get('/{portfolio_id}/contribution-average', response_model=ContributionAverage)
 async def get_contribution_average(
     portfolio_id: OwnedPortfolioId,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     """O aporte médio mensal da carteira.
 
@@ -151,8 +152,8 @@ async def get_contribution_average(
 @router.get('/{portfolio_id}/cdi-cagr', response_model=PortfolioCdiCagr)
 async def get_portfolio_cdi_cagr(
     portfolio_id: OwnedPortfolioId,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     """CAGR do CDI no período da carteira, sem calcular a análise de risco."""
     value = await service.get_portfolio_cdi_cagr(portfolio_id, currency)
@@ -162,8 +163,8 @@ async def get_portfolio_cdi_cagr(
 @router.get('/{portfolio_id}/analysis')
 async def get_portfolio_analysis(
     portfolio_id: OwnedPortfolioId,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     return await service.get_portfolio_stats(portfolio_id, currency=currency)
 
@@ -171,10 +172,10 @@ async def get_portfolio_analysis(
 @router.get('/{portfolio_id}/category/returns')
 async def get_category_returns(
     portfolio_id: OwnedPortfolioId,
-    category_id: int = Query(None),
-    most_recent: bool = Query(False),
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    category_id: Annotated[int | None, Query()] = None,
+    most_recent: Annotated[bool, Query()] = False,
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     return await service.get_category_returns(portfolio_id, category_id, most_recent, currency)
 
@@ -183,8 +184,8 @@ async def get_category_returns(
 async def get_category_analysis(
     portfolio_id: OwnedPortfolioId,
     category_id: int,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     return await service.get_category_stats(portfolio_id, category_id, currency=currency)
 
@@ -193,14 +194,14 @@ async def get_category_analysis(
 async def get_asset_returns(  # noqa: PLR0913
     portfolio_id: OwnedPortfolioId,
     asset_id: int,
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
     # Datas, e não texto: o repositório compara a coluna `date` direto, e o
     # Postgres não compara `date` com `varchar` -- estes dois parâmetros
     # devolviam 500 sempre que preenchidos. Mesma anotação que o módulo de
     # dividendos já usa.
     start_date: dt.date | None = None,
     end_date: dt.date | None = None,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     asset_returns = await service.get_asset_acc_returns(
         portfolio_id, [asset_id], start_date, end_date, currency=currency
@@ -214,8 +215,8 @@ async def get_asset_returns(  # noqa: PLR0913
 async def get_asset_details(
     portfolio_id: OwnedPortfolioId,
     asset_id: int,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     held = await service.get_asset_details(portfolio_id, asset_id, currency=currency)
     return AssetDetailsWithPosition(
@@ -234,7 +235,7 @@ async def get_asset_details(
 async def get_asset_analysis(
     portfolio_id: OwnedPortfolioId,
     asset_id: int,
-    currency: str = Query('BRL'),
-    service: PortfolioPositionService = Depends(get_portfolio_position_service),
+    service: Annotated[PortfolioPositionService, Depends(get_portfolio_position_service)],
+    currency: Annotated[str, Query()] = 'BRL',
 ):
     return await service.get_asset_analysis(portfolio_id, asset_id, currency=currency)

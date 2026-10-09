@@ -134,7 +134,7 @@ import-linter = "2.6"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-lint.select = ["E", "F", "B", "I", "UP", "SIM", "C4", "RUF", "PL", "PT"]
+lint.select = ["E", "F", "B", "I", "UP", "SIM", "C4", "RUF", "PL", "PT", "FAST"]
 lint.ignore = [
     # A linha longa é decidida pelo formatter, que só tenta respeitar o limite.
     "E501",

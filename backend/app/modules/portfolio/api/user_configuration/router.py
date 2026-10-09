@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 
 from app.composition.portfolio import get_portfolio_user_configuration_service
@@ -14,7 +16,9 @@ router = APIRouter(prefix='/user_configuration', tags=['Portfolio User Configura
 @router.get('/{portfolio_id}')
 async def get_user_configurations(
     portfolio_id: OwnedPortfolioId,
-    service: PortfolioUserConfigurationService = Depends(get_portfolio_user_configuration_service),
+    service: Annotated[
+        PortfolioUserConfigurationService, Depends(get_portfolio_user_configuration_service)
+    ],
 ):
     return await service.get_user_configurations(portfolio_id)
 
@@ -23,7 +27,9 @@ async def get_user_configurations(
 async def update_user_configuration(
     portfolio_id: OwnedPortfolioId,
     user_configuration_request: UserConfigurationUpdateRequest,
-    service: PortfolioUserConfigurationService = Depends(get_portfolio_user_configuration_service),
+    service: Annotated[
+        PortfolioUserConfigurationService, Depends(get_portfolio_user_configuration_service)
+    ],
 ):
     return await service.update_user_configuration(
         portfolio_id,

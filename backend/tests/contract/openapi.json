@@ -22825,8 +22825,15 @@
       "name": "asset_id",
       "required": false,
       "schema": {
-       "title": "Asset Id",
-       "type": "integer"
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Asset Id"
       }
      },
      {
@@ -23300,8 +23307,15 @@
       "name": "category_id",
       "required": false,
       "schema": {
-       "title": "Category Id",
-       "type": "integer"
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Category Id"
       }
      },
      {
@@ -23672,8 +23686,15 @@
       "name": "asset_id",
       "required": false,
       "schema": {
-       "title": "Asset Id",
-       "type": "integer"
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Asset Id"
       }
      },
      {
@@ -23681,8 +23702,15 @@
       "name": "asset_type_id",
       "required": false,
       "schema": {
-       "title": "Asset Type Id",
-       "type": "integer"
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Asset Type Id"
       }
      },
      {
@@ -24502,8 +24530,15 @@
       "name": "asset_id",
       "required": false,
       "schema": {
-       "title": "Asset Id",
-       "type": "integer"
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Asset Id"
       }
      },
      {

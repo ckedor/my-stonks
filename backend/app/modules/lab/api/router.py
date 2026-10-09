@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 
 from app.composition.lab import get_backtest_service, get_theoretical_portfolio_service
@@ -28,8 +30,8 @@ backtest_router = APIRouter(prefix='/backtest')
 
 @router.get('/preset', response_model=list[PresetResponse])
 async def list_presets(
-    _: User = Depends(current_active_user),
-    service: TheoreticalPortfolioService = Depends(get_theoretical_portfolio_service),
+    _: Annotated[User, Depends(current_active_user)],
+    service: Annotated[TheoreticalPortfolioService, Depends(get_theoretical_portfolio_service)],
 ):
     """Os modelos que já vêm prontos. São código, não linhas de tabela."""
     return service.list_presets()
@@ -37,8 +39,8 @@ async def list_presets(
 
 @theoretical_portfolio_router.get('', response_model=list[TheoreticalPortfolioResponse])
 async def list_theoretical_portfolios(
-    user: User = Depends(current_active_user),
-    service: TheoreticalPortfolioService = Depends(get_theoretical_portfolio_service),
+    user: Annotated[User, Depends(current_active_user)],
+    service: Annotated[TheoreticalPortfolioService, Depends(get_theoretical_portfolio_service)],
 ):
     return await service.list(user.id)
 
@@ -48,8 +50,8 @@ async def list_theoretical_portfolios(
 )
 async def get_theoretical_portfolio(
     theoretical_portfolio_id: int,
-    user: User = Depends(current_active_user),
-    service: TheoreticalPortfolioService = Depends(get_theoretical_portfolio_service),
+    user: Annotated[User, Depends(current_active_user)],
+    service: Annotated[TheoreticalPortfolioService, Depends(get_theoretical_portfolio_service)],
 ):
     return await service.get(theoretical_portfolio_id, user.id)
 
@@ -57,8 +59,8 @@ async def get_theoretical_portfolio(
 @theoretical_portfolio_router.post('', response_model=TheoreticalPortfolioResponse)
 async def create_theoretical_portfolio(
     payload: SaveTheoreticalPortfolioRequest,
-    user: User = Depends(current_active_user),
-    service: TheoreticalPortfolioService = Depends(get_theoretical_portfolio_service),
+    user: Annotated[User, Depends(current_active_user)],
+    service: Annotated[TheoreticalPortfolioService, Depends(get_theoretical_portfolio_service)],
 ):
     command = _save_command(payload)
     return await service.create(command, user.id)
@@ -70,8 +72,8 @@ async def create_theoretical_portfolio(
 async def update_theoretical_portfolio(
     theoretical_portfolio_id: int,
     payload: SaveTheoreticalPortfolioRequest,
-    user: User = Depends(current_active_user),
-    service: TheoreticalPortfolioService = Depends(get_theoretical_portfolio_service),
+    user: Annotated[User, Depends(current_active_user)],
+    service: Annotated[TheoreticalPortfolioService, Depends(get_theoretical_portfolio_service)],
 ):
     command = _save_command(payload)
     return await service.update(theoretical_portfolio_id, command, user.id)
@@ -80,8 +82,8 @@ async def update_theoretical_portfolio(
 @theoretical_portfolio_router.delete('/{theoretical_portfolio_id}')
 async def delete_theoretical_portfolio(
     theoretical_portfolio_id: int,
-    user: User = Depends(current_active_user),
-    service: TheoreticalPortfolioService = Depends(get_theoretical_portfolio_service),
+    user: Annotated[User, Depends(current_active_user)],
+    service: Annotated[TheoreticalPortfolioService, Depends(get_theoretical_portfolio_service)],
 ):
     await service.delete(theoretical_portfolio_id, user.id)
     return {'message': 'Carteira teórica removida.'}
@@ -90,8 +92,8 @@ async def delete_theoretical_portfolio(
 @backtest_router.post('', response_model=BacktestResponse)
 async def run_backtest(
     payload: RunBacktestRequest,
-    _: User = Depends(current_active_user),
-    service: BacktestService = Depends(get_backtest_service),
+    _: Annotated[User, Depends(current_active_user)],
+    service: Annotated[BacktestService, Depends(get_backtest_service)],
 ):
     """Simula a alocação do corpo. Nada é persistido."""
     command = _run_command(payload)
@@ -101,8 +103,8 @@ async def run_backtest(
 @backtest_router.post('/comparison', response_model=list[BacktestResponse])
 async def compare_backtests(
     payload: CompareBacktestsRequest,
-    _: User = Depends(current_active_user),
-    service: BacktestService = Depends(get_backtest_service),
+    _: Annotated[User, Depends(current_active_user)],
+    service: Annotated[BacktestService, Depends(get_backtest_service)],
 ):
     """Várias simulações lidas lado a lado.
 

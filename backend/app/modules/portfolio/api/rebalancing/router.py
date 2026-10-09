@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 
 from app.composition.portfolio import get_portfolio_rebalancing_service
@@ -14,7 +16,7 @@ router = APIRouter(prefix='/rebalancing', tags=['Portfolio Rebalancing'])
 @router.get('/{portfolio_id}', response_model=RebalancingResponse)
 async def get_rebalancing(
     portfolio_id: OwnedPortfolioId,
-    service: PortfolioRebalancingService = Depends(get_portfolio_rebalancing_service),
+    service: Annotated[PortfolioRebalancingService, Depends(get_portfolio_rebalancing_service)],
 ):
     return await service.get_rebalancing_data(portfolio_id)
 
@@ -24,7 +26,7 @@ async def save_rebalancing_targets(
     portfolio_id: OwnedPortfolioId,
     payload: SaveTargetsRequest,
     guard: PortfolioGuard,
-    service: PortfolioRebalancingService = Depends(get_portfolio_rebalancing_service),
+    service: Annotated[PortfolioRebalancingService, Depends(get_portfolio_rebalancing_service)],
 ):
     await guard(categories=[category.category_id for category in payload.categories])
     await service.save_targets(portfolio_id, categories=payload.categories_to_domain())
